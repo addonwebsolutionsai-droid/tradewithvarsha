@@ -27,8 +27,11 @@ async function snapshot<T>(file: string): Promise<T> {
 export const isPublicMode = (): boolean => PUBLIC_MODE
 export const snapshots = {
   weeklyPick: () => snapshot<{ generatedAt: string; weekOf: string; regime: string; rows: any[] }>('weekly-pick.json'),
+  dailyPick: () => snapshot<{ generatedAt: string; regime: string; rows: any[] }>('daily-pick.json'),
+  preMove: () => snapshot<{ generatedAt: string; rows: any[] }>('pre-move.json'),
   options: () => snapshot<{ generatedAt: string; rows: any[] }>('options.json'),
   intraday: () => snapshot<{ generatedAt: string; rows: any[] }>('intraday.json'),
+  hitLog: () => snapshot<{ generatedAt: string; entries: any[] }>('hit-log.json'),
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {

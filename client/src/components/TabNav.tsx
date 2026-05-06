@@ -60,6 +60,8 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   const PUBLIC_MODE = (import.meta as any).env?.VITE_PUBLIC_MODE === 'true'
   const tops = PUBLIC_MODE ? [
     { to: '/weekly-pick', label: 'Weekly Pick', icon: <Briefcase size={14} /> },
+    { to: '/daily-pick',  label: 'Daily Pick',  icon: <Bot size={14} /> },
+    { to: '/pre-move',    label: 'Pre-Move',    icon: <Wind size={14} /> },
     { to: '/options',     label: 'Options',     icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
     { to: '/intraday',    label: 'Intraday',    icon: <Activity size={14} />, count: counts.intraday },
   ] : [

@@ -84,7 +84,25 @@ async function publishSnapshots(): Promise<void> {
   try {
     const { getLatestPick: gp } = await import('./engine/weeklyManagerPick')
     const wp = await gp()
-    await publishPublicSnapshots({ weeklyPick: wp ?? null, signals: currentSignals })
+    const dp = getLatestDailyPick()
+    const premoveRun = getLatestRun('premove')
+    // Hit log is expensive (fetches candles per pick) — cap at 8s. If it
+    // times out, snapshot ships without hits and the next 30-min cron retries.
+    let hits: any[] = []
+    try {
+      const { buildScorecard } = await import('./engine/pickJournal')
+      hits = await Promise.race<any[]>([
+        buildScorecard(30).then(sc => sc.entries),
+        new Promise<any[]>(r => setTimeout(() => r([]), 8000)),
+      ])
+    } catch { /* journal may be empty on first run */ }
+    await publishPublicSnapshots({
+      weeklyPick: wp ?? null,
+      dailyPick: dp ?? null,
+      preMoveResults: premoveRun?.results ?? null,
+      hitLogEntries: hits,
+      signals: currentSignals,
+    })
   } catch (e) { log.warn('PUBLIC-SNAP', `publish failed: ${(e as Error).message}`) }
 }
 cron.schedule('*/30 * * * *', publishSnapshots, { timezone: 'Asia/Kolkata' })
@@ -800,9 +818,8 @@ app.get('/api/top-trades', async (req, res) => {
 // Manual public-snapshot publish (useful right before deploy / git commit).
 app.post('/api/public-snapshots/publish', async (_req, res) => {
   try {
-    const wp = await getLatestPick()
-    const out = await publishPublicSnapshots({ weeklyPick: wp ?? null, signals: currentSignals })
-    res.json(out)
+    await publishSnapshots()
+    res.json({ ok: true })
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
 

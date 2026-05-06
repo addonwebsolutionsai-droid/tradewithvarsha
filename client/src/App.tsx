@@ -38,7 +38,7 @@ import { SymbolsPage } from './pages/SymbolsPage'
 import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
 import { LoginPage, SignupPage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
-import { PublicWeeklyPickPage, PublicOptionsPage, PublicIntradayPage } from './pages/PublicPages'
+import { PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage } from './pages/PublicPages'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -95,6 +95,8 @@ function Shell() {
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/weekly-pick" element={<PublicWeeklyPickPage />} />
+            <Route path="/daily-pick" element={<PublicDailyPickPage />} />
+            <Route path="/pre-move" element={<PublicPreMovePage />} />
             <Route path="/options" element={<PublicOptionsPage />} />
             <Route path="/intraday" element={<PublicIntradayPage />} />
             <Route path="/" element={<Navigate to="/weekly-pick" replace />} />

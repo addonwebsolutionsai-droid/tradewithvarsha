@@ -103,7 +103,64 @@ function publicIntraday(signals: Signal[]): any[] {
 
 export interface PublishOptions {
   weeklyPick: any | null         // shape: WeeklyPick (engine output)
+  dailyPick: any | null          // shape: DailyPick (engine output)
+  preMoveResults: any[] | null   // ScreenerResult[] from premove scan
+  hitLogEntries: any[] | null    // ScorecardEntry[] from pickJournal
   signals: Signal[]              // currentSignals from index.ts
+}
+
+function publicDailyRows(rows: any[]): any[] {
+  return (rows ?? []).slice(0, 30).map(r => ({
+    symbol: r.symbol,
+    direction: r.direction,
+    pattern: r.pattern,
+    conviction: r.conviction,
+    ltp: r.ltp,
+    entryPrice: r.entryPrice,
+    stopLoss: r.stopLoss,
+    target1: r.target1, target1Date: r.target1Date,
+    target2: r.target2, target2Date: r.target2Date,
+    target3: r.target3, target3Date: r.target3Date,
+    riskReward: r.riskReward,
+  }))
+}
+
+function publicPreMoveRows(rows: any[]): any[] {
+  return (rows ?? [])
+    .filter(r => r.score >= 7)
+    .slice(0, 40)
+    .map(r => ({
+      symbol: r.symbol,
+      price: r.price,
+      direction: r.direction,
+      tier: r.tier,
+      score: r.score,
+      tags: r.tags ?? [],
+      suggestedEntry: r.suggestedEntry,
+      suggestedSL: r.suggestedSL,
+      suggestedTarget: r.suggestedTarget,
+      expectedMovePct: r.expectedMovePct,
+      timeframeLabel: r.timeframeLabel,
+    }))
+}
+
+function publicHitLog(entries: any[]): any[] {
+  // Keep only completed outcomes (T1/T2/T3/SL/EXPIRED) and sort newest-first.
+  return (entries ?? [])
+    .filter(e => e.outcome && e.outcome !== 'PENDING')
+    .sort((a, b) => (b.takenAt < a.takenAt ? -1 : 1))
+    .slice(0, 30)
+    .map(e => ({
+      symbol: e.symbol,
+      direction: e.direction,
+      conviction: e.conviction,
+      takenAt: e.takenAt,
+      entryPrice: e.entryPrice,
+      currentPrice: e.currentPrice,
+      realisedPct: e.realisedPct,
+      outcome: e.outcome,
+      daysSince: e.daysSince,
+    }))
 }
 
 export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ files: string[]; ts: string }> {
@@ -113,35 +170,41 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
 
   // 1. Weekly pick
   if (opts.weeklyPick) {
-    const out = {
-      generatedAt: ts,
-      weekOf: opts.weeklyPick.weekOf,
-      regime: opts.weeklyPick.regime,
-      rows: publicWeeklyRows(opts.weeklyPick.rows ?? []),
-    }
-    const f = path.join(SNAP_DIR, 'weekly-pick.json')
-    await fs.writeFile(f, JSON.stringify(out, null, 2))
+    const out = { generatedAt: ts, weekOf: opts.weeklyPick.weekOf, regime: opts.weeklyPick.regime, rows: publicWeeklyRows(opts.weeklyPick.rows ?? []) }
+    await fs.writeFile(path.join(SNAP_DIR, 'weekly-pick.json'), JSON.stringify(out, null, 2))
     files.push('weekly-pick.json')
   }
 
-  // 2. Options
-  const optionsOut = {
-    generatedAt: ts,
-    rows: publicOptions(opts.signals),
+  // 2. Daily pick
+  if (opts.dailyPick) {
+    const out = { generatedAt: ts, regime: opts.dailyPick.regime ?? '', rows: publicDailyRows(opts.dailyPick.rows ?? []) }
+    await fs.writeFile(path.join(SNAP_DIR, 'daily-pick.json'), JSON.stringify(out, null, 2))
+    files.push('daily-pick.json')
+  } else {
+    await fs.writeFile(path.join(SNAP_DIR, 'daily-pick.json'), JSON.stringify({ generatedAt: ts, regime: '', rows: [] }, null, 2))
+    files.push('daily-pick.json')
   }
-  const fOpts = path.join(SNAP_DIR, 'options.json')
-  await fs.writeFile(fOpts, JSON.stringify(optionsOut, null, 2))
+
+  // 3. Pre-move
+  const preMoveOut = { generatedAt: ts, rows: publicPreMoveRows(opts.preMoveResults ?? []) }
+  await fs.writeFile(path.join(SNAP_DIR, 'pre-move.json'), JSON.stringify(preMoveOut, null, 2))
+  files.push('pre-move.json')
+
+  // 4. Options
+  const optionsOut = { generatedAt: ts, rows: publicOptions(opts.signals) }
+  await fs.writeFile(path.join(SNAP_DIR, 'options.json'), JSON.stringify(optionsOut, null, 2))
   files.push('options.json')
 
-  // 3. Intraday
-  const intraOut = {
-    generatedAt: ts,
-    rows: publicIntraday(opts.signals),
-  }
-  const fIntra = path.join(SNAP_DIR, 'intraday.json')
-  await fs.writeFile(fIntra, JSON.stringify(intraOut, null, 2))
+  // 5. Intraday
+  const intraOut = { generatedAt: ts, rows: publicIntraday(opts.signals) }
+  await fs.writeFile(path.join(SNAP_DIR, 'intraday.json'), JSON.stringify(intraOut, null, 2))
   files.push('intraday.json')
 
-  log.ok('PUBLIC-SNAP', `Wrote ${files.join(', ')} (${publicWeeklyRows(opts.weeklyPick?.rows ?? []).length} weekly · ${optionsOut.rows.length} options · ${intraOut.rows.length} intraday)`)
+  // 6. Hit log (target accuracy tracker)
+  const hitOut = { generatedAt: ts, entries: publicHitLog(opts.hitLogEntries ?? []) }
+  await fs.writeFile(path.join(SNAP_DIR, 'hit-log.json'), JSON.stringify(hitOut, null, 2))
+  files.push('hit-log.json')
+
+  log.ok('PUBLIC-SNAP', `Wrote ${files.length} files: ${publicWeeklyRows(opts.weeklyPick?.rows ?? []).length} weekly · ${publicDailyRows(opts.dailyPick?.rows ?? []).length} daily · ${preMoveOut.rows.length} premove · ${optionsOut.rows.length} options · ${intraOut.rows.length} intraday · ${hitOut.entries.length} hits`)
   return { files, ts }
 }
