@@ -7,6 +7,11 @@ import toast from 'react-hot-toast'
 import type { Health } from '../types'
 import { GlobalSearch } from './GlobalSearch'
 
+// 2026-05-07: PUBLIC_MODE strips out every backend-touching button + indicator
+// because the deployed frontend has no API to call. Status badges are
+// replaced with a static "Snapshot mode" pill.
+const PUBLIC_MODE = (import.meta as any).env?.VITE_PUBLIC_MODE === 'true'
+
 export function Header({ botRunning, health }: { botRunning: boolean; health?: Health }) {
   const { connected, marketOpen, lastUpdate, theme, setTheme } = useStore()
   const qc = useQueryClient()
@@ -19,6 +24,7 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
 
   // Poll status so the button shows accurate remaining-click count
   useEffect(() => {
+    if (PUBLIC_MODE) return                 // skip — no backend on public deploy
     let cancelled = false
     const tick = async () => {
       try {
@@ -80,9 +86,9 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
     <header className="h-[52px] border-b border-ink-500 bg-ink-800 px-5 flex items-center justify-between">
       <div className="flex items-center gap-3">
         <div className={`w-2 h-2 rounded-full ${marketOpen ? 'bg-accent-green pulse-dot' : 'bg-accent-amber'}`} />
-        <span className="font-bold text-white">💰 HedgeFund OS</span>
-        <span className="text-[11px] px-2 py-0.5 rounded border border-accent-magenta/50 bg-accent-magenta/10 text-accent-magenta">PRO</span>
-        {dataMode === 'SNAPSHOT' && (
+        <span className="font-bold text-white">📈 Tradewithvarsha</span>
+        {!PUBLIC_MODE && <span className="text-[11px] px-2 py-0.5 rounded border border-accent-magenta/50 bg-accent-magenta/10 text-accent-magenta">PRO</span>}
+        {!PUBLIC_MODE && dataMode === 'SNAPSHOT' && (
           <span
             className="text-[11px] px-2 py-0.5 rounded border border-accent-amber/50 bg-accent-amber/10 text-accent-amber"
             title={asOf ? `Last close snapshot, asOf ${new Date(asOf).toLocaleString('en-IN')}` : 'Last close snapshot'}
@@ -91,53 +97,68 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
           </span>
         )}
       </div>
-      {/* Global stock search — ⌘K */}
-      <div className="flex-1 flex justify-center px-4 max-w-md">
-        <GlobalSearch />
-      </div>
+      {/* Global stock search — ⌘K — hidden in PUBLIC_MODE (no backend) */}
+      {!PUBLIC_MODE && (
+        <div className="flex-1 flex justify-center px-4 max-w-md">
+          <GlobalSearch />
+        </div>
+      )}
+      {PUBLIC_MODE && <div className="flex-1" />}
       <div className="flex items-center gap-4 text-xs text-neutral-500">
-        <span className="flex items-center gap-1">
-          <Circle size={8} className={connected ? 'fill-accent-green text-accent-green' : 'fill-accent-red text-accent-red'} />
-          {connected ? (marketOpen ? 'Market Open' : 'Connected (closed)') : 'Disconnected'}
-        </span>
-        {(live > 0 || watch > 0) && (
-          <span title="LIVE = current-session setups · WATCH = last-close bias for tabs while market is shut">
-            <span className="text-accent-green">{live} LIVE</span>
-            <span className="text-neutral-600"> · </span>
-            <span className="text-accent-amber">{watch} WATCH</span>
+        {PUBLIC_MODE ? (
+          /* Public deploy: simple snapshot pill, no backend-touching UI. */
+          <span
+            className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green"
+            title="Free public mode — picks refreshed every 30 minutes from the live trading engine"
+          >
+            ● Snapshot mode · auto-refresh 30m
           </span>
+        ) : (
+          <>
+            <span className="flex items-center gap-1">
+              <Circle size={8} className={connected ? 'fill-accent-green text-accent-green' : 'fill-accent-red text-accent-red'} />
+              {connected ? (marketOpen ? 'Market Open' : 'Connected (closed)') : 'Disconnected'}
+            </span>
+            {(live > 0 || watch > 0) && (
+              <span title="LIVE = current-session setups · WATCH = last-close bias for tabs while market is shut">
+                <span className="text-accent-green">{live} LIVE</span>
+                <span className="text-neutral-600"> · </span>
+                <span className="text-accent-amber">{watch} WATCH</span>
+              </span>
+            )}
+            <span className="flex items-center gap-1">
+              <MessageSquare size={12} className={botRunning ? 'text-accent-cyan' : 'text-neutral-600'} />
+              Bot: {botRunning ? 'online' : 'offline'}
+            </span>
+            <span>Updated {new Date(lastUpdate).toLocaleTimeString('en-IN')}</span>
+            <button onClick={refresh} className="p-1 hover:text-accent-cyan transition-colors" title="Re-run signal engine only (fast)">
+              <RefreshCw size={14} />
+            </button>
+            <button
+              onClick={refreshAll}
+              disabled={refreshingAll || remainingClicks === 0}
+              className={
+                'flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors ' +
+                (refreshingAll
+                  ? 'bg-accent-amber/15 text-accent-amber cursor-wait'
+                  : remainingClicks === 0
+                    ? 'bg-ink-500 text-neutral-600 cursor-not-allowed'
+                    : 'bg-accent-cyan/15 text-accent-cyan hover:bg-accent-cyan/25')
+              }
+              title={
+                refreshingAll ? 'Full sweep in progress…' :
+                remainingClicks === 0 ? 'Daily cap (10) reached — resets on rolling 24h window' :
+                `Refresh EVERYTHING — signals · daily pick · screeners · regime. ${remainingClicks ?? '-'}/10 clicks left today.`
+              }
+            >
+              <Zap size={12} className={refreshingAll ? 'animate-pulse' : ''} />
+              {refreshingAll ? 'Sweeping…' : 'Refresh All'}
+              {remainingClicks != null && !refreshingAll && (
+                <span className="text-[9px] text-neutral-500 ml-0.5">{remainingClicks}/10</span>
+              )}
+            </button>
+          </>
         )}
-        <span className="flex items-center gap-1">
-          <MessageSquare size={12} className={botRunning ? 'text-accent-cyan' : 'text-neutral-600'} />
-          Bot: {botRunning ? 'online' : 'offline'}
-        </span>
-        <span>Updated {new Date(lastUpdate).toLocaleTimeString('en-IN')}</span>
-        <button onClick={refresh} className="p-1 hover:text-accent-cyan transition-colors" title="Re-run signal engine only (fast)">
-          <RefreshCw size={14} />
-        </button>
-        <button
-          onClick={refreshAll}
-          disabled={refreshingAll || remainingClicks === 0}
-          className={
-            'flex items-center gap-1 px-2 py-1 rounded text-[11px] font-semibold transition-colors ' +
-            (refreshingAll
-              ? 'bg-accent-amber/15 text-accent-amber cursor-wait'
-              : remainingClicks === 0
-                ? 'bg-ink-500 text-neutral-600 cursor-not-allowed'
-                : 'bg-accent-cyan/15 text-accent-cyan hover:bg-accent-cyan/25')
-          }
-          title={
-            refreshingAll ? 'Full sweep in progress…' :
-            remainingClicks === 0 ? 'Daily cap (10) reached — resets on rolling 24h window' :
-            `Refresh EVERYTHING — signals · daily pick · screeners · regime. ${remainingClicks ?? '-'}/10 clicks left today.`
-          }
-        >
-          <Zap size={12} className={refreshingAll ? 'animate-pulse' : ''} />
-          {refreshingAll ? 'Sweeping…' : 'Refresh All'}
-          {remainingClicks != null && !refreshingAll && (
-            <span className="text-[9px] text-neutral-500 ml-0.5">{remainingClicks}/10</span>
-          )}
-        </button>
         <button
           onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}
           className="p-1 hover:text-accent-cyan transition-colors"
@@ -145,14 +166,16 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
         >
           {theme === 'dark' ? <Sun size={14} /> : <Moon size={14} />}
         </button>
-        <a
-          href="/preview"
-          className="text-[10px] px-2 py-0.5 rounded border border-accent-violet/40 bg-accent-violet/10 text-accent-violet hover:bg-accent-violet/20"
-          title="Preview the new light-theme dashboard (isolated — rollbackable)"
-        >
-          PREVIEW
-        </a>
-        <Settings size={14} className="text-neutral-600" />
+        {!PUBLIC_MODE && (
+          <a
+            href="/preview"
+            className="text-[10px] px-2 py-0.5 rounded border border-accent-violet/40 bg-accent-violet/10 text-accent-violet hover:bg-accent-violet/20"
+            title="Preview the new light-theme dashboard (isolated — rollbackable)"
+          >
+            PREVIEW
+          </a>
+        )}
+        {!PUBLIC_MODE && <Settings size={14} className="text-neutral-600" />}
       </div>
     </header>
   )

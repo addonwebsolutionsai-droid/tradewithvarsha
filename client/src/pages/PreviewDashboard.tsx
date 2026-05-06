@@ -98,7 +98,7 @@ export function PreviewDashboard() {
               HF
             </div>
             <div>
-              <div className="font-bold text-sm" style={{ color: TEXT }}>HedgeFund OS</div>
+              <div className="font-bold text-sm" style={{ color: TEXT }}>Tradewithvarsha</div>
               <div className="text-[10px]" style={{ color: MUTED }}>Preview · Light</div>
             </div>
           </div>
