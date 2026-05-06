@@ -1,0 +1,55 @@
+# Render.com blueprint — one-click deploy.
+# Usage:
+#   1. Push this repo to GitHub
+#   2. Log in to https://dashboard.render.com → "New +" → "Blueprint" → pick the repo
+#   3. Add the following environment variables (from your local .env):
+#        ALPHA_VANTAGE_KEY, TWELVE_DATA_KEY,
+#        ANGEL_API_KEY, ANGEL_SECRET_KEY, ANGEL_TOTP_SECRET,
+#        ANGEL_CLIENT_CODE, ANGEL_MPIN,
+#        TELEGRAM_BOT_TOKEN, TELEGRAM_ALLOWED_CHAT_IDS
+#   4. Deploy — the service stays alive 24/7 on Render's servers. Laptop can be off.
+
+services:
+  - type: web
+    name: hedge-fund-os
+    env: docker
+    plan: starter   # $7/mo — always-on worker. Use "free" for 750h/month (spins down if idle).
+    region: singapore  # closest to Indian markets for low-latency NSE/Angel calls
+    branch: main
+    healthCheckPath: /api/health
+    dockerfilePath: ./Dockerfile
+    envVars:
+      - key: NODE_ENV
+        value: production
+      - key: PORT
+        value: 4000
+      - key: USE_LOCAL_EPHEMERIS
+        value: true
+      - key: ALPHA_VANTAGE_KEY
+        sync: false
+      - key: TWELVE_DATA_KEY
+        sync: false
+      - key: ANGEL_API_KEY
+        sync: false
+      - key: ANGEL_SECRET_KEY
+        sync: false
+      - key: ANGEL_TOTP_SECRET
+        sync: false
+      - key: ANGEL_CLIENT_CODE
+        sync: false
+      - key: ANGEL_MPIN
+        sync: false
+      - key: TELEGRAM_BOT_TOKEN
+        sync: false
+      - key: TELEGRAM_ALLOWED_CHAT_IDS
+        sync: false
+      - key: MAX_CAPITAL_PER_TRADE_PCT
+        value: 5
+      - key: ALERT_MIN_GRADE
+        value: B
+      - key: ALERT_MIN_SCORE
+        value: 6
+    disk:
+      name: data
+      mountPath: /app/server/data
+      sizeGB: 1

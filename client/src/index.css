@@ -1,0 +1,78 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* ─── Theme tokens ──────────────────────────────────────────────
+   Tailwind reads these via `rgb(var(--ink-*) / <alpha-value>)`.
+   Dark is the default; light overrides under `[data-theme="light"]`.
+*/
+:root, [data-theme="dark"] {
+  --ink-900:   7   7  13;
+  --ink-800:  10  10  15;
+  --ink-700:  17  17  24;
+  --ink-600:  26  26  38;
+  --ink-500:  30  30  46;
+  --ink-400:  42  42  62;
+  --fg-default: #e0e0e0;
+  --scrollbar-track: #0a0a0f;
+  --scrollbar-thumb: #1e1e2e;
+  --scrollbar-thumb-hover: #2a2a3e;
+}
+
+[data-theme="light"] {
+  --ink-900: 244 246 248;       /* page background */
+  --ink-800: 255 255 255;       /* surface (cards, header) */
+  --ink-700: 249 250 251;       /* surface alt */
+  --ink-600: 241 245 249;       /* hover surface */
+  --ink-500: 226 232 240;       /* border */
+  --ink-400: 203 213 225;       /* stronger border */
+  --fg-default: #0f172a;
+  --scrollbar-track: #f1f5f9;
+  --scrollbar-thumb: #cbd5e1;
+  --scrollbar-thumb-hover: #94a3b8;
+}
+
+html, body, #root { height: 100%; }
+body {
+  background: rgb(var(--ink-900));
+  color: var(--fg-default);
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  transition: background 0.2s ease, color 0.2s ease;
+}
+
+/* Scrollbar */
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: var(--scrollbar-track); }
+::-webkit-scrollbar-thumb { background: var(--scrollbar-thumb); border-radius: 4px; }
+::-webkit-scrollbar-thumb:hover { background: var(--scrollbar-thumb-hover); }
+
+/* ─── Light-theme text overrides ────────────────────────────────
+   The codebase uses Tailwind's `text-neutral-*` utilities everywhere
+   for muted text on the dark surface. In light mode we invert those
+   to dark slate values so text remains readable.
+*/
+[data-theme="light"] .text-neutral-100 { color: #0f172a; }
+[data-theme="light"] .text-neutral-200 { color: #1e293b; }
+[data-theme="light"] .text-neutral-300 { color: #334155; }
+[data-theme="light"] .text-neutral-400 { color: #475569; }
+[data-theme="light"] .text-neutral-500 { color: #64748b; }
+[data-theme="light"] .text-neutral-600 { color: #94a3b8; }
+
+/* Light-theme: soften the strong red/green/amber tags slightly so they
+   read well on white surfaces (the dark accents stay the same hue). */
+[data-theme="light"] {
+  /* (kept minimal — accent colors are intentionally vivid for trade signals) */
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.3; }
+}
+.pulse-dot { animation: pulse-dot 1.8s ease-in-out infinite; }
+
+/* 5★ signal glow — gentle amber shimmer on the star glyph to draw the eye */
+@keyframes star-glow {
+  0%, 100% { filter: drop-shadow(0 0 2px rgba(255,152,0,0.35)); }
+  50%      { filter: drop-shadow(0 0 10px rgba(255,152,0,0.85)); }
+}
+.animate-star-glow { animation: star-glow 1.8s ease-in-out infinite; }

@@ -1,0 +1,51 @@
+# Fly.io deployment config — alternative to Render (cheaper for always-on).
+#   1. Install flyctl: brew install flyctl
+#   2. flyctl auth signup
+#   3. flyctl launch --copy-config --dockerfile Dockerfile --name hedge-fund-os --region sin
+#   4. flyctl secrets set ALPHA_VANTAGE_KEY=... TWELVE_DATA_KEY=... ANGEL_API_KEY=... ...
+#   5. flyctl deploy
+#
+# Fly gives you 3 shared-cpu-1x VMs free (~256MB RAM each). Singapore region (sin)
+# minimizes NSE latency.
+
+app = "hedge-fund-os"
+primary_region = "sin"
+
+[build]
+  dockerfile = "Dockerfile"
+
+[env]
+  NODE_ENV = "production"
+  PORT = "4000"
+  USE_LOCAL_EPHEMERIS = "true"
+
+[[services]]
+  protocol = "tcp"
+  internal_port = 4000
+  auto_stop_machines = false    # keep alive 24/7 for the bot
+  auto_start_machines = true
+  min_machines_running = 1
+
+  [[services.ports]]
+    port = 80
+    handlers = ["http"]
+    force_https = true
+
+  [[services.ports]]
+    port = 443
+    handlers = ["tls", "http"]
+
+  [services.concurrency]
+    type = "connections"
+    hard_limit = 200
+    soft_limit = 100
+
+[[services.http_checks]]
+  interval = "30s"
+  timeout = "5s"
+  grace_period = "40s"
+  path = "/api/health"
+
+[mounts]
+  source = "hedge_data"
+  destination = "/app/server/data"

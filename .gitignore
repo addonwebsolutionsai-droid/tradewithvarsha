@@ -1,0 +1,25 @@
+node_modules/
+**/node_modules/
+dist/
+**/dist/
+.env
+.env.*
+!.env.example
+*.log
+.DS_Store
+backtest/results/*.json
+client/dist/
+server/dist/
+
+# Server runtime data — local-only, EXCEPT the public-snapshots dir
+# which Vercel reads via raw.githubusercontent.com.
+server/data/*
+!server/data/public-snapshots/
+server/data/public-snapshots/.gitkeep
+
+.claude/logs/
+.vscode/
+.idea/
+*.swp
+coverage/
+.claude/settings.local.json
