@@ -16,6 +16,39 @@ const fmtDate = (iso?: string) => {
 }
 const fmtTs = (iso?: string) => iso ? new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—'
 
+// ── LEGEND STRIP ────────────────────────────────────────────────
+function Legend({ kind }: { kind: 'pick' | 'signal' | 'premove' }): JSX.Element {
+  const items = kind === 'pick' ? [
+    { label: 'Conv', explain: 'Conviction score (0–100). Composite across SMC, trend stack, Gann/Vol-Profile, Astro/RS, and order-flow lenses.' },
+    { label: '≥80', explain: 'Elite — stake-anchored or strong multi-lens alignment. ⭐ NO-BRAINER if FII↑ + promoter stable + pledge<5%.', cls: 'text-accent-green' },
+    { label: '60–79', explain: 'Confirmed — 3+ lenses agree. Reasonable size.', cls: 'text-accent-cyan' },
+    { label: '<60', explain: 'Speculative — fewer lenses; size small or skip.', cls: 'text-accent-amber' },
+    { label: 'Stake', explain: 'FII / DII / Promoter shareholding (% with arrow = QoQ change) + Pledge% + Market Cap. From quarterly NSE/BSE filings.' },
+  ] : kind === 'signal' ? [
+    { label: 'Grade', explain: 'A/B/C — A = ≥4 confluence factors, B = 3, C = 2. Only A+ is pushed to Telegram.' },
+    { label: 'Score', explain: 'Engine score 0–10. ≥9 = elite for OPTIONS, ≥7 for INTRADAY. Higher = stronger setup.' },
+    { label: 'A', explain: '≥4 confluences (SMC, EMA stack, VWAP, RSI, volume).', cls: 'text-accent-green' },
+    { label: 'B', explain: '3 confluences.', cls: 'text-accent-cyan' },
+    { label: 'C', explain: '2 confluences.', cls: 'text-accent-amber' },
+  ] : [
+    { label: 'Tier', explain: 'A = best, B = strong, C = qualifying. Pre-move tiers reflect signal strength + base tightness.' },
+    { label: 'Score', explain: '0–10 strength of the pre-move signature (BB squeeze, coiled range, distribution top, range expansion).' },
+  ]
+  return (
+    <details className="bg-ink-700 border border-ink-500 rounded-lg p-3">
+      <summary className="text-[11px] text-neutral-400 cursor-pointer select-none">📖 Legend — what do these scores mean?</summary>
+      <div className="flex flex-wrap gap-3 mt-2">
+        {items.map((it, i) => (
+          <div key={i} className="text-[11px]">
+            <span className={`font-bold mr-1 ${it.cls ?? 'text-neutral-200'}`}>{it.label}</span>
+            <span className="text-neutral-500">{it.explain}</span>
+          </div>
+        ))}
+      </div>
+    </details>
+  )
+}
+
 // ── HIT-LOG STRIP ───────────────────────────────────────────────
 function HitLog(): JSX.Element | null {
   const { data } = useQuery({
@@ -63,28 +96,29 @@ export function PublicWeeklyPickPage(): JSX.Element {
   return (
     <div className="space-y-4">
       <Banner emoji="📋" title="Weekly Picks" subtitle={data ? `${rows.length} setups · week of ${data.weekOf} · regime ${data.regime}` : 'loading…'} ts={data?.generatedAt} />
+      <Legend kind="pick" />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && (
         <div className="overflow-x-auto rounded-lg border border-ink-500">
-          <table className="w-full text-[11px] bg-ink-800">
+          <table className="w-full text-[12px] bg-ink-800" style={{ minWidth: 1700 }}>
             <thead className="bg-ink-700 text-neutral-400">
               <tr>
-                <th className="text-left px-3 py-2">Stock</th>
-                <th className="text-right px-3 py-2">LTP</th>
-                <th className="text-center px-3 py-2">Dir</th>
-                <th className="text-center px-3 py-2">Conv</th>
-                <th className="text-right px-3 py-2 text-accent-cyan">Entry</th>
-                <th className="text-center px-3 py-2 text-accent-cyan">By</th>
-                <th className="text-right px-3 py-2 text-accent-red">SL</th>
-                <th className="text-right px-3 py-2 text-accent-green">T1</th>
-                <th className="text-center px-3 py-2 text-accent-green">By</th>
-                <th className="text-right px-3 py-2 text-accent-green">T2</th>
-                <th className="text-center px-3 py-2 text-accent-green">By</th>
-                <th className="text-right px-3 py-2 text-accent-green">T3</th>
-                <th className="text-center px-3 py-2 text-accent-green">By</th>
-                <th className="text-left px-3 py-2 text-neutral-500">Stake</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Stock</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap">LTP</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Conviction</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-cyan">Entry Range</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap text-accent-cyan">Entry by</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 1</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap text-accent-green">T1 by</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 2</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap text-accent-green">T2 by</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 3</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap text-accent-green">T3 by</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
               </tr>
             </thead>
             <tbody>
@@ -102,22 +136,22 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
   const convCls = r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : 'text-accent-amber'
   return (
     <tr className={`border-t border-ink-500 hover:bg-ink-700 font-mono ${r.noBrainerBet ? 'bg-accent-amber/5' : ''}`}>
-      <td className="px-3 py-2"><b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b></td>
-      <td className="px-3 py-2 text-right">₹{r.ltp?.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-      <td className="px-3 py-2 text-center">
-        <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+      <td className="px-4 py-3 whitespace-nowrap"><b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b></td>
+      <td className="px-4 py-3 text-right whitespace-nowrap">₹{r.ltp?.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+      <td className="px-4 py-3 text-center">
+        <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
       </td>
-      <td className={`px-3 py-2 text-center font-bold ${convCls}`}>{r.conviction}</td>
-      <td className="px-3 py-2 text-right text-accent-cyan">₹{r.entryPriceLow}–{r.entryPriceHigh}</td>
-      <td className="px-3 py-2 text-center text-accent-cyan text-[10px]">{fmtDate(r.entryDate)}</td>
-      <td className="px-3 py-2 text-right text-accent-red">₹{r.stopLoss}</td>
-      <td className="px-3 py-2 text-right text-accent-green">₹{r.target1}</td>
-      <td className="px-3 py-2 text-center text-accent-green text-[10px]">{fmtDate(r.target1Date)}</td>
-      <td className="px-3 py-2 text-right text-accent-green">₹{r.target2}</td>
-      <td className="px-3 py-2 text-center text-accent-green text-[10px]">{fmtDate(r.target2Date)}</td>
-      <td className="px-3 py-2 text-right text-accent-green font-bold">₹{r.target3}</td>
-      <td className="px-3 py-2 text-center text-accent-green text-[10px] font-semibold">{fmtDate(r.target3Date)}</td>
-      <td className="px-3 py-2 text-left text-neutral-500 text-[10px]">{r.shareholdingNote ? r.shareholdingNote : '—'}</td>
+      <td className={`px-4 py-3 text-center font-bold ${convCls}`}>{r.conviction}</td>
+      <td className="px-4 py-3 text-right text-accent-cyan whitespace-nowrap">₹{r.entryPriceLow}–{r.entryPriceHigh}</td>
+      <td className="px-4 py-3 text-center text-accent-cyan text-[11px] whitespace-nowrap">{fmtDate(r.entryDate)}</td>
+      <td className="px-4 py-3 text-right text-accent-red whitespace-nowrap">₹{r.stopLoss}</td>
+      <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target1}</td>
+      <td className="px-4 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{fmtDate(r.target1Date)}</td>
+      <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target2}</td>
+      <td className="px-4 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{fmtDate(r.target2Date)}</td>
+      <td className="px-4 py-3 text-right text-accent-green font-bold whitespace-nowrap">₹{r.target3}</td>
+      <td className="px-4 py-3 text-center text-accent-green text-[11px] font-semibold whitespace-nowrap">{fmtDate(r.target3Date)}</td>
+      <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{r.shareholdingNote || 'shareholding data unavailable'}</td>
     </tr>
   )
 }
@@ -132,26 +166,28 @@ export function PublicDailyPickPage(): JSX.Element {
   return (
     <div className="space-y-4">
       <Banner emoji="🎯" title="Daily Picks" subtitle={`${rows.length} 5–15 day setups · regime ${data?.regime ?? '—'}`} ts={data?.generatedAt} />
+      <Legend kind="pick" />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No daily picks right now. Refreshes 11:00 / 13:30 / 16:15 IST." />}
       {!isLoading && !error && rows.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-ink-500">
-          <table className="w-full text-[11px] bg-ink-800">
+          <table className="w-full text-[12px] bg-ink-800" style={{ minWidth: 1700 }}>
             <thead className="bg-ink-700 text-neutral-400">
               <tr>
-                <th className="text-left px-3 py-2">Stock</th>
-                <th className="text-right px-3 py-2">LTP</th>
-                <th className="text-center px-3 py-2">Dir</th>
-                <th className="text-center px-3 py-2">Conv</th>
-                <th className="text-center px-3 py-2">Pattern</th>
-                <th className="text-right px-3 py-2 text-accent-cyan">Entry</th>
-                <th className="text-right px-3 py-2 text-accent-red">SL</th>
-                <th className="text-right px-3 py-2 text-accent-green">T1</th>
-                <th className="text-right px-3 py-2 text-accent-green">T2</th>
-                <th className="text-right px-3 py-2 text-accent-green">T3</th>
-                <th className="text-center px-3 py-2">RR</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Stock</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap">LTP</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Conviction</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Pattern</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 1</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 2</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 3</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Risk:Reward</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
               </tr>
             </thead>
             <tbody>
@@ -160,19 +196,20 @@ export function PublicDailyPickPage(): JSX.Element {
                 const convCls = r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : 'text-accent-amber'
                 return (
                   <tr key={i} className="border-t border-ink-500 hover:bg-ink-700 font-mono">
-                    <td className="px-3 py-2"><b>{r.symbol}</b></td>
-                    <td className="px-3 py-2 text-right">₹{r.ltp}</td>
-                    <td className="px-3 py-2 text-center">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                    <td className="px-4 py-3 whitespace-nowrap"><b>{r.symbol}</b></td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">₹{r.ltp}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
                     </td>
-                    <td className={`px-3 py-2 text-center font-bold ${convCls}`}>{r.conviction}</td>
-                    <td className="px-3 py-2 text-center text-[10px] text-neutral-400">{r.pattern}</td>
-                    <td className="px-3 py-2 text-right text-accent-cyan">₹{r.entryPrice}</td>
-                    <td className="px-3 py-2 text-right text-accent-red">₹{r.stopLoss}</td>
-                    <td className="px-3 py-2 text-right text-accent-green">₹{r.target1}</td>
-                    <td className="px-3 py-2 text-right text-accent-green">₹{r.target2}</td>
-                    <td className="px-3 py-2 text-right text-accent-green font-bold">₹{r.target3}</td>
-                    <td className="px-3 py-2 text-center">{r.riskReward ?? '—'}:1</td>
+                    <td className={`px-4 py-3 text-center font-bold ${convCls}`}>{r.conviction}</td>
+                    <td className="px-4 py-3 text-center text-[11px] text-neutral-300 whitespace-nowrap">{r.pattern}</td>
+                    <td className="px-4 py-3 text-right text-accent-cyan whitespace-nowrap">₹{r.entryPrice}</td>
+                    <td className="px-4 py-3 text-right text-accent-red whitespace-nowrap">₹{r.stopLoss}</td>
+                    <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target1}</td>
+                    <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target2}</td>
+                    <td className="px-4 py-3 text-right text-accent-green font-bold whitespace-nowrap">₹{r.target3}</td>
+                    <td className="px-4 py-3 text-center whitespace-nowrap">{r.riskReward ?? '—'}:1</td>
+                    <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{r.shareholdingNote || 'shareholding data unavailable'}</td>
                   </tr>
                 )
               })}
@@ -194,25 +231,26 @@ export function PublicPreMovePage(): JSX.Element {
   return (
     <div className="space-y-4">
       <Banner emoji="⚡" title="Pre-Move Alerts" subtitle="Setups likely to resolve into 5–15% moves within 1–10 sessions" ts={data?.generatedAt} />
+      <Legend kind="premove" />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No pre-move setups right now. Pre-close scan: 15:20 IST." />}
       {!isLoading && !error && rows.length > 0 && (
         <div className="overflow-x-auto rounded-lg border border-ink-500">
-          <table className="w-full text-[11px] bg-ink-800">
+          <table className="w-full text-[12px] bg-ink-800" style={{ minWidth: 1500 }}>
             <thead className="bg-ink-700 text-neutral-400">
               <tr>
-                <th className="text-left px-3 py-2">Stock</th>
-                <th className="text-right px-3 py-2">Price</th>
-                <th className="text-center px-3 py-2">Dir</th>
-                <th className="text-center px-3 py-2">Tier</th>
-                <th className="text-center px-3 py-2">Score</th>
-                <th className="text-right px-3 py-2 text-accent-cyan">Entry</th>
-                <th className="text-right px-3 py-2 text-accent-red">SL</th>
-                <th className="text-right px-3 py-2 text-accent-green">Target</th>
-                <th className="text-center px-3 py-2">Exp%</th>
-                <th className="text-left px-3 py-2 text-neutral-500">Setup</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Stock</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap">Price</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Tier</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Score</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Expected %</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Setup Tags</th>
               </tr>
             </thead>
             <tbody>
@@ -220,18 +258,18 @@ export function PublicPreMovePage(): JSX.Element {
                 const dirColor = r.direction === 'BULL' ? '#00c853' : r.direction === 'BEAR' ? '#ff1744' : '#9aa0a6'
                 return (
                   <tr key={i} className="border-t border-ink-500 hover:bg-ink-700 font-mono">
-                    <td className="px-3 py-2"><b>{r.symbol}</b></td>
-                    <td className="px-3 py-2 text-right">₹{r.price}</td>
-                    <td className="px-3 py-2 text-center">
-                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                    <td className="px-4 py-3 whitespace-nowrap"><b>{r.symbol}</b></td>
+                    <td className="px-4 py-3 text-right whitespace-nowrap">₹{r.price}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
                     </td>
-                    <td className="px-3 py-2 text-center text-[10px]">{r.tier}</td>
-                    <td className="px-3 py-2 text-center font-bold">{r.score?.toFixed?.(1)}</td>
-                    <td className="px-3 py-2 text-right text-accent-cyan">₹{r.suggestedEntry ?? '—'}</td>
-                    <td className="px-3 py-2 text-right text-accent-red">₹{r.suggestedSL ?? '—'}</td>
-                    <td className="px-3 py-2 text-right text-accent-green">₹{r.suggestedTarget ?? '—'}</td>
-                    <td className="px-3 py-2 text-center text-accent-green text-[10px]">{r.expectedMovePct?.toFixed?.(1)}%</td>
-                    <td className="px-3 py-2 text-left text-neutral-500 text-[10px]">{(r.tags ?? []).slice(0, 3).join(' · ')}</td>
+                    <td className="px-4 py-3 text-center text-[11px]">{r.tier}</td>
+                    <td className="px-4 py-3 text-center font-bold">{r.score?.toFixed?.(1)}</td>
+                    <td className="px-4 py-3 text-right text-accent-cyan whitespace-nowrap">₹{r.suggestedEntry ?? '—'}</td>
+                    <td className="px-4 py-3 text-right text-accent-red whitespace-nowrap">₹{r.suggestedSL ?? '—'}</td>
+                    <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.suggestedTarget ?? '—'}</td>
+                    <td className="px-4 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{r.expectedMovePct?.toFixed?.(1)}%</td>
+                    <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{(r.tags ?? []).slice(0, 3).join(' · ')}</td>
                   </tr>
                 )
               })}
@@ -253,6 +291,7 @@ export function PublicOptionsPage(): JSX.Element {
   return (
     <div className="space-y-4">
       <Banner emoji="🎯" title="Options Signals" subtitle={`${rows.length} elite signals (score ≥ 9, conviction ≥ 90)`} ts={data?.generatedAt} />
+      <Legend kind="signal" />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
@@ -272,6 +311,7 @@ export function PublicIntradayPage(): JSX.Element {
   return (
     <div className="space-y-4">
       <Banner emoji="⚡" title="Intraday Signals" subtitle={`${rows.length} signals from today's session`} ts={data?.generatedAt} />
+      <Legend kind="signal" />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
@@ -284,20 +324,20 @@ export function PublicIntradayPage(): JSX.Element {
 function SignalTable({ rows }: { rows: any[] }): JSX.Element {
   return (
     <div className="overflow-x-auto rounded-lg border border-ink-500">
-      <table className="w-full text-[11px] bg-ink-800">
+      <table className="w-full text-[12px] bg-ink-800" style={{ minWidth: 1500 }}>
         <thead className="bg-ink-700 text-neutral-400">
           <tr>
-            <th className="text-center px-3 py-2">Time</th>
-            <th className="text-left px-3 py-2">Instrument</th>
-            <th className="text-center px-3 py-2">Dir</th>
-            <th className="text-center px-3 py-2">Grade</th>
-            <th className="text-center px-3 py-2">Score</th>
-            <th className="text-right px-3 py-2 text-accent-cyan">Entry</th>
-            <th className="text-right px-3 py-2 text-accent-red">SL</th>
-            <th className="text-right px-3 py-2 text-accent-green">T1</th>
-            <th className="text-right px-3 py-2 text-accent-green">T2</th>
-            <th className="text-center px-3 py-2">RR</th>
-            <th className="text-left px-3 py-2 text-neutral-500">Reasoning</th>
+            <th className="text-center px-4 py-3 whitespace-nowrap">Time (IST)</th>
+            <th className="text-left px-4 py-3 whitespace-nowrap">Instrument</th>
+            <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
+            <th className="text-center px-4 py-3 whitespace-nowrap">Grade</th>
+            <th className="text-center px-4 py-3 whitespace-nowrap">Score</th>
+            <th className="text-right px-4 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
+            <th className="text-right px-4 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
+            <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 1</th>
+            <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 2</th>
+            <th className="text-center px-4 py-3 whitespace-nowrap">Risk:Reward</th>
+            <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Reasoning</th>
           </tr>
         </thead>
         <tbody>
@@ -306,19 +346,19 @@ function SignalTable({ rows }: { rows: any[] }): JSX.Element {
             const ts = new Date(r.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })
             return (
               <tr key={i} className="border-t border-ink-500 hover:bg-ink-700 font-mono">
-                <td className="px-3 py-2 text-center text-[10px] text-neutral-500">{ts}</td>
-                <td className="px-3 py-2"><b>{r.instrument}</b></td>
-                <td className="px-3 py-2 text-center">
-                  <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                <td className="px-4 py-3 text-center text-[11px] text-neutral-400 whitespace-nowrap">{ts}</td>
+                <td className="px-4 py-3 whitespace-nowrap"><b>{r.instrument}</b></td>
+                <td className="px-4 py-3 text-center">
+                  <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
                 </td>
-                <td className="px-3 py-2 text-center text-accent-amber">{r.grade}</td>
-                <td className="px-3 py-2 text-center font-bold">{r.score?.toFixed?.(1)}</td>
-                <td className="px-3 py-2 text-right text-accent-cyan">₹{r.entry}</td>
-                <td className="px-3 py-2 text-right text-accent-red">₹{r.stopLoss}</td>
-                <td className="px-3 py-2 text-right text-accent-green">₹{r.target1}</td>
-                <td className="px-3 py-2 text-right text-accent-green">₹{r.target2 ?? '—'}</td>
-                <td className="px-3 py-2 text-center">{r.riskReward ?? '—'}</td>
-                <td className="px-3 py-2 text-left text-neutral-500 text-[10px]">{(r.reasons ?? []).slice(0, 2).join(' · ')}</td>
+                <td className="px-4 py-3 text-center text-accent-amber font-bold">{r.grade}</td>
+                <td className="px-4 py-3 text-center font-bold">{r.score?.toFixed?.(1)}</td>
+                <td className="px-4 py-3 text-right text-accent-cyan whitespace-nowrap">₹{r.entry}</td>
+                <td className="px-4 py-3 text-right text-accent-red whitespace-nowrap">₹{r.stopLoss}</td>
+                <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target1}</td>
+                <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target2 ?? '—'}</td>
+                <td className="px-4 py-3 text-center whitespace-nowrap">{r.riskReward ?? '—'}</td>
+                <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{(r.reasons ?? []).slice(0, 2).join(' · ')}</td>
               </tr>
             )
           })}

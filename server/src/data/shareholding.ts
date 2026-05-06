@@ -17,6 +17,8 @@
  */
 import { log } from '../util/logger'
 import axios from 'axios'
+import fs from 'fs/promises'
+import path from 'path'
 
 const HEADERS = {
   'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0 Safari/537.36',
@@ -50,13 +52,50 @@ export interface NoBrainerVerdict {
   rawScore: number                // 0-15 contribution to the lens score
 }
 
+// 2026-05-07: cache is now disk-backed so it survives server restarts and
+// the publish path always has shareholding data even if screener.in throws.
+// Persists to data/shareholding-cache.json. TTL extended to 7 days because
+// shareholding patterns update quarterly only; failed fetches stay 6h cached
+// so we retry sooner than a successful fetch.
 const cache = new Map<string, { data: ShareholdingPattern | null; ts: number }>()
-const TTL = 24 * 3600_000            // shareholding updates quarterly — 24h cache is plenty
+const TTL_OK = 7 * 24 * 3600_000
+const TTL_NULL = 6 * 3600_000
+const CACHE_FILE = path.resolve(__dirname, '../../data/shareholding-cache.json')
+let cacheLoaded = false
+let cacheDirty = false
+
+async function loadCacheFromDisk(): Promise<void> {
+  if (cacheLoaded) return
+  cacheLoaded = true
+  try {
+    const raw = await fs.readFile(CACHE_FILE, 'utf8')
+    const obj = JSON.parse(raw) as Record<string, { data: ShareholdingPattern | null; ts: number }>
+    for (const [k, v] of Object.entries(obj)) cache.set(k, v)
+  } catch { /* file may not exist yet */ }
+}
+
+async function persistCacheToDisk(): Promise<void> {
+  if (!cacheDirty) return
+  cacheDirty = false
+  try {
+    const obj: Record<string, any> = {}
+    for (const [k, v] of cache.entries()) obj[k] = v
+    await fs.mkdir(path.dirname(CACHE_FILE), { recursive: true })
+    await fs.writeFile(CACHE_FILE, JSON.stringify(obj))
+  } catch { /* skip — best-effort */ }
+}
+
+// Flush cache every 60s if dirty (debounce; avoids per-symbol I/O)
+setInterval(() => { void persistCacheToDisk() }, 60_000).unref?.()
 
 export async function getShareholding(symbol: string): Promise<ShareholdingPattern | null> {
+  await loadCacheFromDisk()
   const k = symbol.toUpperCase()
   const hit = cache.get(k)
-  if (hit && Date.now() - hit.ts < TTL) return hit.data
+  if (hit) {
+    const ttl = hit.data ? TTL_OK : TTL_NULL
+    if (Date.now() - hit.ts < ttl) return hit.data
+  }
   try {
     const url = `https://www.screener.in/company/${encodeURIComponent(k)}/consolidated/`
     const res = await axios.get(url, { timeout: 15_000, headers: HEADERS, validateStatus: s => s < 500 })
@@ -65,18 +104,18 @@ export async function getShareholding(symbol: string): Promise<ShareholdingPatte
       const url2 = `https://www.screener.in/company/${encodeURIComponent(k)}/`
       const res2 = await axios.get(url2, { timeout: 15_000, headers: HEADERS, validateStatus: s => s < 500 })
       if (res2.status !== 200 || typeof res2.data !== 'string') {
-        cache.set(k, { data: null, ts: Date.now() })
+        cache.set(k, { data: null, ts: Date.now() }); cacheDirty = true
         return null
       }
       const parsed = parseScreenerHtml(res2.data, k)
-      cache.set(k, { data: parsed, ts: Date.now() })
+      cache.set(k, { data: parsed, ts: Date.now() }); cacheDirty = true
       return parsed
     }
     const parsed = parseScreenerHtml(res.data, k)
-    cache.set(k, { data: parsed, ts: Date.now() })
+    cache.set(k, { data: parsed, ts: Date.now() }); cacheDirty = true
     return parsed
   } catch (e) {
-    cache.set(k, { data: null, ts: Date.now() })
+    cache.set(k, { data: null, ts: Date.now() }); cacheDirty = true
     return null
   }
 }

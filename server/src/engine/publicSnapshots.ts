@@ -32,6 +32,34 @@ async function ensureDir(): Promise<void> {
 }
 
 /**
+ * Publish-time enricher — for any row whose shareholdingNote is missing,
+ * empty, or the 'unavailable' fallback, attempt to fetch from the disk
+ * cache. Runs in parallel with rate limit. After this returns, every row
+ * has SOMETHING in shareholdingNote (real data if cached, fallback otherwise).
+ */
+async function enrichShareholdingNotes(rows: any[]): Promise<void> {
+  const { getShareholding } = await import('../data/shareholding')
+  const needsFetch = rows.filter(r => !r.shareholdingNote || r.shareholdingNote.includes('unavailable'))
+  let cursor = 0
+  await Promise.all(Array.from({ length: 4 }, async () => {
+    while (cursor < needsFetch.length) {
+      const r = needsFetch[cursor++]
+      try {
+        const shp = await getShareholding(r.symbol)
+        if (!shp) continue                  // leave fallback in place
+        const fiiArr = shp.fiiDeltaQoQ > 0.1 ? '↑' : shp.fiiDeltaQoQ < -0.1 ? '↓' : '→'
+        const pArr = shp.promoterDeltaQoQ > 0.1 ? '↑' : shp.promoterDeltaQoQ < -0.1 ? '↓' : '→'
+        const dArr = shp.diiDeltaQoQ > 0.1 ? '↑' : shp.diiDeltaQoQ < -0.1 ? '↓' : '→'
+        const mc = shp.marketCapCr >= 1000
+          ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
+          : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
+        r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fiiArr} · DII ${shp.diiPct.toFixed(1)}%${dArr} · P ${shp.promoterPct.toFixed(1)}%${pArr} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mc}`
+      } catch { /* skip — fallback stays */ }
+    }
+  }))
+}
+
+/**
  * Slim-down weekly-pick rows to the public-safe subset (no internal scoring
  * details, no flow notes that mention internal infrastructure).
  */
@@ -122,6 +150,7 @@ function publicDailyRows(rows: any[]): any[] {
     target2: r.target2, target2Date: r.target2Date,
     target3: r.target3, target3Date: r.target3Date,
     riskReward: r.riskReward,
+    shareholdingNote: r.shareholdingNote ?? '',     // populated by enricher below
   }))
 }
 
@@ -168,16 +197,20 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   const ts = new Date().toISOString()
   const files: string[] = []
 
-  // 1. Weekly pick
+  // 1. Weekly pick — enrich shareholding from disk cache before serializing.
   if (opts.weeklyPick) {
-    const out = { generatedAt: ts, weekOf: opts.weeklyPick.weekOf, regime: opts.weeklyPick.regime, rows: publicWeeklyRows(opts.weeklyPick.rows ?? []) }
+    const wRows = publicWeeklyRows(opts.weeklyPick.rows ?? [])
+    await enrichShareholdingNotes(wRows)
+    const out = { generatedAt: ts, weekOf: opts.weeklyPick.weekOf, regime: opts.weeklyPick.regime, rows: wRows }
     await fs.writeFile(path.join(SNAP_DIR, 'weekly-pick.json'), JSON.stringify(out, null, 2))
     files.push('weekly-pick.json')
   }
 
-  // 2. Daily pick
+  // 2. Daily pick — same enrichment.
   if (opts.dailyPick) {
-    const out = { generatedAt: ts, regime: opts.dailyPick.regime ?? '', rows: publicDailyRows(opts.dailyPick.rows ?? []) }
+    const dRows = publicDailyRows(opts.dailyPick.rows ?? [])
+    await enrichShareholdingNotes(dRows)
+    const out = { generatedAt: ts, regime: opts.dailyPick.regime ?? '', rows: dRows }
     await fs.writeFile(path.join(SNAP_DIR, 'daily-pick.json'), JSON.stringify(out, null, 2))
     files.push('daily-pick.json')
   } else {
