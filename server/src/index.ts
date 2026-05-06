@@ -80,14 +80,79 @@ const wss = new WebSocketServer({ server, path: '/ws' })
 // options, intraday) every 30 min so the Vercel-deployed frontend can read
 // them via raw GitHub URLs. Manual trigger: POST /api/public-snapshots/publish
 import { publishPublicSnapshots } from './engine/publicSnapshots'
+/**
+ * After-hours fallback: read past-3-day signals from the audit CSV trail so
+ * Options + Intraday tabs always have data even when in-memory currentSignals
+ * is empty (engine cleared at end of session). Returns up to 50 high-quality
+ * signals of the requested type, newest first.
+ */
+async function recentSignalsFromAudit(type: 'OPTIONS' | 'INTRADAY', limit = 30): Promise<Signal[]> {
+  try {
+    const { readAuditRows } = await import('./engine/signalLogger')
+    const rows = await readAuditRows(500)
+    const cutoff = Date.now() - 3 * 86_400_000
+    const matched = rows
+      .filter(r => r.type === type && new Date(r.timestamp).getTime() >= cutoff && r.score >= (type === 'OPTIONS' ? 9 : 7))
+      .slice(-limit)
+      .reverse()
+    // Audit rows have flat shape; coerce to a Signal-like object
+    return matched.map(r => ({
+      id: r.id,
+      timestamp: r.timestamp,
+      instrument: r.instrument,
+      type: r.type,
+      source: r.source,
+      direction: r.direction,
+      grade: r.grade,
+      score: r.score,
+      tier: r.tier,
+      entry: r.entry,
+      stopLoss: r.stopLoss,
+      target1: r.target1,
+      target2: r.target2,
+      riskReward: r.riskReward,
+      reasons: typeof r.reasons === 'string' ? r.reasons.split(' | ').filter(Boolean) : (r.reasons ?? []),
+      meta: {},
+    } as any))
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `audit read failed: ${(e as Error).message}`)
+    return []
+  }
+}
+
 async function publishSnapshots(): Promise<void> {
   try {
     const { getLatestPick: gp } = await import('./engine/weeklyManagerPick')
     const wp = await gp()
-    const dp = getLatestDailyPick()
-    const premoveRun = getLatestRun('premove')
-    // Hit log is expensive (fetches candles per pick) — cap at 8s. If it
-    // times out, snapshot ships without hits and the next 30-min cron retries.
+
+    // Daily Pick — if in-memory empty, try loading the most recent disk snapshot.
+    let dp: any = getLatestDailyPick()
+    if (!dp || !dp.rows?.length) {
+      try {
+        const { loadLatestDailyPick } = await import('./engine/dailyPickEngine')
+        dp = await loadLatestDailyPick()
+      } catch { /* skip */ }
+    }
+
+    // Pre-Move — in-memory only. If empty, surface from movers (last 5d gainers
+    // are the closest substitute when the pre-close scan hasn't fired today).
+    let premoveResults = getLatestRun('premove')?.results ?? []
+    if (!premoveResults.length) {
+      premoveResults = getLatestRun('movers')?.results ?? []
+    }
+
+    // Options/Intraday — if currentSignals is empty (after-hours), surface
+    // last 3 days of qualifying signals from the audit CSV.
+    let signalsForPublish: Signal[] = currentSignals
+    const hasOpts = currentSignals.some(s => s.type === 'OPTIONS')
+    const hasIntra = currentSignals.some(s => s.type === 'INTRADAY')
+    if (!hasOpts || !hasIntra) {
+      const fallbackOpts = !hasOpts ? await recentSignalsFromAudit('OPTIONS', 30) : []
+      const fallbackIntra = !hasIntra ? await recentSignalsFromAudit('INTRADAY', 30) : []
+      signalsForPublish = [...currentSignals, ...fallbackOpts, ...fallbackIntra]
+    }
+
+    // Hit log — 8s timeout cap; falls back to empty if too slow.
     let hits: any[] = []
     try {
       const { buildScorecard } = await import('./engine/pickJournal')
@@ -95,13 +160,14 @@ async function publishSnapshots(): Promise<void> {
         buildScorecard(30).then(sc => sc.entries),
         new Promise<any[]>(r => setTimeout(() => r([]), 8000)),
       ])
-    } catch { /* journal may be empty on first run */ }
+    } catch { /* journal may be empty */ }
+
     await publishPublicSnapshots({
       weeklyPick: wp ?? null,
       dailyPick: dp ?? null,
-      preMoveResults: premoveRun?.results ?? null,
+      preMoveResults: premoveResults,
       hitLogEntries: hits,
-      signals: currentSignals,
+      signals: signalsForPublish,
     })
   } catch (e) { log.warn('PUBLIC-SNAP', `publish failed: ${(e as Error).message}`) }
 }

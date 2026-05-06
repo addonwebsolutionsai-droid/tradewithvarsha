@@ -737,10 +737,13 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
     while (shCursor < top80.length) {
       const i = shCursor++
       const r = top80[i]
+      // Set fallback FIRST so even if the network call below throws, the
+      // dashboard column has SOMETHING. Was rendering blank when scoreShareholding
+      // raised (timeout / 429 from screener.in).
+      if (!r.shareholdingNote) r.shareholdingNote = 'shareholding data unavailable'
       try {
         const verdict = await scoreShareholding(r.symbol)
         r.noBrainerBet = verdict.isNoBrainer
-        // Always populate stake summary — concise one-liner for dashboard column.
         if (verdict.shp) {
           const shp = verdict.shp
           const fiiArrow = shp.fiiDeltaQoQ > 0.1 ? '↑' : shp.fiiDeltaQoQ < -0.1 ? '↓' : '→'
@@ -749,14 +752,12 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
             ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
             : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
           r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fiiArrow} · P ${shp.promoterPct.toFixed(1)}%${pArrow} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mcStr}`
-        } else {
-          r.shareholdingNote = 'shareholding data unavailable'
         }
         if (verdict.isNoBrainer) {
           r.conviction = Math.min(100, r.conviction + 5)
           r.flowNote = `⭐ NO-BRAINER · ${verdict.reasons[0]}`
         }
-      } catch { /* best-effort */ }
+      } catch { /* fallback already set above */ }
     }
   }))
 
