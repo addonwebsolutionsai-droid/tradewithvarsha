@@ -38,6 +38,7 @@ import { SymbolsPage } from './pages/SymbolsPage'
 import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
 import { LoginPage, SignupPage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
+import { PublicWeeklyPickPage, PublicOptionsPage, PublicIntradayPage } from './pages/PublicPages'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -88,15 +89,14 @@ function Shell() {
       <main className="max-w-[1400px] mx-auto p-5 xl:pr-[320px]">
         {PUBLIC_MODE ? (
           <Routes>
-            {/* Public deploy: 3 tabs are OPEN (no auth) — the auth backend
-                lives on the local machine, not Vercel, so RequireAuth would
-                fail. When ready to gate, expose /api/auth/* via Cloudflare
-                Tunnel and re-add the wrappers. */}
+            {/* Public deploy: 3 tabs read STATIC SNAPSHOTS from raw GitHub.
+                No backend dependency, no live signals, no admin. Login pages
+                exist but are non-functional on Vercel without backend. */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/weekly-pick" element={<WeeklyPickPage />} />
-            <Route path="/options" element={<OptionsPage />} />
-            <Route path="/intraday" element={<IntradayPage />} />
+            <Route path="/weekly-pick" element={<PublicWeeklyPickPage />} />
+            <Route path="/options" element={<PublicOptionsPage />} />
+            <Route path="/intraday" element={<PublicIntradayPage />} />
             <Route path="/" element={<Navigate to="/weekly-pick" replace />} />
             <Route path="*" element={<Navigate to="/weekly-pick" replace />} />
           </Routes>
