@@ -91,18 +91,20 @@ function Shell() {
         : "max-w-[1400px] mx-auto p-5 xl:pr-[320px]"}>
         {PUBLIC_MODE ? (
           <Routes>
-            {/* Public deploy: auth-gated tabs reading static GitHub snapshots
-                + Vercel-function-backed auth (Turso DB). Each tab requires
-                user.allowedTabs to include its key, enforced server-side. */}
+            {/* Public deploy: 5 tabs OPEN to everyone (read-only, snapshot-fed).
+                Auth pages (/login /signup /profile /admin/users) remain
+                available for the weekend rollout but are NOT required to view
+                tabs. The api/ backend stays in place — unused for now, will
+                be re-gated when subscription plans launch. */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
             <Route path="/admin/users" element={<RequireAuth adminOnly><AdminUsersPage /></RequireAuth>} />
-            <Route path="/weekly-pick" element={<RequireAuth requireTab="weekly"><PublicWeeklyPickPage /></RequireAuth>} />
-            <Route path="/daily-pick"  element={<RequireAuth requireTab="daily"><PublicDailyPickPage /></RequireAuth>} />
-            <Route path="/pre-move"    element={<RequireAuth requireTab="premove"><PublicPreMovePage /></RequireAuth>} />
-            <Route path="/options"     element={<RequireAuth requireTab="options"><PublicOptionsPage /></RequireAuth>} />
-            <Route path="/intraday"    element={<RequireAuth requireTab="intraday"><PublicIntradayPage /></RequireAuth>} />
+            <Route path="/weekly-pick" element={<PublicWeeklyPickPage />} />
+            <Route path="/daily-pick"  element={<PublicDailyPickPage />} />
+            <Route path="/pre-move"    element={<PublicPreMovePage />} />
+            <Route path="/options"     element={<PublicOptionsPage />} />
+            <Route path="/intraday"    element={<PublicIntradayPage />} />
             <Route path="/" element={<Navigate to="/weekly-pick" replace />} />
             <Route path="*" element={<Navigate to="/weekly-pick" replace />} />
           </Routes>
