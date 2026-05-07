@@ -2,5 +2,8 @@
   "buildCommand": "cd client && npm install && npx vite build",
   "outputDirectory": "client/dist",
   "installCommand": "echo 'install runs inside buildCommand'",
-  "framework": null
+  "framework": null,
+  "rewrites": [
+    { "source": "/(.*)", "destination": "/index.html" }
+  ]
 }
