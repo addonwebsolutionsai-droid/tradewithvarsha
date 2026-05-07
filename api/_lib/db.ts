@@ -21,24 +21,29 @@ export function getDb(): Client {
 }
 
 // ── Schema bootstrap (idempotent) ───────────────────────────────
-let _schemaReady = false
+let _tableReady = false
+let _adminSeeded = false
 export async function ensureSchema(): Promise<void> {
-  if (_schemaReady) return
   const db = getDb()
-  await db.execute(`
-    CREATE TABLE IF NOT EXISTS users (
-      email TEXT PRIMARY KEY,
-      password_hash TEXT NOT NULL,
-      password_salt TEXT NOT NULL,
-      is_admin INTEGER NOT NULL DEFAULT 0,
-      is_active INTEGER NOT NULL DEFAULT 1,
-      expiry_at TEXT,                -- ISO date or NULL = lifetime
-      allowed_tabs TEXT NOT NULL DEFAULT 'weekly,daily,premove,options,intraday',
-      signup_at TEXT NOT NULL,
-      last_login_at TEXT
-    )
-  `)
-  // Bootstrap admin if it doesn't exist yet
+  if (!_tableReady) {
+    await db.execute(`
+      CREATE TABLE IF NOT EXISTS users (
+        email TEXT PRIMARY KEY,
+        password_hash TEXT NOT NULL,
+        password_salt TEXT NOT NULL,
+        is_admin INTEGER NOT NULL DEFAULT 0,
+        is_active INTEGER NOT NULL DEFAULT 1,
+        expiry_at TEXT,                -- ISO date or NULL = lifetime
+        allowed_tabs TEXT NOT NULL DEFAULT 'weekly,daily,premove,options,intraday',
+        signup_at TEXT NOT NULL,
+        last_login_at TEXT
+      )
+    `)
+    _tableReady = true
+  }
+  // Admin seed runs on every request UNTIL the row exists, so adding the
+  // env vars after first deploy still bootstraps the admin successfully.
+  if (_adminSeeded) return
   const adminEmail = (process.env.ADMIN_EMAIL || '').toLowerCase().trim()
   const adminPwd = process.env.ADMIN_PASSWORD_BOOTSTRAP || ''
   if (adminEmail && adminPwd) {
@@ -55,8 +60,8 @@ export async function ensureSchema(): Promise<void> {
         args: [adminEmail, hash, salt, new Date().toISOString()],
       })
     }
+    _adminSeeded = true     // succeeded OR found existing — either way, stop retrying
   }
-  _schemaReady = true
 }
 
 // ── Password hashing (PBKDF2-SHA256) ────────────────────────────
