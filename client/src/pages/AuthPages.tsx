@@ -30,18 +30,32 @@ export function LoginPage(): JSX.Element {
   async function submit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
     setErr(''); setBusy(true)
+    // Clear any stale token first so the login request never carries an
+    // expired Bearer header that confuses the server-side auth check.
+    auth.clear()
     try {
-      const r = await api.login(email, password)
-      if (!r.ok || !r.token) { setErr(r.error || 'login failed'); return }
+      const r = await api.login(email.trim(), password)
+      if (!r?.ok || !r.token) {
+        setErr(r?.error || 'invalid email or password')
+        return
+      }
       auth.setToken(r.token)
-      // Critical: invalidate the cached `me()` query so RequireAuth re-fetches
-      // with the new token. Otherwise the stale-error cache from the logged-out
-      // state would bounce the user back to /login, creating an infinite loop.
-      await qc.invalidateQueries({ queryKey: ['me'] })
-      await qc.refetchQueries({ queryKey: ['me'] })
-      nav('/weekly-pick', { replace: true })
-    } catch (e: any) { setErr(extract(e)) }
-    finally { setBusy(false) }
+      // Reset whatever the queryClient cached — likely an isError=true from
+      // pre-login me() polling. Without this, RequireAuth keeps the stale
+      // error and bounces back to /login.
+      try {
+        qc.removeQueries({ queryKey: ['me'] })
+        qc.removeQueries({ queryKey: ['admin-users'] })
+      } catch { /* defensive — never block login on cache ops */ }
+      // Force-fetch fresh me() so RequireAuth sees data on first render.
+      try { await qc.fetchQuery({ queryKey: ['me'], queryFn: () => api.me() }) }
+      catch { /* still navigate — RequireAuth will retry */ }
+      // Land admins on /admin/users, normal users on /weekly-pick.
+      const target = r.user?.isAdmin ? '/admin/users' : '/weekly-pick'
+      nav(target, { replace: true })
+    } catch (e: any) {
+      setErr(extract(e))
+    } finally { setBusy(false) }
   }
   return (
     <div style={card}>
@@ -72,13 +86,18 @@ export function SignupPage(): JSX.Element {
   async function submit(e: React.FormEvent): Promise<void> {
     e.preventDefault()
     setErr(''); setBusy(true)
+    auth.clear()
     if (password !== confirm) { setErr('passwords do not match'); setBusy(false); return }
     try {
-      const r = await api.signup(email, password)
-      if (!r.ok || !r.token) { setErr(r.error || 'signup failed'); return }
+      const r = await api.signup(email.trim(), password)
+      if (!r?.ok || !r.token) { setErr(r?.error || 'signup failed'); return }
       auth.setToken(r.token)
-      await qc.invalidateQueries({ queryKey: ['me'] })
-      await qc.refetchQueries({ queryKey: ['me'] })
+      try {
+        qc.removeQueries({ queryKey: ['me'] })
+        qc.removeQueries({ queryKey: ['admin-users'] })
+      } catch { /* defensive */ }
+      try { await qc.fetchQuery({ queryKey: ['me'], queryFn: () => api.me() }) }
+      catch { /* still navigate */ }
       nav('/weekly-pick', { replace: true })
     } catch (e: any) { setErr(extract(e)) }
     finally { setBusy(false) }
