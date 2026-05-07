@@ -86,7 +86,9 @@ function Shell() {
       <Header botRunning={botRunning} health={healthQuery.data} />
       {!PUBLIC_MODE && <MarketBar indices={indices} />}
       <TabNav counts={counts} />
-      <main className="max-w-[1400px] mx-auto p-5 xl:pr-[320px]">
+      <main className={PUBLIC_MODE
+        ? "max-w-[1900px] mx-auto p-5"
+        : "max-w-[1400px] mx-auto p-5 xl:pr-[320px]"}>
         {PUBLIC_MODE ? (
           <Routes>
             {/* Public deploy: 3 tabs read STATIC SNAPSHOTS from raw GitHub.
