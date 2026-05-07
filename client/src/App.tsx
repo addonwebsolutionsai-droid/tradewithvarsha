@@ -37,7 +37,7 @@ import { TimeCyclePage } from './pages/TimeCyclePage'
 import { SymbolsPage } from './pages/SymbolsPage'
 import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
-import { LoginPage, SignupPage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
+import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
 import { PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage } from './pages/PublicPages'
 
 const queryClient = new QueryClient({
@@ -91,16 +91,18 @@ function Shell() {
         : "max-w-[1400px] mx-auto p-5 xl:pr-[320px]"}>
         {PUBLIC_MODE ? (
           <Routes>
-            {/* Public deploy: 3 tabs read STATIC SNAPSHOTS from raw GitHub.
-                No backend dependency, no live signals, no admin. Login pages
-                exist but are non-functional on Vercel without backend. */}
+            {/* Public deploy: auth-gated tabs reading static GitHub snapshots
+                + Vercel-function-backed auth (Turso DB). Each tab requires
+                user.allowedTabs to include its key, enforced server-side. */}
             <Route path="/login" element={<LoginPage />} />
             <Route path="/signup" element={<SignupPage />} />
-            <Route path="/weekly-pick" element={<PublicWeeklyPickPage />} />
-            <Route path="/daily-pick" element={<PublicDailyPickPage />} />
-            <Route path="/pre-move" element={<PublicPreMovePage />} />
-            <Route path="/options" element={<PublicOptionsPage />} />
-            <Route path="/intraday" element={<PublicIntradayPage />} />
+            <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
+            <Route path="/admin/users" element={<RequireAuth adminOnly><AdminUsersPage /></RequireAuth>} />
+            <Route path="/weekly-pick" element={<RequireAuth requireTab="weekly"><PublicWeeklyPickPage /></RequireAuth>} />
+            <Route path="/daily-pick"  element={<RequireAuth requireTab="daily"><PublicDailyPickPage /></RequireAuth>} />
+            <Route path="/pre-move"    element={<RequireAuth requireTab="premove"><PublicPreMovePage /></RequireAuth>} />
+            <Route path="/options"     element={<RequireAuth requireTab="options"><PublicOptionsPage /></RequireAuth>} />
+            <Route path="/intraday"    element={<RequireAuth requireTab="intraday"><PublicIntradayPage /></RequireAuth>} />
             <Route path="/" element={<Navigate to="/weekly-pick" replace />} />
             <Route path="*" element={<Navigate to="/weekly-pick" replace />} />
           </Routes>

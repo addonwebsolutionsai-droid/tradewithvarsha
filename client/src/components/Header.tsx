@@ -1,8 +1,9 @@
 import { useState, useEffect } from 'react'
-import { Circle, MessageSquare, Moon, RefreshCw, Settings, Sun, Zap } from 'lucide-react'
+import { Circle, MessageSquare, Moon, RefreshCw, Settings, Sun, Zap, User as UserIcon, LogOut, Shield } from 'lucide-react'
+import { Link, useNavigate } from 'react-router-dom'
 import { useStore } from '../store'
-import { api } from '../api'
-import { useQueryClient } from '@tanstack/react-query'
+import { api, auth } from '../api'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import toast from 'react-hot-toast'
 import type { Health } from '../types'
 import { GlobalSearch } from './GlobalSearch'
@@ -106,13 +107,15 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
       {PUBLIC_MODE && <div className="flex-1" />}
       <div className="flex items-center gap-4 text-xs text-neutral-500">
         {PUBLIC_MODE ? (
-          /* Public deploy: simple snapshot pill, no backend-touching UI. */
-          <span
-            className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green"
-            title="Free public mode — picks refreshed every 30 minutes from the live trading engine"
-          >
-            ● Snapshot mode · auto-refresh 30m
-          </span>
+          <>
+            <span
+              className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green"
+              title="Free public mode — picks refreshed every 30 minutes from the live trading engine"
+            >
+              ● Snapshot mode · auto-refresh 30m
+            </span>
+            <PublicUserMenu />
+          </>
         ) : (
           <>
             <span className="flex items-center gap-1">
@@ -178,5 +181,52 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
         {!PUBLIC_MODE && <Settings size={14} className="text-neutral-600" />}
       </div>
     </header>
+  )
+}
+
+/** User menu shown only in PUBLIC_MODE — links to profile, admin (if admin),
+ *  and logout. If logged out, shows Sign in / Sign up links. */
+function PublicUserMenu(): JSX.Element {
+  const nav = useNavigate()
+  const [open, setOpen] = useState(false)
+  const { data, isError, refetch } = useQuery({
+    queryKey: ['me'], queryFn: () => api.me(), retry: false,
+    refetchOnWindowFocus: true,
+  })
+  useEffect(() => {
+    function close(e: MouseEvent): void {
+      const t = e.target as HTMLElement
+      if (!t.closest('.usermenu-root')) setOpen(false)
+    }
+    if (open) document.addEventListener('click', close)
+    return () => document.removeEventListener('click', close)
+  }, [open])
+
+  if (isError || !data) {
+    return (
+      <div className="flex items-center gap-2">
+        <Link to="/login" className="text-[11px] px-2 py-1 rounded border border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20">Sign in</Link>
+        <Link to="/signup" className="text-[11px] px-2 py-1 rounded bg-accent-green text-white font-semibold hover:bg-accent-green/80">Sign up</Link>
+      </div>
+    )
+  }
+
+  return (
+    <div className="usermenu-root relative">
+      <button onClick={() => setOpen(o => !o)} className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-ink-700 border border-ink-500 hover:bg-ink-600 text-neutral-200">
+        <UserIcon size={12} />
+        <span className="font-mono">{data.email}</span>
+        {data.isAdmin && <span className="text-accent-amber text-[9px] font-bold">ADMIN</span>}
+      </button>
+      {open && (
+        <div className="absolute right-0 top-full mt-1 z-50 min-w-[200px] bg-ink-800 border border-ink-500 rounded shadow-lg py-1">
+          <Link to="/profile" onClick={() => setOpen(false)} className="block px-3 py-2 text-[12px] text-neutral-200 hover:bg-ink-700"><UserIcon size={11} className="inline mr-1.5" />My Profile</Link>
+          {data.isAdmin && (
+            <Link to="/admin/users" onClick={() => setOpen(false)} className="block px-3 py-2 text-[12px] text-accent-amber hover:bg-ink-700"><Shield size={11} className="inline mr-1.5" />Manage Members</Link>
+          )}
+          <button onClick={() => { auth.clear(); setOpen(false); refetch(); nav('/login') }} className="block w-full text-left px-3 py-2 text-[12px] text-accent-red hover:bg-ink-700"><LogOut size={11} className="inline mr-1.5" />Sign out</button>
+        </div>
+      )}
+    </div>
   )
 }

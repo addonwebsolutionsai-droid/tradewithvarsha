@@ -87,17 +87,24 @@ export const api = {
 
   // Auth
   signup: (email: string, password: string) =>
-    j<{ ok: boolean; error?: string; token?: string }>('/api/auth/signup', {
+    j<{ ok: boolean; error?: string; token?: string; user?: any }>('/api/auth/signup', {
       method: 'POST', body: JSON.stringify({ email, password }),
     }),
   login: (email: string, password: string) =>
-    j<{ ok: boolean; error?: string; token?: string; user?: { email: string; isAdmin: boolean } }>('/api/auth/login', {
+    j<{ ok: boolean; error?: string; token?: string; user?: { email: string; isAdmin: boolean; expiryAt?: string; allowedTabs?: string[] } }>('/api/auth/login', {
       method: 'POST', body: JSON.stringify({ email, password }),
     }),
-  me: () => j<{ email: string; isAdmin: boolean }>('/api/auth/me'),
+  me: () =>
+    j<{ email: string; isAdmin: boolean; isActive: boolean; expiryAt?: string; allowedTabs: string[]; signupAt: string; lastLoginAt?: string }>('/api/auth/me'),
   logout: () => { auth.clear(); return j<{ ok: boolean }>('/api/auth/logout', { method: 'POST' }) },
+  changePassword: (oldPassword: string, newPassword: string) =>
+    j<{ ok: boolean; error?: string }>('/api/auth/change-password', {
+      method: 'POST', body: JSON.stringify({ oldPassword, newPassword }),
+    }),
   adminUsers: () =>
-    j<{ users: Array<{ email: string; isAdmin: boolean; isActive: boolean; createdAt: string; lastLoginAt?: string }> }>('/api/admin/users'),
-  toggleUser: (email: string) =>
-    j<{ ok: boolean; user?: any; error?: string }>(`/api/admin/users/${encodeURIComponent(email)}/toggle`, { method: 'POST' }),
+    j<{ users: Array<{ email: string; isAdmin: boolean; isActive: boolean; expiryAt?: string; allowedTabs: string[]; signupAt: string; lastLoginAt?: string }> }>('/api/admin/users'),
+  adminUpdateUser: (email: string, patch: { isActive?: boolean; expiryAt?: string | null; allowedTabs?: string[] }) =>
+    j<{ ok: boolean; error?: string }>('/api/admin/user', {
+      method: 'POST', body: JSON.stringify({ email, ...patch }),
+    }),
 }
