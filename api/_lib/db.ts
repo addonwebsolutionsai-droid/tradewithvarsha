@@ -8,13 +8,18 @@ import { createClient, type Client } from '@libsql/client'
 import crypto from 'crypto'
 
 // ── Turso client ────────────────────────────────────────────────
+// 2026-05-07: Prefer the manually-set TURSO_DATABASE_URL / TURSO_AUTH_TOKEN
+// over the Vercel/Turso-integration-prefixed ones. The integration creates
+// per-deployment ephemeral DB branches (URL contains `vercel-icfg-...`)
+// that get wiped on every push — useless for production. The manual env
+// vars point at a stable Turso DB that persists across deploys.
 let _client: Client | null = null
 export function getDb(): Client {
   if (_client) return _client
-  const url = process.env.tradewithvarshadb_TURSO_DATABASE_URL
-    || process.env.TURSO_DATABASE_URL
-  const authToken = process.env.tradewithvarshadb_TURSO_AUTH_TOKEN
-    || process.env.TURSO_AUTH_TOKEN
+  const url = process.env.TURSO_DATABASE_URL
+    || process.env.tradewithvarshadb_TURSO_DATABASE_URL
+  const authToken = process.env.TURSO_AUTH_TOKEN
+    || process.env.tradewithvarshadb_TURSO_AUTH_TOKEN
   if (!url) throw new Error('TURSO_DATABASE_URL not set')
   _client = createClient({ url, authToken })
   return _client
