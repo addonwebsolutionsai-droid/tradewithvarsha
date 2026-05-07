@@ -15,6 +15,11 @@ const fmtDate = (iso?: string) => {
   return isNaN(d.getTime()) ? iso : `${d.getDate()}/${d.getMonth() + 1}`
 }
 const fmtTs = (iso?: string) => iso ? new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—'
+/** 2-decimal price formatter — used for Entry/SL/Target across every tab. */
+const fmtPx = (n: any): string => {
+  const v = typeof n === 'number' ? n : Number(n)
+  return Number.isFinite(v) ? v.toFixed(2) : '—'
+}
 
 // ── LEGEND STRIP ────────────────────────────────────────────────
 function Legend({ kind }: { kind: 'pick' | 'signal' | 'premove' }): JSX.Element {
@@ -109,15 +114,15 @@ export function PublicWeeklyPickPage(): JSX.Element {
                 <th className="text-right px-4 py-3 whitespace-nowrap">LTP</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Conviction</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-cyan">Entry Range</th>
-                <th className="text-center px-4 py-3 whitespace-nowrap text-accent-cyan">Entry by</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 1</th>
-                <th className="text-center px-4 py-3 whitespace-nowrap text-accent-green">T1 by</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 2</th>
-                <th className="text-center px-4 py-3 whitespace-nowrap text-accent-green">T2 by</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 3</th>
-                <th className="text-center px-4 py-3 whitespace-nowrap text-accent-green">T3 by</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry Range</th>
+                <th className="text-center px-2 py-3 whitespace-nowrap text-accent-cyan">Entry by</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 1</th>
+                <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T1 by</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
+                <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T2 by</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 3</th>
+                <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T3 by</th>
                 <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
               </tr>
             </thead>
@@ -137,19 +142,19 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
   return (
     <tr className={`border-t border-ink-500 hover:bg-ink-700 font-mono ${r.noBrainerBet ? 'bg-accent-amber/5' : ''}`}>
       <td className="px-4 py-3 whitespace-nowrap"><b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b></td>
-      <td className="px-4 py-3 text-right whitespace-nowrap">₹{r.ltp?.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+      <td className="px-2 py-3 text-right whitespace-nowrap">₹{fmtPx(r.ltp)}</td>
       <td className="px-4 py-3 text-center">
         <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
       </td>
       <td className={`px-4 py-3 text-center font-bold ${convCls}`}>{r.conviction}</td>
-      <td className="px-4 py-3 text-right text-accent-cyan whitespace-nowrap">₹{r.entryPriceLow}–{r.entryPriceHigh}</td>
-      <td className="px-4 py-3 text-center text-accent-cyan text-[11px] whitespace-nowrap">{fmtDate(r.entryDate)}</td>
-      <td className="px-4 py-3 text-right text-accent-red whitespace-nowrap">₹{r.stopLoss}</td>
-      <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target1}</td>
-      <td className="px-4 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{fmtDate(r.target1Date)}</td>
-      <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target2}</td>
-      <td className="px-4 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{fmtDate(r.target2Date)}</td>
-      <td className="px-4 py-3 text-right text-accent-green font-bold whitespace-nowrap">₹{r.target3}</td>
+      <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</td>
+      <td className="px-2 py-3 text-center text-accent-cyan text-[11px] whitespace-nowrap">{fmtDate(r.entryDate)}</td>
+      <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.stopLoss)}</td>
+      <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target1)}</td>
+      <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{fmtDate(r.target1Date)}</td>
+      <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
+      <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{fmtDate(r.target2Date)}</td>
+      <td className="px-2 py-3 text-right text-accent-green font-bold whitespace-nowrap">₹{fmtPx(r.target3)}</td>
       <td className="px-4 py-3 text-center text-accent-green text-[11px] font-semibold whitespace-nowrap">{fmtDate(r.target3Date)}</td>
       <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{r.shareholdingNote || 'shareholding data unavailable'}</td>
     </tr>
@@ -181,11 +186,11 @@ export function PublicDailyPickPage(): JSX.Element {
                 <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Conviction</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Pattern</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 1</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 2</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 3</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 1</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 3</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Risk:Reward</th>
                 <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
               </tr>
@@ -197,17 +202,17 @@ export function PublicDailyPickPage(): JSX.Element {
                 return (
                   <tr key={i} className="border-t border-ink-500 hover:bg-ink-700 font-mono">
                     <td className="px-4 py-3 whitespace-nowrap"><b>{r.symbol}</b></td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">₹{r.ltp}</td>
+                    <td className="px-2 py-3 text-right whitespace-nowrap">₹{fmtPx(r.ltp)}</td>
                     <td className="px-4 py-3 text-center">
                       <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
                     </td>
                     <td className={`px-4 py-3 text-center font-bold ${convCls}`}>{r.conviction}</td>
                     <td className="px-4 py-3 text-center text-[11px] text-neutral-300 whitespace-nowrap">{r.pattern}</td>
-                    <td className="px-4 py-3 text-right text-accent-cyan whitespace-nowrap">₹{r.entryPrice}</td>
-                    <td className="px-4 py-3 text-right text-accent-red whitespace-nowrap">₹{r.stopLoss}</td>
-                    <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target1}</td>
-                    <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target2}</td>
-                    <td className="px-4 py-3 text-right text-accent-green font-bold whitespace-nowrap">₹{r.target3}</td>
+                    <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.entryPrice)}</td>
+                    <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.stopLoss)}</td>
+                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target1)}</td>
+                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
+                    <td className="px-2 py-3 text-right text-accent-green font-bold whitespace-nowrap">₹{fmtPx(r.target3)}</td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">{r.riskReward ?? '—'}:1</td>
                     <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{r.shareholdingNote || 'shareholding data unavailable'}</td>
                   </tr>
@@ -246,9 +251,9 @@ export function PublicPreMovePage(): JSX.Element {
                 <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Tier</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Score</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Expected %</th>
                 <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Setup Tags</th>
               </tr>
@@ -259,15 +264,15 @@ export function PublicPreMovePage(): JSX.Element {
                 return (
                   <tr key={i} className="border-t border-ink-500 hover:bg-ink-700 font-mono">
                     <td className="px-4 py-3 whitespace-nowrap"><b>{r.symbol}</b></td>
-                    <td className="px-4 py-3 text-right whitespace-nowrap">₹{r.price}</td>
+                    <td className="px-2 py-3 text-right whitespace-nowrap">₹{fmtPx(r.price)}</td>
                     <td className="px-4 py-3 text-center">
                       <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
                     </td>
                     <td className="px-4 py-3 text-center text-[11px]">{r.tier}</td>
                     <td className="px-4 py-3 text-center font-bold">{r.score?.toFixed?.(1)}</td>
-                    <td className="px-4 py-3 text-right text-accent-cyan whitespace-nowrap">₹{r.suggestedEntry ?? '—'}</td>
-                    <td className="px-4 py-3 text-right text-accent-red whitespace-nowrap">₹{r.suggestedSL ?? '—'}</td>
-                    <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.suggestedTarget ?? '—'}</td>
+                    <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.suggestedEntry)}</td>
+                    <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.suggestedSL)}</td>
+                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.suggestedTarget)}</td>
                     <td className="px-4 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{r.expectedMovePct?.toFixed?.(1)}%</td>
                     <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{(r.tags ?? []).slice(0, 3).join(' · ')}</td>
                   </tr>
@@ -332,10 +337,10 @@ function SignalTable({ rows }: { rows: any[] }): JSX.Element {
             <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
             <th className="text-center px-4 py-3 whitespace-nowrap">Grade</th>
             <th className="text-center px-4 py-3 whitespace-nowrap">Score</th>
-            <th className="text-right px-4 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
-            <th className="text-right px-4 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
-            <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 1</th>
-            <th className="text-right px-4 py-3 whitespace-nowrap text-accent-green">Target 2</th>
+            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
+            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
+            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 1</th>
+            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
             <th className="text-center px-4 py-3 whitespace-nowrap">Risk:Reward</th>
             <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Reasoning</th>
           </tr>
@@ -353,10 +358,10 @@ function SignalTable({ rows }: { rows: any[] }): JSX.Element {
                 </td>
                 <td className="px-4 py-3 text-center text-accent-amber font-bold">{r.grade}</td>
                 <td className="px-4 py-3 text-center font-bold">{r.score?.toFixed?.(1)}</td>
-                <td className="px-4 py-3 text-right text-accent-cyan whitespace-nowrap">₹{r.entry}</td>
-                <td className="px-4 py-3 text-right text-accent-red whitespace-nowrap">₹{r.stopLoss}</td>
-                <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target1}</td>
-                <td className="px-4 py-3 text-right text-accent-green whitespace-nowrap">₹{r.target2 ?? '—'}</td>
+                <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.entry)}</td>
+                <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.stopLoss)}</td>
+                <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target1)}</td>
+                <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
                 <td className="px-4 py-3 text-center whitespace-nowrap">{r.riskReward ?? '—'}</td>
                 <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{(r.reasons ?? []).slice(0, 2).join(' · ')}</td>
               </tr>
