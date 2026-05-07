@@ -21,6 +21,7 @@ const okStyle: React.CSSProperties = { color: '#2ecc71', fontSize: 13, marginBot
 // ── LOGIN ───────────────────────────────────────────────────────
 export function LoginPage(): JSX.Element {
   const nav = useNavigate()
+  const qc = useQueryClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [err, setErr] = useState('')
@@ -33,7 +34,12 @@ export function LoginPage(): JSX.Element {
       const r = await api.login(email, password)
       if (!r.ok || !r.token) { setErr(r.error || 'login failed'); return }
       auth.setToken(r.token)
-      nav('/weekly-pick')
+      // Critical: invalidate the cached `me()` query so RequireAuth re-fetches
+      // with the new token. Otherwise the stale-error cache from the logged-out
+      // state would bounce the user back to /login, creating an infinite loop.
+      await qc.invalidateQueries({ queryKey: ['me'] })
+      await qc.refetchQueries({ queryKey: ['me'] })
+      nav('/weekly-pick', { replace: true })
     } catch (e: any) { setErr(extract(e)) }
     finally { setBusy(false) }
   }
@@ -56,6 +62,7 @@ export function LoginPage(): JSX.Element {
 // ── SIGNUP ──────────────────────────────────────────────────────
 export function SignupPage(): JSX.Element {
   const nav = useNavigate()
+  const qc = useQueryClient()
   const [email, setEmail] = useState('')
   const [password, setPassword] = useState('')
   const [confirm, setConfirm] = useState('')
@@ -70,7 +77,9 @@ export function SignupPage(): JSX.Element {
       const r = await api.signup(email, password)
       if (!r.ok || !r.token) { setErr(r.error || 'signup failed'); return }
       auth.setToken(r.token)
-      nav('/weekly-pick')
+      await qc.invalidateQueries({ queryKey: ['me'] })
+      await qc.refetchQueries({ queryKey: ['me'] })
+      nav('/weekly-pick', { replace: true })
     } catch (e: any) { setErr(extract(e)) }
     finally { setBusy(false) }
   }
