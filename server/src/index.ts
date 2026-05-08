@@ -124,6 +124,14 @@ async function publishSnapshots(): Promise<void> {
   try {
     const { getLatestPick: gp } = await import('./engine/weeklyManagerPick')
     const wp = await gp()
+    // Always inject the latest lifecycle view (read from disk) so even
+    // standalone publish runs (no fresh weekly-pick) show SUPERSEDED rows.
+    if (wp) {
+      try {
+        const { getMergedView } = await import('./engine/signalLifecycle')
+        wp.lifecycle = await getMergedView('WEEKLY')
+      } catch { /* lifecycle file may not exist yet */ }
+    }
 
     // Daily Pick — if in-memory empty, try loading the most recent disk snapshot.
     let dp: any = getLatestDailyPick()
@@ -2006,14 +2014,59 @@ async function runWeeklyPickCron(tag: string, universe: 'MARKET_ALL' | 'NSE_ALL'
     const pick = await runWeeklyPick(universe)
     broadcast({ type: 'WEEKLY_PICK_UPDATE', pick })
     void dispatchWeeklyPickAlerts(pick, tag).catch(() => {})
-    // 2026-05-04: snapshot to pick-journal so we can score these picks
-    // retroactively at +5/+10/+20 trading days.
+    // 2026-05-08: Telegram event-stream for lifecycle changes — user
+    // explicitly asked NOT to silently remove signals. Notify on supersede
+    // so a position-holder sees "this pick is no longer in the active list,
+    // here's why" instead of just disappearance.
+    if (pick.lifecycleReport && botState.bot) {
+      void dispatchLifecycleAlerts(pick.lifecycleReport).catch(() => {})
+    }
     try {
       const { snapshotPick } = await import('./engine/pickJournal')
       await snapshotPick(pick)
     } catch (e) { log.warn('JOURNAL', `snapshot ${tag}: ${(e as Error).message}`) }
     if (tag.includes('daily')) markFired('wp-daily')
   } catch (e) { log.err('CRON', `weekly pick ${tag}: ${(e as Error).message}`) }
+}
+
+async function dispatchLifecycleAlerts(report: import('./engine/signalLifecycle').MergeReport): Promise<void> {
+  if (!botState.bot) return
+  const lines: string[] = []
+  if (report.superseded.length) {
+    lines.push(`🔁 *${report.superseded.length} pick${report.superseded.length === 1 ? '' : 's'} SUPERSEDED*`)
+    lines.push(`These no longer meet the pick criteria. If you have an open position, decide whether to hold or exit.`)
+    lines.push('')
+    for (const e of report.superseded.slice(0, 8)) {
+      const d = e.direction === 'BUY' ? '🟢 BUY' : '🔴 SHORT'
+      const conv = e.convictionPrev != null ? `${e.convictionPrev}→below threshold` : `${e.conviction}`
+      lines.push(`• ${d} ${e.symbol} · was conv ${conv}`)
+      lines.push(`  Entry was \`${e.entryPrice}\` · SL \`${e.stopLoss}\` · T1 \`${e.target1}\``)
+    }
+    lines.push('')
+  }
+  if (report.newAdded.length) {
+    lines.push(`✨ *${report.newAdded.length} new pick${report.newAdded.length === 1 ? '' : 's'} added*`)
+    for (const e of report.newAdded.slice(0, 5)) {
+      const d = e.direction === 'BUY' ? '🟢 BUY' : '🔴 SHORT'
+      lines.push(`• ${d} ${e.symbol} · conv ${e.conviction} · E ₹${e.entryPrice} · SL ₹${e.stopLoss}`)
+    }
+    lines.push('')
+  }
+  if (report.rePriced.length) {
+    lines.push(`📊 *${report.rePriced.length} re-priced* (entry/target shifted >5%)`)
+    for (const e of report.rePriced.slice(0, 5)) {
+      lines.push(`• ${e.symbol}: new entry ₹${e.entryPrice} · SL ₹${e.stopLoss}`)
+    }
+  }
+  if (lines.length === 0) return
+  lines.push(`\n_Lifecycle log: every change is tracked. View on dashboard._`)
+  const msg = lines.join('\n')
+  for (const cid of config.bots.telegramChatIds) {
+    try {
+      await botState.bot.api.sendMessage(cid, msg, { parse_mode: 'Markdown' })
+      recordTgPush('lifecycle', `${report.superseded.length}-sup ${report.newAdded.length}-new ${report.rePriced.length}-rep`, cid)
+    } catch (e) { log.warn('LIFECYCLE-DISPATCH', `tg ${cid}: ${(e as Error).message}`) }
+  }
 }
 cron.schedule('0 16 * * 1-5', async () => {
   log.info('CRON', 'Auto-watchlist rebuild starting...')

@@ -102,6 +102,10 @@ export interface WeeklyPick {
   watchlistInput: string[]
   rows: PickRow[]
   notes: string[]                // top-level commentary lines
+  // 2026-05-08: Lifecycle view — merged ACTIVE + recent SUPERSEDED/HIT entries.
+  // Used by public snapshot + dashboard to render strike-through rows.
+  lifecycle?: import('./signalLifecycle').LifecycleEntry[]
+  lifecycleReport?: import('./signalLifecycle').MergeReport
 }
 
 // ─── Watchlist persistence ─────────────────────────────────────
@@ -810,10 +814,19 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
   await fs.mkdir(PICKS_DIR, { recursive: true })
   await fs.writeFile(path.join(PICKS_DIR, `${pick.weekOf}.json`), JSON.stringify(pick, null, 2), 'utf8')
 
-  // Log every Weekly Pick row to the signals.csv audit journal so the
-  // Backtest Results tab can show its full lineage. Previously these rows
-  // weren't logged — meaning a 23-Apr EPACK BUY the user took was invisible
-  // to the audit and looked "missing" when the engine later flipped views.
+  // 2026-05-08: Merge into the persistent signal lifecycle so rows that
+  // disappear on a re-run get marked SUPERSEDED (not silently dropped).
+  // The mergedView comes back with ACTIVE rows + recent terminal states
+  // for the dashboard / public snapshot to show as strike-through.
+  try {
+    const { mergeWeeklyPickRun } = await import('./signalLifecycle')
+    const { mergedView, report } = await mergeWeeklyPickRun(rows, 'WEEKLY')
+    pick.lifecycle = mergedView          // attached for downstream consumers
+    pick.lifecycleReport = report
+  } catch (e) {
+    log.warn('PICK', `lifecycle merge skipped: ${(e as Error).message}`)
+  }
+
   for (const r of rows) {
     void logSignal(weeklyRowToSignal(r), 'weekly-pick').catch(() => undefined)
   }

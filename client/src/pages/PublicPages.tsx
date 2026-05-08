@@ -139,25 +139,68 @@ export function PublicWeeklyPickPage(): JSX.Element {
 function WeeklyRow({ r }: { r: any }): JSX.Element {
   const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
   const convCls = r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : 'text-accent-amber'
+  // 2026-05-08: Lifecycle status drives row treatment.
+  // ACTIVE = normal · T*_HIT = green-tinted · SUPERSEDED/SL/EXPIRED = strike-through faded.
+  const status = r.lifecycleStatus || 'ACTIVE'
+  const isHit = status === 'T1_HIT' || status === 'T2_HIT' || status === 'T3_HIT'
+  const isLoss = status === 'SL_HIT' || status === 'SUPERSEDED' || status === 'EXPIRED' || status === 'INVALIDATED'
+  const rowCls = `border-t border-ink-500 hover:bg-ink-700 font-mono ${
+    r.noBrainerBet && status === 'ACTIVE' ? 'bg-accent-amber/5' :
+    isHit ? 'bg-accent-green/10' :
+    isLoss ? 'bg-ink-900 opacity-60' : ''
+  }`
+  const strike = isLoss ? 'line-through' : 'none'
+  const tdStyle = { textDecoration: strike } as React.CSSProperties
   return (
-    <tr className={`border-t border-ink-500 hover:bg-ink-700 font-mono ${r.noBrainerBet ? 'bg-accent-amber/5' : ''}`}>
-      <td className="px-4 py-3 whitespace-nowrap"><b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b></td>
-      <td className="px-2 py-3 text-right whitespace-nowrap">₹{fmtPx(r.ltp)}</td>
-      <td className="px-4 py-3 text-center">
-        <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+    <tr className={rowCls}>
+      <td className="px-4 py-3 whitespace-nowrap" style={tdStyle}>
+        <b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+        <StatusChip r={r} status={status} />
       </td>
-      <td className={`px-4 py-3 text-center font-bold ${convCls}`}>{r.conviction}</td>
-      <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</td>
-      <td className="px-2 py-3 text-center text-accent-cyan text-[11px] whitespace-nowrap">{fmtDate(r.entryDate)}</td>
-      <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.stopLoss)}</td>
-      <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target1)}</td>
-      <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{fmtDate(r.target1Date)}</td>
-      <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
-      <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{fmtDate(r.target2Date)}</td>
-      <td className="px-2 py-3 text-right text-accent-green font-bold whitespace-nowrap">₹{fmtPx(r.target3)}</td>
-      <td className="px-4 py-3 text-center text-accent-green text-[11px] font-semibold whitespace-nowrap">{fmtDate(r.target3Date)}</td>
-      <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{r.shareholdingNote || 'shareholding data unavailable'}</td>
+      <td className="px-2 py-3 text-right whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.ltp)}</td>
+      <td className="px-4 py-3 text-center">
+        <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor, textDecoration: strike }}>{r.direction}</span>
+      </td>
+      <td className={`px-4 py-3 text-center font-bold ${convCls}`} style={tdStyle}>{r.conviction}</td>
+      <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</td>
+      <td className="px-2 py-3 text-center text-accent-cyan text-[11px] whitespace-nowrap" style={tdStyle}>{fmtDate(r.entryDate)}</td>
+      <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.stopLoss)}</td>
+      <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.target1)}</td>
+      <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap" style={tdStyle}>{fmtDate(r.target1Date)}</td>
+      <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.target2)}</td>
+      <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap" style={tdStyle}>{fmtDate(r.target2Date)}</td>
+      <td className="px-2 py-3 text-right text-accent-green font-bold whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.target3)}</td>
+      <td className="px-4 py-3 text-center text-accent-green text-[11px] font-semibold whitespace-nowrap" style={tdStyle}>{fmtDate(r.target3Date)}</td>
+      <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap" style={tdStyle}>{r.shareholdingNote || 'shareholding data unavailable'}</td>
     </tr>
+  )
+}
+
+/** Status chip rendered next to the symbol for non-ACTIVE entries. */
+function StatusChip({ r, status }: { r: any; status: string }): JSX.Element | null {
+  if (status === 'ACTIVE') return null
+  const cfg: Record<string, { label: string; bg: string; fg: string }> = {
+    T1_HIT:      { label: '✅ T1 HIT',     bg: '#00c85322', fg: '#00c853' },
+    T2_HIT:      { label: '✅ T2 HIT',     bg: '#00c85333', fg: '#00c853' },
+    T3_HIT:      { label: '🚀 T3 HIT',     bg: '#00c85344', fg: '#00c853' },
+    SL_HIT:      { label: '❌ SL HIT',     bg: '#ff174422', fg: '#ff1744' },
+    SUPERSEDED:  { label: '🔁 SUPERSEDED', bg: '#f5c51822', fg: '#f5c518' },
+    EXPIRED:     { label: '⏰ EXPIRED',    bg: '#88888822', fg: '#888' },
+    INVALIDATED: { label: '🚫 INVALIDATED', bg: '#ff174422', fg: '#ff1744' },
+  }
+  const c = cfg[status]
+  if (!c) return null
+  const tip = [
+    r.lifecycleReason || '',
+    r.lifecycleHitPrice ? `at ₹${r.lifecycleHitPrice}` : '',
+    r.lifecycleHitAt ? `on ${new Date(r.lifecycleHitAt).toLocaleDateString('en-IN')}` : '',
+    r.convictionPrev != null && r.convictionPrev !== r.conviction ? `conv ${r.convictionPrev}→${r.conviction}` : '',
+  ].filter(Boolean).join(' · ')
+  return (
+    <span title={tip} className="ml-2 inline-block align-middle px-2 py-0.5 rounded text-[10px] font-bold"
+      style={{ background: c.bg, color: c.fg, border: `1px solid ${c.fg}66`, textDecoration: 'none' }}>
+      {c.label}
+    </span>
   )
 }
 

@@ -197,9 +197,43 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   const ts = new Date().toISOString()
   const files: string[] = []
 
-  // 1. Weekly pick — enrich shareholding from disk cache before serializing.
+  // 1. Weekly pick — emit the LIFECYCLE merged view (active + superseded +
+  // hits within last 21 days) so the dashboard can render strike-through
+  // rows. Falls back to plain `rows` if lifecycle isn't attached yet.
   if (opts.weeklyPick) {
-    const wRows = publicWeeklyRows(opts.weeklyPick.rows ?? [])
+    let wRows: any[]
+    if (opts.weeklyPick.lifecycle?.length) {
+      // Lifecycle view: each entry already has full shape; project to public schema
+      wRows = opts.weeklyPick.lifecycle.map(e => ({
+        symbol: e.symbol,
+        direction: e.direction,
+        conviction: e.conviction,
+        ltp: e.ltp,
+        entryDate: e.entryDate,
+        entryPriceLow: e.entryPriceLow,
+        entryPriceHigh: e.entryPriceHigh,
+        entryPrice: e.entryPrice,
+        stopLoss: e.stopLoss,
+        target1: e.target1, target1Date: e.target1Date,
+        target2: e.target2, target2Date: e.target2Date,
+        target3: e.target3, target3Date: e.target3Date,
+        noBrainerBet: e.noBrainerBet,
+        shareholdingNote: e.shareholdingNote,
+        flowNote: e.reasoning,
+        // Lifecycle metadata for the frontend
+        lifecycleStatus: e.status,                 // ACTIVE / SUPERSEDED / T1_HIT / etc
+        lifecycleId: e.id,
+        lifecycleReason: e.statusReason,
+        lifecycleHitPrice: e.hitPrice,
+        lifecycleHitAt: e.hitAt,
+        firstSeenAt: e.firstSeenAt,
+        lastSeenAt: e.lastSeenAt,
+        statusChangedAt: e.statusChangedAt,
+        convictionPrev: e.convictionPrev,
+      }))
+    } else {
+      wRows = publicWeeklyRows(opts.weeklyPick.rows ?? [])
+    }
     await enrichShareholdingNotes(wRows)
     const out = { generatedAt: ts, weekOf: opts.weeklyPick.weekOf, regime: opts.weeklyPick.regime, rows: wRows }
     await fs.writeFile(path.join(SNAP_DIR, 'weekly-pick.json'), JSON.stringify(out, null, 2))
