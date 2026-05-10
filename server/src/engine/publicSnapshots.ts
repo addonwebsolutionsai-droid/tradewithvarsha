@@ -173,6 +173,82 @@ function publicPreMoveRows(rows: any[]): any[] {
     }))
 }
 
+/**
+ * Build the unified Top Trades stream — pulls high-conviction picks from
+ * weekly + daily, dedupes by (symbol, direction), sorts no-brainer first
+ * then by conviction descending. Master Setup intentionally omitted from
+ * the public snapshot since those are intraday-fluid and don't survive a
+ * 30-min snapshot cycle gracefully.
+ */
+function buildTopTrades(opts: { weeklyPick: any | null; dailyPick: any | null; minConv: number; limit: number }): any[] {
+  interface UnifiedRow {
+    symbol: string
+    source: 'WEEKLY' | 'DAILY'
+    direction: string
+    conviction: number
+    ltp: number
+    entryDate: string
+    entryPrice: number
+    entryPriceLow: number
+    entryPriceHigh: number
+    stopLoss: number
+    target1: number; target1Date: string
+    target2: number; target2Date: string
+    target3: number; target3Date: string
+    noBrainer: boolean
+    shareholdingNote: string
+    reasoning: string
+    lifecycleStatus?: string
+  }
+  const rows: UnifiedRow[] = []
+  const seen = new Set<string>()
+  const push = (r: UnifiedRow) => {
+    if (r.conviction < opts.minConv) return
+    const k = `${r.symbol}|${r.direction}`
+    if (seen.has(k)) return
+    seen.add(k)
+    rows.push(r)
+  }
+  // Prefer lifecycle view (with statuses) when available, else raw rows.
+  const weeklySource: any[] = opts.weeklyPick?.lifecycle?.length
+    ? opts.weeklyPick.lifecycle.filter((e: any) => e.status === 'ACTIVE')
+    : (opts.weeklyPick?.rows ?? [])
+  for (const r of weeklySource) push({
+    symbol: r.symbol, source: 'WEEKLY', direction: r.direction,
+    conviction: r.conviction, ltp: r.ltp,
+    entryDate: r.entryDate ?? '', entryPrice: r.entryPrice,
+    entryPriceLow: r.entryPriceLow ?? r.entryPrice,
+    entryPriceHigh: r.entryPriceHigh ?? r.entryPrice,
+    stopLoss: r.stopLoss,
+    target1: r.target1, target1Date: r.target1Date ?? '',
+    target2: r.target2, target2Date: r.target2Date ?? '',
+    target3: r.target3, target3Date: r.target3Date ?? '',
+    noBrainer: !!(r.noBrainerBet ?? r.noBrainer),
+    shareholdingNote: r.shareholdingNote ?? '',
+    reasoning: r.flowNote ?? r.reasoning ?? '',
+    lifecycleStatus: r.status ?? r.lifecycleStatus ?? 'ACTIVE',
+  })
+  for (const r of (opts.dailyPick?.rows ?? [])) push({
+    symbol: r.symbol, source: 'DAILY', direction: r.direction,
+    conviction: r.conviction, ltp: r.ltp,
+    entryDate: r.entryDate ?? '', entryPrice: r.entryPrice,
+    entryPriceLow: r.entryPriceLow ?? r.entryPrice,
+    entryPriceHigh: r.entryPriceHigh ?? r.entryPrice,
+    stopLoss: r.stopLoss,
+    target1: r.target1, target1Date: r.target1Date ?? '',
+    target2: r.target2, target2Date: r.target2Date ?? '',
+    target3: r.target3, target3Date: r.target3Date ?? '',
+    noBrainer: false,
+    shareholdingNote: r.shareholdingNote ?? '',
+    reasoning: (r.reasons || []).slice(0, 2).join(' · '),
+  })
+  rows.sort((a, b) => {
+    if (a.noBrainer !== b.noBrainer) return a.noBrainer ? -1 : 1
+    return b.conviction - a.conviction
+  })
+  return rows.slice(0, opts.limit)
+}
+
 function publicHitLog(entries: any[]): any[] {
   // Keep only completed outcomes (T1/T2/T3/SL/EXPIRED) and sort newest-first.
   return (entries ?? [])
@@ -271,6 +347,19 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   const hitOut = { generatedAt: ts, entries: publicHitLog(opts.hitLogEntries ?? []) }
   await fs.writeFile(path.join(SNAP_DIR, 'hit-log.json'), JSON.stringify(hitOut, null, 2))
   files.push('hit-log.json')
+
+  // 7. Top Trades (curated elite-only stream — conviction ≥ 85 across all sources)
+  // 2026-05-10: Promoted to a public tab so the Vercel deploy gets the same
+  // single-stream high-signal view as localhost. Dedup by (symbol, direction).
+  const topRows = buildTopTrades({
+    weeklyPick: opts.weeklyPick,
+    dailyPick: opts.dailyPick,
+    minConv: 85,
+    limit: 30,
+  })
+  const topOut = { generatedAt: ts, filterMinConv: 85, totalAvailable: topRows.length, rows: topRows }
+  await fs.writeFile(path.join(SNAP_DIR, 'top-trades.json'), JSON.stringify(topOut, null, 2))
+  files.push('top-trades.json')
 
   log.ok('PUBLIC-SNAP', `Wrote ${files.length} files: ${publicWeeklyRows(opts.weeklyPick?.rows ?? []).length} weekly · ${publicDailyRows(opts.dailyPick?.rows ?? []).length} daily · ${preMoveOut.rows.length} premove · ${optionsOut.rows.length} options · ${intraOut.rows.length} intraday · ${hitOut.entries.length} hits`)
   return { files, ts }

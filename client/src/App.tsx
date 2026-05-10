@@ -38,7 +38,7 @@ import { SymbolsPage } from './pages/SymbolsPage'
 import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
 import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
-import { PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage } from './pages/PublicPages'
+import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage } from './pages/PublicPages'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -100,13 +100,14 @@ function Shell() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
             <Route path="/admin/users" element={<RequireAuth adminOnly><AdminUsersPage /></RequireAuth>} />
+            <Route path="/top-trades" element={<PublicTopTradesPage />} />
             <Route path="/weekly-pick" element={<PublicWeeklyPickPage />} />
             <Route path="/daily-pick"  element={<PublicDailyPickPage />} />
             <Route path="/pre-move"    element={<PublicPreMovePage />} />
             <Route path="/options"     element={<PublicOptionsPage />} />
             <Route path="/intraday"    element={<PublicIntradayPage />} />
-            <Route path="/" element={<Navigate to="/weekly-pick" replace />} />
-            <Route path="*" element={<Navigate to="/weekly-pick" replace />} />
+            <Route path="/" element={<Navigate to="/top-trades" replace />} />
+            <Route path="*" element={<Navigate to="/top-trades" replace />} />
           </Routes>
         ) : (
         <Routes>

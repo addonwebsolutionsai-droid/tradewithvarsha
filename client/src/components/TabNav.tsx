@@ -59,6 +59,7 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   // navigation to /weekly-pick.
   const PUBLIC_MODE = (import.meta as any).env?.VITE_PUBLIC_MODE === 'true'
   const tops = PUBLIC_MODE ? [
+    { to: '/top-trades',  label: 'Top Trades',  icon: <Target size={14} /> },
     { to: '/weekly-pick', label: 'Weekly Pick', icon: <Briefcase size={14} /> },
     { to: '/daily-pick',  label: 'Daily Pick',  icon: <Bot size={14} /> },
     { to: '/pre-move',    label: 'Pre-Move',    icon: <Wind size={14} /> },

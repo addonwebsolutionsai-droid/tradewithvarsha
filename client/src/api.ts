@@ -32,6 +32,7 @@ export const snapshots = {
   options: () => snapshot<{ generatedAt: string; rows: any[] }>('options.json'),
   intraday: () => snapshot<{ generatedAt: string; rows: any[] }>('intraday.json'),
   hitLog: () => snapshot<{ generatedAt: string; entries: any[] }>('hit-log.json'),
+  topTrades: () => snapshot<{ generatedAt: string; filterMinConv: number; totalAvailable: number; rows: any[] }>('top-trades.json'),
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {

@@ -90,6 +90,76 @@ function HitLog(): JSX.Element | null {
   )
 }
 
+// ── TOP TRADES — curated unified stream ─────────────────────────
+export function PublicTopTradesPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-top-trades'], queryFn: () => snapshots.topTrades(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const rows: any[] = data?.rows ?? []
+  return (
+    <div className="space-y-4">
+      <Banner emoji="🎯" title="Top Trades" subtitle={`Curated elite-only stream — conviction ≥ ${data?.filterMinConv ?? 85} · pulled from Weekly + Daily picks · deduped`} ts={data?.generatedAt} />
+      <Legend kind="pick" />
+      <HitLog />
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No setups currently meet the conviction threshold (≥85). The bar will lower naturally during active sessions." />}
+      {!isLoading && !error && rows.length > 0 && (
+        <div className="overflow-x-auto rounded-lg border border-ink-500">
+          <table className="w-full text-[12px] bg-ink-800" style={{ minWidth: 1700 }}>
+            <thead className="bg-ink-700 text-neutral-400">
+              <tr>
+                <th className="text-left px-4 py-3 whitespace-nowrap">Stock</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Source</th>
+                <th className="text-right px-4 py-3 whitespace-nowrap">LTP</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
+                <th className="text-center px-4 py-3 whitespace-nowrap">Conviction</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry</th>
+                <th className="text-center px-2 py-3 whitespace-nowrap text-accent-cyan">Entry by</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 1</th>
+                <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T1 by</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 3</th>
+                <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
+                const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
+                const convCls = r.conviction >= 90 ? 'text-accent-green' : r.conviction >= 85 ? 'text-accent-cyan' : 'text-accent-amber'
+                const sourceColor = r.source === 'WEEKLY' ? '#5dade2' : r.source === 'DAILY' ? '#f5c518' : '#aaa'
+                return (
+                  <tr key={i} className={`border-t border-ink-500 hover:bg-ink-700 font-mono ${r.noBrainer ? 'bg-accent-amber/5' : ''}`}>
+                    <td className="px-4 py-3 whitespace-nowrap"><b className="text-neutral-200">{r.noBrainer && '⭐ '}{r.symbol}</b></td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: `${sourceColor}22`, color: sourceColor, border: `1px solid ${sourceColor}66` }}>{r.source}</span>
+                    </td>
+                    <td className="px-2 py-3 text-right whitespace-nowrap">₹{fmtPx(r.ltp)}</td>
+                    <td className="px-4 py-3 text-center">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                    </td>
+                    <td className={`px-4 py-3 text-center font-bold ${convCls}`}>{r.conviction}</td>
+                    <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</td>
+                    <td className="px-2 py-3 text-center text-accent-cyan text-[11px] whitespace-nowrap">{fmtDate(r.entryDate)}</td>
+                    <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.stopLoss)}</td>
+                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target1)}</td>
+                    <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{fmtDate(r.target1Date)}</td>
+                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
+                    <td className="px-2 py-3 text-right text-accent-green font-bold whitespace-nowrap">₹{fmtPx(r.target3)}</td>
+                    <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{r.shareholdingNote || '—'}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── WEEKLY PICK ─────────────────────────────────────────────────
 export function PublicWeeklyPickPage(): JSX.Element {
   const { data, isLoading, error } = useQuery({
