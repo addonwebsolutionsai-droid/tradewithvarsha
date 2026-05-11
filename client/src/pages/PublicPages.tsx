@@ -130,9 +130,13 @@ export function PublicTopTradesPage(): JSX.Element {
                 const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
                 const convCls = r.conviction >= 90 ? 'text-accent-green' : r.conviction >= 85 ? 'text-accent-cyan' : 'text-accent-amber'
                 const sourceColor = r.source === 'WEEKLY' ? '#5dade2' : r.source === 'DAILY' ? '#f5c518' : '#aaa'
+                const isWave2 = r.lifecycleStatus !== 'SUPERSEDED' && (r.bucket === 'WAVE_2' || (r.reasoning || '').includes('WAVE-2'))
                 return (
                   <tr key={i} className={`border-t border-ink-500 hover:bg-ink-700 font-mono ${r.noBrainer ? 'bg-accent-amber/5' : ''}`}>
-                    <td className="px-4 py-3 whitespace-nowrap"><b className="text-neutral-200">{r.noBrainer && '⭐ '}{r.symbol}</b></td>
+                    <td className="px-4 py-3 whitespace-nowrap">
+                      <b className="text-neutral-200">{r.noBrainer && '⭐ '}{r.symbol}</b>
+                      {isWave2 && <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40" title="Wave-2: stock ran 10–30%, retraced 38–61%, now consolidating tight. Catching leg-2.">🔄 WAVE-2</span>}
+                    </td>
                     <td className="px-4 py-3 text-center">
                       <span className="px-2 py-0.5 rounded text-[10px] font-bold" style={{ background: `${sourceColor}22`, color: sourceColor, border: `1px solid ${sourceColor}66` }}>{r.source}</span>
                     </td>
@@ -225,6 +229,10 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
     <tr className={rowCls}>
       <td className="px-4 py-3 whitespace-nowrap" style={tdStyle}>
         <b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+        {r.bucket === 'WAVE_2' && status === 'ACTIVE' && (
+          <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
+            title="Wave-2: stock ran 10–30%, retraced 38–61%, now consolidating tight. Catching leg-2.">🔄 WAVE-2</span>
+        )}
         <StatusChip r={r} status={status} />
       </td>
       <td className="px-2 py-3 text-right whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.ltp)}</td>

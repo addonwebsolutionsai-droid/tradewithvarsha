@@ -1360,6 +1360,66 @@ app.get('/api/bot/status', (_req, res) => {
   })
 })
 
+// 2026-05-11: admin one-shot — broadcast an ad-hoc Markdown message to all
+// configured Telegram chat IDs. Used for proposal/approval flows where Claude
+// needs to put a question to the user out-of-band. Localhost-only (no auth).
+// 2026-05-11 diag: trace wave-2 conditions on a specific symbol to see
+// exactly which gate is failing. Used when 0 hits across a universe.
+//   GET /api/diag/wave2?symbol=AVL
+app.get('/api/diag/wave2', async (req, res) => {
+  try {
+    const symbol = String(req.query.symbol || 'NIFTY')
+    const candles = await data.getCandles(symbol, '1D', 80)
+    if (candles.length < 60) return res.json({ symbol, fail: `only ${candles.length} candles` })
+    const last = candles[candles.length - 1]
+    // Replicate wave-2 steps with verbose output
+    const earlySlice = candles.slice(-40, -8)
+    const legLow = Math.min(...earlySlice.map(c => c.low))
+    const legHigh = Math.max(...earlySlice.map(c => c.high))
+    const legHighIdx = candles.length - 40 + earlySlice.findIndex(c => c.high === legHigh)
+    const legPct = ((legHigh - legLow) / legLow) * 100
+    const afterHigh = candles.slice(legHighIdx)
+    const pullbackLow = Math.min(...afterHigh.map(c => c.low))
+    const retracePct = ((legHigh - pullbackLow) / (legHigh - legLow)) * 100
+    const pullbackLowIdx = candles.length - afterHigh.length + afterHigh.findIndex(c => c.low === pullbackLow)
+    const pullbackDays = candles.length - 1 - pullbackLowIdx
+    const last5 = candles.slice(-5)
+    const consHigh = Math.max(...last5.map(c => c.high))
+    const consLow = Math.min(...last5.map(c => c.low))
+    const consPct = ((consHigh - consLow) / last.close) * 100
+    const preLegSlice = candles.slice(-65, -25)
+    const preLegVol = preLegSlice.length ? preLegSlice.reduce((s, c) => s + c.volume, 0) / preLegSlice.length : 0
+    const last5Vol = last5.reduce((s, c) => s + c.volume, 0) / 5
+    res.json({
+      symbol,
+      ltp: last.close,
+      step1_legPct: legPct.toFixed(2), gate1_8to35: legPct >= 8 && legPct <= 35,
+      step2_retracePct: retracePct.toFixed(2), gate2_25to70: retracePct >= 25 && retracePct <= 70,
+      step2_pullbackDays: pullbackDays, gate2_1to18: pullbackDays >= 1 && pullbackDays <= 18,
+      step3_consPct: consPct.toFixed(2), gate3_lt8: consPct < 8,
+      step4_volRatio: preLegVol ? (last5Vol / preLegVol).toFixed(2) : 'n/a', gate4_lt110: preLegVol === 0 || last5Vol <= preLegVol * 1.1,
+    })
+  } catch (e: any) { res.status(500).json({ error: String(e?.message || e) }) }
+})
+
+app.post('/api/bot/broadcast', async (req, res) => {
+  if (!botState.bot) return res.status(503).json({ error: 'bot not running' })
+  const message = String(req.body?.message ?? '')
+  if (!message || message.length < 5) return res.status(400).json({ error: 'message required (≥5 chars)' })
+  const tag = String(req.body?.tag ?? 'ad-hoc')
+  const sent: any[] = []
+  for (const cid of config.bots.telegramChatIds) {
+    try {
+      await botState.bot.api.sendMessage(cid, message, { parse_mode: 'Markdown' })
+      recordTgPush(`broadcast-${tag}`, `${message.length} chars`, cid)
+      sent.push({ chatId: cid, ok: true })
+    } catch (e: any) {
+      sent.push({ chatId: cid, ok: false, error: String(e?.message || e) })
+    }
+  }
+  res.json({ ok: true, sent })
+})
+
 // ────────────────────────────────────────────────────────────────
 // Self-diagnose endpoint
 // ────────────────────────────────────────────────────────────────

@@ -85,6 +85,7 @@ function publicWeeklyRows(rows: any[]): any[] {
     horaLord: r.horaLord,
     horaNote: r.horaNote,
     flowNote: r.flowNote,
+    bucket: r.bucket ?? 'FIRST_BASE',     // FIRST_BASE | WAVE_2
   }))
 }
 
@@ -296,6 +297,7 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
         noBrainerBet: e.noBrainerBet,
         shareholdingNote: e.shareholdingNote,
         flowNote: e.reasoning,
+        bucket: (e as any).bucket ?? 'FIRST_BASE',    // FIRST_BASE | WAVE_2
         // Lifecycle metadata for the frontend
         lifecycleStatus: e.status,                 // ACTIVE / SUPERSEDED / T1_HIT / etc
         lifecycleId: e.id,

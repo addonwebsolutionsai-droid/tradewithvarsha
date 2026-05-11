@@ -49,6 +49,7 @@ export interface LifecycleEntry {
   noBrainerBet: boolean
   shareholdingNote: string
   reasoning: string
+  bucket?: 'FIRST_BASE' | 'WAVE_2'
   // Lifecycle
   status: LifecycleStatus
   firstSeenAt: string                 // first time this (symbol|direction) ever appeared
@@ -106,7 +107,7 @@ function pricesMaterialChange(prev: LifecycleEntry, fresh: any): boolean {
   return delta > MATERIAL_PRICE_DELTA
 }
 
-function rowToEntryShape(row: any): Omit<LifecycleEntry, 'id' | 'status' | 'firstSeenAt' | 'lastSeenAt' | 'statusChangedAt' | 'source'> {
+function rowToEntryShape(row: any): Omit<LifecycleEntry, 'id' | 'status' | 'firstSeenAt' | 'lastSeenAt' | 'statusChangedAt' | 'source'> & { bucket?: string } {
   return {
     symbol: row.symbol,
     direction: row.direction,
@@ -123,6 +124,7 @@ function rowToEntryShape(row: any): Omit<LifecycleEntry, 'id' | 'status' | 'firs
     noBrainerBet: !!row.noBrainerBet,
     shareholdingNote: row.shareholdingNote ?? '',
     reasoning: row.flowNote ?? row.reasoning ?? '',
+    bucket: row.bucket,
   }
 }
 

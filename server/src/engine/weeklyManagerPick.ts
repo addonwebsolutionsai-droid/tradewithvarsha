@@ -93,6 +93,8 @@ export interface PickRow {
   shareholdingNote: string        // human-readable summary for dashboard
   // Source
   source: 'WATCHLIST' | 'CURATED'
+  // 2026-05-11: which prerank lane qualified this pick
+  bucket?: 'FIRST_BASE' | 'WAVE_2'
 }
 
 export interface WeeklyPick {
@@ -621,17 +623,19 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
   // FRESHNESS REJECT (hard gate): if |ret5d| > 6% OR |ret20d| > 25%
   // the stock is already extended — drop entirely. No 5-lens scoring
   // happens for already-moved names. THIS IS THE CORE FIX.
-  log.info('PICK', `Pre-ranking ${fullUniverse.length} symbols (universe=${universeKey}) [PRE-BREAKOUT mode]`)
-  type Prerank = { symbol: string; preBreakoutScore: number; ret5d: number; ret20d: number; rank: number; candles: import('../types').Candle[]; avgTurnoverCr: number; reasons: string[] }
+  log.info('PICK', `Pre-ranking ${fullUniverse.length} symbols (universe=${universeKey}) [PRE-BREAKOUT + WAVE-2 dual-lane]`)
+  type Prerank = { symbol: string; preBreakoutScore: number; ret5d: number; ret20d: number; rank: number; candles: import('../types').Candle[]; avgTurnoverCr: number; reasons: string[]; bucket: 'FIRST_BASE' | 'WAVE_2' }
   const prerank: Prerank[] = []
   let pCursor = 0
   const TOP_N = universeKey === 'MARKET_ALL' ? 800
     : universeKey === 'NSE_ALL' ? 500
     : Math.min(250, fullUniverse.length)
   const { NIFTY_500_CORE } = require('../screeners/universe')
+  const { wave2Continuation } = await import('../screeners/preMoveAdvanced')
   const nifty500Set = new Set<string>(NIFTY_500_CORE.map((s: string) => s.toUpperCase()))
   let rejectedExtended = 0
   let rejectedThin = 0
+  let wave2Hits = 0
   await Promise.all(Array.from({ length: 4 }, async () => {
     while (pCursor < fullUniverse.length) {
       const sym = fullUniverse[pCursor++]
@@ -644,18 +648,42 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
         const ref20 = candlesD[candlesD.length - 21]?.close ?? last.close
         const ret5d = ((last.close - ref5) / ref5) * 100
         const ret20d = ((last.close - ref20) / ref20) * 100
-        // ── HARD FRESHNESS REJECT ──
-        // Already extended → drop entirely. We're hunting PRE-breakout, not
-        // chasing. 6% in 5d or 25% in 20d means the move has already started.
+        // Liquidity gates (apply to BOTH lanes)
+        if (last.volume < 1_000) { rejectedThin++; continue }
+        const avgTurnoverCr = candlesD.slice(-60).reduce((s, c) => s + c.close * c.volume, 0) / 60 / 1e7
+        if (avgTurnoverCr < 0.5) { rejectedThin++; continue }
+
+        // ── LANE B: WAVE-2 CONTINUATION ──
+        // For extended names (ret20d > 10%), try the wave-2 pattern. If it
+        // fires, the stock is in re-accumulation after leg-1 → catch leg-2.
+        // This is the path that surfaces stocks like AVL/BHARATWIRE etc.
+        // AFTER they've consolidated, not while chasing the initial run.
+        if (Math.abs(ret20d) > 10) {
+          try {
+            const w2 = wave2Continuation.scan(candlesD, sym)
+            if (w2) {
+              wave2Hits++
+              const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.5 : avgTurnoverCr >= 5 ? 1.2 : 1.0
+              const rank = (50 + w2.score * 3) * visibilityMult
+              prerank.push({
+                symbol: sym, preBreakoutScore: w2.score * 10, ret5d, ret20d, rank,
+                candles: candlesD, avgTurnoverCr,
+                reasons: w2.tags ?? [],
+                bucket: 'WAVE_2',
+              })
+              continue                  // wave-2 candidate found, skip lane A check
+            }
+          } catch { /* fall through to lane A */ }
+        }
+
+        // ── LANE A: FIRST-BASE PRE-BREAKOUT ──
+        // HARD freshness reject — already-extended names that DON'T match
+        // wave-2 pattern (above) are dropped. Hunting fresh first-base only.
         if (Math.abs(ret5d) > 6 || Math.abs(ret20d) > 25) {
           rejectedExtended++
           continue
         }
-        // Liquidity gates (unchanged)
-        if (last.volume < 1_000) { rejectedThin++; continue }
-        const avgTurnoverCr = candlesD.slice(-60).reduce((s, c) => s + c.close * c.volume, 0) / 60 / 1e7
-        if (avgTurnoverCr < 0.5) { rejectedThin++; continue }
-        // ── PRE-BREAKOUT SCORE ──
+        // PRE-BREAKOUT composite
         const last10 = candlesD.slice(-10)
         const last20 = candlesD.slice(-20)
         const r10 = (Math.max(...last10.map(c => c.high)) - Math.min(...last10.map(c => c.low))) / last.close
@@ -664,39 +692,31 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
         const v60 = candlesD.slice(-61, -1).reduce((s, c) => s + c.volume, 0) / 60
         const volRatio5 = v60 > 0 ? v5 / v60 : 1
         const high20 = Math.max(...last20.map(c => c.high))
-        const proximityToHigh = (high20 - last.close) / last.close      // 0 = at high, 0.03 = 3% below
-        // Compute composite — higher = better PRE-breakout candidate
+        const proximityToHigh = (high20 - last.close) / last.close
         let preBreakoutScore = 0
         const reasons: string[] = []
-        // Tight base (last-10 range under 5% = very tight)
         if (r10 < 0.05) { preBreakoutScore += 25; reasons.push(`tight-base ${(r10 * 100).toFixed(1)}%`) }
         else if (r10 < 0.08) { preBreakoutScore += 15; reasons.push(`base ${(r10 * 100).toFixed(1)}%`) }
-        // Consolidation (last-20 range under 12% on quiet name)
         if (r20 < 0.12) { preBreakoutScore += 15; reasons.push(`coiled-20d ${(r20 * 100).toFixed(1)}%`) }
         else if (r20 < 0.18) { preBreakoutScore += 8 }
-        // Volume dry-up (5d avg < 80% of 60d avg = supply drying, Wyckoff)
         if (volRatio5 < 0.8) { preBreakoutScore += 20; reasons.push(`vol-dryup ${volRatio5.toFixed(2)}×`) }
         else if (volRatio5 < 1.0) { preBreakoutScore += 10 }
-        // Proximity to 20d high (within 3% = primed at resistance)
         if (proximityToHigh < 0.03) { preBreakoutScore += 15; reasons.push(`at-20dH (${(proximityToHigh * 100).toFixed(1)}%)`) }
         else if (proximityToHigh < 0.07) { preBreakoutScore += 8 }
-        // Penalize if too far below high (no setup brewing)
         if (proximityToHigh > 0.15) preBreakoutScore -= 10
-        // Penalize extension (even within reject threshold, prefer quieter)
         preBreakoutScore -= Math.min(20, Math.abs(ret5d) * 2)
         preBreakoutScore -= Math.min(15, Math.abs(ret20d) * 0.5)
-        // Visibility multiplier
-        const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.5
-          : avgTurnoverCr >= 5 ? 1.2
-          : 1.0
+        const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.5 : avgTurnoverCr >= 5 ? 1.2 : 1.0
         const rank = Math.max(0, preBreakoutScore) * visibilityMult
-        prerank.push({ symbol: sym, preBreakoutScore, ret5d, ret20d, rank, candles: candlesD, avgTurnoverCr, reasons })
+        prerank.push({ symbol: sym, preBreakoutScore, ret5d, ret20d, rank, candles: candlesD, avgTurnoverCr, reasons, bucket: 'FIRST_BASE' })
       } catch { /* skip */ }
     }
   }))
   prerank.sort((a, b) => b.rank - a.rank)
   const shortlist = prerank.slice(0, TOP_N)
-  log.ok('PICK', `[PRE-BREAKOUT] Shortlist: top ${shortlist.length} (rejected ${rejectedExtended} extended, ${rejectedThin} thin) · top: ${shortlist.slice(0, 5).map(p => `${p.symbol}(${p.reasons[0] ?? 'mixed'})`).join(', ')}`)
+  const firstBaseCount = shortlist.filter(p => p.bucket === 'FIRST_BASE').length
+  const wave2Count = shortlist.filter(p => p.bucket === 'WAVE_2').length
+  log.ok('PICK', `[DUAL-LANE] Shortlist: ${shortlist.length} (FIRST_BASE ${firstBaseCount} + WAVE_2 ${wave2Count}) · rejected ${rejectedExtended} extended, ${rejectedThin} thin · wave-2 hits ${wave2Hits} · top: ${shortlist.slice(0, 5).map(p => `${p.symbol}[${p.bucket}]`).join(', ')}`)
 
   // ── 5-lens scoring on shortlist (with screener cross-check guard) ──
   // 2026-05-03: verify-vs-movers showed 25% SHORT hit rate vs 75% BUY hit
@@ -753,7 +773,15 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
           if (bullVotes >= 3) continue
         }
 
-        curatedCandidates.push(buildPickRow(sym, candlesD, scoring, 'CURATED', today, quote?.price ?? null))
+        const row = buildPickRow(sym, candlesD, scoring, 'CURATED', today, quote?.price ?? null)
+        // 2026-05-11: tag the pick with its prerank bucket so the dashboard
+        // can show FIRST_BASE vs WAVE_2 badge. WAVE_2 picks get a flow note
+        // explaining they're post-pullback continuation candidates.
+        ;(row as any).bucket = cand.bucket
+        if (cand.bucket === 'WAVE_2') {
+          row.flowNote = `🔄 WAVE-2 CONTINUATION · ${cand.reasons.slice(0, 2).join(' · ')}`
+        }
+        curatedCandidates.push(row)
       } catch { /* skip */ }
     }
   }))

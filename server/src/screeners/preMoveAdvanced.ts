@@ -479,6 +479,119 @@ export const rangeExpansionBreakout: Screener = {
   },
 }
 
+/**
+ * Wave-2 Continuation (Wyckoff re-accumulation / Minervini stage-2 second base).
+ *
+ * The pattern: stock runs up 10–30% over ~20 sessions (leg 1) → retraces
+ * 38–61% of that leg over 5–15 sessions → consolidates tight for 5+ sessions
+ * with volume drying up → holds above 20-EMA and above the 50% retrace level
+ * of leg 1. This is where institutional money quietly accumulates BEFORE the
+ * 2nd leg. Most retail traders miss it — they either chased leg 1 and got
+ * stopped, or wait for confirmation and enter after leg 2 is half done.
+ *
+ * 2026-05-11: added per user request. They observed (correctly) that the
+ * strict pre-breakout screener REJECTS already-moved names entirely, missing
+ * the 2nd-leg opportunity. This screener fills that gap.
+ */
+export const wave2Continuation: Screener = {
+  id: 'wave2_continuation',
+  name: 'Wave-2 Continuation',
+  description: 'Stock that ran +10–30%, retraced 38–61%, now in 5d+ tight consolidation above 20-EMA with vol dry-up',
+  timeframeLabel: '5–15 sessions',
+  setupKind: 'ACCUMULATION',
+  scan(candles: Candle[], symbol: string): ScreenerResult | null {
+    if (candles.length < 60) return null
+    const latest = last(candles)!
+
+    // ── Step 1: identify Wave 1 (the prior leg up) ──
+    // Look at sessions -40 to -8 (wider window: leg 1 could be ~20 days back
+    // with pullback up to 12 days — total span 30-32 days).
+    const earlySlice = candles.slice(-40, -8)
+    if (earlySlice.length < 15) return null
+    const legLow = Math.min(...earlySlice.map(c => c.low))
+    const legHigh = Math.max(...earlySlice.map(c => c.high))
+    const legHighIdx = candles.length - 40 + earlySlice.findIndex(c => c.high === legHigh)
+    const legPct = ((legHigh - legLow) / legLow) * 100
+    if (legPct < 8 || legPct > 35) return null      // wider: 8-35% leg 1
+
+    // ── Step 2: identify the pullback ──
+    const afterHigh = candles.slice(legHighIdx)
+    const pullbackLow = Math.min(...afterHigh.map(c => c.low))
+    const retracePct = ((legHigh - pullbackLow) / (legHigh - legLow)) * 100
+    if (retracePct < 25 || retracePct > 70) return null   // wider Fib zone
+    const pullbackLowIdx = candles.length - afterHigh.length + afterHigh.findIndex(c => c.low === pullbackLow)
+    const pullbackDays = candles.length - 1 - pullbackLowIdx
+    if (pullbackDays < 1 || pullbackDays > 18) return null
+
+    // ── Step 3: consolidation tightness over last 5 sessions ──
+    const last5 = candles.slice(-5)
+    const consHigh = Math.max(...last5.map(c => c.high))
+    const consLow = Math.min(...last5.map(c => c.low))
+    const consPct = ((consHigh - consLow) / latest.close) * 100
+    if (consPct > 8) return null     // widened from 6% to 8%
+
+    // ── Step 4: volume dry-up during consolidation ──
+    const preLegSlice = candles.slice(-65, -25)
+    const preLegVol = preLegSlice.length ? avg(preLegSlice.map(c => c.volume)) : 0
+    const last5Vol = avg(last5.map(c => c.volume))
+    // Allow volume up to 110% of pre-leg (not increasing on consolidation is enough)
+    if (preLegVol > 0 && last5Vol > preLegVol * 1.1) return null
+
+    // ── Step 5: hold above 20-EMA (key support during consolidation) ──
+    const e20Series = ema(candles, 20)
+    const e20 = e20Series[e20Series.length - 1]
+    if (latest.close < e20 * 0.98) return null    // allow 2% slop
+
+    // ── Step 6: RSI cooling but constructive (35-72 wider) ──
+    const rsi = lastRSI(candles, 14) ?? 50
+    if (rsi < 35 || rsi > 72) return null
+
+    const fib50 = legHigh - (legHigh - legLow) * 0.5
+
+    // Trade plan: T1/T2/T3 from CURRENT close (not from retest), aim for leg-2
+    // of similar size to leg 1. SL just below pullback low.
+    const atr = lastATR(candles) ?? latest.close * 0.02
+    const slPrice = +Math.min(pullbackLow * 0.99, latest.close - atr * 1.5).toFixed(2)
+    const t1Price = +(latest.close + (legHigh - legLow) * 0.6).toFixed(2)     // 60% of leg-1 size
+    const t2Price = +(latest.close + (legHigh - legLow) * 1.0).toFixed(2)     // 100% (measured move)
+    const t3Price = +(latest.close + (legHigh - legLow) * 1.5).toFixed(2)     // 150% (extended)
+
+    // Score on tightness, retrace quality, vol dry-up
+    let score = 6.5
+    if (consPct < 4) score += 1.0
+    if (retracePct >= 38 && retracePct <= 50) score += 0.8    // ideal Fib zone
+    if (preLegVol > 0 && last5Vol < preLegVol * 0.7) score += 0.7    // strong dry-up
+    if (rsi > 45 && rsi < 60) score += 0.5
+
+    const tier: 'A' | 'B' | 'C' = score >= 8.5 ? 'A' : score >= 7.5 ? 'B' : 'C'
+
+    return {
+      symbol, price: +latest.close.toFixed(2), change: 0, changePct: 0,
+      score: +score.toFixed(1),
+      tier,
+      direction: 'BULL',
+      reasons: [
+        `Leg-1 +${legPct.toFixed(1)}% completed ${candles.length - 1 - legHighIdx}d ago`,
+        `Retraced ${retracePct.toFixed(0)}% of leg (Fib ${retracePct < 50 ? '38–50' : '50–61'} zone)`,
+        `Consolidating ${consPct.toFixed(1)}% range over last 5 sessions`,
+        `Vol dry-up: 5d avg ${(last5Vol / 1e3).toFixed(0)}k vs pre-leg ${(preLegVol / 1e3).toFixed(0)}k (${preLegVol ? (last5Vol / preLegVol * 100).toFixed(0) : '?'}%)`,
+        `Holding above 20-EMA (₹${e20.toFixed(2)}) and 50% retrace (₹${fib50.toFixed(2)})`,
+      ],
+      tags: ['Wave-2', `Leg+${legPct.toFixed(0)}%`, `Pullback ${retracePct.toFixed(0)}%`, `Vol ${preLegVol ? Math.round(last5Vol / preLegVol * 100) : '?'}%`],
+      expectedMovePct: ((t2Price - latest.close) / latest.close) * 100,
+      timeframeLabel: this.timeframeLabel,
+      suggestedEntry: +latest.close.toFixed(2),
+      suggestedSL: slPrice,
+      suggestedTarget: t2Price,
+      target1: t1Price,
+      target2: t2Price,
+      target3: t3Price,
+      detectedAt: Date.now(),
+      setupKind: this.setupKind,
+    }
+  },
+}
+
 export const ADVANCED_PREMOVE_SCREENERS: Screener[] = [
   vcpSetup,
   insideDayCluster,
@@ -488,4 +601,5 @@ export const ADVANCED_PREMOVE_SCREENERS: Screener[] = [
   rsiPositiveReversal,
   distributionTop,
   rangeExpansionBreakout,
+  wave2Continuation,
 ]
