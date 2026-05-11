@@ -603,25 +603,35 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
     ? await resolveUniverse('NIFTY50').then(async n50 => [...n50, ...await resolveUniverse('NEXT50')])
     : await resolveUniverse(universeKey)
 
-  // ── Pre-rank pass (cheap, daily-only) ──
-  log.info('PICK', `Pre-ranking ${fullUniverse.length} symbols (universe=${universeKey})`)
-  type Prerank = { symbol: string; mom5: number; volBurst: number; rank: number; candles: import('../types').Candle[] }
+  // ── Pre-rank pass — PRE-BREAKOUT detection, NOT momentum chasing ──
+  // 2026-05-10 OVERHAUL: prior prerank `|mom5| × 0.6 + volBurst × 4` was
+  // a momentum CHASER — it rewarded stocks already up +20% in 5 sessions.
+  // User feedback: "Bharatwire / Gayaproj / AVL / Megastar / Vijaya all
+  // ran 10–20% before you flagged them. The aim is to capture BEFORE the
+  // move." Math.abs(mom5) literally surfaces extended stocks first.
+  //
+  // New prerank composite (higher = better pre-breakout candidate):
+  //   1. TIGHTNESS (last-10-bar range / price) — lower = tighter base
+  //   2. CONSOLIDATION (last-20-bar range / EMA50) — lower = quieter
+  //   3. VOLUME DRY-UP (last-5d vol / 60d avg) — < 1.0 = Wyckoff no-supply
+  //   4. RSI 40–60 (coiled, not extended either direction)
+  //   5. PROXIMITY to 20d high (within 3% = primed for breakout)
+  //   6. ADX < 22 (low trend strength = consolidation, NOT trending move)
+  //
+  // FRESHNESS REJECT (hard gate): if |ret5d| > 6% OR |ret20d| > 25%
+  // the stock is already extended — drop entirely. No 5-lens scoring
+  // happens for already-moved names. THIS IS THE CORE FIX.
+  log.info('PICK', `Pre-ranking ${fullUniverse.length} symbols (universe=${universeKey}) [PRE-BREAKOUT mode]`)
+  type Prerank = { symbol: string; preBreakoutScore: number; ret5d: number; ret20d: number; rank: number; candles: import('../types').Candle[]; avgTurnoverCr: number; reasons: string[] }
   const prerank: Prerank[] = []
   let pCursor = 0
-  // Bump shortlist cap with universe size: 250 for curated, 500 for NSE_ALL,
-  // 800 for MARKET_ALL — matches the ~3× bigger universe.
   const TOP_N = universeKey === 'MARKET_ALL' ? 800
     : universeKey === 'NSE_ALL' ? 500
     : Math.min(250, fullUniverse.length)
-  // 2026-05-04: bias prerank to NIFTY 500 (institutional-grade names) — user
-  // feedback was "none of these are well-known companies, no investment
-  // discussion anywhere." Pure-momentum ranking surfaces obscure micro-caps
-  // (CELLA, NATHUEC etc.) over recognised mid-caps. Solution: 2× rank
-  // multiplier for NIFTY-500 members so they dominate the top-800 shortlist
-  // unless a microcap is genuinely exploding. ALSO require ₹2Cr+ daily
-  // turnover — that's the floor for institutional liquidity / executable size.
   const { NIFTY_500_CORE } = require('../screeners/universe')
   const nifty500Set = new Set<string>(NIFTY_500_CORE.map((s: string) => s.toUpperCase()))
+  let rejectedExtended = 0
+  let rejectedThin = 0
   await Promise.all(Array.from({ length: 4 }, async () => {
     while (pCursor < fullUniverse.length) {
       const sym = fullUniverse[pCursor++]
@@ -631,31 +641,62 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
         if (candlesD.length < 60) continue
         const last = candlesD[candlesD.length - 1]
         const ref5 = candlesD[candlesD.length - 6]?.close ?? last.close
-        const mom5 = ((last.close - ref5) / ref5) * 100
-        const v60 = candlesD.slice(-61, -1).reduce((s, c) => s + c.volume, 0) / 60
-        const volBurst = v60 > 0 ? last.volume / v60 : 0
-        // Avg daily turnover (close × volume) over last 60 sessions — this is
-        // what institutional desks look at: ₹2 Cr+ means the position can be
-        // executed without moving the price. Below ₹50L is operator territory.
+        const ref20 = candlesD[candlesD.length - 21]?.close ?? last.close
+        const ret5d = ((last.close - ref5) / ref5) * 100
+        const ret20d = ((last.close - ref20) / ref20) * 100
+        // ── HARD FRESHNESS REJECT ──
+        // Already extended → drop entirely. We're hunting PRE-breakout, not
+        // chasing. 6% in 5d or 25% in 20d means the move has already started.
+        if (Math.abs(ret5d) > 6 || Math.abs(ret20d) > 25) {
+          rejectedExtended++
+          continue
+        }
+        // Liquidity gates (unchanged)
+        if (last.volume < 1_000) { rejectedThin++; continue }
         const avgTurnoverCr = candlesD.slice(-60).reduce((s, c) => s + c.close * c.volume, 0) / 60 / 1e7
-        if (last.volume < 1_000) continue
-        if (avgTurnoverCr < 0.5) continue              // ₹50L floor (was none)
-        const baseRank = Math.abs(mom5) * 0.6 + volBurst * 4
-        // 2× rank for NIFTY-500 names, 1.3× for liquid (₹5Cr+ turnover),
-        // 1× for everyone else. Microcap with massive momentum still ranks
-        // but has to clear a higher bar than a NIFTY-500 name with moderate
-        // momentum.
-        const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 2.0
-          : avgTurnoverCr >= 5 ? 1.3
+        if (avgTurnoverCr < 0.5) { rejectedThin++; continue }
+        // ── PRE-BREAKOUT SCORE ──
+        const last10 = candlesD.slice(-10)
+        const last20 = candlesD.slice(-20)
+        const r10 = (Math.max(...last10.map(c => c.high)) - Math.min(...last10.map(c => c.low))) / last.close
+        const r20 = (Math.max(...last20.map(c => c.high)) - Math.min(...last20.map(c => c.low))) / last.close
+        const v5 = last10.slice(-5).reduce((s, c) => s + c.volume, 0) / 5
+        const v60 = candlesD.slice(-61, -1).reduce((s, c) => s + c.volume, 0) / 60
+        const volRatio5 = v60 > 0 ? v5 / v60 : 1
+        const high20 = Math.max(...last20.map(c => c.high))
+        const proximityToHigh = (high20 - last.close) / last.close      // 0 = at high, 0.03 = 3% below
+        // Compute composite — higher = better PRE-breakout candidate
+        let preBreakoutScore = 0
+        const reasons: string[] = []
+        // Tight base (last-10 range under 5% = very tight)
+        if (r10 < 0.05) { preBreakoutScore += 25; reasons.push(`tight-base ${(r10 * 100).toFixed(1)}%`) }
+        else if (r10 < 0.08) { preBreakoutScore += 15; reasons.push(`base ${(r10 * 100).toFixed(1)}%`) }
+        // Consolidation (last-20 range under 12% on quiet name)
+        if (r20 < 0.12) { preBreakoutScore += 15; reasons.push(`coiled-20d ${(r20 * 100).toFixed(1)}%`) }
+        else if (r20 < 0.18) { preBreakoutScore += 8 }
+        // Volume dry-up (5d avg < 80% of 60d avg = supply drying, Wyckoff)
+        if (volRatio5 < 0.8) { preBreakoutScore += 20; reasons.push(`vol-dryup ${volRatio5.toFixed(2)}×`) }
+        else if (volRatio5 < 1.0) { preBreakoutScore += 10 }
+        // Proximity to 20d high (within 3% = primed at resistance)
+        if (proximityToHigh < 0.03) { preBreakoutScore += 15; reasons.push(`at-20dH (${(proximityToHigh * 100).toFixed(1)}%)`) }
+        else if (proximityToHigh < 0.07) { preBreakoutScore += 8 }
+        // Penalize if too far below high (no setup brewing)
+        if (proximityToHigh > 0.15) preBreakoutScore -= 10
+        // Penalize extension (even within reject threshold, prefer quieter)
+        preBreakoutScore -= Math.min(20, Math.abs(ret5d) * 2)
+        preBreakoutScore -= Math.min(15, Math.abs(ret20d) * 0.5)
+        // Visibility multiplier
+        const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.5
+          : avgTurnoverCr >= 5 ? 1.2
           : 1.0
-        const rank = baseRank * visibilityMult
-        prerank.push({ symbol: sym, mom5, volBurst, rank, candles: candlesD, avgTurnoverCr } as any)
+        const rank = Math.max(0, preBreakoutScore) * visibilityMult
+        prerank.push({ symbol: sym, preBreakoutScore, ret5d, ret20d, rank, candles: candlesD, avgTurnoverCr, reasons })
       } catch { /* skip */ }
     }
   }))
   prerank.sort((a, b) => b.rank - a.rank)
   const shortlist = prerank.slice(0, TOP_N)
-  log.ok('PICK', `Shortlist: top ${shortlist.length} by 5d-mom × vol-burst (e.g. ${shortlist.slice(0, 5).map(p => `${p.symbol}+${p.mom5.toFixed(1)}%`).join(', ')})`)
+  log.ok('PICK', `[PRE-BREAKOUT] Shortlist: top ${shortlist.length} (rejected ${rejectedExtended} extended, ${rejectedThin} thin) · top: ${shortlist.slice(0, 5).map(p => `${p.symbol}(${p.reasons[0] ?? 'mixed'})`).join(', ')}`)
 
   // ── 5-lens scoring on shortlist (with screener cross-check guard) ──
   // 2026-05-03: verify-vs-movers showed 25% SHORT hit rate vs 75% BUY hit
