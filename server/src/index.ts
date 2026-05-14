@@ -181,6 +181,35 @@ async function publishSnapshots(): Promise<void> {
 }
 cron.schedule('*/30 * * * *', publishSnapshots, { timezone: 'Asia/Kolkata' })
 
+/**
+ * 2026-05-14: auto-push fresh snapshots to GitHub so the Vercel deploy
+ * sees them. Runs at minute 2 + 32 of every hour (offset 2 min after
+ * publishSnapshots cron so files are written first). macOS crontab is
+ * sandbox-blocked, so we drive git directly from Node.
+ */
+import { exec as _exec } from 'child_process'
+import { promisify as _prom } from 'util'
+const _execP = _prom(_exec)
+async function pushSnapshotsToGitHub(): Promise<void> {
+  try {
+    const cwd = path.resolve(__dirname, '../..')      // repo root
+    // Stage just the public-snapshots dir
+    await _execP('/usr/bin/git add server/data/public-snapshots', { cwd })
+    // Check if there are any staged changes (exit code 1 = changes, 0 = none)
+    try {
+      await _execP('/usr/bin/git diff --cached --quiet', { cwd })
+      return                                          // no changes, no-op
+    } catch { /* changes present, proceed */ }
+    const stamp = new Date().toLocaleString('en-IN', { timeZone: 'Asia/Kolkata', hour12: false })
+    await _execP(`/usr/bin/git commit -m "snapshot: ${stamp}" -q`, { cwd })
+    await _execP('/usr/bin/git push origin main -q', { cwd })
+    log.ok('SNAP-PUSH', `Pushed snapshot to GitHub at ${stamp} IST`)
+  } catch (e) {
+    log.warn('SNAP-PUSH', `${(e as Error).message?.slice(0, 200)}`)
+  }
+}
+cron.schedule('2,32 * * * *', pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
+
 // 2026-05-06: cors with credentials so the dashboard can carry the auth
 // cookie cross-origin during local dev (vite :3000 → api :4000).
 app.use(cors({
