@@ -169,6 +169,34 @@ export async function logSignal(signal: Signal, regime?: string): Promise<void> 
   dailyLogDedup.add(key)
   await ensureFiles()
   rememberSignal(signal)
+
+  // 2026-05-11: register every signal in the lifecycle store as PENDING
+  // so the periodic LTP checker tracks entry/SL/target. Maps Signal.type
+  // → lifecycle source enum. INTRADAY scalps skip lifecycle (too noisy,
+  // would explode the store). Best-effort, never blocks the CSV log.
+  try {
+    if (signal.type !== 'INTRADAY' && signal.entry && signal.stopLoss && signal.target1) {
+      const sourceMap: Record<string, string> = {
+        OPTIONS: 'OPTIONS', SWING: 'WEEKLY', POSITIONAL: 'WEEKLY',
+        FUTURES: 'OPTIONS', COMMODITY: 'OPTIONS',
+      }
+      const lifeSrc = (sourceMap[signal.type] ?? 'INTRADAY') as any
+      const { appendSignal } = await import('./signalLifecycle')
+      await appendSignal({
+        source: lifeSrc,
+        symbol: signal.instrument.split(' ')[0],
+        direction: signal.direction === 'SELL' ? 'SHORT' : (signal.direction as 'BUY' | 'SHORT'),
+        ltp: signal.entry,
+        entryPrice: signal.entry,
+        stopLoss: signal.stopLoss,
+        target1: signal.target1,
+        target2: signal.target2 ?? signal.target1,
+        target3: (signal as any).target3 ?? signal.target2 ?? signal.target1,
+        conviction: (signal as any).convictionScore ?? signal.score * 10,
+        reasoning: (signal.reasons ?? []).slice(0, 2).join(' · '),
+      })
+    }
+  } catch { /* swallow — lifecycle is best-effort */ }
   const m = signal.meta ?? {}
   const reasons = (signal.reasons ?? []).slice(0, 4).join(' | ')
   const conviction = (signal as any).convictionScore ?? ''

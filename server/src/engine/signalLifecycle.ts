@@ -26,12 +26,28 @@ const LIFECYCLE_FILE = path.join(DATA_DIR, 'signal-lifecycle.json')
 const HORIZON_DAYS = 28              // weekly picks: 6-week horizon, 28 trading days
 const MATERIAL_PRICE_DELTA = 0.05    // re-stamp prices when entry/SL/T move > 5%
 
+/**
+ * State machine for every tracked signal across the system.
+ *
+ *   PENDING     ← signal generated, waiting for LTP to reach entry range
+ *      ↓
+ *   ACTIVE      ← LTP entered [entryLow, entryHigh] (or ±0.5% of single entry)
+ *      ↓
+ *   T1_HIT / T2_HIT / T3_HIT  ← target reached (preserved permanently)
+ *   SL_HIT                    ← stop-loss reached
+ *   EXPIRED                   ← entry window passed without trigger (PENDING)
+ *                              OR 28+ days in ACTIVE without target
+ *   SUPERSEDED                ← removed from a fresh pick run (with reason)
+ *   INVALIDATED               ← pattern broke before entry triggered
+ */
 export type LifecycleStatus =
-  | 'ACTIVE' | 'SUPERSEDED' | 'T1_HIT' | 'T2_HIT' | 'T3_HIT' | 'SL_HIT' | 'EXPIRED' | 'INVALIDATED'
+  | 'PENDING' | 'ACTIVE' | 'SUPERSEDED'
+  | 'T1_HIT' | 'T2_HIT' | 'T3_HIT' | 'SL_HIT'
+  | 'EXPIRED' | 'INVALIDATED'
 
 export interface LifecycleEntry {
   id: string                          // uuid v4
-  source: 'WEEKLY' | 'DAILY' | 'MASTER'
+  source: 'WEEKLY' | 'DAILY' | 'MASTER' | 'OPTIONS' | 'INTRADAY' | 'TURTLE' | 'FIB' | 'HARMONIC' | 'PREMOVE'
   symbol: string
   direction: 'BUY' | 'SHORT'
   // Trade plan (snapshot when status was last ACTIVE)
@@ -58,6 +74,15 @@ export interface LifecycleEntry {
   statusReason?: string
   hitPrice?: number
   hitAt?: string
+  // 2026-05-11: price watermarks observed since signal generation. Used by
+  // the periodic checker to detect SL_HIT / T*_HIT without re-fetching full
+  // historical candles each cycle.
+  highSinceGenerated?: number
+  lowSinceGenerated?: number
+  lastSeenLtp?: number
+  lastLtpAt?: string                    // last time we read live LTP for this entry
+  // Time tracking for accuracy reporting
+  triggeredAt?: string                  // when status went PENDING → ACTIVE
 }
 
 export interface LifecycleStore {
@@ -169,16 +194,23 @@ export async function mergeWeeklyPickRun(rows: any[], source: 'WEEKLY' | 'DAILY'
       if (material) report.rePriced.push(existing)
       else report.refreshed.push(existing)
     } else {
-      // New active entry
+      // 2026-05-11: new entries start in PENDING. The periodic LTP checker
+      // transitions PENDING → ACTIVE when price reaches the entry zone.
+      // Pre-existing ACTIVE entries from before this change are preserved.
       const id = crypto.randomUUID()
+      const shape = rowToEntryShape(row)
       const entry: LifecycleEntry = {
         id,
         source,
-        ...rowToEntryShape(row),
-        status: 'ACTIVE',
+        ...shape,
+        status: 'PENDING',
         firstSeenAt: now,
         lastSeenAt: now,
         statusChangedAt: now,
+        lastSeenLtp: shape.ltp,
+        lastLtpAt: now,
+        highSinceGenerated: shape.ltp,
+        lowSinceGenerated: shape.ltp,
       }
       store.entries[id] = entry
       seenIds.add(id)
@@ -242,6 +274,282 @@ export async function markHit(id: string, status: 'T1_HIT' | 'T2_HIT' | 'T3_HIT'
   if (reason) e.statusReason = reason
   await saveStore(store)
   log.ok('LIFECYCLE', `${e.symbol} ${e.direction} → ${status}${hitPrice ? ` @ ₹${hitPrice}` : ''}`)
+}
+
+/**
+ * Generic single-signal append — used by sources that emit one signal at a
+ * time (turtle soup, fib-lrc, harmonic, options/intraday tick). The signal
+ * starts in PENDING, transitions to ACTIVE when LTP reaches the entry range.
+ * Idempotent: matching (symbol, direction, source) PENDING/ACTIVE entry
+ * within the last 24h refreshes lastSeen instead of duplicating.
+ */
+export async function appendSignal(input: {
+  source: LifecycleEntry['source']
+  symbol: string
+  direction: 'BUY' | 'SHORT'
+  ltp: number
+  entryPrice: number
+  entryPriceLow?: number
+  entryPriceHigh?: number
+  stopLoss: number
+  target1: number; target1Date?: string
+  target2: number; target2Date?: string
+  target3?: number; target3Date?: string
+  conviction?: number                        // 0-100; fallback to 50
+  shareholdingNote?: string
+  reasoning?: string
+  bucket?: 'FIRST_BASE' | 'WAVE_2'
+}): Promise<LifecycleEntry> {
+  const store = await loadStore()
+  const now = new Date().toISOString()
+  const dayAgo = Date.now() - 24 * 3600_000
+  // Find an open (PENDING or ACTIVE) match within last 24h to dedupe
+  for (const e of Object.values(store.entries)) {
+    if (e.source !== input.source) continue
+    if (e.symbol !== input.symbol) continue
+    if (e.direction !== input.direction) continue
+    if (e.status !== 'PENDING' && e.status !== 'ACTIVE') continue
+    if (new Date(e.firstSeenAt).getTime() < dayAgo) continue
+    // Refresh lastSeen + ltp; do NOT change plan (entry/SL/target preserve)
+    e.lastSeenAt = now
+    e.lastSeenLtp = input.ltp
+    e.lastLtpAt = now
+    await saveStore(store)
+    return e
+  }
+  // New entry — start PENDING
+  const id = crypto.randomUUID()
+  const entry: LifecycleEntry = {
+    id,
+    source: input.source,
+    symbol: input.symbol,
+    direction: input.direction,
+    ltp: input.ltp,
+    entryPrice: input.entryPrice,
+    entryPriceLow: input.entryPriceLow ?? input.entryPrice,
+    entryPriceHigh: input.entryPriceHigh ?? input.entryPrice,
+    entryDate: '',
+    stopLoss: input.stopLoss,
+    target1: input.target1, target1Date: input.target1Date ?? '',
+    target2: input.target2, target2Date: input.target2Date ?? '',
+    target3: input.target3 ?? input.target2, target3Date: input.target3Date ?? '',
+    conviction: input.conviction ?? 50,
+    noBrainerBet: false,
+    shareholdingNote: input.shareholdingNote ?? '',
+    reasoning: input.reasoning ?? '',
+    bucket: input.bucket,
+    status: 'PENDING',
+    firstSeenAt: now,
+    lastSeenAt: now,
+    statusChangedAt: now,
+    lastSeenLtp: input.ltp,
+    lastLtpAt: now,
+    highSinceGenerated: input.ltp,
+    lowSinceGenerated: input.ltp,
+  }
+  store.entries[id] = entry
+  await saveStore(store)
+  return entry
+}
+
+/**
+ * Periodic checker — given current LTP for each tracked symbol, walks all
+ * PENDING and ACTIVE entries and transitions states based on:
+ *
+ *   PENDING + LTP in entry range  →  ACTIVE  (triggeredAt stamped)
+ *   PENDING + entryDate passed    →  EXPIRED (with reason)
+ *   ACTIVE  + LTP touched SL      →  SL_HIT
+ *   ACTIVE  + LTP touched T1/T2/T3 →  T*_HIT (highest target hit wins)
+ *   ACTIVE  + 28+ days no target  →  EXPIRED
+ *
+ * Returns transitions for Telegram dispatch.
+ */
+export interface Transition {
+  entry: LifecycleEntry
+  from: LifecycleStatus
+  to: LifecycleStatus
+  hitPrice?: number
+}
+
+export async function checkTransitions(ltps: Map<string, number>): Promise<Transition[]> {
+  const store = await loadStore()
+  const now = new Date().toISOString()
+  const now28 = Date.now() - 28 * 86_400_000
+  const transitions: Transition[] = []
+
+  for (const e of Object.values(store.entries)) {
+    if (e.status !== 'PENDING' && e.status !== 'ACTIVE') continue
+    const ltp = ltps.get(e.symbol)
+    if (ltp == null || !Number.isFinite(ltp)) continue
+    // Update watermarks
+    e.lastSeenLtp = ltp
+    e.lastLtpAt = now
+    if (e.highSinceGenerated == null || ltp > e.highSinceGenerated) e.highSinceGenerated = ltp
+    if (e.lowSinceGenerated == null || ltp < e.lowSinceGenerated) e.lowSinceGenerated = ltp
+
+    // ── PENDING → ACTIVE / EXPIRED ──
+    if (e.status === 'PENDING') {
+      // Entry zone: explicit range, or ±0.5% around single entry
+      const zoneLow = Math.min(e.entryPriceLow, e.entryPrice * 0.995)
+      const zoneHigh = Math.max(e.entryPriceHigh, e.entryPrice * 1.005)
+      const inZone = ltp >= zoneLow && ltp <= zoneHigh
+      if (inZone) {
+        const from = e.status
+        e.status = 'ACTIVE'
+        e.statusChangedAt = now
+        e.triggeredAt = now
+        transitions.push({ entry: e, from, to: 'ACTIVE', hitPrice: ltp })
+        continue
+      }
+      // Stale PENDING — generated more than 5 days ago without trigger
+      if (new Date(e.firstSeenAt).getTime() < Date.now() - 5 * 86_400_000) {
+        const from = e.status
+        e.status = 'EXPIRED'
+        e.statusChangedAt = now
+        e.statusReason = 'Entry window passed without LTP reaching the entry zone'
+        transitions.push({ entry: e, from, to: 'EXPIRED' })
+        continue
+      }
+    }
+
+    // ── ACTIVE → terminal states ──
+    if (e.status === 'ACTIVE') {
+      const isBuy = e.direction === 'BUY'
+      // SL check first (failure-first ordering)
+      const slHit = isBuy ? ltp <= e.stopLoss : ltp >= e.stopLoss
+      if (slHit) {
+        const from = e.status
+        e.status = 'SL_HIT'
+        e.statusChangedAt = now
+        e.hitPrice = ltp
+        e.hitAt = now
+        e.statusReason = `LTP ${ltp} crossed SL ${e.stopLoss}`
+        transitions.push({ entry: e, from, to: 'SL_HIT', hitPrice: ltp })
+        continue
+      }
+      // Target detection — highest-numbered target reached wins
+      let hitTarget: 'T1_HIT' | 'T2_HIT' | 'T3_HIT' | null = null
+      if (isBuy) {
+        if (e.target3 && ltp >= e.target3) hitTarget = 'T3_HIT'
+        else if (e.target2 && ltp >= e.target2) hitTarget = 'T2_HIT'
+        else if (e.target1 && ltp >= e.target1) hitTarget = 'T1_HIT'
+      } else {
+        if (e.target3 && ltp <= e.target3) hitTarget = 'T3_HIT'
+        else if (e.target2 && ltp <= e.target2) hitTarget = 'T2_HIT'
+        else if (e.target1 && ltp <= e.target1) hitTarget = 'T1_HIT'
+      }
+      if (hitTarget) {
+        const from = e.status
+        e.status = hitTarget
+        e.statusChangedAt = now
+        e.hitPrice = ltp
+        e.hitAt = now
+        transitions.push({ entry: e, from, to: hitTarget, hitPrice: ltp })
+        continue
+      }
+      // Timeout: 28 days in ACTIVE without target
+      if (e.triggeredAt && new Date(e.triggeredAt).getTime() < now28) {
+        const from = e.status
+        e.status = 'EXPIRED'
+        e.statusChangedAt = now
+        e.statusReason = '28-day target window closed without T1/T2/T3'
+        transitions.push({ entry: e, from, to: 'EXPIRED' })
+      }
+    }
+  }
+  if (transitions.length) await saveStore(store)
+  return transitions
+}
+
+/**
+ * Accuracy report across all entries (optionally filtered by source).
+ * Computes: triggered rate (PENDING→ACTIVE), win rate (any target),
+ * SL rate, avg R-multiple, breakdown by source + by conviction tier.
+ */
+export interface AccuracyReport {
+  source: string                        // 'ALL' or specific source
+  daysBack: number
+  total: number
+  byStatus: Record<string, number>
+  triggeredRate: number                 // % of PENDING that went ACTIVE
+  winRate: number                       // % of ACTIVE that hit any target
+  slRate: number                        // % of ACTIVE that hit SL
+  avgRMultiple: number                  // avg gain / planned risk
+  bySource: Record<string, { total: number; wins: number; sl: number; winRate: number }>
+  byConvictionTier: Record<string, { total: number; wins: number; winRate: number }>
+}
+
+export async function buildAccuracyReport(opts: { source?: string; daysBack?: number } = {}): Promise<AccuracyReport> {
+  const daysBack = opts.daysBack ?? 30
+  const source = opts.source ?? 'ALL'
+  const cutoff = Date.now() - daysBack * 86_400_000
+  const store = await loadStore()
+  const inWindow = Object.values(store.entries).filter(e => {
+    if (source !== 'ALL' && e.source !== source) return false
+    return new Date(e.firstSeenAt).getTime() >= cutoff
+  })
+  const byStatus: Record<string, number> = {}
+  let triggered = 0, totalPending = 0, wins = 0, sl = 0, activeOrTerminal = 0
+  let rSum = 0, rCount = 0
+  const bySource: AccuracyReport['bySource'] = {}
+  const tierBucket = (c: number): string => c >= 80 ? '80+' : c >= 60 ? '60-79' : c >= 40 ? '40-59' : '<40'
+  const byTier: AccuracyReport['byConvictionTier'] = {}
+
+  for (const e of inWindow) {
+    byStatus[e.status] = (byStatus[e.status] ?? 0) + 1
+    const everPending = true                // every entry starts pending
+    if (everPending) totalPending++
+    const isActiveOrTerminal = e.status !== 'PENDING' && e.status !== 'SUPERSEDED' && e.status !== 'EXPIRED' && e.status !== 'INVALIDATED'
+                                || e.status === 'EXPIRED' && e.triggeredAt
+    if (e.status !== 'PENDING') {
+      // Was triggered if ever became ACTIVE; we can prove that via triggeredAt
+      if (e.triggeredAt || e.status === 'ACTIVE' || ['T1_HIT','T2_HIT','T3_HIT','SL_HIT'].includes(e.status)) triggered++
+    }
+    const win = e.status === 'T1_HIT' || e.status === 'T2_HIT' || e.status === 'T3_HIT'
+    const loss = e.status === 'SL_HIT'
+    if (win || loss || e.status === 'ACTIVE') activeOrTerminal++
+    if (win) wins++
+    if (loss) sl++
+    // R-multiple — only for terminal outcomes with known hit price
+    if ((win || loss) && e.hitPrice != null && e.entryPrice && e.stopLoss) {
+      const planRisk = Math.abs(e.entryPrice - e.stopLoss)
+      if (planRisk > 0) {
+        const actualMove = e.direction === 'BUY' ? e.hitPrice - e.entryPrice : e.entryPrice - e.hitPrice
+        const r = actualMove / planRisk
+        rSum += r; rCount++
+      }
+    }
+    // By source
+    const srcKey = e.source
+    if (!bySource[srcKey]) bySource[srcKey] = { total: 0, wins: 0, sl: 0, winRate: 0 }
+    bySource[srcKey].total++
+    if (win) bySource[srcKey].wins++
+    if (loss) bySource[srcKey].sl++
+    // By tier
+    const tier = tierBucket(e.conviction)
+    if (!byTier[tier]) byTier[tier] = { total: 0, wins: 0, winRate: 0 }
+    byTier[tier].total++
+    if (win) byTier[tier].wins++
+  }
+  for (const k of Object.keys(bySource)) {
+    const s = bySource[k]
+    const tradedCount = s.wins + s.sl
+    s.winRate = tradedCount ? +(s.wins / tradedCount * 100).toFixed(1) : 0
+  }
+  for (const k of Object.keys(byTier)) {
+    const t = byTier[k]
+    t.winRate = t.total ? +(t.wins / t.total * 100).toFixed(1) : 0
+  }
+  return {
+    source, daysBack,
+    total: inWindow.length,
+    byStatus,
+    triggeredRate: totalPending ? +(triggered / totalPending * 100).toFixed(1) : 0,
+    winRate: activeOrTerminal ? +(wins / Math.max(wins + sl, 1) * 100).toFixed(1) : 0,
+    slRate: activeOrTerminal ? +(sl / Math.max(wins + sl, 1) * 100).toFixed(1) : 0,
+    avgRMultiple: rCount ? +(rSum / rCount).toFixed(2) : 0,
+    bySource, byConvictionTier: byTier,
+  }
 }
 
 /** Read-only fetch of the merged view for a source (used by snapshot publisher). */

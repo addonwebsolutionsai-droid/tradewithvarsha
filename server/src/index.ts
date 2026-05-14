@@ -1410,7 +1410,12 @@ app.post('/api/bot/broadcast', async (req, res) => {
   const sent: any[] = []
   for (const cid of config.bots.telegramChatIds) {
     try {
-      await botState.bot.api.sendMessage(cid, message, { parse_mode: 'Markdown' })
+      // Try Markdown first; fall back to plain text if Telegram parser rejects it.
+      try {
+        await botState.bot.api.sendMessage(cid, message, { parse_mode: 'Markdown' })
+      } catch {
+        await botState.bot.api.sendMessage(cid, message)
+      }
       recordTgPush(`broadcast-${tag}`, `${message.length} chars`, cid)
       sent.push({ chatId: cid, ok: true })
     } catch (e: any) {
@@ -2354,6 +2359,109 @@ async function dispatchLifecycleAlert(ev: LifecycleEvent): Promise<void> {
  * weren't in the previous run) so we don't spam the chat with the same names
  * every 30 min. Caps to top 3 per dispatch.
  */
+// Manual trigger for periodic checker — used to verify transitions
+app.post('/api/lifecycle/check', async (_req, res) => {
+  try { await runLifecycleChecker(); res.json({ ok: true }) }
+  catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
+// ── /api/accuracy — system-wide signal accuracy report ──
+// 2026-05-11: user asked to log every signal at generation, transition to
+// ACTIVE on entry, terminal on target/SL → measure ACCURACY across all
+// sources. This endpoint reads from the signal-lifecycle store.
+//   GET /api/accuracy?source=ALL&days=30
+//   GET /api/accuracy?source=WEEKLY&days=14
+app.get('/api/accuracy', async (req, res) => {
+  try {
+    const source = (req.query.source as string) || 'ALL'
+    const days = Math.max(1, Math.min(180, Number(req.query.days ?? 30)))
+    const { buildAccuracyReport } = await import('./engine/signalLifecycle')
+    res.json(await buildAccuracyReport({ source, daysBack: days }))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
+// ── Periodic state checker — fetches LTP for every PENDING/ACTIVE entry,
+// transitions states, dispatches Telegram for terminal events.
+// Runs every 5 min during market hours, every 30 min off-hours.
+async function runLifecycleChecker(): Promise<void> {
+  try {
+    const { loadStore, checkTransitions } = await import('./engine/signalLifecycle')
+    const store = await loadStore()
+    // Collect unique symbols across PENDING + ACTIVE entries
+    const symbols = new Set<string>()
+    for (const e of Object.values(store.entries)) {
+      if (e.status === 'PENDING' || e.status === 'ACTIVE') symbols.add(e.symbol)
+    }
+    if (symbols.size === 0) return
+    // Fetch live LTPs in parallel (capped concurrency = 6)
+    const ltps = new Map<string, number>()
+    const syms = Array.from(symbols)
+    let cursor = 0
+    await Promise.all(Array.from({ length: 6 }, async () => {
+      while (cursor < syms.length) {
+        const sym = syms[cursor++]
+        try {
+          const q = await data.getQuote(sym)
+          if (q?.price && q.price > 0) ltps.set(sym, q.price)
+        } catch { /* skip — periodic retry */ }
+      }
+    }))
+    const transitions = await checkTransitions(ltps)
+    if (transitions.length === 0) return
+    log.ok('LIFECYCLE-CHECKER', `${syms.length} tracked · ${ltps.size} priced · ${transitions.length} transitions`)
+    // Telegram dispatch for terminal states
+    if (botState.bot) {
+      const newlyTriggered = transitions.filter(t => t.to === 'ACTIVE')
+      const targetHits = transitions.filter(t => t.to === 'T1_HIT' || t.to === 'T2_HIT' || t.to === 'T3_HIT')
+      const slHits = transitions.filter(t => t.to === 'SL_HIT')
+      const expired = transitions.filter(t => t.to === 'EXPIRED')
+      const lines: string[] = []
+      if (targetHits.length) {
+        lines.push(`✅ *${targetHits.length} TARGET HIT*`)
+        for (const t of targetHits.slice(0, 8)) {
+          const e = t.entry
+          const r = e.hitPrice && e.entryPrice && e.stopLoss
+            ? ((e.hitPrice - e.entryPrice) / Math.abs(e.entryPrice - e.stopLoss)).toFixed(1)
+            : '?'
+          lines.push(`  ${e.symbol} ${e.direction} ${t.to} @ ₹${t.hitPrice} (${r}R) · ${e.source}`)
+        }
+      }
+      if (slHits.length) {
+        if (lines.length) lines.push('')
+        lines.push(`❌ *${slHits.length} SL HIT*`)
+        for (const t of slHits.slice(0, 8)) {
+          const e = t.entry
+          lines.push(`  ${e.symbol} ${e.direction} SL @ ₹${t.hitPrice} · ${e.source}`)
+        }
+      }
+      if (newlyTriggered.length) {
+        if (lines.length) lines.push('')
+        lines.push(`🎯 *${newlyTriggered.length} entry triggered*`)
+        for (const t of newlyTriggered.slice(0, 8)) {
+          const e = t.entry
+          lines.push(`  ${e.symbol} ${e.direction} entered @ ₹${t.hitPrice} · SL ₹${e.stopLoss} · T1 ₹${e.target1}`)
+        }
+      }
+      if (expired.length) {
+        if (lines.length) lines.push('')
+        lines.push(`⏰ *${expired.length} expired*`)
+      }
+      if (lines.length) {
+        const msg = lines.join('\n')
+        for (const cid of config.bots.telegramChatIds) {
+          try {
+            try { await botState.bot.api.sendMessage(cid, msg, { parse_mode: 'Markdown' }) }
+            catch { await botState.bot.api.sendMessage(cid, msg) }
+            recordTgPush('lifecycle-transitions', `${transitions.length}`, cid)
+          } catch { /* swallow */ }
+        }
+      }
+    }
+  } catch (e) { log.warn('LIFECYCLE-CHECKER', `${(e as Error).message}`) }
+}
+cron.schedule('*/5 9-15 * * 1-5', () => runLifecycleChecker(), { timezone: 'Asia/Kolkata' })
+cron.schedule('*/30 * * * *', () => runLifecycleChecker(), { timezone: 'Asia/Kolkata' })
+
 // ── /api/alert-audit — list last 50 Telegram pushes + per-source counts ──
 // Use this to verify "is engine X actually pushing?" without combing logs.
 //   GET /api/alert-audit            → last 50 pushes + counts

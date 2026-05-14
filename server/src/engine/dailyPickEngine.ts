@@ -512,6 +512,30 @@ export async function runDailyPick(opts: { limit?: number; reason?: string } = {
     void logSignal(dailyRowToSignal(r), 'daily-pick').catch(() => undefined)
   }
 
+  // 2026-05-11: register each pick in the signal-lifecycle store as PENDING
+  // so the periodic checker tracks entry/SL/target. Accuracy report (/api/accuracy)
+  // surfaces hit-rate per source.
+  try {
+    const { appendSignal } = await import('./signalLifecycle')
+    for (const r of rows) {
+      await appendSignal({
+        source: 'DAILY',
+        symbol: r.symbol,
+        direction: r.direction === 'BUY' ? 'BUY' : 'SHORT',
+        ltp: r.ltp,
+        entryPrice: r.entryPrice,
+        entryPriceLow: r.entryPriceLow ?? r.entryPrice,
+        entryPriceHigh: r.entryPriceHigh ?? r.entryPrice,
+        stopLoss: r.stopLoss,
+        target1: r.target1, target1Date: r.target1Date,
+        target2: r.target2, target2Date: r.target2Date,
+        target3: r.target3, target3Date: r.target3Date,
+        conviction: r.conviction,
+        reasoning: (r.reasons ?? []).slice(0, 2).join(' · '),
+      })
+    }
+  } catch (e) { log.warn('DAILYPICK', `lifecycle append: ${(e as Error).message}`) }
+
   log.ok('DAILYPICK', `${rows.length} candidates (${rows.filter(r => r.pattern === 'MOMENTUM').length} momentum / ${rows.filter(r => r.pattern === 'REBOUND').length} rebound / ${rows.filter(r => r.pattern === 'BOTH').length} both) · ${newSinceLastRun.length} new`)
   return pick
 }
