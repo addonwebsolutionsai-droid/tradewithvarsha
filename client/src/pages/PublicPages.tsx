@@ -54,6 +54,68 @@ function Legend({ kind }: { kind: 'pick' | 'signal' | 'premove' }): JSX.Element 
   )
 }
 
+// ── ACCURACY STRIP — system-wide hit rate over last 30 days ──
+// 2026-05-18: surfaces lifecycle accuracy stats above each table so the user
+// (and visitors) can see at a glance how many signals actually triggered, how
+// many won, R-multiple, and breakdown by conviction tier.
+function AccuracyStrip(): JSX.Element | null {
+  const { data } = useQuery({
+    queryKey: ['accuracy'], queryFn: () => snapshots.accuracy(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  if (!data || !data.total) return null
+  const tierEntries = Object.entries(data.byConvictionTier || {}).sort(([a], [b]) => b.localeCompare(a))
+  return (
+    <details className="bg-ink-700 border border-ink-500 rounded-lg p-3 mb-3" open>
+      <summary className="text-[11px] font-semibold text-neutral-300 cursor-pointer select-none">
+        📊 System accuracy ({data.daysBack}d) — {data.total} signals · Triggered {data.triggeredRate}% · Win rate <span className="text-accent-green">{data.winRate}%</span> · SL rate <span className="text-accent-red">{data.slRate}%</span> · Avg R-multiple <b>{data.avgRMultiple > 0 ? '+' : ''}{data.avgRMultiple}</b>
+      </summary>
+      <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
+        <div>
+          <div className="text-neutral-500 mb-1 font-semibold">By source</div>
+          <table className="w-full font-mono">
+            <thead className="text-neutral-500">
+              <tr><th className="text-left">Source</th><th className="text-right">Total</th><th className="text-right">Wins</th><th className="text-right">SL</th><th className="text-right">Hit%</th></tr>
+            </thead>
+            <tbody>
+              {Object.entries(data.bySource || {}).map(([src, s]: [string, any]) => (
+                <tr key={src} className="border-t border-ink-600">
+                  <td className="py-1">{src}</td>
+                  <td className="text-right">{s.total}</td>
+                  <td className="text-right text-accent-green">{s.wins}</td>
+                  <td className="text-right text-accent-red">{s.sl}</td>
+                  <td className="text-right font-bold">{s.winRate}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+        <div>
+          <div className="text-neutral-500 mb-1 font-semibold">By conviction tier</div>
+          <table className="w-full font-mono">
+            <thead className="text-neutral-500">
+              <tr><th className="text-left">Conviction</th><th className="text-right">Total</th><th className="text-right">Wins</th><th className="text-right">Hit%</th></tr>
+            </thead>
+            <tbody>
+              {tierEntries.map(([tier, t]: [string, any]) => (
+                <tr key={tier} className="border-t border-ink-600">
+                  <td className="py-1">{tier}</td>
+                  <td className="text-right">{t.total}</td>
+                  <td className="text-right text-accent-green">{t.wins}</td>
+                  <td className="text-right font-bold">{t.winRate}%</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+      <div className="mt-2 text-[10px] text-neutral-600">
+        Status counts: {Object.entries(data.byStatus || {}).map(([k, v]) => `${k}=${v}`).join(' · ')}
+      </div>
+    </details>
+  )
+}
+
 // ── HIT-LOG STRIP ───────────────────────────────────────────────
 function HitLog(): JSX.Element | null {
   const { data } = useQuery({
@@ -101,6 +163,7 @@ export function PublicTopTradesPage(): JSX.Element {
     <div className="space-y-4">
       <Banner emoji="🎯" title="Top Trades" subtitle={`Curated elite-only stream — conviction ≥ ${data?.filterMinConv ?? 85} · pulled from Weekly + Daily picks · deduped`} ts={data?.generatedAt} />
       <Legend kind="pick" />
+      <AccuracyStrip />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
@@ -176,6 +239,7 @@ export function PublicWeeklyPickPage(): JSX.Element {
     <div className="space-y-4">
       <Banner emoji="📋" title="Weekly Picks" subtitle={data ? `${rows.length} setups · week of ${data.weekOf} · regime ${data.regime}` : 'loading…'} ts={data?.generatedAt} />
       <Legend kind="pick" />
+      <AccuracyStrip />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
@@ -293,6 +357,7 @@ export function PublicDailyPickPage(): JSX.Element {
     <div className="space-y-4">
       <Banner emoji="🎯" title="Daily Picks" subtitle={`${rows.length} 5–15 day setups · regime ${data?.regime ?? '—'}`} ts={data?.generatedAt} />
       <Legend kind="pick" />
+      <AccuracyStrip />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
@@ -358,6 +423,7 @@ export function PublicPreMovePage(): JSX.Element {
     <div className="space-y-4">
       <Banner emoji="⚡" title="Pre-Move Alerts" subtitle="Setups likely to resolve into 5–15% moves within 1–10 sessions" ts={data?.generatedAt} />
       <Legend kind="premove" />
+      <AccuracyStrip />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
@@ -418,6 +484,7 @@ export function PublicOptionsPage(): JSX.Element {
     <div className="space-y-4">
       <Banner emoji="🎯" title="Options Signals" subtitle={`${rows.length} elite signals (score ≥ 9, conviction ≥ 90)`} ts={data?.generatedAt} />
       <Legend kind="signal" />
+      <AccuracyStrip />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
@@ -438,6 +505,7 @@ export function PublicIntradayPage(): JSX.Element {
     <div className="space-y-4">
       <Banner emoji="⚡" title="Intraday Signals" subtitle={`${rows.length} signals from today's session`} ts={data?.generatedAt} />
       <Legend kind="signal" />
+      <AccuracyStrip />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}

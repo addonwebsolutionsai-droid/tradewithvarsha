@@ -350,7 +350,21 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   await fs.writeFile(path.join(SNAP_DIR, 'hit-log.json'), JSON.stringify(hitOut, null, 2))
   files.push('hit-log.json')
 
-  // 7. Top Trades (curated elite-only stream — conviction ≥ 85 across all sources)
+  // 7. Accuracy report (system-wide hit-rate, R-multiple, by source/tier)
+  // 2026-05-18: published as a separate snapshot for the dashboard strip.
+  let accuracy: any = null
+  try {
+    const { buildAccuracyReport } = await import('./signalLifecycle')
+    accuracy = await Promise.race<any>([
+      buildAccuracyReport({ source: 'ALL', daysBack: 30 }),
+      new Promise<any>(r => setTimeout(() => r(null), 6000)),
+    ])
+  } catch { /* skip */ }
+  const accOut = { generatedAt: ts, daysBack: 30, ...accuracy }
+  await fs.writeFile(path.join(SNAP_DIR, 'accuracy.json'), JSON.stringify(accOut, null, 2))
+  files.push('accuracy.json')
+
+  // 8. Top Trades (curated elite-only stream — conviction ≥ 85 across all sources)
   // 2026-05-10: Promoted to a public tab so the Vercel deploy gets the same
   // single-stream high-signal view as localhost. Dedup by (symbol, direction).
   const topRows = buildTopTrades({

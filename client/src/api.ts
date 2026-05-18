@@ -33,6 +33,7 @@ export const snapshots = {
   intraday: () => snapshot<{ generatedAt: string; rows: any[] }>('intraday.json'),
   hitLog: () => snapshot<{ generatedAt: string; entries: any[] }>('hit-log.json'),
   topTrades: () => snapshot<{ generatedAt: string; filterMinConv: number; totalAvailable: number; rows: any[] }>('top-trades.json'),
+  accuracy: () => snapshot<{ generatedAt: string; daysBack: number; total: number; byStatus: Record<string, number>; triggeredRate: number; winRate: number; slRate: number; avgRMultiple: number; bySource: any; byConvictionTier: any }>('accuracy.json'),
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {
