@@ -1805,6 +1805,11 @@ cron.schedule('0 0,3,6,8 * * 1-5', () => runFibLrcCron('off-4x'), { timezone: 'A
 async function runOptionsFastCron(tag: string): Promise<void> {
   const { futuresOptionsAdvisor } = await import('./strategies/futuresOptionsAdvisor')
   const { niftyOptionsStrictSignal } = await import('./strategies/niftyOptionsStrict')
+  // 2026-05-18: PRE-BREAKOUT lane — catches NIFTY/FINNIFTY CE/PE BEFORE the
+  // strict engine's 6-confluence requirement aligns. Fires WATCH on setup
+  // (4+ conditions), LIVE on confirmed range break. Solves the recurring
+  // "signal fires after 300pt move" problem.
+  const { optionsPreBreakoutSignal } = await import('./strategies/optionsPreBreakout')
   // BANKNIFTY excluded per user standing directive — see memory project_banknifty_excluded.
   const indexes = ['NIFTY', 'FINNIFTY'] as const
   const fired: Signal[] = []
@@ -1826,6 +1831,14 @@ async function runOptionsFastCron(tag: string): Promise<void> {
       if (strict) fired.push(strict)
       const advised = futuresOptionsAdvisor(ctx)
       fired.push(...advised)
+      // Pre-breakout — only adds a signal if strict didn't already fire on
+      // the same direction (avoid duplicate alerts on the same setup).
+      const preBreak = optionsPreBreakoutSignal(ctx)
+      if (preBreak) {
+        const strictSameDir = strict && preBreak.instrument.split(' ').slice(-1)[0] ===
+          strict.instrument.split(' ').slice(-1)[0]
+        if (!strictSameDir) fired.push(preBreak)
+      }
     } catch (e) {
       log.warn('OPT-FAST', `${sym}: ${(e as Error).message}`)
     }

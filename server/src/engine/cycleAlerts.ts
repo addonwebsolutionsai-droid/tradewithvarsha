@@ -70,9 +70,24 @@ export async function computeCycleAlerts(today: Date = new Date()): Promise<Cycl
       const status = getGannCycleStatus(sym, q.price, today)
       const bestTrade = getBestCycleTrade(status, today)
 
+      // 2026-05-18: PRICE-ACTION CONFLUENCE GATE
+      // User reported Gann/Time Cycle targets miss too often. Root cause:
+      // cycle dates are PROBABILISTIC timing windows, not directional. Without
+      // price-action confirmation, direction is a coin flip. Now we require:
+      //   cycle date hit AND price within 0.3% of a Gann SQ9 level
+      // Otherwise the alert is suppressed (would be ambiguous direction).
+      const nearestSQ9 = status.squareOf9.nearest
+      const atKeyLevel = nearestSQ9 && nearestSQ9.distancePct <= 0.3
+      // Allow alerts WITHOUT key-level proximity ONLY if the cycle is
+      // HIGH importance AND the symbol is an index (NIFTY/BANKNIFTY/GOLD/CRUDE
+      // — indices have macro cycle weight that justifies a WATCH even without
+      // exact price confluence).
+
       // 1. REVERSAL_WATCH — HIGH-importance cycle ending in ≤ 3 days
       for (const cy of status.activeCycles) {
         if (cy.importance === 'HIGH' && cy.bucket !== 'MINOR' && cy.daysRemaining <= 3 && cy.daysRemaining >= 0) {
+          // Gate: skip unless at key level
+          if (!atKeyLevel) continue
           const key = `${sym}:revwatch:${cy.cycleDays}:${cy.seedDate}:${cy.cycleEnd}`
           if (ledger.sent[key]) continue
           alerts.push({
@@ -83,7 +98,8 @@ export async function computeCycleAlerts(today: Date = new Date()): Promise<Cycl
             seedName: cy.seedName,
             importance: cy.importance,
             price: q.price,
-            message: formatReversalWatch(sym, cy, q.price, bestTrade),
+            message: formatReversalWatch(sym, cy, q.price, bestTrade) +
+              `\n\n📍 Price at SQ9 level **${nearestSQ9!.label}** (₹${nearestSQ9!.price}, ${nearestSQ9!.distancePct.toFixed(2)}%) — directional confluence.`,
             dedupeKey: key,
             bestTrade,
           })
@@ -93,6 +109,7 @@ export async function computeCycleAlerts(today: Date = new Date()): Promise<Cycl
       // 2. CYCLE_STARTED — HIGH-importance cycle at ≤ 2 days elapsed
       for (const cy of status.activeCycles) {
         if (cy.importance === 'HIGH' && cy.bucket !== 'MINOR' && cy.daysElapsed <= 2) {
+          if (!atKeyLevel) continue              // same gate
           const key = `${sym}:started:${cy.cycleDays}:${cy.seedDate}:${cy.cycleStart}`
           if (ledger.sent[key]) continue
           alerts.push({
@@ -103,7 +120,8 @@ export async function computeCycleAlerts(today: Date = new Date()): Promise<Cycl
             seedName: cy.seedName,
             importance: cy.importance,
             price: q.price,
-            message: formatCycleStarted(sym, cy, q.price, bestTrade),
+            message: formatCycleStarted(sym, cy, q.price, bestTrade) +
+              `\n\n📍 Price at SQ9 level **${nearestSQ9!.label}** (₹${nearestSQ9!.price}, ${nearestSQ9!.distancePct.toFixed(2)}%) — confluence.`,
             dedupeKey: key,
             bestTrade,
           })
