@@ -107,9 +107,20 @@ export async function loadStore(): Promise<LifecycleStore> {
   }
 }
 
+// 2026-05-18: serialise writes via an in-process queue + atomic rename.
+// Previous direct fs.writeFile races corrupted the JSON (extra braces from
+// interleaved writes). Now: every save waits for the prior save to finish,
+// and we write to a temp file then rename — eliminates partial reads.
+let _saveChain: Promise<void> = Promise.resolve()
 async function saveStore(store: LifecycleStore): Promise<void> {
   store.updatedAt = new Date().toISOString()
-  await fs.writeFile(LIFECYCLE_FILE, JSON.stringify(store, null, 2))
+  const job = _saveChain.then(async () => {
+    const tmp = LIFECYCLE_FILE + '.tmp'
+    await fs.writeFile(tmp, JSON.stringify(store, null, 2))
+    await fs.rename(tmp, LIFECYCLE_FILE)
+  }).catch(() => { /* swallow per-save errors, keep chain alive */ })
+  _saveChain = job
+  await job
 }
 
 /** Find an ACTIVE entry that matches (symbol, direction, source). */
