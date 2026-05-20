@@ -65,6 +65,7 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/pre-move',    label: 'Pre-Move',    icon: <Wind size={14} /> },
     { to: '/options',     label: 'Options',     icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
     { to: '/intraday',    label: 'Intraday',    icon: <Activity size={14} />, count: counts.intraday },
+    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} /> },
   ] : [
     { to: '/',          label: 'Dashboard',   icon: <LayoutDashboard size={14} /> },
     { to: '/signals',   label: 'All Signals', icon: <Zap size={14} />, count: counts.all },

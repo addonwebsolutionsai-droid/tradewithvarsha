@@ -38,7 +38,7 @@ import { SymbolsPage } from './pages/SymbolsPage'
 import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
 import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
-import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage } from './pages/PublicPages'
+import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage } from './pages/PublicPages'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -106,6 +106,7 @@ function Shell() {
             <Route path="/pre-move"    element={<PublicPreMovePage />} />
             <Route path="/options"     element={<PublicOptionsPage />} />
             <Route path="/intraday"    element={<PublicIntradayPage />} />
+            <Route path="/track-record" element={<PublicSignalsHistoryPage />} />
             <Route path="/" element={<Navigate to="/top-trades" replace />} />
             <Route path="*" element={<Navigate to="/top-trades" replace />} />
           </Routes>

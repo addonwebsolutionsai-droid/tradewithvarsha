@@ -152,6 +152,120 @@ function HitLog(): JSX.Element | null {
   )
 }
 
+// ── SIGNALS HISTORY — public track-record page (every signal + outcome) ──
+// 2026-05-20: Built per user ask — surfaces full lifecycle of every issued
+// signal so visitors can verify accuracy. Filter by outcome + source.
+export function PublicSignalsHistoryPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-signals-history'], queryFn: () => snapshots.signalsHistory(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const [filter, setFilter] = useState<string>('ALL')
+  const [src, setSrc] = useState<string>('ALL')
+  const all: any[] = data?.signals ?? []
+  // Filter chips
+  const rows = all.filter(r => {
+    if (src !== 'ALL' && r.source !== src) return false
+    if (filter === 'WIN' && !['T1_HIT', 'T2_HIT', 'T3_HIT'].includes(r.status)) return false
+    if (filter === 'LOSS' && r.status !== 'SL_HIT') return false
+    if (filter === 'ACTIVE' && r.status !== 'ACTIVE') return false
+    if (filter === 'PENDING' && r.status !== 'PENDING') return false
+    return true
+  })
+  // Counts
+  const wins = all.filter(r => ['T1_HIT', 'T2_HIT', 'T3_HIT'].includes(r.status)).length
+  const losses = all.filter(r => r.status === 'SL_HIT').length
+  const active = all.filter(r => r.status === 'ACTIVE').length
+  const pending = all.filter(r => r.status === 'PENDING').length
+  const sources = Array.from(new Set(all.map(r => r.source))).sort()
+  return (
+    <div className="space-y-4">
+      <Banner emoji="📈" title="Track Record" subtitle={`Every signal we've issued and what actually happened — fully transparent. ${all.length} signals tracked.`} ts={data?.generatedAt} />
+      <div className="flex flex-wrap gap-2">
+        {[
+          { k: 'ALL', l: `All (${all.length})` },
+          { k: 'WIN', l: `✅ Wins (${wins})`, c: 'text-accent-green' },
+          { k: 'LOSS', l: `❌ SL Hit (${losses})`, c: 'text-accent-red' },
+          { k: 'ACTIVE', l: `🎯 Active (${active})` },
+          { k: 'PENDING', l: `⏳ Pending (${pending})` },
+        ].map(b => (
+          <button key={b.k} onClick={() => setFilter(b.k)}
+            className={`px-3 py-1 rounded text-[12px] font-bold border ${filter === b.k ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-400'} ${b.c ?? ''}`}>
+            {b.l}
+          </button>
+        ))}
+      </div>
+      {sources.length > 1 && (
+        <div className="flex flex-wrap gap-2">
+          <button onClick={() => setSrc('ALL')} className={`px-2 py-1 rounded text-[11px] border ${src === 'ALL' ? 'bg-accent-violet/20 border-accent-violet text-accent-violet' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>All sources</button>
+          {sources.map(s => (
+            <button key={s} onClick={() => setSrc(s)}
+              className={`px-2 py-1 rounded text-[11px] border ${src === s ? 'bg-accent-violet/20 border-accent-violet text-accent-violet' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+              {s}
+            </button>
+          ))}
+        </div>
+      )}
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No signals match these filters yet." />}
+      {!isLoading && !error && rows.length > 0 && (
+        <div className="overflow-x-auto rounded-lg border border-ink-500">
+          <table className="w-full text-[12px] bg-ink-800" style={{ minWidth: 1600 }}>
+            <thead className="bg-ink-700 text-neutral-400">
+              <tr>
+                <th className="text-center px-3 py-3 whitespace-nowrap">Generated</th>
+                <th className="text-left px-3 py-3 whitespace-nowrap">Symbol</th>
+                <th className="text-center px-3 py-3 whitespace-nowrap">Source</th>
+                <th className="text-center px-3 py-3 whitespace-nowrap">Direction</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">SL</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T1</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T2</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T3</th>
+                <th className="text-center px-3 py-3 whitespace-nowrap">Status</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap">Realised</th>
+                <th className="text-left px-3 py-3 whitespace-nowrap">Reason for trade</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.slice(0, 200).map((r, i) => {
+                const isWin = ['T1_HIT', 'T2_HIT', 'T3_HIT'].includes(r.status)
+                const isLoss = r.status === 'SL_HIT'
+                const bg = isWin ? 'bg-accent-green/10' : isLoss ? 'bg-accent-red/10' : ''
+                const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
+                const statusBadge = isWin ? '✅' : isLoss ? '❌' : r.status === 'ACTIVE' ? '🎯' : r.status === 'PENDING' ? '⏳' : '⏰'
+                return (
+                  <tr key={i} className={`border-t border-ink-500 hover:bg-ink-700 font-mono ${bg}`}>
+                    <td className="px-3 py-3 text-center text-[10px] text-neutral-500 whitespace-nowrap">{fmtDate(r.generatedAt)}</td>
+                    <td className="px-3 py-3 whitespace-nowrap"><b>{r.symbol}</b></td>
+                    <td className="px-3 py-3 text-center text-[10px] text-neutral-400">{r.source}</td>
+                    <td className="px-3 py-3 text-center">
+                      <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                    </td>
+                    <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.entry)}</td>
+                    <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.stopLoss)}</td>
+                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target1)}</td>
+                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
+                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target3)}</td>
+                    <td className="px-3 py-3 text-center whitespace-nowrap">
+                      <span className="text-[11px]">{statusBadge} {r.status}</span>
+                    </td>
+                    <td className="px-2 py-3 text-right whitespace-nowrap" style={{ color: r.realisedPct == null ? '#666' : (r.realisedPct >= 0 ? '#00c853' : '#ff1744') }}>
+                      {r.realisedPct == null ? '—' : `${r.realisedPct >= 0 ? '+' : ''}${r.realisedPct}%`}
+                    </td>
+                    <td className="px-3 py-3 text-left text-neutral-300 text-[11px]">{r.reason || '—'}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── TOP TRADES — curated unified stream ─────────────────────────
 export function PublicTopTradesPage(): JSX.Element {
   const { data, isLoading, error } = useQuery({

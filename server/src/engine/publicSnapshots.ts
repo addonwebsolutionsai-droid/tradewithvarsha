@@ -350,6 +350,51 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   await fs.writeFile(path.join(SNAP_DIR, 'hit-log.json'), JSON.stringify(hitOut, null, 2))
   files.push('hit-log.json')
 
+  // 6.5 — Signals History (every signal with full outcome trail for the
+  // public Track Record page). Strips internal IDs but keeps symbol, direction,
+  // entry/SL/targets, status (PENDING/ACTIVE/T1_HIT/...), realised %, reason.
+  // 2026-05-20: built so users can verify accuracy of past calls publicly.
+  try {
+    const { loadStore } = await import('./signalLifecycle')
+    const lcStore = await loadStore()
+    const entries = Object.values(lcStore.entries)
+      .sort((a, b) => (a.firstSeenAt < b.firstSeenAt ? 1 : -1))    // newest first
+      .slice(0, 500)                                                // cap to 500 most recent
+      .map(e => {
+        const isTerminal = ['T1_HIT', 'T2_HIT', 'T3_HIT', 'SL_HIT', 'EXPIRED', 'INVALIDATED'].includes(e.status)
+        const realisedPct = (() => {
+          if (!isTerminal || e.hitPrice == null) return null
+          const sign = e.direction === 'BUY' ? 1 : -1
+          return +(sign * ((e.hitPrice - e.entryPrice) / e.entryPrice) * 100).toFixed(2)
+        })()
+        return {
+          symbol: e.symbol,
+          source: e.source,
+          direction: e.direction,
+          bucket: (e as any).bucket ?? null,
+          generatedAt: e.firstSeenAt,
+          ltp: e.ltp,
+          entry: e.entryPrice,
+          entryLow: e.entryPriceLow,
+          entryHigh: e.entryPriceHigh,
+          stopLoss: e.stopLoss,
+          target1: e.target1, target2: e.target2, target3: e.target3,
+          status: e.status,
+          statusChangedAt: e.statusChangedAt,
+          hitPrice: e.hitPrice ?? null,
+          hitAt: e.hitAt ?? null,
+          realisedPct,
+          conviction: e.conviction,
+          reason: e.reasoning || e.statusReason || '',
+        }
+      })
+    const histOut = { generatedAt: ts, total: entries.length, signals: entries }
+    await fs.writeFile(path.join(SNAP_DIR, 'signals-history.json'), JSON.stringify(histOut, null, 2))
+    files.push('signals-history.json')
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `signals-history: ${(e as Error).message}`)
+  }
+
   // 7. Accuracy report (system-wide hit-rate, R-multiple, by source/tier)
   // 2026-05-18: published as a separate snapshot for the dashboard strip.
   let accuracy: any = null
