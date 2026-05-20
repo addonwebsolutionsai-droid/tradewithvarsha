@@ -116,6 +116,12 @@ export interface SignalMeta {
   vwap?: number
   pattern?: string
   timeframe?: string             // '15m' | '1D' | etc — what the signal was computed on
+  // OPTIONS-specific (set by niftyOptionsStrict + read by signalLogger lifecycle
+  // adapter so SL/target track underlying spot, not the option premium).
+  spot?: number
+  strike?: number
+  side?: 'CE' | 'PE'
+  underlyingDirection?: 'BUY' | 'SHORT'
 }
 
 export interface TradePlan {

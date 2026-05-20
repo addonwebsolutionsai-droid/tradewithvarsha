@@ -192,16 +192,52 @@ export async function logSignal(signal: Signal, regime?: string): Promise<void> 
       else if (signal.type === 'SWING' || signal.type === 'POSITIONAL') lifeSrc = 'WEEKLY'
       else lifeSrc = 'INTRADAY'
       const { appendSignal } = await import('./signalLifecycle')
+
+      // 2026-05-20: OPTIONS lifecycle fix. Previously we stored premium-space
+      // entry/SL/T1/T2/T3 (e.g. entry=150, SL=105) but the lifecycle checker
+      // fetches the UNDERLYING quote (e.g. NIFTY spot=23400). The two scales
+      // never match, so every OPTIONS entry sat in PENDING until 5-day expiry.
+      // Fix: when the engine has tagged `meta.spot` + `meta.underlyingDirection`,
+      // store underlying-spot-equivalent levels so the existing spot LTP path
+      // works. ATR-based offsets approximate delta=0.5 ATM behaviour:
+      //   spot SL = spot ∓ 0.8 × ATR  (≈ 35% premium drop)
+      //   spot T1 = spot ± 0.7 × ATR  (≈ 30% premium gain)
+      //   spot T2 = spot ± 1.5 × ATR  (≈ 65% premium gain)
+      //   spot T3 = spot ± 2.5 × ATR  (≈ 120% premium gain)
+      const meta = (signal.meta ?? {}) as any
+      const isOptions = lifeSrc === 'OPTIONS'
+      const hasUnderlying = isOptions && Number.isFinite(meta.spot) && Number.isFinite(meta.atr) && meta.underlyingDirection
+      let lifeSymbol = signal.instrument.split(' ')[0]
+      let lifeDir: 'BUY' | 'SHORT' = signal.direction === 'SELL' ? 'SHORT' : (signal.direction as 'BUY' | 'SHORT')
+      let lifeEntry = signal.entry
+      let lifeSL = signal.stopLoss
+      let lifeT1 = signal.target1
+      let lifeT2 = signal.target2 ?? signal.target1
+      let lifeT3 = (signal as any).target3 ?? signal.target2 ?? signal.target1
+      let lifeLtp = signal.entry
+      if (hasUnderlying) {
+        const spot = meta.spot as number
+        const atr = meta.atr as number
+        const isBull = meta.underlyingDirection === 'BUY'
+        lifeDir = isBull ? 'BUY' : 'SHORT'
+        lifeEntry = +spot.toFixed(2)
+        lifeLtp = lifeEntry
+        lifeSL = +(isBull ? spot - 0.8 * atr : spot + 0.8 * atr).toFixed(2)
+        lifeT1 = +(isBull ? spot + 0.7 * atr : spot - 0.7 * atr).toFixed(2)
+        lifeT2 = +(isBull ? spot + 1.5 * atr : spot - 1.5 * atr).toFixed(2)
+        lifeT3 = +(isBull ? spot + 2.5 * atr : spot - 2.5 * atr).toFixed(2)
+      }
+
       await appendSignal({
         source: lifeSrc,
-        symbol: signal.instrument.split(' ')[0],
-        direction: signal.direction === 'SELL' ? 'SHORT' : (signal.direction as 'BUY' | 'SHORT'),
-        ltp: signal.entry,
-        entryPrice: signal.entry,
-        stopLoss: signal.stopLoss,
-        target1: signal.target1,
-        target2: signal.target2 ?? signal.target1,
-        target3: (signal as any).target3 ?? signal.target2 ?? signal.target1,
+        symbol: lifeSymbol,
+        direction: lifeDir,
+        ltp: lifeLtp,
+        entryPrice: lifeEntry,
+        stopLoss: lifeSL,
+        target1: lifeT1,
+        target2: lifeT2,
+        target3: lifeT3,
         conviction: (signal as any).convictionScore ?? signal.score * 10,
         reasoning: (signal.reasons ?? []).slice(0, 2).join(' · '),
       })

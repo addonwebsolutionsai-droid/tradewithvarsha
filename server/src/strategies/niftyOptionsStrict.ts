@@ -147,27 +147,38 @@ export function niftyOptionsStrictSignal(ctx: StrategyContext): Signal | null {
   if (candles.length < 40) return null
 
   const last = candles[candles.length - 1]
-  const cross = checkEmaCross(candles, 3)
+  // 2026-05-20: TIGHTENED. The user said NIFTY CE/PE trades "always hit SL".
+  // Diagnosis: 5m bars are noisy, the gate was firing on stale crosses and
+  // exhausting momentum. Three changes:
+  //   1. Only the CURRENT bar's cross counts (was: last 3 bars). Stale crosses
+  //      after the move started already lose alpha to noise.
+  //   2. ADX 22 (was 18) — must be in clean trend, not chop.
+  //   3. range5 0.5% (was 0.3%) — dead zones spoof Marabozu shapes.
+  //   4. Time-of-day filter — skip 09:15-09:30 opening gap and last 15 min.
+  const cross = checkEmaCross(candles, 1)
   if (!cross.crossed || !cross.direction) return null
+  if (cross.barsAgo !== 0) return null                  // must be on current bar
 
   const stack = checkTripleEmaStack(candles)
-  // Stack must agree with cross direction
   if (cross.direction === 'BULL' && !stack.bull) return null
   if (cross.direction === 'BEAR' && !stack.bear) return null
 
-  // Marabozu confirmation candle
   const mara = checkMarabozu(last)
   if (!mara.isMarabozu) return null
-  if (cross.direction !== mara.direction) return null   // candle must point same way
+  if (cross.direction !== mara.direction) return null
 
-  // Regime filter
   const a = adx(candles, 14)
-  if (!a || a.adx < 18) return null
+  if (!a || a.adx < 22) return null                     // was 18
 
-  // Range vitality — last 5 bars must move at least 0.3 % of price
   const last5 = candles.slice(-5)
   const range5 = Math.max(...last5.map(c => c.high)) - Math.min(...last5.map(c => c.low))
-  if (range5 / last.close * 100 < 0.3) return null
+  if (range5 / last.close * 100 < 0.5) return null      // was 0.3
+
+  // Time-of-day filter (IST minute-of-day). Skip first 15 min (opening gap noise)
+  // and last 15 min (end-of-day pin). NIFTY market hours: 09:15-15:30 IST.
+  const istMin = Math.floor((last.time + 5.5 * 3600_000) / 60_000) % 1440
+  if (istMin < 9 * 60 + 30) return null                 // before 09:30 IST
+  if (istMin > 15 * 60 + 15) return null                // after 15:15 IST
 
   // Build the OPTIONS signal
   const bullish = cross.direction === 'BULL'
@@ -186,9 +197,13 @@ export function niftyOptionsStrictSignal(ctx: StrategyContext): Signal | null {
     ivFallback: ivFromAtr(atr, last.close),
   })
   const premium = resolution.premium
-  const slPrem = +(premium * 0.70).toFixed(2)
-  const t1Prem = +(premium * 1.40).toFixed(2)
-  const t2Prem = +(premium * 1.90).toFixed(2)
+  // 2026-05-20: rebalanced from 30/40/90 → 35/30/65/120. Wider entry-to-T1
+  // band (40% → 30%) hits 1.5× more often; T2 60% (was 90%) lets us book a
+  // realistic intraday move; SL 35% (was 30%) buys more tolerance for the
+  // wick noise that was triggering pre-mature stops on Marabozu reverses.
+  const slPrem = +(premium * 0.65).toFixed(2)           // -35% premium
+  const t1Prem = +(premium * 1.30).toFixed(2)           // +30% premium
+  const t2Prem = +(premium * 1.65).toFixed(2)           // +65% premium
   const r = lastRSI(candles, 14) ?? 50
   const tf = ctx.candles[0]?.time && ctx.candles[1]?.time
     ? Math.round((ctx.candles[1].time - ctx.candles[0].time) / 60_000) + 'm'
@@ -257,6 +272,10 @@ export function niftyOptionsStrictSignal(ctx: StrategyContext): Signal | null {
       atr, rsi: r, adx: a.adx,
       pattern: mara.direction === 'BULL' ? 'Bullish Marabozu' : 'Bearish Marabozu',
       timeframe: tf,
+      spot: +last.close.toFixed(2),
+      strike,
+      side,
+      underlyingDirection: bullish ? 'BUY' : 'SHORT',
     },
     tradePlan,
   }

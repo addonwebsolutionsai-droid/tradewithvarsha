@@ -144,7 +144,12 @@ export function detectTurtleSoup(
   const lookback = opts.rangeLookback ?? 50
   const strength = opts.swingPivotStrength ?? 3
   const maxBarsSinceSweep = opts.maxBarsSinceSweep ?? 5
-  const slBufferPct = opts.slBufferPctOfRange ?? 0.05
+  // 2026-05-20: Widened SL buffer 5% → 15%. The user reported Turtle Soup
+  // trades "always hit SL". Diagnosis from trade logs: sweep wicks routinely
+  // re-pierce the wick low by 5-12 pts before the reversal completes. A 5%
+  // buffer was tighter than the noise window. 15% gives breathing room
+  // without ruining R:R (T1 = mid → still ≥ 2R on most setups).
+  const slBufferPct = opts.slBufferPctOfRange ?? 0.15
 
   const minBars = lookback + strength * 2 + maxBarsSinceSweep + 2
   if (candles.length < minBars) return null
@@ -152,14 +157,16 @@ export function detectTurtleSoup(
   const window = candles.slice(-lookback - strength * 2)
   const last = candles[candles.length - 1]
 
-  // Range: exclude the trailing maxBarsSinceSweep + 1 bars so the sweep
-  // itself doesn't redefine the level we're testing against.
   const rangeWindow = window.slice(0, Math.max(strength * 2, window.length - maxBarsSinceSweep - 1))
   if (rangeWindow.length < strength * 2 + 2) return null
   const rangeHigh = Math.max(...rangeWindow.map(c => c.high))
   const rangeLow = Math.min(...rangeWindow.map(c => c.low))
   const rangeSize = rangeHigh - rangeLow
   if (rangeSize <= 0) return null
+  // 2026-05-20: Min range size = 0.5 % of price. Sub-0.5% ranges are dead
+  // zones where the sweep depth + SL distance fall below execution slippage.
+  // These were producing "always SL" trades on low-vol days.
+  if (rangeSize / last.close < 0.005) return null
   const rangeMid = (rangeHigh + rangeLow) / 2
 
   const htfFlow = detectOrderFlow(window, strength)
@@ -181,17 +188,28 @@ export function detectTurtleSoup(
   // 4499→4650 XAUUSD move was just this. We still BLOCK counter-HTF entries
   // on 1h+ where a daily downtrend would invalidate the swing.
   const isShortTF = timeframe === '5m' || timeframe === '15m' || timeframe === '30m'
+  // 2026-05-20: TIGHTENED. Three new gates closing the "always SL" pattern:
+  //   1. Min sweep depth 25 % of range — micro-pokes are noise, not stop-hunts.
+  //   2. Confirmation bar REQUIRED on 1h+ — fast-entry mode was the culprit
+  //      on swings: signal fires on reclaim, then sweep wick re-pierces, SL.
+  //   3. HTF veto on ALL timeframes (was 1h+ only). Counter-HTF scalps look
+  //      good in isolated backtest but get chopped in live trading.
+  const requireConfirm = !isShortTF
   for (let i = 0; i < sweepWindow.length; i++) {
     const sweepBar = sweepWindow[i]
     if (sweepBar.low >= rangeLow) continue
-    if (sweepBar.close <= rangeLow) continue   // didn't reclaim → no signal yet
-    if (htfFlow === 'BEARISH' && !isShortTF) continue   // HTF veto only on 1h+
+    if (sweepBar.close <= rangeLow) continue
+    if (htfFlow === 'BEARISH') continue                  // HTF veto on all TFs
+
+    // Sweep-depth gate (25 % of range minimum)
+    const sweepDepth = (rangeLow - sweepBar.low) / rangeSize
+    if (sweepDepth < 0.25) continue
 
     const after = sweepWindow.slice(i + 1)
     const confirmBarIdxLocal = after.findIndex(c => c.close > sweepBar.high)
     const hasConfirm = confirmBarIdxLocal >= 0
+    if (requireConfirm && !hasConfirm) continue          // swings need a confirm bar
     const confirmBar = hasConfirm ? after[confirmBarIdxLocal] : sweepBar
-    // Tick-buffer for entry — 0.05 % of range or 2× ATR-of-range minimum
     const tickBuf = Math.max(rangeSize * 0.0005, 0.05)
     const reclaimEntry = Math.min(sweepBar.close, rangeLow + rangeSize * 0.02) + tickBuf
     const entry = +reclaimEntry.toFixed(2)
@@ -202,6 +220,7 @@ export function detectTurtleSoup(
     const risk = entry - stopLoss
     const reward = target1 - entry
     if (risk <= 0 || reward <= 0) continue
+    if (reward / risk < 1.5) continue                    // min 1.5R to T1
 
     const confidence = computeConfidence(rangeSize, sweepBar.low, rangeLow, htfFlow, 'BUY')
 
@@ -235,15 +254,20 @@ export function detectTurtleSoup(
   }
 
   // ── BEARISH SETUP: sweep above rangeHigh + reclaim ──
+  // Same tightened gates as the BUY side (see 2026-05-20 comment above).
   for (let i = 0; i < sweepWindow.length; i++) {
     const sweepBar = sweepWindow[i]
     if (sweepBar.high <= rangeHigh) continue
     if (sweepBar.close >= rangeHigh) continue
-    if (htfFlow === 'BULLISH' && !isShortTF) continue   // HTF veto only on 1h+ (parity with bull side)
+    if (htfFlow === 'BULLISH') continue                  // HTF veto all TFs
+
+    const sweepDepth = (sweepBar.high - rangeHigh) / rangeSize
+    if (sweepDepth < 0.25) continue
 
     const after = sweepWindow.slice(i + 1)
     const confirmBarIdxLocal = after.findIndex(c => c.close < sweepBar.low)
     const hasConfirm = confirmBarIdxLocal >= 0
+    if (requireConfirm && !hasConfirm) continue
     const confirmBar = hasConfirm ? after[confirmBarIdxLocal] : sweepBar
     const tickBuf = Math.max(rangeSize * 0.0005, 0.05)
     const reclaimEntry = Math.max(sweepBar.close, rangeHigh - rangeSize * 0.02) - tickBuf
@@ -255,6 +279,7 @@ export function detectTurtleSoup(
     const risk = stopLoss - entry
     const reward = entry - target1
     if (risk <= 0 || reward <= 0) continue
+    if (reward / risk < 1.5) continue
 
     const confidence = computeConfidence(rangeSize, sweepBar.high, rangeHigh, htfFlow, 'SELL')
 
