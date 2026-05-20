@@ -83,7 +83,7 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
 
   return (
     <>
-      <nav className="flex items-center gap-1 overflow-x-auto bg-ink-800 border-b border-ink-500 px-5">
+      <nav className="flex items-center gap-0 overflow-x-auto bg-ink-800 border-b border-ink-500 px-3" style={{ scrollbarWidth: 'thin' }}>
         {tops.map(t => {
           const active = t.to === '/'
             ? location.pathname === '/'
@@ -98,7 +98,7 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
                 else navigate(t.to)
               }}
               className={clsx(
-                'px-4 py-3 text-[13px] flex items-center gap-1.5 whitespace-nowrap border-b-2 transition-colors',
+                'px-3 py-2.5 text-[12px] flex items-center gap-1 whitespace-nowrap border-b-2 transition-colors flex-shrink-0',
                 active
                   ? 'text-accent-cyan border-accent-cyan'
                   : 'text-neutral-500 border-transparent hover:text-neutral-300',

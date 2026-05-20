@@ -119,6 +119,9 @@ function Shell() {
           {/* Top Trades — single curated unified feed (the "anti-noise" view) */}
           <Route path="/top-trades" element={<TopTradesPage />} />
 
+          {/* Track Record — public signal history with outcomes (also on Vercel) */}
+          <Route path="/track-record" element={<PublicSignalsHistoryPage />} />
+
           {/* Admin — users management (admin-only via RequireAuth) */}
           <Route path="/admin/users" element={<RequireAuth adminOnly><AdminUsersPage /></RequireAuth>} />
 

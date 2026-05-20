@@ -175,12 +175,22 @@ export async function logSignal(signal: Signal, regime?: string): Promise<void> 
   // → lifecycle source enum. INTRADAY scalps skip lifecycle (too noisy,
   // would explode the store). Best-effort, never blocks the CSV log.
   try {
-    if (signal.type !== 'INTRADAY' && signal.entry && signal.stopLoss && signal.target1) {
-      const sourceMap: Record<string, string> = {
-        OPTIONS: 'OPTIONS', SWING: 'WEEKLY', POSITIONAL: 'WEEKLY',
-        FUTURES: 'OPTIONS', COMMODITY: 'OPTIONS',
-      }
-      const lifeSrc = (sourceMap[signal.type] ?? 'INTRADAY') as any
+    if (signal.entry && signal.stopLoss && signal.target1) {
+      // 2026-05-20: routing fix — use signal.source (e.g. 'turtle-soup',
+      // 'fib-lrc', 'harmonic') to disambiguate engines that all use the
+      // SWING type wrapper. Previously turtle-soup signals collapsed into
+      // 'WEEKLY' bucket, making them invisible in Track Record by-source
+      // filters. Now each engine gets its own lifecycle source.
+      const srcStr = String(signal.source ?? '').toLowerCase()
+      let lifeSrc: any
+      if (srcStr.includes('turtle')) lifeSrc = 'TURTLE'
+      else if (srcStr.includes('fib') || srcStr.includes('lrc')) lifeSrc = 'FIB'
+      else if (srcStr.includes('harmonic')) lifeSrc = 'HARMONIC'
+      else if (srcStr.includes('premove') || srcStr.includes('pre-move')) lifeSrc = 'PREMOVE'
+      else if (signal.type === 'OPTIONS' || signal.type === 'FUTURES' || signal.type === 'COMMODITY') lifeSrc = 'OPTIONS'
+      else if (signal.type === 'INTRADAY') lifeSrc = 'INTRADAY'
+      else if (signal.type === 'SWING' || signal.type === 'POSITIONAL') lifeSrc = 'WEEKLY'
+      else lifeSrc = 'INTRADAY'
       const { appendSignal } = await import('./signalLifecycle')
       await appendSignal({
         source: lifeSrc,

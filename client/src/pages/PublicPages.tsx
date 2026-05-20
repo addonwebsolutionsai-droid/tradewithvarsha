@@ -162,36 +162,77 @@ export function PublicSignalsHistoryPage(): JSX.Element {
   })
   const [filter, setFilter] = useState<string>('ALL')
   const [src, setSrc] = useState<string>('ALL')
+  const [sort, setSort] = useState<'newest' | 'return-desc' | 'return-asc' | 'conviction-desc'>('newest')
   const all: any[] = data?.signals ?? []
-  // Filter chips
+  // 2026-05-20: granular filters per user request — separate T1/T2/T3/SL
+  // outcome buckets so users can see exact accuracy per target tier.
   const rows = all.filter(r => {
     if (src !== 'ALL' && r.source !== src) return false
-    if (filter === 'WIN' && !['T1_HIT', 'T2_HIT', 'T3_HIT'].includes(r.status)) return false
-    if (filter === 'LOSS' && r.status !== 'SL_HIT') return false
-    if (filter === 'ACTIVE' && r.status !== 'ACTIVE') return false
-    if (filter === 'PENDING' && r.status !== 'PENDING') return false
-    return true
+    switch (filter) {
+      case 'ALL': return true
+      case 'RUNNING': return r.status === 'ACTIVE' || r.status === 'PENDING'
+      case 'COMPLETED': return ['T1_HIT', 'T2_HIT', 'T3_HIT', 'SL_HIT', 'EXPIRED', 'INVALIDATED'].includes(r.status)
+      case 'T1': return r.status === 'T1_HIT'
+      case 'T2': return r.status === 'T2_HIT'
+      case 'T3': return r.status === 'T3_HIT'
+      case 'SL': return r.status === 'SL_HIT'
+      case 'EXPIRED': return r.status === 'EXPIRED' || r.status === 'INVALIDATED'
+      default: return true
+    }
+  }).sort((a, b) => {
+    if (sort === 'newest') return (b.generatedAt || '').localeCompare(a.generatedAt || '')
+    if (sort === 'return-desc') return (b.realisedPct ?? -Infinity) - (a.realisedPct ?? -Infinity)
+    if (sort === 'return-asc') return (a.realisedPct ?? Infinity) - (b.realisedPct ?? Infinity)
+    if (sort === 'conviction-desc') return (b.conviction ?? 0) - (a.conviction ?? 0)
+    return 0
   })
-  // Counts
-  const wins = all.filter(r => ['T1_HIT', 'T2_HIT', 'T3_HIT'].includes(r.status)).length
-  const losses = all.filter(r => r.status === 'SL_HIT').length
-  const active = all.filter(r => r.status === 'ACTIVE').length
-  const pending = all.filter(r => r.status === 'PENDING').length
+  const c = (cond: (r: any) => boolean) => all.filter(cond).length
+  const counts = {
+    all: all.length,
+    running: c(r => r.status === 'ACTIVE' || r.status === 'PENDING'),
+    completed: c(r => ['T1_HIT', 'T2_HIT', 'T3_HIT', 'SL_HIT', 'EXPIRED', 'INVALIDATED'].includes(r.status)),
+    t1: c(r => r.status === 'T1_HIT'),
+    t2: c(r => r.status === 'T2_HIT'),
+    t3: c(r => r.status === 'T3_HIT'),
+    sl: c(r => r.status === 'SL_HIT'),
+    exp: c(r => r.status === 'EXPIRED' || r.status === 'INVALIDATED'),
+  }
+  const wins = counts.t1 + counts.t2 + counts.t3
+  const overallHit = counts.completed > 0 ? +(wins / counts.completed * 100).toFixed(1) : 0
   const sources = Array.from(new Set(all.map(r => r.source))).sort()
   return (
     <div className="space-y-4">
-      <Banner emoji="📈" title="Track Record" subtitle={`Every signal we've issued and what actually happened — fully transparent. ${all.length} signals tracked.`} ts={data?.generatedAt} />
+      <Banner emoji="📈" title="Track Record"
+        subtitle={`${all.length} signals tracked · ${counts.completed} completed · hit rate ${overallHit}% · fully transparent`}
+        ts={data?.generatedAt} />
       <div className="flex flex-wrap gap-2">
         {[
-          { k: 'ALL', l: `All (${all.length})` },
-          { k: 'WIN', l: `✅ Wins (${wins})`, c: 'text-accent-green' },
-          { k: 'LOSS', l: `❌ SL Hit (${losses})`, c: 'text-accent-red' },
-          { k: 'ACTIVE', l: `🎯 Active (${active})` },
-          { k: 'PENDING', l: `⏳ Pending (${pending})` },
+          { k: 'ALL',       l: `All (${counts.all})` },
+          { k: 'RUNNING',   l: `🎯 Running (${counts.running})`, c: 'text-accent-cyan' },
+          { k: 'COMPLETED', l: `📋 Completed (${counts.completed})` },
+          { k: 'T1',        l: `✅ T1 hit (${counts.t1})`, c: 'text-accent-green' },
+          { k: 'T2',        l: `✅✅ T2 hit (${counts.t2})`, c: 'text-accent-green' },
+          { k: 'T3',        l: `🚀 T3 hit (${counts.t3})`, c: 'text-accent-green' },
+          { k: 'SL',        l: `❌ SL hit (${counts.sl})`, c: 'text-accent-red' },
+          { k: 'EXPIRED',   l: `⏰ Expired (${counts.exp})`, c: 'text-neutral-500' },
         ].map(b => (
           <button key={b.k} onClick={() => setFilter(b.k)}
             className={`px-3 py-1 rounded text-[12px] font-bold border ${filter === b.k ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-400'} ${b.c ?? ''}`}>
             {b.l}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Sort:</span>
+        {[
+          { k: 'newest', l: 'Newest first' },
+          { k: 'return-desc', l: '% Return ▼ (best wins first)' },
+          { k: 'return-asc', l: '% Return ▲ (worst losses first)' },
+          { k: 'conviction-desc', l: 'Conviction ▼' },
+        ].map(s => (
+          <button key={s.k} onClick={() => setSort(s.k as any)}
+            className={`px-2 py-0.5 rounded border ${sort === s.k ? 'bg-accent-violet/20 border-accent-violet text-accent-violet' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+            {s.l}
           </button>
         ))}
       </div>
@@ -218,13 +259,14 @@ export function PublicSignalsHistoryPage(): JSX.Element {
                 <th className="text-left px-3 py-3 whitespace-nowrap">Symbol</th>
                 <th className="text-center px-3 py-3 whitespace-nowrap">Source</th>
                 <th className="text-center px-3 py-3 whitespace-nowrap">Direction</th>
+                <th className="text-center px-3 py-3 whitespace-nowrap">Conviction</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">SL</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T1</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T2</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T3</th>
                 <th className="text-center px-3 py-3 whitespace-nowrap">Status</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap">Realised</th>
+                <th className="text-right px-2 py-3 whitespace-nowrap">% Return</th>
                 <th className="text-left px-3 py-3 whitespace-nowrap">Reason for trade</th>
               </tr>
             </thead>
@@ -242,6 +284,11 @@ export function PublicSignalsHistoryPage(): JSX.Element {
                     <td className="px-3 py-3 text-center text-[10px] text-neutral-400">{r.source}</td>
                     <td className="px-3 py-3 text-center">
                       <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                    </td>
+                    <td className="px-3 py-3 text-center font-bold">
+                      <span className={r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : r.conviction >= 40 ? 'text-accent-amber' : 'text-neutral-500'}>
+                        {r.conviction ?? '—'}
+                      </span>
                     </td>
                     <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.entry)}</td>
                     <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.stopLoss)}</td>
