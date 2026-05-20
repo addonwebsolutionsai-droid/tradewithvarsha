@@ -267,7 +267,7 @@ export function PublicSignalsHistoryPage(): JSX.Element {
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T3</th>
                 <th className="text-center px-3 py-3 whitespace-nowrap">Status</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap">% Return</th>
-                <th className="text-left px-3 py-3 whitespace-nowrap">Reason for trade</th>
+                <th className="text-left px-3 py-3">Reason for trade</th>
               </tr>
             </thead>
             <tbody>
@@ -301,7 +301,7 @@ export function PublicSignalsHistoryPage(): JSX.Element {
                     <td className="px-2 py-3 text-right whitespace-nowrap" style={{ color: r.realisedPct == null ? '#666' : (r.realisedPct >= 0 ? '#00c853' : '#ff1744') }}>
                       {r.realisedPct == null ? '—' : `${r.realisedPct >= 0 ? '+' : ''}${r.realisedPct}%`}
                     </td>
-                    <td className="px-3 py-3 text-left text-neutral-300 text-[11px]">{r.reason || '—'}</td>
+                    <td className="px-3 py-3 text-left text-neutral-300 text-[11px] leading-relaxed break-words" style={{ minWidth: 240, maxWidth: 360, whiteSpace: 'normal' }}>{r.reason || '—'}</td>
                   </tr>
                 )
               })}
@@ -346,7 +346,7 @@ export function PublicTopTradesPage(): JSX.Element {
                 <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T1 by</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 3</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
+                <th className="text-left px-4 py-3 text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
               </tr>
             </thead>
             <tbody>
@@ -376,7 +376,7 @@ export function PublicTopTradesPage(): JSX.Element {
                     <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{fmtDate(r.target1Date)}</td>
                     <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
                     <td className="px-2 py-3 text-right text-accent-green font-bold whitespace-nowrap">₹{fmtPx(r.target3)}</td>
-                    <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{r.shareholdingNote || '—'}</td>
+                    <td className="px-4 py-3 text-left text-neutral-300 text-[11px] leading-relaxed break-words" style={{ minWidth: 220, maxWidth: 340, whiteSpace: 'normal' }}>{r.shareholdingNote || '—'}</td>
                   </tr>
                 )
               })}
@@ -422,7 +422,7 @@ export function PublicWeeklyPickPage(): JSX.Element {
                 <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T2 by</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 3</th>
                 <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T3 by</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
+                <th className="text-left px-4 py-3 text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
               </tr>
             </thead>
             <tbody>
@@ -474,7 +474,7 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
       <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap" style={tdStyle}>{fmtDate(r.target2Date)}</td>
       <td className="px-2 py-3 text-right text-accent-green font-bold whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.target3)}</td>
       <td className="px-4 py-3 text-center text-accent-green text-[11px] font-semibold whitespace-nowrap" style={tdStyle}>{fmtDate(r.target3Date)}</td>
-      <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap" style={tdStyle}>{r.shareholdingNote || 'shareholding data unavailable'}</td>
+      <td className="px-4 py-3 text-left text-neutral-300 text-[11px] leading-relaxed break-words" style={{ ...tdStyle, minWidth: 220, maxWidth: 340, whiteSpace: 'normal' }}>{r.shareholdingNote || 'shareholding data unavailable'}</td>
     </tr>
   )
 }
@@ -539,7 +539,7 @@ export function PublicDailyPickPage(): JSX.Element {
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 3</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Risk:Reward</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
+                <th className="text-left px-4 py-3 text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
               </tr>
             </thead>
             <tbody>
@@ -561,7 +561,7 @@ export function PublicDailyPickPage(): JSX.Element {
                     <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
                     <td className="px-2 py-3 text-right text-accent-green font-bold whitespace-nowrap">₹{fmtPx(r.target3)}</td>
                     <td className="px-4 py-3 text-center whitespace-nowrap">{r.riskReward ?? '—'}:1</td>
-                    <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{r.shareholdingNote || 'shareholding data unavailable'}</td>
+                    <td className="px-4 py-3 text-left text-neutral-300 text-[11px] leading-relaxed break-words" style={{ minWidth: 220, maxWidth: 340, whiteSpace: 'normal' }}>{r.shareholdingNote || 'shareholding data unavailable'}</td>
                   </tr>
                 )
               })}
@@ -603,7 +603,7 @@ export function PublicPreMovePage(): JSX.Element {
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Expected %</th>
-                <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Setup Tags</th>
+                <th className="text-left px-4 py-3 text-neutral-400">Setup Tags</th>
               </tr>
             </thead>
             <tbody>
@@ -622,7 +622,7 @@ export function PublicPreMovePage(): JSX.Element {
                     <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.suggestedSL)}</td>
                     <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.suggestedTarget)}</td>
                     <td className="px-4 py-3 text-center text-accent-green text-[11px] whitespace-nowrap">{r.expectedMovePct?.toFixed?.(1)}%</td>
-                    <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{(r.tags ?? []).slice(0, 3).join(' · ')}</td>
+                    <td className="px-4 py-3 text-left text-neutral-300 text-[11px] leading-relaxed break-words" style={{ minWidth: 200, maxWidth: 320, whiteSpace: 'normal' }}>{(r.tags ?? []).slice(0, 3).join(' · ')}</td>
                   </tr>
                 )
               })}
@@ -692,7 +692,7 @@ function SignalTable({ rows }: { rows: any[] }): JSX.Element {
             <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 1</th>
             <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
             <th className="text-center px-4 py-3 whitespace-nowrap">Risk:Reward</th>
-            <th className="text-left px-4 py-3 whitespace-nowrap text-neutral-400">Reasoning</th>
+            <th className="text-left px-4 py-3 text-neutral-400">Reasoning</th>
           </tr>
         </thead>
         <tbody>
@@ -713,7 +713,7 @@ function SignalTable({ rows }: { rows: any[] }): JSX.Element {
                 <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target1)}</td>
                 <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
                 <td className="px-4 py-3 text-center whitespace-nowrap">{r.riskReward ?? '—'}</td>
-                <td className="px-4 py-3 text-left text-neutral-300 text-[11px] whitespace-nowrap">{(r.reasons ?? []).slice(0, 2).join(' · ')}</td>
+                <td className="px-4 py-3 text-left text-neutral-300 text-[11px] leading-relaxed break-words" style={{ minWidth: 220, maxWidth: 340, whiteSpace: 'normal' }}>{(r.reasons ?? []).slice(0, 2).join(' · ')}</td>
               </tr>
             )
           })}

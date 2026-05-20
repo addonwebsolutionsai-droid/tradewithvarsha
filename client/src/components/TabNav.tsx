@@ -83,63 +83,77 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
 
   return (
     <>
-      <nav className="flex items-center gap-0 overflow-x-auto bg-ink-800 border-b border-ink-500 px-3" style={{ scrollbarWidth: 'thin' }}>
-        {tops.map(t => {
-          const active = t.to === '/'
-            ? location.pathname === '/'
-            : t.isParent
-              ? onInvestment
-              : location.pathname === t.to || location.pathname.startsWith(t.to + '/')
-          return (
-            <button
-              key={t.to}
-              onClick={() => {
-                if (t.isParent) navigate('/investment/symbols')
-                else navigate(t.to)
-              }}
-              className={clsx(
-                'px-3 py-2.5 text-[12px] flex items-center gap-1 whitespace-nowrap border-b-2 transition-colors flex-shrink-0',
-                active
-                  ? 'text-accent-cyan border-accent-cyan'
-                  : 'text-neutral-500 border-transparent hover:text-neutral-300',
-              )}
-            >
-              {t.icon}
-              {t.label}
-              {t.isParent && <ChevronDown size={11} />}
-              {(t as any).count != null && (t as any).count > 0 && (
-                <span className={clsx(
-                  'text-[10px] px-1.5 py-0.5 rounded-full',
-                  active ? 'bg-accent-cyan/10 text-accent-cyan' : 'bg-ink-500 text-neutral-500',
-                )}>{(t as any).count}</span>
-              )}
-            </button>
-          )
-        })}
+      {/* 2026-05-20: Layout fix. Previously the 3-dot Settings dropdown was a
+          child of the overflow-x-auto <nav>, with ml-auto. In PUBLIC_MODE that
+          consumed the spare row width and pushed the 7th tab (Track Record)
+          off-screen. New layout: outer flex pins the settings to the right
+          edge OUTSIDE the scroll area, so all tabs always show + the dropdown
+          stays visible. Settings dropdown is also hidden entirely in PUBLIC_MODE
+          since none of those routes (/commodity /backtest /learning /bot
+          /preview) exist on the public Vercel build — they'd just redirect. */}
+      <div className="flex items-stretch bg-ink-800 border-b border-ink-500">
+        <nav
+          className="flex items-center gap-0 overflow-x-auto px-3 flex-1 min-w-0"
+          style={{ scrollbarWidth: 'thin' }}
+        >
+          {tops.map(t => {
+            const active = t.to === '/'
+              ? location.pathname === '/'
+              : t.isParent
+                ? onInvestment
+                : location.pathname === t.to || location.pathname.startsWith(t.to + '/')
+            return (
+              <button
+                key={t.to}
+                onClick={() => {
+                  if (t.isParent) navigate('/investment/symbols')
+                  else navigate(t.to)
+                }}
+                className={clsx(
+                  'px-3 py-2.5 text-[12px] flex items-center gap-1 whitespace-nowrap border-b-2 transition-colors flex-shrink-0',
+                  active
+                    ? 'text-accent-cyan border-accent-cyan'
+                    : 'text-neutral-500 border-transparent hover:text-neutral-300',
+                )}
+              >
+                {t.icon}
+                {t.label}
+                {t.isParent && <ChevronDown size={11} />}
+                {(t as any).count != null && (t as any).count > 0 && (
+                  <span className={clsx(
+                    'text-[10px] px-1.5 py-0.5 rounded-full',
+                    active ? 'bg-accent-cyan/10 text-accent-cyan' : 'bg-ink-500 text-neutral-500',
+                  )}>{(t as any).count}</span>
+                )}
+              </button>
+            )
+          })}
+        </nav>
 
-        {/* Settings dropdown — right side */}
-        <div className="ml-auto relative" ref={settingsRef}>
-          <button
-            onClick={() => setSettingsOpen(o => !o)}
-            className="px-3 py-3 text-[13px] flex items-center gap-1 text-neutral-500 hover:text-neutral-300"
-            title="More tabs (Bot · Learning · Backtest · Commodity)"
-          >
-            <MoreVertical size={14} />
-          </button>
-          {settingsOpen && (
-            <div
-              className="absolute right-0 top-full mt-1 w-52 bg-ink-700 border border-ink-500 rounded-lg shadow-xl z-50 overflow-hidden"
+        {/* Settings dropdown — pinned right, outside the scroll area.
+            Hidden in PUBLIC_MODE (those routes redirect on Vercel). */}
+        {!PUBLIC_MODE && (
+          <div className="relative flex-shrink-0 border-l border-ink-500" ref={settingsRef}>
+            <button
+              onClick={() => setSettingsOpen(o => !o)}
+              className="h-full px-3 text-[13px] flex items-center gap-1 text-neutral-500 hover:text-neutral-300"
+              title="More tabs (Bot · Learning · Backtest · Commodity)"
             >
-              <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-neutral-600 border-b border-ink-500">More</div>
-              <SettingsItem to="/commodity" icon={<TrendingUp size={12} />} label="Gold/Crude" onClick={() => setSettingsOpen(false)} />
-              <SettingsItem to="/backtest" icon={<BarChart3 size={12} />} label="Backtest" onClick={() => setSettingsOpen(false)} />
-              <SettingsItem to="/learning" icon={<FlaskConical size={12} />} label="Learning" onClick={() => setSettingsOpen(false)} />
-              <SettingsItem to="/bot"      icon={<MessageSquare size={12} />} label="Bot Status" onClick={() => setSettingsOpen(false)} />
-              <SettingsItem to="/preview"  icon={<Settings size={12} />} label="Preview Theme" onClick={() => setSettingsOpen(false)} />
-            </div>
-          )}
-        </div>
-      </nav>
+              <MoreVertical size={14} />
+            </button>
+            {settingsOpen && (
+              <div className="absolute right-0 top-full mt-1 w-52 bg-ink-700 border border-ink-500 rounded-lg shadow-xl z-50 overflow-hidden">
+                <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-neutral-600 border-b border-ink-500">More</div>
+                <SettingsItem to="/commodity" icon={<TrendingUp size={12} />} label="Gold/Crude" onClick={() => setSettingsOpen(false)} />
+                <SettingsItem to="/backtest" icon={<BarChart3 size={12} />} label="Backtest" onClick={() => setSettingsOpen(false)} />
+                <SettingsItem to="/learning" icon={<FlaskConical size={12} />} label="Learning" onClick={() => setSettingsOpen(false)} />
+                <SettingsItem to="/bot"      icon={<MessageSquare size={12} />} label="Bot Status" onClick={() => setSettingsOpen(false)} />
+                <SettingsItem to="/preview"  icon={<Settings size={12} />} label="Preview Theme" onClick={() => setSettingsOpen(false)} />
+              </div>
+            )}
+          </div>
+        )}
+      </div>
 
       {/* Sub-nav for Investment */}
       {onInvestment && (
