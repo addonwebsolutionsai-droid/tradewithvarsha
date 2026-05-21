@@ -189,9 +189,18 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
 function PublicUserMenu(): JSX.Element {
   const nav = useNavigate()
   const [open, setOpen] = useState(false)
+  // 2026-05-22: gated on token presence + window-focus refetch DISABLED.
+  // Earlier: this query ran on every page load + every tab focus for every
+  // visitor (logged in or not) — eating Vercel's 1M Function Invocations
+  // free tier. Hit 75% in May. Fix: skip the API call entirely when there's
+  // no auth token in localStorage (anonymous visitor), and don't refetch
+  // when the tab is focused.
+  const hasToken = auth.getToken().length > 0
   const { data, isError, refetch } = useQuery({
     queryKey: ['me'], queryFn: () => api.me(), retry: false,
-    refetchOnWindowFocus: true,
+    enabled: hasToken,
+    staleTime: 30 * 60_000,           // 30 min cache — auth state changes rarely
+    refetchOnWindowFocus: false,
   })
   useEffect(() => {
     function close(e: MouseEvent): void {

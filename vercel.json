@@ -1,9 +1,10 @@
 {
-  "buildCommand": "cd api && npm install && cd ../client && npm install && npx vite build",
+  "buildCommand": "cd client && npm install && npx vite build",
   "outputDirectory": "client/dist",
   "installCommand": "echo 'install runs inside buildCommand'",
   "framework": null,
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
-  ]
+    { "source": "/(.*)", "destination": "/index.html" }
+  ],
+  "ignoreCommand": "git diff HEAD^ HEAD --quiet -- ':!server/data/public-snapshots'"
 }

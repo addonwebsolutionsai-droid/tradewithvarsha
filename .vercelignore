@@ -1,0 +1,19 @@
+# 2026-05-22: api/ folder excluded from Vercel deploys.
+#
+# Why: every Vercel deploy was failing at "Provisioning Integrations" because
+# the tradewithvarsha-db Turso integration couldn't provision a DB branch
+# (likely the TURSO_AUTH_TOKEN got rotated and the integration's stored
+# credential went stale). Result: 2+ days of failed deploys → no fixes live.
+#
+# Public-mode Vercel doesn't need auth or any serverless functions. The site
+# is a static SPA fed by snapshots from GitHub raw URLs (no backend round-
+# trip). Auth lives on the localhost dev server only. By excluding api/,
+# Vercel auto-detection stops creating functions, the Turso integration
+# stops being invoked, and deploys succeed.
+#
+# Also fixes the 1M Function Invocations quota warning — zero functions
+# means zero invocations.
+api/
+server/
+.claude/
+*.log

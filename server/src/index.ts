@@ -208,7 +208,19 @@ async function pushSnapshotsToGitHub(): Promise<void> {
     log.warn('SNAP-PUSH', `${(e as Error).message?.slice(0, 200)}`)
   }
 }
-cron.schedule('2,32 * * * *', pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
+// 2026-05-22: Reduced push frequency from every 30 min (48/day) to 4/day on
+// weekdays only. Free Vercel free tier allows 100 deploys/day, but auto-push
+// at 30-min cadence + every commit during dev was burning the quota and
+// triggering Vercel's "approaching limits" warning. New schedule:
+//   09:20 IST  (5 min after market open — fresh weekly/daily picks)
+//   12:30 IST  (midday — pre-move scans refreshed)
+//   15:35 IST  (5 min after market close — final intraday + outcomes)
+//   17:05 IST  (post-close — miss-miner + accuracy snapshot)
+// = 4 pushes/weekday × 5 = 20/week vs 336/week previously.
+cron.schedule('20 9 * * 1-5',  pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
+cron.schedule('30 12 * * 1-5', pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
+cron.schedule('35 15 * * 1-5', pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
+cron.schedule('5 17 * * 1-5',  pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
 
 // 2026-05-06: cors with credentials so the dashboard can carry the auth
 // cookie cross-origin during local dev (vite :3000 → api :4000).
