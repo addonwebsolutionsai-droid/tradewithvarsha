@@ -171,6 +171,26 @@ export async function applyDirectionStability(signals: Signal[]): Promise<{
     //     different source confirming the change.
     if (sameSourceFamily(s.source, prior.source)) continue
 
+    // 2026-05-21: WHIPSAW HARD GUARD.
+    // User report: Titan long 4600 → 4200 (SL) then we flipped to short and
+    // got chopped; Hindalco short 1048 → 1098. Each flip was a fresh loss.
+    // Root cause: within the SWING/POSITIONAL cooldown the prior cooldown-note
+    // was attached but the flip still emitted, so users acted on the flip
+    // and got run over by the chop.
+    // Fix: inside the cooldown window, BLOCK the flip entirely unless the new
+    // signal is dramatically stronger (score ≥ prior + 1.5). Downgrade to
+    // WATCH-only so the user sees it as informational, not actionable.
+    const horiz = horizonOf(s)
+    const cooldown = COOLDOWN_HOURS[horiz]
+    if (cooldown > 0 && ageH < cooldown && s.score < prior.score + 1.5) {
+      s.tier = 'WATCH'
+      s.stabilityNote =
+        `🔁 WHIPSAW-GUARD: ${prior.direction}→${newDir} flip blocked (${ageH.toFixed(0)}h since prior ` +
+        `${prior.source} ${prior.grade}/${prior.score}; need score ≥ ${(prior.score + 1.5).toFixed(1)} to flip ` +
+        `inside ${cooldown}h cooldown). Showing as WATCH only — do NOT enter a fresh position.`
+      continue   // skip invalidation — keep prior trade open, just attach the watch tag
+    }
+
     // Real flip — tag the new card AND invalidate the prior open trade.
     s.stabilityNote =
       `View flipped ${prior.direction}→${newDir} after ${ageH.toFixed(1)}h · ` +

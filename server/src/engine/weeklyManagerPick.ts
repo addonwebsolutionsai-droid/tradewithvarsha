@@ -701,9 +701,21 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
         else if (r20 < 0.18) { preBreakoutScore += 8 }
         if (volRatio5 < 0.8) { preBreakoutScore += 20; reasons.push(`vol-dryup ${volRatio5.toFixed(2)}×`) }
         else if (volRatio5 < 1.0) { preBreakoutScore += 10 }
+        // 2026-05-21: BIAS FIX. Miss-miner reports (server/data/learning/miss-deltas-*)
+        // consistently show: hits clustered at -20% off-highs · misses at -26% off-highs.
+        // The old `if (proximityToHigh > 0.15) -10` penalized exactly the zone where
+        // actual movers live. User complaint: "you don't pick stocks before they move".
+        // Reason: scoring was structurally biased AGAINST off-highs accumulation.
+        // New rule: TWO sweet spots — near-high break (≤7%) AND wyckoff accumulation
+        // (-15% to -35% off-high WITH dry-up + tight base + neutral RSI).
         if (proximityToHigh < 0.03) { preBreakoutScore += 15; reasons.push(`at-20dH (${(proximityToHigh * 100).toFixed(1)}%)`) }
         else if (proximityToHigh < 0.07) { preBreakoutScore += 8 }
-        if (proximityToHigh > 0.15) preBreakoutScore -= 10
+        else if (proximityToHigh >= 0.15 && proximityToHigh <= 0.35 && volRatio5 < 1.0 && r10 < 0.06) {
+          preBreakoutScore += 18
+          reasons.push(`wyckoff-zone -${(proximityToHigh * 100).toFixed(0)}% off-high + dry-up + tight base`)
+        }
+        // Off-high penalty only on REAL extension downside (>35% off-high → broken)
+        if (proximityToHigh > 0.35) preBreakoutScore -= 10
         preBreakoutScore -= Math.min(20, Math.abs(ret5d) * 2)
         preBreakoutScore -= Math.min(15, Math.abs(ret20d) * 0.5)
         const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.5 : avgTurnoverCr >= 5 ? 1.2 : 1.0

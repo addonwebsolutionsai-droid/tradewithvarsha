@@ -1,5 +1,5 @@
 import type { Candle } from '../types'
-import { bollinger, emaStack, lastATR, lastRSI, obv, sma } from '../indicators'
+import { adx, bollinger, ema, emaStack, lastATR, lastRSI, obv, sma } from '../indicators'
 import { analyzeSMC, findSwings } from '../patterns/smc'
 import type { Screener, ScreenerResult } from './types'
 
@@ -493,6 +493,121 @@ export const rangeExpansionBreakout: Screener = {
  * strict pre-breakout screener REJECTS already-moved names entirely, missing
  * the 2nd-leg opportunity. This screener fills that gap.
  */
+/**
+ * Wyckoff Accumulation — explicit miss-profile screener.
+ *
+ * 2026-05-21: built after user complaint "you don't pick stocks BEFORE the
+ * move happens". Miss-miner reports (server/data/learning/miss-deltas-*) show
+ * the consistent gap: actual movers cluster at -20% to -35% off 52-week highs
+ * with RSI 40-55 (NEUTRAL not extended), vol-ratio < 1.0 (dry-up), and recent
+ * tight base. We were structurally biased toward near-high names and missing
+ * this entire zone.
+ *
+ * Pattern (Wyckoff Phase C → D):
+ *   1. Stock pulled back -15% to -35% from its 60-day high (accumulation zone)
+ *   2. Last 10 sessions tight (range < 6 % of price)
+ *   3. 20-day vol average ≤ 60-day vol average (institutional accumulation)
+ *   4. RSI 40-55 (no extension either way — neutral spring-loaded)
+ *   5. Above 200-EMA (NOT broken stock — still in long-term uptrend)
+ *   6. ATR < 4 % (settled vol, not falling-knife volatility)
+ *
+ * The signal fires BEFORE the breakout. Entry on next-day open above the 10-day
+ * range high. SL below the 20-day low. Targets at +1×, +2.5×, +5× ATR.
+ */
+export const wyckoffAccumulation: Screener = {
+  id: 'wyckoff_accumulation',
+  name: 'Wyckoff Accumulation',
+  description: 'Off-highs (-15% to -35%) + dry-up + tight base + neutral RSI — pre-breakout accumulation',
+  timeframeLabel: '3–15 sessions',
+  setupKind: 'ACCUMULATION',
+  scan(candles: Candle[], symbol: string): ScreenerResult | null {
+    if (candles.length < 80) return null
+    const latest = last(candles)!
+
+    // Step 1: position in 60-day range — must be in accumulation zone
+    const last60 = candles.slice(-60)
+    const high60 = Math.max(...last60.map(c => c.high))
+    const offHighPct = (high60 - latest.close) / high60
+    if (offHighPct < 0.10 || offHighPct > 0.40) return null   // 10-40% off high
+
+    // Step 2: NOT broken — still above 200-EMA (or no 200 → above 50-EMA)
+    const e50Series = ema(candles, 50)
+    const e200Series = ema(candles, 200)
+    const e50 = e50Series[e50Series.length - 1]
+    const e200 = e200Series[e200Series.length - 1]
+    const longTermBaseline = e200 ?? e50
+    if (latest.close < longTermBaseline * 0.96) return null   // allow 4% slop
+
+    // Step 3: tight base over last 10 sessions
+    const last10 = candles.slice(-10)
+    const r10 = (Math.max(...last10.map(c => c.high)) - Math.min(...last10.map(c => c.low))) / latest.close
+    if (r10 > 0.07) return null                               // < 7% range = tight
+
+    // Step 4: vol dry-up — 20d avg ≤ 60d avg × 1.05
+    const v20 = avg(candles.slice(-20).map(c => c.volume))
+    const v60 = avg(candles.slice(-60).map(c => c.volume))
+    if (v60 === 0) return null
+    const volRatio = v20 / v60
+    if (volRatio > 1.05) return null                          // expanding vol = not dry-up
+
+    // Step 5: RSI neutral — 40 to 58 — coiled spring zone
+    const rsi = lastRSI(candles, 14) ?? 50
+    if (rsi < 40 || rsi > 58) return null
+
+    // Step 6: ATR settled (volatility cooled)
+    const atr = lastATR(candles, 14) ?? latest.close * 0.025
+    const atrPct = atr / latest.close
+    if (atrPct > 0.04) return null                            // > 4% = still chaotic
+
+    // Step 7: not below recent swing low (no fresh breakdown)
+    const swingLow10 = Math.min(...last10.map(c => c.low))
+    if (latest.close < swingLow10 * 1.005) return null        // sitting at base low → not yet sprung
+
+    // Trade plan
+    const breakoutTrigger = +Math.max(...last10.map(c => c.high)).toFixed(2)
+    const entry = +latest.close.toFixed(2)
+    const slPrice = +Math.min(swingLow10 * 0.99, latest.close - atr * 1.5).toFixed(2)
+    const t1Price = +(latest.close + atr * 2.5).toFixed(2)
+    const t2Price = +(latest.close + atr * 5).toFixed(2)
+    const t3Price = +(latest.close + (high60 - latest.close) * 1.1).toFixed(2)  // beat 60d high by 10%
+
+    // Score on (a) base tightness (b) vol dry-up strength (c) RSI sweet spot
+    let score = 6.5
+    if (r10 < 0.04) score += 1.0
+    if (volRatio < 0.80) score += 0.8
+    else if (volRatio < 0.95) score += 0.4
+    if (rsi >= 45 && rsi <= 53) score += 0.7
+    if (offHighPct >= 0.18 && offHighPct <= 0.30) score += 0.5   // miss-miner sweet spot
+    const tier: 'A' | 'B' | 'C' = score >= 8.5 ? 'A' : score >= 7.5 ? 'B' : 'C'
+
+    return {
+      symbol, price: entry, change: 0, changePct: 0,
+      score: +score.toFixed(1),
+      tier,
+      direction: 'BULL',
+      reasons: [
+        `Off 60d-high by ${(offHighPct * 100).toFixed(0)}% (₹${high60.toFixed(2)} → ₹${entry}) — accumulation zone`,
+        `Tight base: 10d range ${(r10 * 100).toFixed(1)}%`,
+        `Vol dry-up: 20d avg ${(volRatio * 100).toFixed(0)}% of 60d avg (${volRatio < 0.8 ? 'institutional accumulation' : 'cooling'})`,
+        `RSI ${rsi.toFixed(0)} (coiled neutral) · ATR ${(atrPct * 100).toFixed(2)}% (settled)`,
+        `Above ${e200 ? '200-EMA ₹' + e200.toFixed(2) : '50-EMA ₹' + e50.toFixed(2)} — trend intact`,
+        `Breakout trigger ₹${breakoutTrigger} (10d range high)`,
+      ],
+      tags: ['Wyckoff', `Off-${(offHighPct * 100).toFixed(0)}%`, `Tight ${(r10 * 100).toFixed(1)}%`, `Vol ${(volRatio * 100).toFixed(0)}%`],
+      expectedMovePct: ((t2Price - entry) / entry) * 100,
+      timeframeLabel: this.timeframeLabel,
+      suggestedEntry: entry,
+      suggestedSL: slPrice,
+      suggestedTarget: t1Price,
+      target1: t1Price,
+      target2: t2Price,
+      target3: t3Price,
+      detectedAt: Date.now(),
+      setupKind: this.setupKind,
+    }
+  },
+}
+
 export const wave2Continuation: Screener = {
   id: 'wave2_continuation',
   name: 'Wave-2 Continuation',
@@ -729,6 +844,7 @@ export const ADVANCED_PREMOVE_SCREENERS: Screener[] = [
   rsiPositiveReversal,
   distributionTop,
   rangeExpansionBreakout,
+  wyckoffAccumulation,
   wave2Continuation,
   fiftyTwoWeekBreakout,
 ]
@@ -756,6 +872,7 @@ export const ADVANCED_PREMOVE_SCREENERS: Screener[] = [
 export const ADVANCED_PREMOVE_ACTIVE: Screener[] = [
   rsiPositiveReversal,       // R=22.54 · Net +1.44%/trade · ✅ ship
   distributionTop,           // R= 1.61 · Net +1.25%/trade · ✅ ship
+  wyckoffAccumulation,       // 2026-05-21: miss-miner targeted screener — see comment above
 ]
 
 /** Watch tier — positive R but expectancy too close to 0 for primary dispatch. */
