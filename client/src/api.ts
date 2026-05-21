@@ -5,7 +5,13 @@ import type { AstroBias, BacktestResult, GannBias, Health, MarketIndex, OIAnalys
 // VITE_PUBLIC_MODE=true and no live backend, the 3 public tabs read from
 // static JSON snapshots hosted at VITE_SNAPSHOT_BASE_URL (e.g. raw GitHub).
 const API = (import.meta as any).env?.VITE_API_URL || ''
-const SNAPSHOT_BASE = (import.meta as any).env?.VITE_SNAPSHOT_BASE_URL || ''
+// 2026-05-22: SNAPSHOT_BASE falls back to the GitHub raw URL so localhost dev
+// (where no .env.development exists) can still load Track Record + other
+// public snapshot pages. Previously this was empty in dev → "Couldn't load"
+// error on /track-record. Now the same data Vercel reads is also available
+// locally without any env setup.
+const SNAPSHOT_BASE = (import.meta as any).env?.VITE_SNAPSHOT_BASE_URL
+  || 'https://raw.githubusercontent.com/addonwebsolutionsai-droid/tradewithvarsha/main/server/data/public-snapshots'
 const PUBLIC_MODE = (import.meta as any).env?.VITE_PUBLIC_MODE === 'true'
 
 // Auth token in localStorage — attached as Bearer header automatically.
