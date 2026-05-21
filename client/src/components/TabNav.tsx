@@ -1,9 +1,8 @@
 import clsx from 'clsx'
-import { useState, useRef, useEffect } from 'react'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
-  Activity, BarChart3, Bot, Brain, Briefcase, Clock, FlaskConical, LayoutDashboard,
-  Layers, ListChecks, MessageSquare, MoreVertical, Rocket, Settings, Star, Target,
+  Activity, BarChart3, Bot, Brain, Briefcase, Clock, LayoutDashboard,
+  Layers, ListChecks, Rocket, Star, Target,
   TrendingUp, Wind, Zap, ChevronDown, ClipboardList, Triangle,
 } from 'lucide-react'
 
@@ -28,17 +27,6 @@ interface SubItem { to: string; label: string; icon: React.ReactNode; count?: nu
 export function TabNav({ counts }: { counts: Record<string, number> }) {
   const location = useLocation()
   const navigate = useNavigate()
-  const [settingsOpen, setSettingsOpen] = useState(false)
-  const settingsRef = useRef<HTMLDivElement>(null)
-
-  // Close settings dropdown on outside click
-  useEffect(() => {
-    const onClick = (e: MouseEvent) => {
-      if (settingsRef.current && !settingsRef.current.contains(e.target as Node)) setSettingsOpen(false)
-    }
-    document.addEventListener('mousedown', onClick)
-    return () => document.removeEventListener('mousedown', onClick)
-  }, [])
 
   const investmentSubs: SubItem[] = [
     { to: '/investment/symbols',     label: 'Symbols',      icon: <ListChecks size={12} /> },
@@ -58,16 +46,22 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   // not just CSS-hidden). The route gate in App.tsx redirects any direct URL
   // navigation to /weekly-pick.
   const PUBLIC_MODE = (import.meta as any).env?.VITE_PUBLIC_MODE === 'true'
+  // 2026-05-21: Track Record promoted to position #2 (right after Top Trades)
+  // so it's visible on narrow viewports without horizontal scroll. User
+  // couldn't find it on Vercel when it was at position #7. Badge "NEW" for
+  // discoverability — public users land on Top Trades and immediately see
+  // Track Record next to it for outcome verification.
   const tops = PUBLIC_MODE ? [
-    { to: '/top-trades',  label: 'Top Trades',  icon: <Target size={14} /> },
-    { to: '/weekly-pick', label: 'Weekly Pick', icon: <Briefcase size={14} /> },
-    { to: '/daily-pick',  label: 'Daily Pick',  icon: <Bot size={14} /> },
-    { to: '/pre-move',    label: 'Pre-Move',    icon: <Wind size={14} /> },
-    { to: '/options',     label: 'Options',     icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
-    { to: '/intraday',    label: 'Intraday',    icon: <Activity size={14} />, count: counts.intraday },
-    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} /> },
+    { to: '/top-trades',   label: 'Top Trades',   icon: <Target size={14} /> },
+    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />, badge: 'NEW' },
+    { to: '/weekly-pick',  label: 'Weekly Pick',  icon: <Briefcase size={14} /> },
+    { to: '/daily-pick',   label: 'Daily Pick',   icon: <Bot size={14} /> },
+    { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} /> },
+    { to: '/options',      label: 'Options',      icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
+    { to: '/intraday',     label: 'Intraday',     icon: <Activity size={14} />, count: counts.intraday },
   ] : [
     { to: '/',          label: 'Dashboard',   icon: <LayoutDashboard size={14} /> },
+    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />, badge: 'NEW' },
     { to: '/signals',   label: 'All Signals', icon: <Zap size={14} />, count: counts.all },
     { to: '/intraday',  label: 'Intraday',    icon: <Activity size={14} />, count: counts.intraday },
     { to: '/options',   label: 'Options',     icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
@@ -119,6 +113,11 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
                 {t.icon}
                 {t.label}
                 {t.isParent && <ChevronDown size={11} />}
+                {(t as any).badge && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-accent-green text-ink-900 leading-none">
+                    {(t as any).badge}
+                  </span>
+                )}
                 {(t as any).count != null && (t as any).count > 0 && (
                   <span className={clsx(
                     'text-[10px] px-1.5 py-0.5 rounded-full',
@@ -130,29 +129,13 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
           })}
         </nav>
 
-        {/* Settings dropdown — pinned right, outside the scroll area.
-            Hidden in PUBLIC_MODE (those routes redirect on Vercel). */}
-        {!PUBLIC_MODE && (
-          <div className="relative flex-shrink-0 border-l border-ink-500" ref={settingsRef}>
-            <button
-              onClick={() => setSettingsOpen(o => !o)}
-              className="h-full px-3 text-[13px] flex items-center gap-1 text-neutral-500 hover:text-neutral-300"
-              title="More tabs (Bot · Learning · Backtest · Commodity)"
-            >
-              <MoreVertical size={14} />
-            </button>
-            {settingsOpen && (
-              <div className="absolute right-0 top-full mt-1 w-52 bg-ink-700 border border-ink-500 rounded-lg shadow-xl z-50 overflow-hidden">
-                <div className="px-3 py-2 text-[10px] uppercase tracking-wider text-neutral-600 border-b border-ink-500">More</div>
-                <SettingsItem to="/commodity" icon={<TrendingUp size={12} />} label="Gold/Crude" onClick={() => setSettingsOpen(false)} />
-                <SettingsItem to="/backtest" icon={<BarChart3 size={12} />} label="Backtest" onClick={() => setSettingsOpen(false)} />
-                <SettingsItem to="/learning" icon={<FlaskConical size={12} />} label="Learning" onClick={() => setSettingsOpen(false)} />
-                <SettingsItem to="/bot"      icon={<MessageSquare size={12} />} label="Bot Status" onClick={() => setSettingsOpen(false)} />
-                <SettingsItem to="/preview"  icon={<Settings size={12} />} label="Preview Theme" onClick={() => setSettingsOpen(false)} />
-              </div>
-            )}
-          </div>
-        )}
+        {/* 2026-05-21: 3-dot Settings dropdown REMOVED. User reported it
+            still rendering "weirdly" on Vercel (likely stale deploy serving
+            old bundle, OR the dropdown items overflowing on narrow screens).
+            The items it contained (/commodity /backtest /learning /bot
+            /preview) are all admin-only — accessible by direct URL when
+            needed but not user-facing. Track Record + the primary trading
+            tabs are all now visible in the main nav row above. */}
       </div>
 
       {/* Sub-nav for Investment */}
@@ -183,15 +166,4 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   )
 }
 
-function SettingsItem({ to, icon, label, onClick }: { to: string; icon: React.ReactNode; label: string; onClick?: () => void }) {
-  return (
-    <NavLink
-      to={to}
-      onClick={onClick}
-      className="flex items-center gap-2 px-3 py-2 text-xs text-neutral-300 hover:bg-ink-600"
-    >
-      <span className="text-neutral-500">{icon}</span>
-      {label}
-    </NavLink>
-  )
-}
+// SettingsItem removed along with 3-dot dropdown (2026-05-21).
