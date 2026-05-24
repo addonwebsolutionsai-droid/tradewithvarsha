@@ -62,15 +62,14 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} /> },
     { to: '/options',      label: 'Options',      icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
   ] : [
+    // 2026-05-25: Niche tabs (Gann / TimeCycle / Harmonic / Turtle Soup) moved
+    // INTO the More dropdown — last-14-days lifecycle audit showed zero closed
+    // signals from these sources. Top bar now focused on the primary workflow.
     { to: '/',          label: 'Dashboard',   icon: <LayoutDashboard size={14} /> },
     { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />, badge: 'NEW' },
     { to: '/signals',   label: 'All Signals', icon: <Zap size={14} />, count: counts.all },
     { to: '/options',   label: 'Options',     icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
     { to: '/investment', label: 'Investment', icon: <Target size={14} />, isParent: true },
-    { to: '/gann',      label: 'Gann Cycle',  icon: <Star size={14} /> },
-    { to: '/timecycle', label: 'Time Cycle',  icon: <Clock size={14} /> },
-    { to: '/harmonic',  label: 'Harmonic',    icon: <Triangle size={14} /> },
-    { to: '/turtle-soup', label: 'Turtle Soup', icon: <Wind size={14} /> },
     { to: '/backtest-results', label: 'Backtest Results', icon: <ClipboardList size={14} /> },
   ]
 

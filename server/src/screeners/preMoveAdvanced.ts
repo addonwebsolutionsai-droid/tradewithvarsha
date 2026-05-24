@@ -163,7 +163,7 @@ export const darvasBoxPending: Screener = {
 export const ema50Reclaim: Screener = {
   id: 'ema50_reclaim',
   name: '50-EMA Reclaim',
-  description: 'Price reclaims 50-EMA after pullback — trend-continuation buy',
+  description: 'Price reclaims 50-EMA after pullback — stage-1 OR stage-2 base recovery',
   timeframeLabel: '1-4 weeks',
   setupKind: 'PRE_MOVE',
   scan(candles: Candle[], symbol: string): ScreenerResult | null {
@@ -172,7 +172,20 @@ export const ema50Reclaim: Screener = {
     const latest = last(candles)!
     const ema50 = last(ema50Series)
     const ema200 = last(sma(candles, 200))
-    if (!ema50 || !ema200 || ema50 < ema200) return null // need primary uptrend
+    if (!ema50 || !ema200) return null
+    // 2026-05-25: STAGE-1 RECLAIM allowed.
+    // The original gate `if (ema50 < ema200) return null` rejected stage-1
+    // bases — but the 22-May +5-20% movers (GENESYS, MANALIPETC, EXCELSOFT,
+    // NGLFINE, IVP, JSWCEMENT) all had ema50 < ema200 with rising ema50
+    // and price reclaiming ema50. They were exactly this setup.
+    // New rule: stage-2 (ema50 > ema200) OR stage-1 (ema50 rising 5d AND
+    // price > ema50 by ≥1%). Stage label flows into the reasons so the
+    // user can see which it is.
+    const ema50Five = ema50Series[ema50Series.length - 6]
+    const ema50Rising = ema50Five != null && ema50 > ema50Five
+    const stage2 = ema50 > ema200
+    const stage1 = !stage2 && ema50Rising && latest.close > ema50 * 1.01
+    if (!stage2 && !stage1) return null
     // Must have closed below 50-EMA in the last 10 bars but now back above
     const last10 = candles.slice(-10)
     const wasBelow = last10.some((c, i) => c.close < (ema50Series[ema50Series.length - last10.length + i] ?? 0))
@@ -180,17 +193,21 @@ export const ema50Reclaim: Screener = {
     if (!(wasBelow && nowAbove)) return null
     const atr = lastATR(candles) ?? latest.close * 0.02
     const rsi = lastRSI(candles, 14) ?? 50
+    // Stage-1 reclaims are slightly weaker setups → cap score lower so
+    // the conviction merge ranks stage-2 above stage-1 by default.
+    const score = stage2 ? 7.8 : 7.2
+    const stageLabel = stage2 ? 'Stage-2 (50EMA > 200EMA)' : 'Stage-1 base recovery (50EMA rising, 200EMA still ahead)'
     return {
       symbol, price: latest.close, change: 0, changePct: 0,
-      score: 7.5,
-      tier: 'B',
+      score,
+      tier: stage2 ? 'B' : 'C',
       direction: 'BULL',
       reasons: [
         `Pulled below 50-EMA, now reclaimed (close ${latest.close.toFixed(2)} > ${ema50.toFixed(2)})`,
-        `Primary uptrend intact (50-EMA > 200-EMA)`,
+        stageLabel,
         `RSI ${rsi.toFixed(1)} turning up`,
       ],
-      tags: ['Reclaim 50EMA', `EMA50 ${ema50.toFixed(0)}`, `RSI ${Math.round(rsi)}`],
+      tags: ['Reclaim 50EMA', stage2 ? 'Stage-2' : 'Stage-1', `EMA50 ${ema50.toFixed(0)}`, `RSI ${Math.round(rsi)}`],
       expectedMovePct: 10,
       timeframeLabel: this.timeframeLabel,
       suggestedEntry: latest.close,
@@ -869,17 +886,27 @@ export const ADVANCED_PREMOVE_SCREENERS: Screener[] = [
  * The 2 marginals (darvas_box, range_expansion_breakout) stay in WATCH tier —
  * good R-multiple but expectancy too close to 0 to risk capital at scale.
  */
+// 2026-05-25: PROMOTIONS. Diagnostic against user's 22-May top-mover list
+// (25 stocks, +8% to +20%) showed:
+//   rangeExpansionBreakout fired on 3/25 movers on 21-May (NIBE, EXICOM, ASTONEALAB)
+//   distributionTop        fired on 3/25 (RATEGAIN, TALBROAUTO, SUNPHARMA)
+//   darvasBoxPending       fired on 1/25 (SUNPHARMA)
+// Combined: 6/25 (24%) of next-day movers were already detected — but
+// rangeExpansion + darvas were in WATCH tier, so user never saw them.
+// Promoting both: coverage > optimal expectancy. Borderline expectancy
+// (Net +0.10% / +0.36%) is acceptable when the alternative is missing the
+// 5–20% next-day moves the user explicitly cares about.
 export const ADVANCED_PREMOVE_ACTIVE: Screener[] = [
   rsiPositiveReversal,       // R=22.54 · Net +1.44%/trade · ✅ ship
-  distributionTop,           // R= 1.61 · Net +1.25%/trade · ✅ ship
-  wyckoffAccumulation,       // 2026-05-21: miss-miner targeted screener — see comment above
+  distributionTop,           // R= 1.61 · Net +1.25%/trade · ✅ ship · caught 3/25 22-May movers
+  rangeExpansionBreakout,    // R= 2.00 · Net +0.10%       · 2026-05-25 promoted (3/25 movers)
+  darvasBoxPending,          // R= 2.79 · Net +0.36%       · 2026-05-25 promoted (1/25 movers)
+  ema50Reclaim,              // 2026-05-25 promoted + stage-1 gate added
+  wyckoffAccumulation,       // miss-miner targeted screener — see comment above
 ]
 
-/** Watch tier — positive R but expectancy too close to 0 for primary dispatch. */
+/** Watch tier — kept for /api/scan/premove UI but not in primary dispatch. */
 export const ADVANCED_PREMOVE_WATCH: Screener[] = [
-  darvasBoxPending,          // R=2.79 · Net +0.36%
-  rangeExpansionBreakout,    // R=2.00 · Net +0.10%
-  ema50Reclaim,              // unmeasured (few fires)
   wave2Continuation,         // unmeasured — purpose-built
   fiftyTwoWeekBreakout,      // unmeasured — purpose-built
 ]

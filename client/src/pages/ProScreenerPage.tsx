@@ -193,9 +193,9 @@ export function ProScreenerPage() {
             </div>
           </div>
           {dailyPick.data?.rows?.length > 0 && (
-            <div className="overflow-x-auto rounded-lg border border-ink-500">
+            <div className="overflow-auto rounded-lg border border-ink-500" style={{ maxHeight: '75vh' }}>
               <table className="w-full text-[11px] bg-ink-800">
-                <thead className="bg-ink-700 text-neutral-400">
+                <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
                   <tr>
                     <th className="text-left px-3 py-2">Symbol</th>
                     <th className="text-center px-3 py-2">Dir</th>

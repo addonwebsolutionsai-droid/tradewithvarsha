@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { Plus, X, RefreshCw, ArrowUpRight, ArrowDownRight } from 'lucide-react'
 import clsx from 'clsx'
+import { StickyScrollBox, StickyTable, STICKY_THEAD, STICKY_FIRST_COL_HEADER, STICKY_FIRST_COL_BODY } from '../components/StickyTable'
 
 /**
  * Symbols — personal watchlist with live snapshot per stock.
@@ -75,12 +76,12 @@ export function SymbolsPage() {
         </button>
       </div>
 
-      {/* Watchlist table */}
-      <div className="overflow-x-auto bg-ink-700 border border-ink-500 rounded-lg">
-        <table className="w-full text-xs">
-          <thead className="bg-ink-800 text-neutral-400">
+      {/* Watchlist table — sticky thead + sticky Symbol col + 75vh scroll. */}
+      <StickyScrollBox>
+        <StickyTable minWidth={900} className="text-xs">
+          <thead className={STICKY_THEAD}>
             <tr>
-              <th className="text-left px-3 py-2">Symbol</th>
+              <th className={`text-left px-3 py-2 ${STICKY_FIRST_COL_HEADER}`}>Symbol</th>
               <th className="text-right px-3 py-2">LTP</th>
               <th className="text-right px-3 py-2">Day change</th>
               <th className="text-center px-3 py-2">Signal</th>
@@ -93,8 +94,8 @@ export function SymbolsPage() {
           <tbody>
             {symbols.map(s => <SymbolRow key={s} symbol={s} onRemove={() => remove(s)} />)}
           </tbody>
-        </table>
-      </div>
+        </StickyTable>
+      </StickyScrollBox>
     </div>
   )
 }
@@ -126,16 +127,19 @@ function SymbolRow({ symbol, onRemove }: { symbol: string; onRemove: () => void 
   const change = p?.change ?? 0
   const changePct = p?.changePct ?? 0
 
+  // Row tint goes on each <td> so the sticky Symbol cell stays opaque against
+  // horizontal-scrolled content.
+  const td = `px-3 py-2 border-t border-ink-500 bg-ink-800 group-hover:bg-ink-700 font-mono`
   return (
-    <tr className="border-t border-ink-500 hover:bg-ink-700 font-mono">
-      <td className="px-3 py-2 font-bold text-neutral-200">{symbol}</td>
-      <td className="px-3 py-2 text-right">
+    <tr className="group">
+      <td className={`${td} font-bold text-neutral-200 ${STICKY_FIRST_COL_BODY}`}>{symbol}</td>
+      <td className={`${td} text-right`}>
         {p ? `₹${p.price?.toLocaleString('en-IN', { maximumFractionDigits: 2 })}` : '—'}
       </td>
-      <td className={clsx('px-3 py-2 text-right text-[11px]', change >= 0 ? 'text-accent-green' : 'text-accent-red')}>
+      <td className={clsx(td, 'text-right text-[11px]', change >= 0 ? 'text-accent-green' : 'text-accent-red')}>
         {p ? <>{change >= 0 ? <ArrowUpRight size={11} className="inline" /> : <ArrowDownRight size={11} className="inline" />} {change >= 0 ? '+' : ''}{change.toFixed(2)} ({changePct >= 0 ? '+' : ''}{changePct.toFixed(2)}%)</> : '—'}
       </td>
-      <td className="px-3 py-2 text-center">
+      <td className={`${td} text-center`}>
         {top ? (
           <span className={clsx('text-[10px] px-1.5 py-0.5 rounded font-bold',
             top.direction === 'BUY' ? 'bg-accent-green/15 text-accent-green' : 'bg-accent-red/15 text-accent-red')}>
@@ -145,10 +149,10 @@ function SymbolRow({ symbol, onRemove }: { symbol: string; onRemove: () => void 
           <span className="text-[10px] text-neutral-600">— no signal</span>
         )}
       </td>
-      <td className="px-3 py-2 text-right text-[11px]">{top ? `₹${top.entry}` : '—'}</td>
-      <td className="px-3 py-2 text-right text-[11px] text-accent-red">{top ? `₹${top.stopLoss}` : '—'}</td>
-      <td className="px-3 py-2 text-right text-[11px] text-accent-green">{top ? `₹${top.target1}` : '—'}</td>
-      <td className="px-3 py-2 text-center">
+      <td className={`${td} text-right text-[11px]`}>{top ? `₹${top.entry}` : '—'}</td>
+      <td className={`${td} text-right text-[11px] text-accent-red`}>{top ? `₹${top.stopLoss}` : '—'}</td>
+      <td className={`${td} text-right text-[11px] text-accent-green`}>{top ? `₹${top.target1}` : '—'}</td>
+      <td className={`${td} text-center`}>
         <button onClick={onRemove} className="text-neutral-500 hover:text-accent-red"><X size={12} /></button>
       </td>
     </tr>

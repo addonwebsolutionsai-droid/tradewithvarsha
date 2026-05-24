@@ -199,9 +199,9 @@ export function BacktestResultsPage() {
           Showing <b className="text-neutral-200">{filtered.length}</b> of {rows.length} signals
           {audit.data?.asOf && <> · refreshed {new Date(audit.data.asOf).toLocaleTimeString('en-IN')}</>}
         </div>
-        <div className="overflow-x-auto rounded-lg border border-ink-500">
+        <div className="overflow-auto rounded-lg border border-ink-500" style={{ maxHeight: '75vh' }}>
           <table className="w-full text-[11px] bg-ink-800">
-            <thead className="bg-ink-700 text-neutral-400 sticky top-0">
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
               <tr>
                 <th className="text-left px-3 py-2">Emitted</th>
                 <th className="text-left px-3 py-2">Instrument</th>
