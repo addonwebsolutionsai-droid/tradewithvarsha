@@ -389,6 +389,19 @@ export function PublicTopTradesPage(): JSX.Element {
 }
 
 // ── WEEKLY PICK ─────────────────────────────────────────────────
+// 2026-05-24: PROTOTYPE redesign per user feedback.
+//   Old issue: table was 1700px min-width with horizontal scroll at the
+//   bottom of a tall table — user had to scroll page down THEN scroll
+//   table right. Tedious especially on mobile.
+//   New approach:
+//     • Mobile (< md=768px) → vertical CARD list, no horizontal scroll at all.
+//     • Desktop (≥ md) → table with:
+//         - scroll container `max-height: 75vh` so horizontal bar is always
+//           near the viewport bottom (not buried at the table bottom)
+//         - sticky <thead> (column labels visible while scrolling vertically)
+//         - sticky first column "Stock" (always visible while scrolling
+//           horizontally, so you always know which row you're on)
+//   If you approve this, we apply the same pattern to all other pages.
 export function PublicWeeklyPickPage(): JSX.Element {
   const { data, isLoading, error } = useQuery({
     queryKey: ['public-weekly'], queryFn: () => snapshots.weeklyPick(),
@@ -405,30 +418,86 @@ export function PublicWeeklyPickPage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && (
-        <div className="overflow-x-auto rounded-lg border border-ink-500">
-          <table className="w-full text-[12px] bg-ink-800" style={{ minWidth: 1700 }}>
-            <thead className="bg-ink-700 text-neutral-400">
-              <tr>
-                <th className="text-left px-4 py-3 whitespace-nowrap">Stock</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap">LTP</th>
-                <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
-                <th className="text-center px-4 py-3 whitespace-nowrap">Conviction</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry Range</th>
-                <th className="text-center px-2 py-3 whitespace-nowrap text-accent-cyan">Entry by</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 1</th>
-                <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T1 by</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
-                <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T2 by</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 3</th>
-                <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T3 by</th>
-                <th className="text-left px-4 py-3 text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => <WeeklyRow key={i} r={r} />)}
-            </tbody>
-          </table>
+        <>
+          {/* Mobile card list — < 768px */}
+          <div className="md:hidden space-y-3">
+            {rows.map((r, i) => <WeeklyCard key={`m${i}`} r={r} />)}
+          </div>
+
+          {/* Desktop table — ≥ 768px */}
+          <div
+            className="hidden md:block overflow-auto rounded-lg border border-ink-500 bg-ink-800"
+            style={{ maxHeight: '75vh' }}
+          >
+            <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1500 }}>
+              <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+                <tr>
+                  <th className="text-left px-4 py-3 whitespace-nowrap bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Stock</th>
+                  <th className="text-right px-4 py-3 whitespace-nowrap">LTP</th>
+                  <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
+                  <th className="text-center px-4 py-3 whitespace-nowrap">Conviction</th>
+                  <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry Range</th>
+                  <th className="text-center px-2 py-3 whitespace-nowrap text-accent-cyan">Entry by</th>
+                  <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
+                  <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 1</th>
+                  <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T1 by</th>
+                  <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
+                  <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T2 by</th>
+                  <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 3</th>
+                  <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T3 by</th>
+                  <th className="text-left px-4 py-3 text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
+                </tr>
+              </thead>
+              <tbody>
+                {rows.map((r, i) => <WeeklyRow key={i} r={r} />)}
+              </tbody>
+            </table>
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+
+/** Mobile card layout — every column collapsed into a vertical stack.
+ *  No horizontal scroll. Tap anywhere on the card to do nothing yet (placeholder). */
+function WeeklyCard({ r }: { r: any }): JSX.Element {
+  const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
+  const convCls = r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : 'text-accent-amber'
+  const status = r.lifecycleStatus || 'ACTIVE'
+  const isHit = status === 'T1_HIT' || status === 'T2_HIT' || status === 'T3_HIT'
+  const isLoss = status === 'SL_HIT' || status === 'SUPERSEDED' || status === 'EXPIRED' || status === 'INVALIDATED'
+  const cardCls = `rounded-lg border p-3 font-mono text-[12px] ${
+    isHit ? 'bg-accent-green/10 border-accent-green/40' :
+    isLoss ? 'bg-ink-900 border-ink-500 opacity-60' :
+    r.noBrainerBet ? 'bg-accent-amber/5 border-accent-amber/40' :
+    'bg-ink-800 border-ink-500'
+  }`
+  return (
+    <div className={cardCls}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <b className="text-neutral-100 text-[13px]">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+          {r.bucket === 'WAVE_2' && status === 'ACTIVE' && (
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40">🔄 WAVE-2</span>
+          )}
+        </div>
+        <span className={`text-[12px] font-bold ${convCls}`}>{r.conviction}</span>
+      </div>
+      <StatusChip r={r} status={status} />
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 mt-2 text-[11px]">
+        <div className="text-neutral-500">LTP</div><div className="text-right">₹{fmtPx(r.ltp)}</div>
+        <div className="text-accent-cyan">Entry</div><div className="text-right text-accent-cyan">₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</div>
+        <div className="text-neutral-500">Entry by</div><div className="text-right text-[10px]">{fmtDate(r.entryDate)}</div>
+        <div className="text-accent-red">Stop Loss</div><div className="text-right text-accent-red">₹{fmtPx(r.stopLoss)}</div>
+        <div className="text-accent-green">T1</div><div className="text-right text-accent-green">₹{fmtPx(r.target1)} <span className="text-neutral-500 text-[10px]">· {fmtDate(r.target1Date)}</span></div>
+        <div className="text-accent-green">T2</div><div className="text-right text-accent-green">₹{fmtPx(r.target2)} <span className="text-neutral-500 text-[10px]">· {fmtDate(r.target2Date)}</span></div>
+        <div className="text-accent-green">T3</div><div className="text-right text-accent-green font-bold">₹{fmtPx(r.target3)} <span className="text-neutral-500 text-[10px]">· {fmtDate(r.target3Date)}</span></div>
+      </div>
+      {r.shareholdingNote && (
+        <div className="mt-2 pt-2 border-t border-ink-500 text-[10px] text-neutral-400 leading-relaxed">
+          <span className="text-neutral-500">Stake:</span> {r.shareholdingNote}
         </div>
       )}
     </div>
@@ -443,16 +512,18 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
   const status = r.lifecycleStatus || 'ACTIVE'
   const isHit = status === 'T1_HIT' || status === 'T2_HIT' || status === 'T3_HIT'
   const isLoss = status === 'SL_HIT' || status === 'SUPERSEDED' || status === 'EXPIRED' || status === 'INVALIDATED'
-  const rowCls = `border-t border-ink-500 hover:bg-ink-700 font-mono ${
+  // Row-level background (used by every cell so the sticky Stock column matches the row tint).
+  const rowBg =
     r.noBrainerBet && status === 'ACTIVE' ? 'bg-accent-amber/5' :
     isHit ? 'bg-accent-green/10' :
-    isLoss ? 'bg-ink-900 opacity-60' : ''
-  }`
+    isLoss ? 'bg-ink-900' : 'bg-ink-800'
+  const rowOpacity = isLoss ? 'opacity-60' : ''
   const strike = isLoss ? 'line-through' : 'none'
   const tdStyle = { textDecoration: strike } as React.CSSProperties
+  const td = `px-2 py-3 whitespace-nowrap border-t border-ink-500 group-hover:bg-ink-700 ${rowBg} ${rowOpacity}`
   return (
-    <tr className={rowCls}>
-      <td className="px-4 py-3 whitespace-nowrap" style={tdStyle}>
+    <tr className="group">
+      <td className={`${td} px-4 text-left sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={tdStyle}>
         <b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
         {r.bucket === 'WAVE_2' && status === 'ACTIVE' && (
           <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
@@ -460,21 +531,21 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
         )}
         <StatusChip r={r} status={status} />
       </td>
-      <td className="px-2 py-3 text-right whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.ltp)}</td>
-      <td className="px-4 py-3 text-center">
+      <td className={`${td} px-2 text-right`} style={tdStyle}>₹{fmtPx(r.ltp)}</td>
+      <td className={`${td} px-4 text-center`}>
         <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor, textDecoration: strike }}>{r.direction}</span>
       </td>
-      <td className={`px-4 py-3 text-center font-bold ${convCls}`} style={tdStyle}>{r.conviction}</td>
-      <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</td>
-      <td className="px-2 py-3 text-center text-accent-cyan text-[11px] whitespace-nowrap" style={tdStyle}>{fmtDate(r.entryDate)}</td>
-      <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.stopLoss)}</td>
-      <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.target1)}</td>
-      <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap" style={tdStyle}>{fmtDate(r.target1Date)}</td>
-      <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.target2)}</td>
-      <td className="px-2 py-3 text-center text-accent-green text-[11px] whitespace-nowrap" style={tdStyle}>{fmtDate(r.target2Date)}</td>
-      <td className="px-2 py-3 text-right text-accent-green font-bold whitespace-nowrap" style={tdStyle}>₹{fmtPx(r.target3)}</td>
-      <td className="px-4 py-3 text-center text-accent-green text-[11px] font-semibold whitespace-nowrap" style={tdStyle}>{fmtDate(r.target3Date)}</td>
-      <td className="px-4 py-3 text-left text-neutral-300 text-[11px] leading-relaxed break-words" style={{ ...tdStyle, minWidth: 220, maxWidth: 340, whiteSpace: 'normal' }}>{r.shareholdingNote || 'shareholding data unavailable'}</td>
+      <td className={`${td} px-4 text-center font-bold ${convCls}`} style={tdStyle}>{r.conviction}</td>
+      <td className={`${td} text-right text-accent-cyan`} style={tdStyle}>₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</td>
+      <td className={`${td} text-center text-accent-cyan text-[11px]`} style={tdStyle}>{fmtDate(r.entryDate)}</td>
+      <td className={`${td} text-right text-accent-red`} style={tdStyle}>₹{fmtPx(r.stopLoss)}</td>
+      <td className={`${td} text-right text-accent-green`} style={tdStyle}>₹{fmtPx(r.target1)}</td>
+      <td className={`${td} text-center text-accent-green text-[11px]`} style={tdStyle}>{fmtDate(r.target1Date)}</td>
+      <td className={`${td} text-right text-accent-green`} style={tdStyle}>₹{fmtPx(r.target2)}</td>
+      <td className={`${td} text-center text-accent-green text-[11px]`} style={tdStyle}>{fmtDate(r.target2Date)}</td>
+      <td className={`${td} text-right text-accent-green font-bold`} style={tdStyle}>₹{fmtPx(r.target3)}</td>
+      <td className={`${td} px-4 text-center text-accent-green text-[11px] font-semibold`} style={tdStyle}>{fmtDate(r.target3Date)}</td>
+      <td className={`${td} px-4 text-left text-neutral-300 text-[11px] leading-relaxed break-words`} style={{ ...tdStyle, minWidth: 220, maxWidth: 340, whiteSpace: 'normal' }}>{r.shareholdingNote || 'shareholding data unavailable'}</td>
     </tr>
   )
 }
