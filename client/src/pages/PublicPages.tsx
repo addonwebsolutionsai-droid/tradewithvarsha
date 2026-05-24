@@ -65,11 +65,26 @@ function AccuracyStrip(): JSX.Element | null {
   })
   if (!data || !data.total) return null
   const tierEntries = Object.entries(data.byConvictionTier || {}).sort(([a], [b]) => b.localeCompare(a))
+  // 2026-05-25: catch-rate row shows the user's #1 KPI — % of NSE top-100
+  // gainers our pre-move screeners caught on T-1 (day before the move).
+  // Auto-replayed every weekday 17:30 IST against the actual day's gainers
+  // and persisted to data/learning/daily-catch-*.json. Goal: 85%.
+  const cr = (data as any).catchRate
+  const crLatest = cr?.latest
+  const crRolling = cr?.rolling
   return (
     <details className="bg-ink-700 border border-ink-500 rounded-lg p-3 mb-3" open>
       <summary className="text-[11px] font-semibold text-neutral-300 cursor-pointer select-none">
         📊 System accuracy ({data.daysBack}d) — {data.total} signals · Triggered {data.triggeredRate}% · Win rate <span className="text-accent-green">{data.winRate}%</span> · SL rate <span className="text-accent-red">{data.slRate}%</span> · Avg R-multiple <b>{data.avgRMultiple > 0 ? '+' : ''}{data.avgRMultiple}</b>
       </summary>
+      {crRolling && crRolling.runs > 0 && (
+        <div className="mt-2 mb-2 px-2 py-1.5 rounded bg-ink-800 border border-ink-500 text-[11px] flex items-center gap-3 flex-wrap">
+          <span className="text-neutral-400">🎯 <b>Pre-move catch rate</b></span>
+          <span>30d avg: <b className={crRolling.avgCatchRate >= 0.85 ? 'text-accent-green' : crRolling.avgCatchRate >= 0.5 ? 'text-accent-cyan' : 'text-accent-amber'}>{(crRolling.avgCatchRate * 100).toFixed(1)}%</b></span>
+          {crLatest && <span className="text-neutral-500">latest ({crLatest.date}): <b>{(crLatest.catchRate * 100).toFixed(1)}%</b> ({crLatest.catches}/{crLatest.topGainersCount})</span>}
+          <span className="text-neutral-600 text-[10px]">goal 85%</span>
+        </div>
+      )}
       <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-3 text-[11px]">
         <div>
           <div className="text-neutral-500 mb-1 font-semibold">By source</div>

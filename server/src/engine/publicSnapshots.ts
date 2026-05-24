@@ -397,6 +397,9 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
 
   // 7. Accuracy report (system-wide hit-rate, R-multiple, by source/tier)
   // 2026-05-18: published as a separate snapshot for the dashboard strip.
+  // 2026-05-25: also includes catch-rate (% of NSE top-gainers our pre-move
+  // screeners caught on T-1 over the last 30 days). This is the user's
+  // primary KPI — "did we catch the move BEFORE it happened".
   let accuracy: any = null
   try {
     const { buildAccuracyReport } = await import('./signalLifecycle')
@@ -405,7 +408,14 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
       new Promise<any>(r => setTimeout(() => r(null), 6000)),
     ])
   } catch { /* skip */ }
-  const accOut = { generatedAt: ts, daysBack: 30, ...accuracy }
+  let catchRate: any = null
+  try {
+    const { getLatestCatchReport, getCatchRateRolling } = await import('./dailyCatchAnalyzer')
+    const latest = await getLatestCatchReport()
+    const rolling = await getCatchRateRolling(30)
+    if (latest || rolling.runs > 0) catchRate = { latest, rolling }
+  } catch { /* skip */ }
+  const accOut = { generatedAt: ts, daysBack: 30, ...accuracy, catchRate }
   await fs.writeFile(path.join(SNAP_DIR, 'accuracy.json'), JSON.stringify(accOut, null, 2))
   files.push('accuracy.json')
 

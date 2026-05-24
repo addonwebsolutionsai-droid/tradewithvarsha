@@ -2033,6 +2033,64 @@ app.get('/api/learning/miss-report', async (_req, res) => {
     res.json(report)
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
+
+// ── DAILY CATCH-RATE ANALYZER — 17:30 IST ──
+// 2026-05-25: User's #1 ask is "identify the move BEFORE it happens". This
+// cron answers "did we?" with a number. Every weekday it pulls today's
+// actual top NSE gainers, replays our ACTIVE pre-move screeners against
+// each one's T-1 candles, and persists a catch-rate JSON to disk.
+// Result surfaces via /api/catch-rate (rolling 30d) and into the Telegram
+// evening digest. Token-cheap: samples 500 of NSE_ALL so it completes in
+// the 10-min eod window.
+cron.schedule('30 17 * * 1-5', async () => {
+  log.info('CRON', 'Daily catch-rate analyzer starting...')
+  try {
+    const { runDailyCatchAnalyzer } = await import('./engine/dailyCatchAnalyzer')
+    const report = await runDailyCatchAnalyzer({ universeSample: 500, topN: 100 })
+    if (botState.bot && report.topGainersCount > 0) {
+      const perScr = Object.entries(report.perScreenerCounts)
+        .filter(([, n]) => n > 0)
+        .sort((a, b) => b[1] - a[1])
+        .map(([k, n]) => `${k}: ${n}`)
+        .join(' · ') || '—'
+      const samples = report.caughtSamples.slice(0, 5).map(s => `${s.symbol} +${s.todayPct.toFixed(1)}% (${s.screeners.join(',')})`).join('\n  ')
+      const lines = [
+        `🎯 *Daily Catch-Rate — ${report.date}*`,
+        `Caught ${report.catches}/${report.topGainersCount} (${(report.catchRate * 100).toFixed(1)}%) of today's top gainers ≥ 3%`,
+        ``,
+        `*Per screener:* ${perScr}`,
+        ``,
+        report.caughtSamples.length ? `*Top catches:*\n  ${samples}` : `_No catches today._`,
+        ``,
+        `Goal: 85%. Saved to data/learning/daily-catch-${report.date}.json`,
+      ].join('\n')
+      for (const cid of config.bots.telegramChatIds) {
+        try {
+          await botState.bot.api.sendMessage(cid, lines, { parse_mode: 'Markdown' })
+          recordTgPush('catch-rate', `${(report.catchRate * 100).toFixed(0)}% (${report.catches}/${report.topGainersCount})`, cid)
+        } catch { /* swallow */ }
+      }
+    }
+  } catch (e) { log.err('CRON', `catch-analyzer: ${(e as Error).message}`) }
+}, { timezone: 'Asia/Kolkata' })
+
+app.get('/api/catch-rate', async (_req, res) => {
+  try {
+    const { getLatestCatchReport, getCatchRateRolling } = await import('./engine/dailyCatchAnalyzer')
+    const latest = await getLatestCatchReport()
+    const rolling = await getCatchRateRolling(30)
+    res.json({ latest, rolling })
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+app.post('/api/catch-rate/run', async (_req, res) => {
+  try {
+    const { runDailyCatchAnalyzer } = await import('./engine/dailyCatchAnalyzer')
+    res.json(await runDailyCatchAnalyzer({
+      universeSample: Math.max(100, Math.min(2000, Number(_req.query.sample ?? 500))),
+      topN: Math.max(20, Math.min(300, Number(_req.query.topN ?? 100))),
+    }))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
 app.post('/api/learning/miss-report/run', async (_req, res) => {
   try {
     const days = Math.max(3, Math.min(30, Number(_req.query.days ?? 7)))
