@@ -31,6 +31,8 @@ interface PickRow {
   gannNote: string
   astroNote: string
   flowNote: string
+  shareholdingNote?: string         // 2026-05-24: FII/DII/Promoter/Pledge/MC summary
+  noBrainerBet?: boolean
   source: 'WATCHLIST' | 'CURATED'
 }
 
@@ -181,16 +183,33 @@ export function WeeklyPickPage() {
 
 function PickTable({ title, rows }: { title: string; rows: PickRow[] }) {
   const sorted = rows.slice().sort(byScoreQuality)
+  // 2026-05-24: mirrored the Vercel public-page UX upgrade onto localhost.
+  //   • Mobile (< md=768px) → vertical cards, no horizontal scroll.
+  //   • Desktop (≥ md) → table inside max-h-75vh scroll container with
+  //     sticky <thead> + sticky first column (Stock pinned left while
+  //     horizontal scrolling).
+  //   • NEW Stake column showing FII/DII/Promoter/Pledge/MC (was missing
+  //     from localhost — restored per user request).
   return (
     <section>
       <div className="text-sm font-semibold text-neutral-200 mb-2">
         {title} <span className="text-neutral-500 text-xs">· {rows.length} stocks · sort: ⭐ first</span>
       </div>
-      <div className="overflow-x-auto rounded-lg border border-ink-500">
-        <table className="w-full text-[11px] bg-ink-800">
-          <thead className="bg-ink-700 text-neutral-400">
+
+      {/* Mobile cards */}
+      <div className="md:hidden space-y-3">
+        {sorted.map(r => <PickCardView key={r.symbol} row={r} />)}
+      </div>
+
+      {/* Desktop table */}
+      <div
+        className="hidden md:block overflow-auto rounded-lg border border-ink-500 bg-ink-800"
+        style={{ maxHeight: '75vh' }}
+      >
+        <table className="w-full text-[11px] border-separate" style={{ borderSpacing: 0, minWidth: 1600 }}>
+          <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
             <tr>
-              <th className="text-left px-3 py-2">Stock</th>
+              <th className="text-left px-3 py-2 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Stock</th>
               <th className="text-right px-3 py-2">LTP</th>
               <th className="text-center px-3 py-2">Dir</th>
               <th className="text-center px-3 py-2">Conv</th>
@@ -205,6 +224,7 @@ function PickTable({ title, rows }: { title: string; rows: PickRow[] }) {
               <th className="text-right px-3 py-2 text-accent-green font-semibold">T3 (≥20%)</th>
               <th className="text-center px-3 py-2 text-accent-green">T3 by</th>
               <th className="text-center px-3 py-2">RR</th>
+              <th className="text-left px-3 py-2 text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
             </tr>
           </thead>
           <tbody>
@@ -216,24 +236,87 @@ function PickTable({ title, rows }: { title: string; rows: PickRow[] }) {
   )
 }
 
-function PickRowView({ row }: { row: PickRow }) {
+/** Mobile card layout — all 16 fields stacked vertically, no horizontal scroll. */
+function PickCardView({ row }: { row: PickRow }) {
   const [open, setOpen] = useState(false)
   const dirColor = row.direction === 'BUY' ? '#00c853' : '#ff1744'
   const convColor = row.conviction >= 80 ? 'text-accent-green' : row.conviction >= 60 ? 'text-accent-cyan' : row.conviction >= 50 ? 'text-accent-amber' : 'text-neutral-500'
   const stars = starsForScore(row.conviction)
   return (
+    <div className={`rounded-lg border p-3 font-mono text-[12px] ${row.noBrainerBet ? 'bg-accent-amber/5 border-accent-amber/40' : 'bg-ink-800 border-ink-500'}`}
+         onClick={() => setOpen(o => !o)}>
+      <div className="flex items-center justify-between mb-2">
+        <div className="flex items-center gap-2">
+          <b className="text-neutral-100 text-[13px]">{row.noBrainerBet && '⭐ '}{row.symbol}</b>
+          <Stars count={stars} className="text-[10px]" />
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{row.direction}</span>
+        </div>
+        <span className={clsx('text-[12px] font-bold', convColor)}>{row.conviction}</span>
+      </div>
+      <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
+        <div className="text-neutral-500">LTP</div>
+        <div className="text-right">
+          ₹{row.ltp.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
+          {row.ltpSource === 'eod' && <span className="ml-1 text-[8px] text-accent-amber">EOD</span>}
+          {row.ltpSource === 'live' && <span className="ml-1 text-[8px] text-accent-green">●</span>}
+        </div>
+        <div className="text-accent-cyan">Entry</div>
+        <div className="text-right text-accent-cyan">
+          {row.entryPriceLow != null && row.entryPriceHigh != null
+            ? <>₹{row.entryPriceLow}–{row.entryPriceHigh}</>
+            : <>₹{row.entryPrice}</>}
+          <span className="text-neutral-500 text-[10px]"> · {shortDate(row.entryDate)}</span>
+        </div>
+        {row.bestEntryTimeIST && (<>
+          <div className="text-neutral-500">Entry time</div>
+          <div className="text-right text-[10px]">{row.bestEntryTimeIST} {row.horaLord && <span className="text-neutral-600">· {row.horaLord}</span>}</div>
+        </>)}
+        <div className="text-accent-red">Stop Loss</div><div className="text-right text-accent-red">₹{row.stopLoss}</div>
+        <div className="text-accent-green">T1 (8%)</div><div className="text-right text-accent-green">₹{row.target1} <span className="text-neutral-500 text-[10px]">· {shortDate(row.target1Date)}</span></div>
+        <div className="text-accent-green">T2 (14%)</div><div className="text-right text-accent-green">₹{row.target2} <span className="text-neutral-500 text-[10px]">· {shortDate(row.target2Date)}</span></div>
+        <div className="text-accent-green">T3 (≥20%)</div><div className="text-right text-accent-green font-bold">₹{row.target3} <span className="text-neutral-500 text-[10px]">· {shortDate(row.target3Date)}</span></div>
+        <div className="text-neutral-500">R:R</div><div className="text-right">{row.riskRewardRatio}:1</div>
+      </div>
+      {row.shareholdingNote && (
+        <div className="mt-2 pt-2 border-t border-ink-500 text-[10px] text-neutral-400 leading-relaxed">
+          <span className="text-neutral-500 font-semibold">Stake: </span>{row.shareholdingNote}
+        </div>
+      )}
+      {open && (
+        <div className="mt-2 pt-2 border-t border-ink-500 grid grid-cols-1 gap-2 text-[10px]">
+          <Reason label="🧠 SMC" text={row.smcNote} />
+          <Reason label="📈 Trend" text={row.trendNote} />
+          <Reason label="🔮 Gann" text={row.gannNote} />
+          <Reason label="🪐 Astro" text={row.astroNote} />
+          <Reason label="💧 Flow" text={row.flowNote} />
+          <div className="text-neutral-500 text-[10px]">
+            <b>{row.entryNote}</b> · expected {row.expectedReturnPct >= 0 ? '+' : ''}{row.expectedReturnPct}% by {row.target3Date}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function PickRowView({ row }: { row: PickRow }) {
+  const [open, setOpen] = useState(false)
+  const dirColor = row.direction === 'BUY' ? '#00c853' : '#ff1744'
+  const convColor = row.conviction >= 80 ? 'text-accent-green' : row.conviction >= 60 ? 'text-accent-cyan' : row.conviction >= 50 ? 'text-accent-amber' : 'text-neutral-500'
+  const stars = starsForScore(row.conviction)
+  // Row tint moved to each cell so the sticky-left Stock cell matches the
+  // hover/no-brainer background of the rest of the row.
+  const rowBg = row.noBrainerBet ? 'bg-accent-amber/5' : 'bg-ink-800'
+  const td = `px-3 py-2 border-t border-ink-500 ${rowBg} group-hover:bg-ink-700 cursor-pointer`
+  return (
     <>
-      <tr
-        onClick={() => setOpen(o => !o)}
-        className="border-t border-ink-500 hover:bg-ink-700 cursor-pointer font-mono"
-      >
-        <td className="px-3 py-2">
+      <tr className="group" onClick={() => setOpen(o => !o)}>
+        <td className={`${td} sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
           <div className="flex items-center gap-1.5">
-            <b className="text-neutral-200">{row.symbol}</b>
+            <b className="text-neutral-200">{row.noBrainerBet && '⭐ '}{row.symbol}</b>
             <Stars count={stars} className="text-[10px]" />
           </div>
         </td>
-        <td className="px-3 py-2 text-right">
+        <td className={`${td} text-right`}>
           ₹{row.ltp.toLocaleString('en-IN', { maximumFractionDigits: 2 })}
           {row.ltpSource === 'eod' && (
             <span title={`Stale — last close ${row.ltpAsOf?.slice(0, 16) ?? ''}`}
@@ -244,19 +327,19 @@ function PickRowView({ row }: { row: PickRow }) {
               className="ml-1 text-[8px] text-accent-green">●</span>
           )}
         </td>
-        <td className="px-3 py-2 text-center">
+        <td className={`${td} text-center`}>
           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>
             {row.direction}
           </span>
         </td>
-        <td className={clsx('px-3 py-2 text-center font-bold', convColor)}>{row.conviction}</td>
-        <td className="px-3 py-2 text-right text-accent-cyan">
+        <td className={clsx(td, 'text-center font-bold', convColor)}>{row.conviction}</td>
+        <td className={`${td} text-right text-accent-cyan`}>
           {row.entryPriceLow != null && row.entryPriceHigh != null
             ? <>₹{row.entryPriceLow}–{row.entryPriceHigh}</>
             : <>₹{row.entryPrice}</>}
         </td>
-        <td className="px-3 py-2 text-center text-accent-cyan text-[10px]">{shortDate(row.entryDate)}</td>
-        <td className="px-3 py-2 text-center text-accent-cyan text-[10px]">
+        <td className={`${td} text-center text-accent-cyan text-[10px]`}>{shortDate(row.entryDate)}</td>
+        <td className={`${td} text-center text-accent-cyan text-[10px]`}>
           {row.bestEntryTimeIST ? (
             <>
               <div className="font-mono">{row.bestEntryTimeIST}</div>
@@ -264,18 +347,21 @@ function PickRowView({ row }: { row: PickRow }) {
             </>
           ) : '—'}
         </td>
-        <td className="px-3 py-2 text-right text-accent-red">₹{row.stopLoss}</td>
-        <td className="px-3 py-2 text-right text-accent-green">₹{row.target1}</td>
-        <td className="px-3 py-2 text-center text-accent-green text-[10px]">{shortDate(row.target1Date)}</td>
-        <td className="px-3 py-2 text-right text-accent-green">₹{row.target2}</td>
-        <td className="px-3 py-2 text-center text-accent-green text-[10px]">{shortDate(row.target2Date)}</td>
-        <td className="px-3 py-2 text-right text-accent-green font-bold">₹{row.target3}</td>
-        <td className="px-3 py-2 text-center text-accent-green text-[10px] font-semibold">{shortDate(row.target3Date)}</td>
-        <td className="px-3 py-2 text-center">{row.riskRewardRatio}:1</td>
+        <td className={`${td} text-right text-accent-red`}>₹{row.stopLoss}</td>
+        <td className={`${td} text-right text-accent-green`}>₹{row.target1}</td>
+        <td className={`${td} text-center text-accent-green text-[10px]`}>{shortDate(row.target1Date)}</td>
+        <td className={`${td} text-right text-accent-green`}>₹{row.target2}</td>
+        <td className={`${td} text-center text-accent-green text-[10px]`}>{shortDate(row.target2Date)}</td>
+        <td className={`${td} text-right text-accent-green font-bold`}>₹{row.target3}</td>
+        <td className={`${td} text-center text-accent-green text-[10px] font-semibold`}>{shortDate(row.target3Date)}</td>
+        <td className={`${td} text-center`}>{row.riskRewardRatio}:1</td>
+        <td className={`${td} text-left text-neutral-300 text-[10px] leading-relaxed`} style={{ minWidth: 220, maxWidth: 360, whiteSpace: 'normal' }}>
+          {row.shareholdingNote || <span className="text-neutral-600">shareholding unavailable</span>}
+        </td>
       </tr>
       {open && (
         <tr className="bg-ink-700 border-t border-ink-500">
-          <td colSpan={15} className="px-4 py-3">
+          <td colSpan={16} className="px-4 py-3">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-[11px]">
               <Reason label="🧠 SMC" text={row.smcNote} />
               <Reason label="📈 Trend" text={row.trendNote} />
