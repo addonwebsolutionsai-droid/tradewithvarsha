@@ -45,6 +45,53 @@ export function createBot(): Bot | null {
   const bot = new Bot(config.bots.telegramToken)
   state.bot = bot
 
+  // 2026-05-24: GLOBAL OUTBOUND GATE — monkey-patch bot.api.sendMessage to
+  // apply two user-requested rules ONCE for all 26+ call sites:
+  //   1. WEEKEND BLOCK — no IST Sat/Sun pushes (markets closed = noise).
+  //   2. DEDUP — same content to same chat within 24h is dropped silently.
+  //      Hash includes only the message body (the chat side is per-chat),
+  //      so a fresh different message still gets through but reposts don't.
+  //
+  // /commands replies from user-initiated chats (ctx.reply) bypass this
+  // gate intentionally — they are direct interactions, not scheduled pushes.
+  const _origSendMessage = bot.api.sendMessage.bind(bot.api)
+  const dedupLedger = new Map<string, number>()       // hash → epoch ms
+  const DEDUP_WINDOW_MS = 24 * 60 * 60 * 1000          // 24 h
+  function hashContent(chatId: string | number, text: string): string {
+    // Cheap stable hash — chat + first 200 chars of text. Lifecycle messages
+    // include timestamps; we strip digits to make near-duplicates match.
+    const norm = String(text).replace(/\d/g, '#').slice(0, 200)
+    return `${chatId}|${norm}`
+  }
+  function istDow(): number {
+    // Convert UTC → IST (UTC+5:30), then read day-of-week.
+    const ist = new Date(Date.now() + 5.5 * 3600_000)
+    return ist.getUTCDay()                             // 0=Sun, 6=Sat
+  }
+  bot.api.sendMessage = (async (chatId: any, text: any, opts?: any) => {
+    // Rule 1: weekend block — IST Sat (6) or Sun (0)
+    const dow = istDow()
+    if (dow === 0 || dow === 6) {
+      log.info('TG-GATE', `weekend-block: drop "${String(text).slice(0, 60)}..." (IST dow=${dow})`)
+      return undefined as any                          // pretend success
+    }
+    // Rule 2: dedup within 24h
+    const key = hashContent(chatId, String(text))
+    const now = Date.now()
+    const prev = dedupLedger.get(key)
+    if (prev != null && now - prev < DEDUP_WINDOW_MS) {
+      log.info('TG-GATE', `dedup-block: "${String(text).slice(0, 60)}..." (sent ${Math.round((now - prev) / 60_000)}m ago)`)
+      return undefined as any
+    }
+    dedupLedger.set(key, now)
+    // Prune ledger entries older than the window so memory doesn't grow.
+    if (dedupLedger.size > 500) {
+      const cutoff = now - DEDUP_WINDOW_MS
+      for (const [k, t] of dedupLedger) if (t < cutoff) dedupLedger.delete(k)
+    }
+    return _origSendMessage(chatId, text, opts)
+  }) as typeof bot.api.sendMessage
+
   // Access control middleware — logs rejections visibly and echoes the chat ID
   // back so the operator can update TELEGRAM_ALLOWED_CHAT_IDS if needed.
   bot.use(async (ctx, next) => {
