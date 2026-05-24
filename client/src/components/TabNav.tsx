@@ -51,6 +51,9 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   // couldn't find it on Vercel when it was at position #7. Badge "NEW" for
   // discoverability — public users land on Top Trades and immediately see
   // Track Record next to it for outcome verification.
+  // 2026-05-25: Intraday tab REMOVED — live lifecycle WR 28.6% (7 closed,
+  // 5 SL). Engine dropped from signalEngine.ts strategy lists. Page still
+  // exists in code but no longer in nav → no user confusion.
   const tops = PUBLIC_MODE ? [
     { to: '/top-trades',   label: 'Top Trades',   icon: <Target size={14} /> },
     { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />, badge: 'NEW' },
@@ -58,12 +61,10 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/daily-pick',   label: 'Daily Pick',   icon: <Bot size={14} /> },
     { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} /> },
     { to: '/options',      label: 'Options',      icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
-    { to: '/intraday',     label: 'Intraday',     icon: <Activity size={14} />, count: counts.intraday },
   ] : [
     { to: '/',          label: 'Dashboard',   icon: <LayoutDashboard size={14} /> },
     { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />, badge: 'NEW' },
     { to: '/signals',   label: 'All Signals', icon: <Zap size={14} />, count: counts.all },
-    { to: '/intraday',  label: 'Intraday',    icon: <Activity size={14} />, count: counts.intraday },
     { to: '/options',   label: 'Options',     icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
     { to: '/investment', label: 'Investment', icon: <Target size={14} />, isParent: true },
     { to: '/gann',      label: 'Gann Cycle',  icon: <Star size={14} /> },

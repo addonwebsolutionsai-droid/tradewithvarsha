@@ -99,9 +99,17 @@ async function buildUniverse(): Promise<UniverseItem[]> {
       //   not after — see missed 21-Apr NIFTY 24580 short).
       // Non-F&O stocks get intraday + swing + harmonic (structural edge
       //   without needing options-chain data).
+      // 2026-05-25: DROPPED 'intraday' + 'reversal'. Live lifecycle audit
+      // showed INTRADAY source at 28.6% win-rate (7 closed, 5 SL). That's
+      // worse than coin-flip and well below the 85% bar the user set as
+      // the system goal. Both engines stay in code (intraday.ts +
+      // intradayReversal.ts) but are no longer in any active strategy
+      // list, so they no longer fire, no longer push to Telegram, and no
+      // longer populate the lifecycle store. Reinstate only after
+      // backtest shows ≥75% WR + R ≥ 1.5.
       strategies: FNO_STOCKS.has(sym)
-        ? ['intraday', 'swing', 'fno', 'reversal', 'options-mtf', 'confluence-weekly', 'confluence-monthly', 'harmonic']
-        : ['intraday', 'swing', 'harmonic'],
+        ? ['swing', 'fno', 'options-mtf', 'confluence-weekly', 'confluence-monthly', 'harmonic']
+        : ['swing', 'harmonic'],
       higherTf: true,
     })),
   ]

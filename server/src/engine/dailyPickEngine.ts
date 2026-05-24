@@ -476,8 +476,12 @@ export async function runDailyPick(opts: { limit?: number; reason?: string } = {
     }
   }))
 
+  // 2026-05-25: Quality floor — drop sub-65 conviction picks before slicing
+  // top-N. Live lifecycle showed Daily at 69% WR; sub-60s dominated the SL
+  // bucket. Cap also halved (30→15) so dispatch focuses on elite only.
   candidates.sort((a, b) => b.conviction - a.conviction)
-  const rows = candidates.slice(0, MAX_CANDIDATES)
+  const elite = candidates.filter(c => c.conviction >= 65)
+  const rows = elite.slice(0, 15)
 
   // Newness — symbols not in the previous run
   const currentSymbols = new Set(rows.map(r => r.symbol))

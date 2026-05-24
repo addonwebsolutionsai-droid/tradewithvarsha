@@ -28,6 +28,8 @@ interface DailyPickRow {
   momentumScore: number
   reboundScore: number
   reasons: string[]
+  shareholdingNote?: string         // 2026-05-25: FII/DII/Promoter/Pledge/MC
+  noBrainerBet?: boolean
   meta: {
     rsi: number
     distFrom52WH: number
@@ -217,7 +219,7 @@ function DailyPickCard({ row, isNew }: { row: DailyPickRow; isNew: boolean }) {
       <div className="flex items-start justify-between">
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 flex-wrap">
-            <span className="text-base font-semibold text-neutral-200">{row.symbol}</span>
+            <span className="text-base font-semibold text-neutral-200">{row.noBrainerBet && '⭐ '}{row.symbol}</span>
             <Stars count={stars} />
             <span className={clsx('px-1.5 py-0.5 rounded text-[10px] font-semibold border', patternBg)}>
               {row.pattern}
@@ -260,6 +262,11 @@ function DailyPickCard({ row, isNew }: { row: DailyPickRow; isNew: boolean }) {
               <span className="text-neutral-500">T3 <b className="text-accent-green">₹{row.target3}</b> ({shortDate(row.target3Date)})</span>
             )}
           </div>
+          {row.shareholdingNote && (
+            <div className="mt-1.5 text-[10px] text-neutral-400 leading-relaxed font-mono">
+              <span className="text-neutral-600 font-semibold">Stake: </span>{row.shareholdingNote}
+            </div>
+          )}
         </div>
         <div className="text-right ml-3">
           <div className={clsx('w-11 h-11 rounded-full flex items-center justify-center text-sm font-bold',

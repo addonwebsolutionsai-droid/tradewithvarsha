@@ -754,11 +754,16 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
         const scoring = scoreSymbol(sym, candlesD, today)
         if (!scoring) continue
 
-        // 2026-05-03: SHORT floor raised 60 → 70 (Indian market has structural
-        // bull bias; SHORTs need stronger confluence). BUY floor unchanged.
+        // 2026-05-25: Floors RAISED toward 85% WR target.
+        // Lifecycle audit at 2026-05-25: WEEKLY 50 closed @ 64% WR. Sample
+        // showed all sub-60 conviction picks were SL-dominated. Bumping
+        // BUY floor 60→75 (mid/large) and 45→65 (micro), SHORT 70→82
+        // (mid/large) and 55→72 (micro). This will cut the pick list
+        // dramatically (likely 689 → ~150 setups) but should lift WR into
+        // the 80s. Per user goal: "WORLD'S HIGHEST ACCURATE SYSTEM".
         const isMc = isMicroCap(sym)
-        const buyFloor = isMc ? 45 : 60
-        const shortFloor = isMc ? 55 : 70
+        const buyFloor = isMc ? 65 : 75
+        const shortFloor = isMc ? 72 : 82
         const direction = scoring.direction
         const minScore = direction === 'SHORT' ? shortFloor : buyFloor
         if (scoring.total < minScore) continue

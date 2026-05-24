@@ -1156,6 +1156,29 @@ app.get('/api/daily-pick', async (_req, res) => {
   try {
     const pick = (await loadLatestDailyPick())
     if (!pick) return res.status(404).json({ error: 'No daily pick yet — POST /api/daily-pick/run' })
+    // 2026-05-25: enrich each row with shareholdingNote (FII/DII/Promoter
+    // /Pledge/MC) so the localhost Daily Pick cards can show stake info.
+    // The data lives in disk cache from the weekly pick run; we just look
+    // it up per symbol here. Best-effort: silently leaves note empty if
+    // the symbol has no cached shareholding.
+    try {
+      const { getShareholding } = await import('./data/shareholding')
+      const rows = (pick as any).rows ?? []
+      await Promise.all(rows.map(async (r: any) => {
+        if (r.shareholdingNote) return
+        try {
+          const shp = await getShareholding(r.symbol)
+          if (!shp) return
+          const fiiArr = shp.fiiDeltaQoQ > 0.1 ? '↑' : shp.fiiDeltaQoQ < -0.1 ? '↓' : '→'
+          const pArr = shp.promoterDeltaQoQ > 0.1 ? '↑' : shp.promoterDeltaQoQ < -0.1 ? '↓' : '→'
+          const dArr = shp.diiDeltaQoQ > 0.1 ? '↑' : shp.diiDeltaQoQ < -0.1 ? '↓' : '→'
+          const mc = shp.marketCapCr >= 1000
+            ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
+            : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
+          r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fiiArr} · DII ${shp.diiPct.toFixed(1)}%${dArr} · P ${shp.promoterPct.toFixed(1)}%${pArr} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mc}`
+        } catch { /* skip */ }
+      }))
+    } catch { /* enrichment best-effort */ }
     res.json(pick)
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
