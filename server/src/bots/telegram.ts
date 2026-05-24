@@ -63,16 +63,21 @@ export function createBot(): Bot | null {
     const norm = String(text).replace(/\d/g, '#').slice(0, 200)
     return `${chatId}|${norm}`
   }
-  function istDow(): number {
-    // Convert UTC → IST (UTC+5:30), then read day-of-week.
+  function istNow(): { dow: number; hour: number } {
+    // Convert UTC → IST (UTC+5:30), then read day-of-week + hour.
     const ist = new Date(Date.now() + 5.5 * 3600_000)
-    return ist.getUTCDay()                             // 0=Sun, 6=Sat
+    return { dow: ist.getUTCDay(), hour: ist.getUTCHours() }   // dow 0=Sun, 6=Sat
   }
   bot.api.sendMessage = (async (chatId: any, text: any, opts?: any) => {
-    // Rule 1: weekend block — IST Sat (6) or Sun (0)
-    const dow = istDow()
-    if (dow === 0 || dow === 6) {
-      log.info('TG-GATE', `weekend-block: drop "${String(text).slice(0, 60)}..." (IST dow=${dow})`)
+    // Rule 1: weekend block. Markets-closed window for Indian equities.
+    //   • Sat (dow=6) all day blocked
+    //   • Sun (dow=0) all day blocked
+    //   • Mon (dow=1) blocked until 06:00 IST — user wants pushes to start
+    //     exactly at 6 AM IST Monday, not at midnight (no point during sleep).
+    const { dow, hour } = istNow()
+    const inWeekendBlock = dow === 6 || dow === 0 || (dow === 1 && hour < 6)
+    if (inWeekendBlock) {
+      log.info('TG-GATE', `weekend-block: drop "${String(text).slice(0, 60)}..." (IST dow=${dow} hr=${hour})`)
       return undefined as any                          // pretend success
     }
     // Rule 2: dedup within 24h
