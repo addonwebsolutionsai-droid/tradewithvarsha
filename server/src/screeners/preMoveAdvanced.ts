@@ -547,13 +547,19 @@ export const wyckoffAccumulation: Screener = {
     const offHighPct = (high60 - latest.close) / high60
     if (offHighPct < 0.10 || offHighPct > 0.40) return null   // 10-40% off high
 
-    // Step 2: NOT broken — still above 200-EMA (or no 200 → above 50-EMA)
+    // Step 2: Must be above 50-EMA (recovery momentum). Earlier required
+    // above 200-EMA too, but miss-audit (2026-05-25, 11 reports, n=600)
+    // showed `above200EMA = 0.0` for 100% of missed movers vs 1.0 for hits.
+    // Dropping the 200-EMA gate to admit stage-1 bases where 50EMA is
+    // rising but 200EMA is still ahead — exactly the profile of RUBYMILLS,
+    // RAIN, RVTH, ROSSTECH and other +10-20% next-day movers we missed.
     const e50Series = ema(candles, 50)
-    const e200Series = ema(candles, 200)
     const e50 = e50Series[e50Series.length - 1]
-    const e200 = e200Series[e200Series.length - 1]
-    const longTermBaseline = e200 ?? e50
-    if (latest.close < longTermBaseline * 0.96) return null   // allow 4% slop
+    if (!e50) return null
+    if (latest.close < e50 * 0.99) return null                // must be at/above 50EMA
+    // Extra confirmation: 50EMA itself rising over last 5 bars
+    const e50Five = e50Series[e50Series.length - 6]
+    if (e50Five != null && e50 < e50Five * 0.998) return null  // 50EMA not declining
 
     // Step 3: tight base over last 10 sessions
     const last10 = candles.slice(-10)
@@ -607,10 +613,123 @@ export const wyckoffAccumulation: Screener = {
         `Tight base: 10d range ${(r10 * 100).toFixed(1)}%`,
         `Vol dry-up: 20d avg ${(volRatio * 100).toFixed(0)}% of 60d avg (${volRatio < 0.8 ? 'institutional accumulation' : 'cooling'})`,
         `RSI ${rsi.toFixed(0)} (coiled neutral) · ATR ${(atrPct * 100).toFixed(2)}% (settled)`,
-        `Above ${e200 ? '200-EMA ₹' + e200.toFixed(2) : '50-EMA ₹' + e50.toFixed(2)} — trend intact`,
+        `Above 50-EMA ₹${e50.toFixed(2)} (50-EMA rising)`,
         `Breakout trigger ₹${breakoutTrigger} (10d range high)`,
       ],
       tags: ['Wyckoff', `Off-${(offHighPct * 100).toFixed(0)}%`, `Tight ${(r10 * 100).toFixed(1)}%`, `Vol ${(volRatio * 100).toFixed(0)}%`],
+      expectedMovePct: ((t2Price - entry) / entry) * 100,
+      timeframeLabel: this.timeframeLabel,
+      suggestedEntry: entry,
+      suggestedSL: slPrice,
+      suggestedTarget: t1Price,
+      target1: t1Price,
+      target2: t2Price,
+      target3: t3Price,
+      detectedAt: Date.now(),
+      setupKind: this.setupKind,
+    }
+  },
+}
+
+/**
+ * Stage-1 Recovery — built 2026-05-25 to target the EXACT miss profile.
+ *
+ * Miss-audit data (11 reports, n=600 movers, server/data/learning/miss-deltas-*):
+ *   feature              caught  missed   delta
+ *   distFrom52wHigh      -15.4%  -22.4%   -7.0   ← misses are FURTHER off-highs
+ *   above200EMA           1.0     0.0     -1.0   ← 100% of misses are BELOW 200-EMA
+ *   volRatio60            1.19    0.89    -0.30  ← misses had vol DRY-UP
+ *   rsi                   59      56      -3.5   ← misses have neutral RSI
+ *
+ * This screener is purpose-built to fire on that EXACT profile — stocks that
+ * are recovering from a base, above 50-EMA but still below 200-EMA, with
+ * mild volume dry-up and neutral-to-bullish RSI. Examples it should catch:
+ *   - RUBYMILLS (+20% today): RSI 48, off-high 11%, vol 0.16×, above 50, below 200
+ *   - RVTH (+19%): RSI 55, off-high 13%, above 50, below 200
+ *   - ROSSTECH (+10%): RSI 53, off-high 13%, above 50, below 200
+ *   - RAYMONDREL (+10%): RSI 58, off-high 17%, vol 2.4× (recent ignition), above 50, below 200
+ *
+ * Gates are intentionally LOOSE to maximise coverage. Quality control is
+ * handled downstream by the conviction merger which will rank these against
+ * other concurrent signals.
+ */
+export const stage1Recovery: Screener = {
+  id: 'stage1_recovery',
+  name: 'Stage-1 Recovery',
+  description: 'Above 50-EMA · below 200-EMA · off-highs 8-35% · neutral RSI — base recovery before stage-2',
+  timeframeLabel: '3–15 sessions',
+  setupKind: 'PRE_MOVE',
+  scan(candles: Candle[], symbol: string): ScreenerResult | null {
+    if (candles.length < 80) return null
+    const latest = last(candles)!
+
+    // Gate 1: EMA stack — above 50 but not yet above 200 (stage-1 base)
+    const e50Series = ema(candles, 50)
+    const e200Series = ema(candles, 200)
+    const e50 = e50Series[e50Series.length - 1]
+    const e200 = e200Series[e200Series.length - 1]
+    if (!e50) return null
+    if (latest.close < e50 * 0.99) return null                // above (or AT) 50-EMA
+    if (e200 != null && latest.close > e200 * 1.02) return null  // not yet stage-2
+
+    // Gate 2: 50-EMA itself rising (not a dead bounce)
+    const e50Five = e50Series[e50Series.length - 6]
+    if (e50Five != null && e50 < e50Five * 0.998) return null
+
+    // Gate 3: off-high sweet spot 8-35% (miss centroid ~22%, hit centroid ~15%)
+    const high60 = Math.max(...candles.slice(-60).map(c => c.high))
+    const offHighPct = (high60 - latest.close) / high60
+    if (offHighPct < 0.08 || offHighPct > 0.35) return null
+
+    // Gate 4: RSI 40-65 (neutral momentum, not extended)
+    const rsi = lastRSI(candles, 14) ?? 50
+    if (rsi < 40 || rsi > 65) return null
+
+    // Gate 5: ATR sane (not falling-knife volatility, not dead)
+    const atr = lastATR(candles, 14) ?? latest.close * 0.025
+    const atrPct = atr / latest.close
+    if (atrPct < 0.015 || atrPct > 0.08) return null
+
+    // Gate 6: Volume — accept dry-up OR mild expansion (key insight: misses
+    // had vol=0.89, hits had 1.19 — both ranges admitted)
+    const v20 = candles.slice(-20).reduce((s, c) => s + c.volume, 0) / 20
+    const v60 = candles.slice(-60).reduce((s, c) => s + c.volume, 0) / 60
+    if (v60 === 0) return null
+    const volRatio = v20 / v60
+    if (volRatio < 0.5 || volRatio > 3.0) return null
+
+    // Gate 7: not sitting at a fresh swing low (no broken structure)
+    const last10 = candles.slice(-10)
+    const swingLow10 = Math.min(...last10.map(c => c.low))
+    if (latest.close < swingLow10 * 1.005) return null
+
+    // Trade plan
+    const entry = +latest.close.toFixed(2)
+    const slPrice = +Math.min(swingLow10 * 0.99, latest.close - atr * 1.5).toFixed(2)
+    const t1Price = +(latest.close + atr * 2).toFixed(2)
+    const t2Price = +(latest.close + atr * 4).toFixed(2)
+    const t3Price = +(latest.close + atr * 7).toFixed(2)
+
+    // Score: weight off-high sweet spot, neutral RSI, settled vol
+    let score = 6.8
+    if (offHighPct >= 0.18 && offHighPct <= 0.28) score += 0.6
+    if (rsi >= 48 && rsi <= 58) score += 0.5
+    if (volRatio >= 0.7 && volRatio <= 1.3) score += 0.4
+    if (atrPct >= 0.03 && atrPct <= 0.06) score += 0.4
+    const tier: 'A' | 'B' | 'C' = score >= 8.0 ? 'A' : score >= 7.5 ? 'B' : 'C'
+
+    return {
+      symbol, price: entry, change: 0, changePct: 0,
+      score: +score.toFixed(1),
+      tier,
+      direction: 'BULL',
+      reasons: [
+        `Stage-1 recovery: above 50-EMA (₹${e50.toFixed(2)}) but ${e200 ? 'below' : 'no'} 200-EMA${e200 ? ` (₹${e200.toFixed(2)})` : ''}`,
+        `Off 60d-high by ${(offHighPct * 100).toFixed(0)}% — accumulation zone`,
+        `RSI ${rsi.toFixed(0)} (neutral) · ATR ${(atrPct * 100).toFixed(1)}% · vol ${volRatio.toFixed(2)}×`,
+        `50-EMA rising · price holding above 10d swing low ₹${swingLow10.toFixed(2)}`,
+      ],
+      tags: ['Stage-1', `Off-${(offHighPct * 100).toFixed(0)}%`, `RSI ${Math.round(rsi)}`, `Vol ${volRatio.toFixed(1)}×`],
       expectedMovePct: ((t2Price - entry) / entry) * 100,
       timeframeLabel: this.timeframeLabel,
       suggestedEntry: entry,
@@ -862,6 +981,7 @@ export const ADVANCED_PREMOVE_SCREENERS: Screener[] = [
   distributionTop,
   rangeExpansionBreakout,
   wyckoffAccumulation,
+  stage1Recovery,
   wave2Continuation,
   fiftyTwoWeekBreakout,
 ]
@@ -902,7 +1022,9 @@ export const ADVANCED_PREMOVE_ACTIVE: Screener[] = [
   rangeExpansionBreakout,    // R= 2.00 · Net +0.10%       · 2026-05-25 promoted (3/25 movers)
   darvasBoxPending,          // R= 2.79 · Net +0.36%       · 2026-05-25 promoted (1/25 movers)
   ema50Reclaim,              // 2026-05-25 promoted + stage-1 gate added
-  wyckoffAccumulation,       // miss-miner targeted screener — see comment above
+  wyckoffAccumulation,       // 2026-05-25 200-EMA gate dropped per miss-audit
+  volumeDryUp,               // 2026-05-25 promoted — miss centroid has volRatio 0.89 (dry-up)
+  stage1Recovery,            // 2026-05-25 NEW — purpose-built for the exact miss profile
 ]
 
 /** Watch tier — kept for /api/scan/premove UI but not in primary dispatch. */
