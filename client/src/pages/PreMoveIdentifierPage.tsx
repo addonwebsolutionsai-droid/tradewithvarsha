@@ -41,6 +41,25 @@ interface Candidate {
   primarySignal: string
   shareholdingNote?: string
   passedQualityFilter: boolean
+  futuristicBucket?: { key: string; label: string; emoji: string }
+  volumeRatio?: number
+  volumeRatio5d?: number
+  entryDate?: string
+  target1Date?: string; target2Date?: string; target3Date?: string
+}
+
+function fmtD(iso?: string): string {
+  if (!iso) return '—'
+  const [, m, d] = iso.split('-').map(Number)
+  const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+  return `${d} ${months[m - 1] ?? '?'}`
+}
+function volCls(r?: number): string {
+  if (r == null) return 'text-neutral-500'
+  if (r >= 3) return 'text-accent-green font-bold'      // unusual volume → confirms move
+  if (r >= 1.5) return 'text-accent-cyan'               // above-avg
+  if (r < 0.8) return 'text-accent-amber'               // dry-up (also bullish in some setups)
+  return 'text-neutral-400'
 }
 interface PreMoveRun {
   generatedAt: string
@@ -149,13 +168,18 @@ export function PreMoveIdentifierPage(): JSX.Element {
                 <tr>
                   <th className={`text-left px-3 py-2 ${STICKY_FIRST_COL_HEADER}`}>Stock</th>
                   <th className="text-right px-2 py-2">LTP</th>
+                  <th className="text-center px-2 py-2" title="Today's volume / 20-day avg. ≥3× = unusual volume confirming move.">Vol×</th>
                   <th className="text-center px-2 py-2">Score</th>
                   <th className="text-center px-2 py-2">Tier</th>
                   <th className="text-right px-2 py-2 text-accent-cyan">Entry</th>
+                  <th className="text-center px-2 py-2 text-accent-cyan">Entry by</th>
                   <th className="text-right px-2 py-2 text-accent-red">SL</th>
                   <th className="text-right px-2 py-2 text-accent-green">T1</th>
+                  <th className="text-center px-2 py-2 text-accent-green">T1 by</th>
                   <th className="text-right px-2 py-2 text-accent-green">T2</th>
+                  <th className="text-center px-2 py-2 text-accent-green">T2 by</th>
                   <th className="text-right px-2 py-2 text-accent-green">T3</th>
+                  <th className="text-center px-2 py-2 text-accent-green">T3 by</th>
                   <th className="text-center px-2 py-2">R:R</th>
                   <th className="text-center px-2 py-2">Exp%</th>
                   <th className="text-left px-3 py-2">Primary signal</th>
@@ -193,15 +217,26 @@ function CandidateRow({ c }: { c: Candidate }): JSX.Element {
       <tr className="group" onClick={() => setOpen(o => !o)}>
         <td className={`${td} px-3 ${STICKY_FIRST_COL_BODY}`}>
           <b className="text-neutral-200">{c.symbol}</b>
+          {c.futuristicBucket && (
+            <span className="ml-1.5 px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
+              title={`${c.futuristicBucket.label} — futuristic high-growth sector (+score bonus)`}>
+              {c.futuristicBucket.emoji} {c.futuristicBucket.key}
+            </span>
+          )}
         </td>
         <td className={`${td} text-right`}>₹{c.ltp.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+        <td className={`${td} text-center ${volCls(c.volumeRatio)}`} title={c.volumeRatio5d ? `5d avg ${c.volumeRatio5d}× of 60d avg` : ''}>{c.volumeRatio ? `${c.volumeRatio}×` : '—'}</td>
         <td className={`${td} text-center font-bold ${tierCls(c.tier)}`}>{c.totalScore}/24</td>
         <td className={`${td} text-center text-[10px] font-bold ${tierCls(c.tier)}`}>{c.tierLabel}</td>
         <td className={`${td} text-right text-accent-cyan`}>₹{c.entry}</td>
+        <td className={`${td} text-center text-accent-cyan text-[10px]`}>{fmtD(c.entryDate)}</td>
         <td className={`${td} text-right text-accent-red`}>₹{c.stopLoss}</td>
         <td className={`${td} text-right text-accent-green`}>₹{c.target1}</td>
+        <td className={`${td} text-center text-accent-green text-[10px]`}>{fmtD(c.target1Date)}</td>
         <td className={`${td} text-right text-accent-green`}>₹{c.target2}</td>
+        <td className={`${td} text-center text-accent-green text-[10px]`}>{fmtD(c.target2Date)}</td>
         <td className={`${td} text-right text-accent-green font-bold`}>₹{c.target3}</td>
+        <td className={`${td} text-center text-accent-green text-[10px] font-semibold`}>{fmtD(c.target3Date)}</td>
         <td className={`${td} text-center`}>1:{c.riskReward}</td>
         <td className={`${td} text-center text-accent-green`}>+{c.expectedMovePct}%</td>
         <td className={`${td} px-3 text-left text-[10px] text-neutral-400`} style={{ maxWidth: 240, whiteSpace: 'normal' }}>
@@ -213,7 +248,7 @@ function CandidateRow({ c }: { c: Candidate }): JSX.Element {
       </tr>
       {open && (
         <tr className="bg-ink-700 border-t border-ink-500">
-          <td colSpan={13} className="px-4 py-3">
+          <td colSpan={18} className="px-4 py-3">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] font-mono">
               <SignalCell n={1} label="Institutional" b={c.s1_institutional} />
               <SignalCell n={2} label="Volume" b={c.s2_volume} />
@@ -256,17 +291,25 @@ function CandidateCard({ c }: { c: Candidate }): JSX.Element {
       c.tier === 2 ? 'bg-accent-cyan/5 border-accent-cyan/40' :
       'bg-ink-800 border-ink-500')}
       onClick={() => setOpen(o => !o)}>
-      <div className="flex items-center justify-between mb-2">
-        <b className="text-neutral-100 text-[13px]">{c.symbol}</b>
+      <div className="flex items-center justify-between mb-2 flex-wrap gap-1">
+        <div className="flex items-center gap-1.5">
+          <b className="text-neutral-100 text-[13px]">{c.symbol}</b>
+          {c.futuristicBucket && (
+            <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40">
+              {c.futuristicBucket.emoji} {c.futuristicBucket.key}
+            </span>
+          )}
+        </div>
         <span className={clsx('text-[12px] font-bold', tierCls(c.tier))}>{c.totalScore}/24 {c.tierLabel}</span>
       </div>
       <div className="grid grid-cols-2 gap-x-3 gap-y-1 text-[11px]">
         <div className="text-neutral-500">LTP</div><div className="text-right">₹{c.ltp}</div>
-        <div className="text-accent-cyan">Entry</div><div className="text-right text-accent-cyan">₹{c.entry}</div>
+        <div className="text-neutral-500">Vol×</div><div className={clsx('text-right', volCls(c.volumeRatio))}>{c.volumeRatio ? `${c.volumeRatio}×` : '—'}</div>
+        <div className="text-accent-cyan">Entry</div><div className="text-right text-accent-cyan">₹{c.entry} <span className="text-neutral-500 text-[10px]">· {fmtD(c.entryDate)}</span></div>
         <div className="text-accent-red">Stop Loss</div><div className="text-right text-accent-red">₹{c.stopLoss}</div>
-        <div className="text-accent-green">T1</div><div className="text-right text-accent-green">₹{c.target1}</div>
-        <div className="text-accent-green">T2</div><div className="text-right text-accent-green">₹{c.target2}</div>
-        <div className="text-accent-green">T3</div><div className="text-right text-accent-green font-bold">₹{c.target3}</div>
+        <div className="text-accent-green">T1</div><div className="text-right text-accent-green">₹{c.target1} <span className="text-neutral-500 text-[10px]">· {fmtD(c.target1Date)}</span></div>
+        <div className="text-accent-green">T2</div><div className="text-right text-accent-green">₹{c.target2} <span className="text-neutral-500 text-[10px]">· {fmtD(c.target2Date)}</span></div>
+        <div className="text-accent-green">T3</div><div className="text-right text-accent-green font-bold">₹{c.target3} <span className="text-neutral-500 text-[10px]">· {fmtD(c.target3Date)}</span></div>
         <div className="text-neutral-500">R:R</div><div className="text-right">1:{c.riskReward}</div>
         <div className="text-neutral-500">Exp move</div><div className="text-right text-accent-green">+{c.expectedMovePct}%</div>
       </div>

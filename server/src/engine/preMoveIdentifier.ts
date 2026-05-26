@@ -38,11 +38,43 @@ export interface SignalBreakdown {
   reason: string                                // 1-line human reason
 }
 
+// 2026-05-26: futuristic-sector basket from the master prompt's "Preferred
+// High-Momentum Sectors" + structural India-growth themes. Stocks in these
+// baskets get a +1 to +2 score bonus AND a ⚡FUTURISTIC badge in the UI.
+// Quarterly review intended — update as themes evolve.
+const FUTURISTIC_SECTORS: Record<string, { label: string; emoji: string; members: string[] }> = {
+  DEFENSE: { label: 'Defense & Aerospace', emoji: '🛡️', members: ['HAL', 'BEL', 'MTARTECH', 'PARAS', 'BDL', 'COCHINSHIP', 'GRSE', 'MIDHANI', 'ASTRAMICRO', 'DATAPATTNS', 'IDEAFORGE', 'ZENTEC', 'KEC', 'BHARATFORG', 'ASHOKA'] },
+  RENEWABLE: { label: 'Renewable Energy', emoji: '☀️', members: ['INOXWIND', 'SUZLON', 'BORORENEW', 'ADANIGREEN', 'NTPCGREEN', 'JSWENERGY', 'TATAPOWER', 'KPIGREEN', 'WAAREE', 'PREMIERENE', 'ORIENTGREEN'] },
+  EV: { label: 'EV & Auto-Tech', emoji: '🔋', members: ['OLAELEC', 'EXIDEIND', 'AMARARAJA', 'TATAMOTORS', 'M&M', 'HEROMOTOCO', 'BAJAJ-AUTO', 'TIINDIA', 'ENDURANCE', 'EXICOM', 'GREAVESCOT', 'GENSOL', 'MOTHERSON'] },
+  SPECCHEM: { label: 'Specialty Chemicals', emoji: '🧪', members: ['PIIND', 'NAVINFLUOR', 'AARTIIND', 'SRF', 'CLEAN', 'GUJFLUORO', 'FINEORG', 'ROSSARI', 'VINATIORGA', 'DEEPAKNTR', 'TATACHEM', 'BALAMINES', 'PRIVISCL', 'CHEMPLASTS'] },
+  CDMO: { label: 'Pharma CDMO/API', emoji: '💊', members: ['DIVISLAB', 'LAURUSLABS', 'GLAND', 'SUVENPHAR', 'PIRAMALENT', 'NEULANDLAB', 'GRANULES', 'AARTIDRUGS', 'JBCHEPHARM', 'AJANTPHARM', 'SUNPHARMA', 'CIPLA'] },
+  DATACTR: { label: 'Data Centers / AI / IT', emoji: '🤖', members: ['ROUTE', 'TATATECH', 'KPITTECH', 'TANLA', 'INTELLECT', 'NETWEB', 'PERSISTENT', 'CYIENT', 'HAPPSTMNDS', 'NEWGEN', 'BIRLASOFT', 'LATENTVIEW', 'INFY', 'TCS', 'WIPRO'] },
+  CAPGOODS: { label: 'Capital Goods / Infra', emoji: '🏗️', members: ['LT', 'ABB', 'SIEMENS', 'THERMAX', 'CUMMINSIND', 'TIMKEN', 'AIAENG', 'GMRINFRA', 'JSWINFRA', 'RAILTEL', 'IRCON', 'IRFC', 'RVNL', 'RITES', 'CONCOR', 'KEC'] },
+  QSR: { label: 'QSR / Consumer Premium', emoji: '🍔', members: ['JUBLFOOD', 'SAPPHIRE', 'WESTLIFE', 'DEVYANI', 'NESTLEIND', 'VBL', 'NYKAA', 'TRENT', 'AVENUE', 'DOMS', 'BIKAJI'] },
+  RAILWAYS: { label: 'Railways', emoji: '🚄', members: ['RVNL', 'IRFC', 'IRCON', 'TITAGARH', 'JUPITERWAG', 'TEXRAIL', 'RAILTEL', 'IRCTC', 'CONCOR', 'RITES'] },
+}
+
+function getFuturisticBucket(symbol: string): { key: string; label: string; emoji: string } | null {
+  const up = symbol.toUpperCase()
+  for (const [key, b] of Object.entries(FUTURISTIC_SECTORS)) {
+    if (b.members.includes(up)) return { key, label: b.label, emoji: b.emoji }
+  }
+  return null
+}
+
 export interface PreMoveCandidate {
   symbol: string
   ltp: number
   marketCapCr?: number
   sector?: string
+  // 2026-05-26 additions per user request:
+  futuristicBucket?: { key: string; label: string; emoji: string }
+  volumeRatio?: number              // today vs 20d avg — confirmation signal
+  volumeRatio5d?: number            // 5d avg vs 60d avg — slower confirmation
+  entryDate?: string                // YYYY-MM-DD (today IST)
+  target1Date?: string              // estimated session-based date
+  target2Date?: string
+  target3Date?: string
   // 8-signal breakdown
   s1_institutional: SignalBreakdown
   s2_volume: SignalBreakdown
@@ -347,14 +379,51 @@ async function evaluateOne(symbol: string, candles: Candle[]): Promise<PreMoveCa
   const s6 = scoreSector(symbol)
   const { score: s8, plan } = scoreEntry(candles)
 
-  const totalScore = s1.score + s2.score + s3.score + s4.score + s5.score + s6.score + s7.score + s8.score
+  // Futuristic-sector bonus: +1 if member, +1 extra if pattern OR volume
+  // already fired (so the bonus rewards REAL setups in futuristic sectors,
+  // not just any random stock in the basket).
+  const futuristicBucket = getFuturisticBucket(symbol) ?? undefined
+  let futBonus = 0
+  if (futuristicBucket) {
+    futBonus = 1
+    if (s2.score >= 2 || s3.score >= 2) futBonus = 2
+  }
 
-  // Tier classification — adjusted because s5_news is 0 by default (max realistic = 21)
+  // Volume metrics for the UI confirmation column
+  const v20 = candles.slice(-20).reduce((s, c) => s + c.volume, 0) / 20
+  const v60 = candles.slice(-60).reduce((s, c) => s + c.volume, 0) / 60
+  const v5 = candles.slice(-5).reduce((s, c) => s + c.volume, 0) / 5
+  const volumeRatio = v20 > 0 ? +(last.volume / v20).toFixed(2) : 1
+  const volumeRatio5d = v60 > 0 ? +(v5 / v60).toFixed(2) : 1
+
+  // Target dates — ATR-based session estimates (T1 ≈ 5 sessions, T2 ≈ 15, T3 ≈ 30).
+  // Skip weekends (Sat=6, Sun=0) when projecting.
+  function addBusinessDays(start: Date, n: number): Date {
+    const d = new Date(start)
+    let added = 0
+    while (added < n) {
+      d.setDate(d.getDate() + 1)
+      const dow = d.getDay()
+      if (dow !== 0 && dow !== 6) added++
+    }
+    return d
+  }
+  const ist = new Date(Date.now() + 5.5 * 3600_000)
+  const fmtIST = (d: Date): string => d.toISOString().slice(0, 10)
+  const entryDate = fmtIST(ist)
+  const target1Date = fmtIST(addBusinessDays(ist, 5))
+  const target2Date = fmtIST(addBusinessDays(ist, 15))
+  const target3Date = fmtIST(addBusinessDays(ist, 30))
+
+  const totalScore = s1.score + s2.score + s3.score + s4.score + s5.score + s6.score + s7.score + s8.score + futBonus
+
+  // Tier classification. Max realistic = 23 (signal 5 news scores 0 by default
+  // + max 2 futuristic bonus). Thresholds raised proportionally:
   let tier: 1 | 2 | 3 | 4
   let tierLabel: string
-  if (totalScore >= 16) { tier = 1; tierLabel = '🟢 BUY ALERT' }
-  else if (totalScore >= 12) { tier = 2; tierLabel = '🟡 WATCHLIST' }
-  else if (totalScore >= 8) { tier = 3; tierLabel = '🟠 MONITOR' }
+  if (totalScore >= 17) { tier = 1; tierLabel = '🟢 BUY ALERT' }
+  else if (totalScore >= 13) { tier = 2; tierLabel = '🟡 WATCHLIST' }
+  else if (totalScore >= 9) { tier = 3; tierLabel = '🟠 MONITOR' }
   else { tier = 4; tierLabel = '🔴 AVOID' }
 
   // Primary signal — highest-scoring of pattern/volume/institutional
@@ -394,6 +463,9 @@ async function evaluateOne(symbol: string, candles: Candle[]): Promise<PreMoveCa
     expectedMovePct: +plan.expMove.toFixed(1),
     primarySignal,
     shareholdingNote,
+    futuristicBucket,
+    volumeRatio, volumeRatio5d,
+    entryDate, target1Date, target2Date, target3Date,
     detectedAt: new Date().toISOString(),
   }
 }

@@ -849,13 +849,18 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
               <tr>
                 <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Stock</th>
                 <th className="text-right px-2 py-3">LTP</th>
+                <th className="text-center px-2 py-3" title="Today's volume / 20-day avg. ≥3× = unusual volume confirming move.">Vol×</th>
                 <th className="text-center px-2 py-3">Score</th>
                 <th className="text-center px-2 py-3">Tier</th>
                 <th className="text-right px-2 py-3 text-accent-cyan">Entry</th>
+                <th className="text-center px-2 py-3 text-accent-cyan">Entry by</th>
                 <th className="text-right px-2 py-3 text-accent-red">SL</th>
                 <th className="text-right px-2 py-3 text-accent-green">T1</th>
+                <th className="text-center px-2 py-3 text-accent-green">T1 by</th>
                 <th className="text-right px-2 py-3 text-accent-green">T2</th>
+                <th className="text-center px-2 py-3 text-accent-green">T2 by</th>
                 <th className="text-right px-2 py-3 text-accent-green">T3</th>
+                <th className="text-center px-2 py-3 text-accent-green">T3 by</th>
                 <th className="text-center px-2 py-3">R:R</th>
                 <th className="text-center px-2 py-3">Exp%</th>
                 <th className="text-left px-3 py-3">Signal mix</th>
@@ -867,19 +872,32 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
                 const tcls = c.tier === 1 ? 'text-accent-green' : c.tier === 2 ? 'text-accent-cyan' : 'text-accent-amber'
                 const rowBg = c.tier === 1 ? 'bg-accent-green/5' : 'bg-ink-800'
                 const td = `px-2 py-3 border-t border-ink-500 ${rowBg} group-hover:bg-ink-700 font-mono`
+                const vr = c.volumeRatio
+                const vcls = vr == null ? 'text-neutral-500' : vr >= 3 ? 'text-accent-green font-bold' : vr >= 1.5 ? 'text-accent-cyan' : vr < 0.8 ? 'text-accent-amber' : 'text-neutral-400'
                 return (
                   <tr key={i} className="group">
                     <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
                       <b className="text-neutral-200">{c.symbol}</b>
+                      {c.futuristicBucket && (
+                        <span className="ml-1.5 px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
+                          title={`${c.futuristicBucket.label} — futuristic high-growth sector`}>
+                          {c.futuristicBucket.emoji} {c.futuristicBucket.key}
+                        </span>
+                      )}
                     </td>
                     <td className={`${td} text-right`}>₹{fmtPx(c.ltp)}</td>
+                    <td className={`${td} text-center ${vcls}`}>{vr ? `${vr}×` : '—'}</td>
                     <td className={`${td} text-center font-bold ${tcls}`}>{c.totalScore}/24</td>
                     <td className={`${td} text-center text-[10px] font-bold ${tcls}`}>{c.tierLabel}</td>
                     <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(c.entry)}</td>
+                    <td className={`${td} text-center text-accent-cyan text-[10px]`}>{fmtDate(c.entryDate)}</td>
                     <td className={`${td} text-right text-accent-red`}>₹{fmtPx(c.stopLoss)}</td>
                     <td className={`${td} text-right text-accent-green`}>₹{fmtPx(c.target1)}</td>
+                    <td className={`${td} text-center text-accent-green text-[10px]`}>{fmtDate(c.target1Date)}</td>
                     <td className={`${td} text-right text-accent-green`}>₹{fmtPx(c.target2)}</td>
+                    <td className={`${td} text-center text-accent-green text-[10px]`}>{fmtDate(c.target2Date)}</td>
                     <td className={`${td} text-right text-accent-green font-bold`}>₹{fmtPx(c.target3)}</td>
+                    <td className={`${td} text-center text-accent-green text-[10px] font-semibold`}>{fmtDate(c.target3Date)}</td>
                     <td className={`${td} text-center`}>1:{c.riskReward}</td>
                     <td className={`${td} text-center text-accent-green`}>+{c.expectedMovePct}%</td>
                     <td className={`${td} px-3 text-left text-[11px] text-neutral-300 leading-relaxed break-words`} style={{ maxWidth: 280, whiteSpace: 'normal' }}>{c.primarySignal}</td>
