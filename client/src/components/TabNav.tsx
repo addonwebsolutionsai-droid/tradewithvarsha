@@ -29,6 +29,7 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   const navigate = useNavigate()
 
   const investmentSubs: SubItem[] = [
+    { to: '/5-20-move',              label: '5–20% Move',   icon: <Rocket size={12} /> },
     { to: '/investment/symbols',     label: 'Symbols',      icon: <ListChecks size={12} /> },
     { to: '/investment/swings',      label: 'Swings',       icon: <TrendingUp size={12} />, count: counts.swing },
     { to: '/investment/fno',         label: 'F&O',          icon: <BarChart3 size={12} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
