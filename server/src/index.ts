@@ -805,31 +805,54 @@ app.post('/api/learning/autotune/run', async (_req, res) => {
 })
 
 // ── Weekly Manager Pick ────────────────────────────────────────
+// 2026-05-26: shared enricher used by /api/weekly-pick and /api/daily-pick.
+// Adds shareholdingNote (FII/DII/Promoter/Pledge/MC text) + the explicit
+// user-requested flags: vol5dRatio (5d vs 20d avg), smartMoneyUp (FII↑ +
+// Promoter stable+), and the raw fiiDelta / promoterDelta / diiDelta for
+// sort/filter on the client.
+async function enrichRowsWithMoneyFlow(rows: any[]): Promise<void> {
+  const dataMod = await import('./data')
+  const { getShareholding } = await import('./data/shareholding')
+  await Promise.all(rows.map(async (r: any) => {
+    // Volume — only fetch candles if vol5dRatio missing
+    if (r.vol5dRatio == null) {
+      try {
+        const candles = await dataMod.getCandles(r.symbol, '1D', 25)
+        if (candles.length >= 20) {
+          const v20 = candles.slice(-20).reduce((s, c) => s + c.volume, 0) / 20
+          const v5 = candles.slice(-5).reduce((s, c) => s + c.volume, 0) / 5
+          r.vol5dRatio = v20 > 0 ? +(v5 / v20).toFixed(2) : 1
+        }
+      } catch { /* skip */ }
+    }
+    // Shareholding-derived
+    try {
+      const shp = await getShareholding(r.symbol)
+      if (!shp) return
+      r.fiiDelta = +shp.fiiDeltaQoQ.toFixed(2)
+      r.promoterDelta = +shp.promoterDeltaQoQ.toFixed(2)
+      r.diiDelta = +shp.diiDeltaQoQ.toFixed(2)
+      r.smartMoneyUp = r.fiiDelta > 0.3 && r.promoterDelta >= -0.2
+      if (!r.shareholdingNote) {
+        const fA = shp.fiiDeltaQoQ > 0.1 ? '↑' : shp.fiiDeltaQoQ < -0.1 ? '↓' : '→'
+        const pA = shp.promoterDeltaQoQ > 0.1 ? '↑' : shp.promoterDeltaQoQ < -0.1 ? '↓' : '→'
+        const dA = shp.diiDeltaQoQ > 0.1 ? '↑' : shp.diiDeltaQoQ < -0.1 ? '↓' : '→'
+        const mc = shp.marketCapCr >= 1000
+          ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
+          : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
+        r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fA} · DII ${shp.diiPct.toFixed(1)}%${dA} · P ${shp.promoterPct.toFixed(1)}%${pA} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mc}`
+      }
+    } catch { /* skip */ }
+  }))
+}
+
 app.get('/api/weekly-pick', async (_req, res) => {
   try {
     const pick = await getLatestPick()
     if (!pick) return res.status(404).json({ error: 'No weekly pick yet — POST /api/weekly-pick/run first' })
-    // 2026-05-25: enrich rows with shareholdingNote at request time so the
-    // localhost Weekly Pick page shows FII/DII/Promoter/Pledge/MC. Same
-    // enricher logic as /api/daily-pick — best-effort, silent if cache miss.
-    try {
-      const { getShareholding } = await import('./data/shareholding')
-      const rows = (pick as any).rows ?? []
-      await Promise.all(rows.map(async (r: any) => {
-        if (r.shareholdingNote) return
-        try {
-          const shp = await getShareholding(r.symbol)
-          if (!shp) return
-          const fiiArr = shp.fiiDeltaQoQ > 0.1 ? '↑' : shp.fiiDeltaQoQ < -0.1 ? '↓' : '→'
-          const pArr = shp.promoterDeltaQoQ > 0.1 ? '↑' : shp.promoterDeltaQoQ < -0.1 ? '↓' : '→'
-          const dArr = shp.diiDeltaQoQ > 0.1 ? '↑' : shp.diiDeltaQoQ < -0.1 ? '↓' : '→'
-          const mc = shp.marketCapCr >= 1000
-            ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
-            : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
-          r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fiiArr} · DII ${shp.diiPct.toFixed(1)}%${dArr} · P ${shp.promoterPct.toFixed(1)}%${pArr} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mc}`
-        } catch { /* skip */ }
-      }))
-    } catch { /* enrichment best-effort */ }
+    // 2026-05-26: shared money-flow enricher adds shareholdingNote + vol5dRatio
+    // + smartMoneyUp + fii/promoter/dii deltas in one pass.
+    await enrichRowsWithMoneyFlow((pick as any).rows ?? []).catch(() => {})
     res.json(pick)
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
@@ -1177,29 +1200,7 @@ app.get('/api/daily-pick', async (_req, res) => {
   try {
     const pick = (await loadLatestDailyPick())
     if (!pick) return res.status(404).json({ error: 'No daily pick yet — POST /api/daily-pick/run' })
-    // 2026-05-25: enrich each row with shareholdingNote (FII/DII/Promoter
-    // /Pledge/MC) so the localhost Daily Pick cards can show stake info.
-    // The data lives in disk cache from the weekly pick run; we just look
-    // it up per symbol here. Best-effort: silently leaves note empty if
-    // the symbol has no cached shareholding.
-    try {
-      const { getShareholding } = await import('./data/shareholding')
-      const rows = (pick as any).rows ?? []
-      await Promise.all(rows.map(async (r: any) => {
-        if (r.shareholdingNote) return
-        try {
-          const shp = await getShareholding(r.symbol)
-          if (!shp) return
-          const fiiArr = shp.fiiDeltaQoQ > 0.1 ? '↑' : shp.fiiDeltaQoQ < -0.1 ? '↓' : '→'
-          const pArr = shp.promoterDeltaQoQ > 0.1 ? '↑' : shp.promoterDeltaQoQ < -0.1 ? '↓' : '→'
-          const dArr = shp.diiDeltaQoQ > 0.1 ? '↑' : shp.diiDeltaQoQ < -0.1 ? '↓' : '→'
-          const mc = shp.marketCapCr >= 1000
-            ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
-            : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
-          r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fiiArr} · DII ${shp.diiPct.toFixed(1)}%${dArr} · P ${shp.promoterPct.toFixed(1)}%${pArr} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mc}`
-        } catch { /* skip */ }
-      }))
-    } catch { /* enrichment best-effort */ }
+    await enrichRowsWithMoneyFlow((pick as any).rows ?? []).catch(() => {})
     res.json(pick)
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })

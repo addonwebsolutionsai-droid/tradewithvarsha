@@ -70,7 +70,14 @@ export interface PreMoveCandidate {
   // 2026-05-26 additions per user request:
   futuristicBucket?: { key: string; label: string; emoji: string }
   volumeRatio?: number              // today vs 20d avg — confirmation signal
-  volumeRatio5d?: number            // 5d avg vs 60d avg — slower confirmation
+  volumeRatio5d?: number            // 5d avg vs 20d avg — recent volume acceleration
+  // 2026-05-26: explicit Smart-Money flags per user request — "Last 5 Days
+  // volume higher than weekly/monthly" + "FII & Promoters increasing stakes".
+  // smartMoneyUp = fiiDelta > +0.3% AND promoterDelta >= -0.2% (no major selling).
+  smartMoneyUp?: boolean
+  fiiDelta?: number                 // QoQ delta in percentage points
+  promoterDelta?: number
+  diiDelta?: number
   entryDate?: string                // YYYY-MM-DD (today IST)
   target1Date?: string              // estimated session-based date
   target2Date?: string
@@ -391,10 +398,25 @@ async function evaluateOne(symbol: string, candles: Candle[]): Promise<PreMoveCa
 
   // Volume metrics for the UI confirmation column
   const v20 = candles.slice(-20).reduce((s, c) => s + c.volume, 0) / 20
-  const v60 = candles.slice(-60).reduce((s, c) => s + c.volume, 0) / 60
   const v5 = candles.slice(-5).reduce((s, c) => s + c.volume, 0) / 5
   const volumeRatio = v20 > 0 ? +(last.volume / v20).toFixed(2) : 1
-  const volumeRatio5d = v60 > 0 ? +(v5 / v60).toFixed(2) : 1
+  // 2026-05-26: per user — "Last 5 Days volume higher than its weekly or
+  // monthly". v20 ≈ 4 weeks (monthly proxy in trading days). Ratio >1.0
+  // means recent vol acceleration. Bullish when >1.2.
+  const volumeRatio5d = v20 > 0 ? +(v5 / v20).toFixed(2) : 1
+  // Smart-money flag — explicit boolean for UI badge.
+  // FII↑ ≥ +0.3 pp QoQ AND Promoter not selling significantly (≥ −0.2 pp).
+  let smartMoneyUp = false
+  let fiiDelta: number | undefined, promoterDelta: number | undefined, diiDelta: number | undefined
+  try {
+    const _shp = await getShareholding(symbol)
+    if (_shp) {
+      fiiDelta = +_shp.fiiDeltaQoQ.toFixed(2)
+      promoterDelta = +_shp.promoterDeltaQoQ.toFixed(2)
+      diiDelta = +_shp.diiDeltaQoQ.toFixed(2)
+      smartMoneyUp = fiiDelta > 0.3 && promoterDelta >= -0.2
+    }
+  } catch { /* skip */ }
 
   // Target dates — ATR-based session estimates (T1 ≈ 5 sessions, T2 ≈ 15, T3 ≈ 30).
   // Skip weekends (Sat=6, Sun=0) when projecting.
@@ -465,6 +487,7 @@ async function evaluateOne(symbol: string, candles: Candle[]): Promise<PreMoveCa
     shareholdingNote,
     futuristicBucket,
     volumeRatio, volumeRatio5d,
+    smartMoneyUp, fiiDelta, promoterDelta, diiDelta,
     entryDate, target1Date, target2Date, target3Date,
     detectedAt: new Date().toISOString(),
   }

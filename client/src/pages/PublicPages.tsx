@@ -8,6 +8,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { snapshots } from '../api'
 import { useState } from 'react'
+import { useSortableTable } from '../components/useSortableTable'
 
 const fmtDate = (iso?: string) => {
   if (!iso) return '—'
@@ -422,7 +423,20 @@ export function PublicWeeklyPickPage(): JSX.Element {
     queryKey: ['public-weekly'], queryFn: () => snapshots.weeklyPick(),
     refetchInterval: 5 * 60_000, retry: false,
   })
-  const rows: any[] = data?.rows ?? []
+  const allRows: any[] = data?.rows ?? []
+  // 2026-05-26: column-wise sortable headers.
+  const { rows, headerProps, sortIndicator } = useSortableTable<any>(
+    allRows,
+    { key: 'conv', dir: 'desc' },
+    {
+      symbol: r => r.symbol, ltp: r => r.ltp, dir: r => r.direction,
+      conv: r => r.conviction,
+      vol5d: r => r.vol5dRatio ?? 0, smart: r => (r.smartMoneyUp ? 1 : 0),
+      fii: r => r.fiiDelta ?? 0,
+      entry: r => r.entryPrice ?? r.entryPriceLow,
+      sl: r => r.stopLoss, t1: r => r.target1, t2: r => r.target2, t3: r => r.target3,
+    },
+  )
 
   return (
     <div className="space-y-4">
@@ -447,18 +461,21 @@ export function PublicWeeklyPickPage(): JSX.Element {
             <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1500 }}>
               <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
                 <tr>
-                  <th className="text-left px-4 py-3 whitespace-nowrap bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Stock</th>
-                  <th className="text-right px-4 py-3 whitespace-nowrap">LTP</th>
-                  <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
-                  <th className="text-center px-4 py-3 whitespace-nowrap">Conviction</th>
-                  <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry Range</th>
+                  <th {...headerProps('symbol')} className={`text-left px-4 py-3 whitespace-nowrap bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)] ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
+                  <th {...headerProps('ltp')} className={`text-right px-4 py-3 whitespace-nowrap ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
+                  <th {...headerProps('dir')} className={`text-center px-4 py-3 whitespace-nowrap ${headerProps('dir').className}`}>Direction {sortIndicator('dir')}</th>
+                  <th {...headerProps('conv')} className={`text-center px-4 py-3 whitespace-nowrap ${headerProps('conv').className}`}>Conviction {sortIndicator('conv')}</th>
+                  <th {...headerProps('vol5d')} className={`text-center px-3 py-3 whitespace-nowrap ${headerProps('vol5d').className}`} title="Last 5 days avg / 20-day avg. >1.0 = recent volume acceleration.">5dVol× {sortIndicator('vol5d')}</th>
+                  <th {...headerProps('smart')} className={`text-center px-3 py-3 whitespace-nowrap ${headerProps('smart').className}`} title="🔥 = FII increasing AND Promoter not selling.">Smart $ {sortIndicator('smart')}</th>
+                  <th {...headerProps('fii')} className={`text-right px-3 py-3 whitespace-nowrap ${headerProps('fii').className}`}>FIIΔ {sortIndicator('fii')}</th>
+                  <th {...headerProps('entry')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-cyan ${headerProps('entry').className}`}>Entry Range {sortIndicator('entry')}</th>
                   <th className="text-center px-2 py-3 whitespace-nowrap text-accent-cyan">Entry by</th>
-                  <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
-                  <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 1</th>
+                  <th {...headerProps('sl')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-red ${headerProps('sl').className}`}>Stop Loss {sortIndicator('sl')}</th>
+                  <th {...headerProps('t1')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t1').className}`}>Target 1 {sortIndicator('t1')}</th>
                   <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T1 by</th>
-                  <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
+                  <th {...headerProps('t2')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t2').className}`}>Target 2 {sortIndicator('t2')}</th>
                   <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T2 by</th>
-                  <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 3</th>
+                  <th {...headerProps('t3')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t3').className}`}>Target 3 {sortIndicator('t3')}</th>
                   <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T3 by</th>
                   <th className="text-left px-4 py-3 text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
                 </tr>
@@ -551,6 +568,13 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
         <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor, textDecoration: strike }}>{r.direction}</span>
       </td>
       <td className={`${td} px-4 text-center font-bold ${convCls}`} style={tdStyle}>{r.conviction}</td>
+      <td className={`${td} text-center ${r.vol5dRatio != null && r.vol5dRatio >= 1.3 ? 'text-accent-green font-bold' : r.vol5dRatio != null && r.vol5dRatio >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'}`} style={tdStyle}>{r.vol5dRatio ? `${r.vol5dRatio}×` : '—'}</td>
+      <td className={`${td} text-center`} style={tdStyle} title={r.smartMoneyUp ? `FII +${r.fiiDelta} · P ${(r.promoterDelta ?? 0) > 0 ? '+' : ''}${r.promoterDelta}` : 'FII not buying or Promoter selling'}>
+        {r.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-600">—</span>}
+      </td>
+      <td className={`${td} text-right text-[10px]`} style={tdStyle}>
+        {r.fiiDelta != null ? <span className={r.fiiDelta > 0 ? 'text-accent-green' : r.fiiDelta < 0 ? 'text-accent-red' : 'text-neutral-500'}>{r.fiiDelta > 0 ? '+' : ''}{r.fiiDelta}</span> : <span className="text-neutral-600">—</span>}
+      </td>
       <td className={`${td} text-right text-accent-cyan`} style={tdStyle}>₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</td>
       <td className={`${td} text-center text-accent-cyan text-[11px]`} style={tdStyle}>{fmtDate(r.entryDate)}</td>
       <td className={`${td} text-right text-accent-red`} style={tdStyle}>₹{fmtPx(r.stopLoss)}</td>
@@ -599,7 +623,17 @@ export function PublicDailyPickPage(): JSX.Element {
     queryKey: ['public-daily'], queryFn: () => snapshots.dailyPick(),
     refetchInterval: 5 * 60_000, retry: false,
   })
-  const rows: any[] = data?.rows ?? []
+  const allRows: any[] = data?.rows ?? []
+  const { rows, headerProps, sortIndicator } = useSortableTable<any>(
+    allRows,
+    { key: 'conv', dir: 'desc' },
+    {
+      symbol: r => r.symbol, ltp: r => r.ltp, dir: r => r.direction, conv: r => r.conviction,
+      vol5d: r => r.vol5dRatio ?? 0, smart: r => (r.smartMoneyUp ? 1 : 0), fii: r => r.fiiDelta ?? 0,
+      entry: r => r.entryPrice, sl: r => r.stopLoss,
+      t1: r => r.target1, t2: r => r.target2, t3: r => r.target3, rr: r => r.riskReward,
+    },
+  )
   return (
     <div className="space-y-4">
       <Banner emoji="🎯" title="Daily Picks" subtitle={`${rows.length} 5–15 day setups · regime ${data?.regime ?? '—'}`} ts={data?.generatedAt} />
@@ -610,21 +644,24 @@ export function PublicDailyPickPage(): JSX.Element {
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No daily picks right now. Refreshes 11:00 / 13:30 / 16:15 IST." />}
       {!isLoading && !error && rows.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-ink-500">
-          <table className="w-full text-[12px] bg-ink-800" style={{ minWidth: 1700 }}>
-            <thead className="bg-ink-700 text-neutral-400">
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '75vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1700 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
               <tr>
-                <th className="text-left px-4 py-3 whitespace-nowrap">Stock</th>
-                <th className="text-right px-4 py-3 whitespace-nowrap">LTP</th>
-                <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
-                <th className="text-center px-4 py-3 whitespace-nowrap">Conviction</th>
+                <th {...headerProps('symbol')} className={`text-left px-4 py-3 whitespace-nowrap bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)] ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
+                <th {...headerProps('ltp')} className={`text-right px-4 py-3 whitespace-nowrap ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
+                <th {...headerProps('dir')} className={`text-center px-4 py-3 whitespace-nowrap ${headerProps('dir').className}`}>Direction {sortIndicator('dir')}</th>
+                <th {...headerProps('conv')} className={`text-center px-4 py-3 whitespace-nowrap ${headerProps('conv').className}`}>Conviction {sortIndicator('conv')}</th>
+                <th {...headerProps('vol5d')} className={`text-center px-3 py-3 whitespace-nowrap ${headerProps('vol5d').className}`} title="Last 5 days avg / 20-day avg.">5dVol× {sortIndicator('vol5d')}</th>
+                <th {...headerProps('smart')} className={`text-center px-3 py-3 whitespace-nowrap ${headerProps('smart').className}`} title="🔥 = FII increasing AND Promoter not selling.">Smart $ {sortIndicator('smart')}</th>
+                <th {...headerProps('fii')} className={`text-right px-3 py-3 whitespace-nowrap ${headerProps('fii').className}`}>FIIΔ {sortIndicator('fii')}</th>
                 <th className="text-center px-4 py-3 whitespace-nowrap">Pattern</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 1</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 3</th>
-                <th className="text-center px-4 py-3 whitespace-nowrap">Risk:Reward</th>
+                <th {...headerProps('entry')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-cyan ${headerProps('entry').className}`}>Entry Price {sortIndicator('entry')}</th>
+                <th {...headerProps('sl')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-red ${headerProps('sl').className}`}>Stop Loss {sortIndicator('sl')}</th>
+                <th {...headerProps('t1')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t1').className}`}>Target 1 {sortIndicator('t1')}</th>
+                <th {...headerProps('t2')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t2').className}`}>Target 2 {sortIndicator('t2')}</th>
+                <th {...headerProps('t3')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t3').className}`}>Target 3 {sortIndicator('t3')}</th>
+                <th {...headerProps('rr')} className={`text-center px-4 py-3 whitespace-nowrap ${headerProps('rr').className}`}>R:R {sortIndicator('rr')}</th>
                 <th className="text-left px-4 py-3 text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
               </tr>
             </thead>
@@ -632,14 +669,22 @@ export function PublicDailyPickPage(): JSX.Element {
               {rows.map((r, i) => {
                 const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
                 const convCls = r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : 'text-accent-amber'
+                const v5cls = r.vol5dRatio != null && r.vol5dRatio >= 1.3 ? 'text-accent-green font-bold' : r.vol5dRatio != null && r.vol5dRatio >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'
                 return (
                   <tr key={i} className="border-t border-ink-500 hover:bg-ink-700 font-mono">
-                    <td className="px-4 py-3 whitespace-nowrap"><b>{r.symbol}</b></td>
+                    <td className="px-4 py-3 whitespace-nowrap bg-ink-800 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]"><b>{r.symbol}</b></td>
                     <td className="px-2 py-3 text-right whitespace-nowrap">₹{fmtPx(r.ltp)}</td>
                     <td className="px-4 py-3 text-center">
                       <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
                     </td>
                     <td className={`px-4 py-3 text-center font-bold ${convCls}`}>{r.conviction}</td>
+                    <td className={`px-3 py-3 text-center ${v5cls}`}>{r.vol5dRatio ? `${r.vol5dRatio}×` : '—'}</td>
+                    <td className="px-3 py-3 text-center" title={r.smartMoneyUp ? `FII +${r.fiiDelta} · P ${(r.promoterDelta ?? 0) > 0 ? '+' : ''}${r.promoterDelta}` : ''}>
+                      {r.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-600">—</span>}
+                    </td>
+                    <td className="px-3 py-3 text-right text-[10px]">
+                      {r.fiiDelta != null ? <span className={r.fiiDelta > 0 ? 'text-accent-green' : r.fiiDelta < 0 ? 'text-accent-red' : 'text-neutral-500'}>{r.fiiDelta > 0 ? '+' : ''}{r.fiiDelta}</span> : '—'}
+                    </td>
                     <td className="px-4 py-3 text-center text-[11px] text-neutral-300 whitespace-nowrap">{r.pattern}</td>
                     <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.entryPrice)}</td>
                     <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.stopLoss)}</td>
@@ -834,7 +879,21 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
     queryKey: ['public-pre-move-identifier'], queryFn: () => snapshots.preMoveIdentifier(),
     refetchInterval: 5 * 60_000, retry: false,
   })
-  const cs: any[] = data?.candidates ?? []
+  const allCs: any[] = data?.candidates ?? []
+  const { rows: cs, headerProps, sortIndicator } = useSortableTable<any>(
+    allCs,
+    { key: 'score', dir: 'desc' },
+    {
+      symbol: c => c.symbol, ltp: c => c.ltp,
+      vol: c => c.volumeRatio ?? 0, vol5d: c => c.volumeRatio5d ?? 0,
+      smart: c => (c.smartMoneyUp ? 1 : 0),
+      fii: c => c.fiiDelta ?? 0,
+      score: c => c.totalScore, tier: c => -c.tier,
+      entry: c => c.entry, sl: c => c.stopLoss,
+      t1: c => c.target1, t2: c => c.target2, t3: c => c.target3,
+      rr: c => c.riskReward, exp: c => c.expectedMovePct,
+    },
+  )
   return (
     <div className="space-y-4">
       <Banner emoji="🎯" title="5–20% Move — Pre-Move Identifier" subtitle={data ? `${data.tier1Count} Tier-1 · ${data.tier2Count} Tier-2 · ${data.tier3Count} Tier-3 · ${data.qualityPassed} passed quality filter from ${data.universeSize}` : '8-signal composite scorer · quality-filtered · pump-and-dump rejected'} ts={data?.generatedAt} />
@@ -847,22 +906,25 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
           <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1500 }}>
             <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
               <tr>
-                <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Stock</th>
-                <th className="text-right px-2 py-3">LTP</th>
-                <th className="text-center px-2 py-3" title="Today's volume / 20-day avg. ≥3× = unusual volume confirming move.">Vol×</th>
-                <th className="text-center px-2 py-3">Score</th>
-                <th className="text-center px-2 py-3">Tier</th>
-                <th className="text-right px-2 py-3 text-accent-cyan">Entry</th>
+                <th {...headerProps('symbol')} className={`text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)] ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
+                <th {...headerProps('ltp')} className={`text-right px-2 py-3 ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
+                <th {...headerProps('vol')} className={`text-center px-2 py-3 ${headerProps('vol').className}`} title="Today's volume / 20-day avg. ≥3× = unusual volume confirming move.">Vol× {sortIndicator('vol')}</th>
+                <th {...headerProps('vol5d')} className={`text-center px-2 py-3 ${headerProps('vol5d').className}`} title="Last 5 days avg / 20-day avg. >1.0 = recent volume acceleration.">5dVol× {sortIndicator('vol5d')}</th>
+                <th {...headerProps('smart')} className={`text-center px-2 py-3 ${headerProps('smart').className}`} title="🔥 = FII increasing (>+0.3% QoQ) AND Promoter not selling significantly.">Smart $ {sortIndicator('smart')}</th>
+                <th {...headerProps('fii')} className={`text-right px-2 py-3 ${headerProps('fii').className}`} title="FII delta in percentage points QoQ.">FIIΔ {sortIndicator('fii')}</th>
+                <th {...headerProps('score')} className={`text-center px-2 py-3 ${headerProps('score').className}`}>Score {sortIndicator('score')}</th>
+                <th {...headerProps('tier')} className={`text-center px-2 py-3 ${headerProps('tier').className}`}>Tier {sortIndicator('tier')}</th>
+                <th {...headerProps('entry')} className={`text-right px-2 py-3 text-accent-cyan ${headerProps('entry').className}`}>Entry {sortIndicator('entry')}</th>
                 <th className="text-center px-2 py-3 text-accent-cyan">Entry by</th>
-                <th className="text-right px-2 py-3 text-accent-red">SL</th>
-                <th className="text-right px-2 py-3 text-accent-green">T1</th>
+                <th {...headerProps('sl')} className={`text-right px-2 py-3 text-accent-red ${headerProps('sl').className}`}>SL {sortIndicator('sl')}</th>
+                <th {...headerProps('t1')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t1').className}`}>T1 {sortIndicator('t1')}</th>
                 <th className="text-center px-2 py-3 text-accent-green">T1 by</th>
-                <th className="text-right px-2 py-3 text-accent-green">T2</th>
+                <th {...headerProps('t2')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t2').className}`}>T2 {sortIndicator('t2')}</th>
                 <th className="text-center px-2 py-3 text-accent-green">T2 by</th>
-                <th className="text-right px-2 py-3 text-accent-green">T3</th>
+                <th {...headerProps('t3')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t3').className}`}>T3 {sortIndicator('t3')}</th>
                 <th className="text-center px-2 py-3 text-accent-green">T3 by</th>
-                <th className="text-center px-2 py-3">R:R</th>
-                <th className="text-center px-2 py-3">Exp%</th>
+                <th {...headerProps('rr')} className={`text-center px-2 py-3 ${headerProps('rr').className}`}>R:R {sortIndicator('rr')}</th>
+                <th {...headerProps('exp')} className={`text-center px-2 py-3 ${headerProps('exp').className}`}>Exp% {sortIndicator('exp')}</th>
                 <th className="text-left px-3 py-3">Signal mix</th>
                 <th className="text-left px-3 py-3 text-neutral-400">Stake</th>
               </tr>
@@ -887,6 +949,13 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
                     </td>
                     <td className={`${td} text-right`}>₹{fmtPx(c.ltp)}</td>
                     <td className={`${td} text-center ${vcls}`}>{vr ? `${vr}×` : '—'}</td>
+                    <td className={`${td} text-center ${c.volumeRatio5d != null && c.volumeRatio5d >= 1.3 ? 'text-accent-green font-bold' : c.volumeRatio5d != null && c.volumeRatio5d >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'}`} title="5d avg / 20d avg — recent volume acceleration">{c.volumeRatio5d ? `${c.volumeRatio5d}×` : '—'}</td>
+                    <td className={`${td} text-center`} title={c.smartMoneyUp ? `FII +${c.fiiDelta} · P ${c.promoterDelta > 0 ? '+' : ''}${c.promoterDelta}` : 'FII not buying or Promoter selling'}>
+                      {c.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-600">—</span>}
+                    </td>
+                    <td className={`${td} text-right text-[10px]`}>
+                      {c.fiiDelta != null ? <span className={c.fiiDelta > 0 ? 'text-accent-green' : c.fiiDelta < 0 ? 'text-accent-red' : 'text-neutral-500'}>{c.fiiDelta > 0 ? '+' : ''}{c.fiiDelta}</span> : <span className="text-neutral-600">—</span>}
+                    </td>
                     <td className={`${td} text-center font-bold ${tcls}`}>{c.totalScore}/24</td>
                     <td className={`${td} text-center text-[10px] font-bold ${tcls}`}>{c.tierLabel}</td>
                     <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(c.entry)}</td>

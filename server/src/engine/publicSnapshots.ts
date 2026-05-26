@@ -39,22 +39,43 @@ async function ensureDir(): Promise<void> {
  */
 async function enrichShareholdingNotes(rows: any[]): Promise<void> {
   const { getShareholding } = await import('../data/shareholding')
-  const needsFetch = rows.filter(r => !r.shareholdingNote || r.shareholdingNote.includes('unavailable'))
+  const dataMod = await import('../data')
+  // 2026-05-26: also enrich with vol5dRatio + smartMoneyUp + raw deltas
+  // (per user request: "Last 5 Days volume higher than weekly/monthly AND
+  // FII & Promoters increasing stakes"). Done in one pass over all rows.
   let cursor = 0
   await Promise.all(Array.from({ length: 4 }, async () => {
-    while (cursor < needsFetch.length) {
-      const r = needsFetch[cursor++]
+    while (cursor < rows.length) {
+      const r = rows[cursor++]
+      // Volume — only if missing
+      if (r.vol5dRatio == null) {
+        try {
+          const candles = await dataMod.getCandles(r.symbol, '1D', 25)
+          if (candles.length >= 20) {
+            const v20 = candles.slice(-20).reduce((s, c) => s + c.volume, 0) / 20
+            const v5 = candles.slice(-5).reduce((s, c) => s + c.volume, 0) / 5
+            r.vol5dRatio = v20 > 0 ? +(v5 / v20).toFixed(2) : 1
+          }
+        } catch { /* skip */ }
+      }
+      // Shareholding — both note + deltas + smart-money flag
       try {
         const shp = await getShareholding(r.symbol)
-        if (!shp) continue                  // leave fallback in place
-        const fiiArr = shp.fiiDeltaQoQ > 0.1 ? '↑' : shp.fiiDeltaQoQ < -0.1 ? '↓' : '→'
-        const pArr = shp.promoterDeltaQoQ > 0.1 ? '↑' : shp.promoterDeltaQoQ < -0.1 ? '↓' : '→'
-        const dArr = shp.diiDeltaQoQ > 0.1 ? '↑' : shp.diiDeltaQoQ < -0.1 ? '↓' : '→'
-        const mc = shp.marketCapCr >= 1000
-          ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
-          : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
-        r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fiiArr} · DII ${shp.diiPct.toFixed(1)}%${dArr} · P ${shp.promoterPct.toFixed(1)}%${pArr} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mc}`
-      } catch { /* skip — fallback stays */ }
+        if (!shp) continue
+        r.fiiDelta = +shp.fiiDeltaQoQ.toFixed(2)
+        r.promoterDelta = +shp.promoterDeltaQoQ.toFixed(2)
+        r.diiDelta = +shp.diiDeltaQoQ.toFixed(2)
+        r.smartMoneyUp = r.fiiDelta > 0.3 && r.promoterDelta >= -0.2
+        if (!r.shareholdingNote || r.shareholdingNote.includes('unavailable')) {
+          const fiiArr = shp.fiiDeltaQoQ > 0.1 ? '↑' : shp.fiiDeltaQoQ < -0.1 ? '↓' : '→'
+          const pArr = shp.promoterDeltaQoQ > 0.1 ? '↑' : shp.promoterDeltaQoQ < -0.1 ? '↓' : '→'
+          const dArr = shp.diiDeltaQoQ > 0.1 ? '↑' : shp.diiDeltaQoQ < -0.1 ? '↓' : '→'
+          const mc = shp.marketCapCr >= 1000
+            ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
+            : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
+          r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fiiArr} · DII ${shp.diiPct.toFixed(1)}%${dArr} · P ${shp.promoterPct.toFixed(1)}%${pArr} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mc}`
+        }
+      } catch { /* skip */ }
     }
   }))
 }
@@ -86,6 +107,12 @@ function publicWeeklyRows(rows: any[]): any[] {
     horaNote: r.horaNote,
     flowNote: r.flowNote,
     bucket: r.bucket ?? 'FIRST_BASE',     // FIRST_BASE | WAVE_2
+    // 2026-05-26: new money-flow fields per user request.
+    vol5dRatio: r.vol5dRatio,
+    smartMoneyUp: r.smartMoneyUp,
+    fiiDelta: r.fiiDelta,
+    promoterDelta: r.promoterDelta,
+    diiDelta: r.diiDelta,
   }))
 }
 
@@ -152,6 +179,12 @@ function publicDailyRows(rows: any[]): any[] {
     target3: r.target3, target3Date: r.target3Date,
     riskReward: r.riskReward,
     shareholdingNote: r.shareholdingNote ?? '',     // populated by enricher below
+    // 2026-05-26: money-flow fields
+    vol5dRatio: r.vol5dRatio,
+    smartMoneyUp: r.smartMoneyUp,
+    fiiDelta: r.fiiDelta,
+    promoterDelta: r.promoterDelta,
+    diiDelta: r.diiDelta,
   }))
 }
 

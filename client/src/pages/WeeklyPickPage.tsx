@@ -4,6 +4,7 @@ import clsx from 'clsx'
 import { starsForScore, byScoreQuality } from '../components/convictionTier'
 import { Stars } from '../components/Stars'
 import { ExportButtons } from '../components/ExportButtons'
+import { useSortableTable } from '../components/useSortableTable'
 
 interface PickRow {
   symbol: string
@@ -33,6 +34,12 @@ interface PickRow {
   flowNote: string
   shareholdingNote?: string         // 2026-05-24: FII/DII/Promoter/Pledge/MC summary
   noBrainerBet?: boolean
+  // 2026-05-26: server-enriched at /api/weekly-pick
+  vol5dRatio?: number
+  smartMoneyUp?: boolean
+  fiiDelta?: number
+  promoterDelta?: number
+  diiDelta?: number
   source: 'WATCHLIST' | 'CURATED'
 }
 
@@ -182,7 +189,22 @@ export function WeeklyPickPage() {
 }
 
 function PickTable({ title, rows }: { title: string; rows: PickRow[] }) {
-  const sorted = rows.slice().sort(byScoreQuality)
+  // 2026-05-26: replace fixed star-sort with click-to-sort headers. Default
+  // still ranks elite first (conviction desc).
+  const initialSorted = rows.slice().sort(byScoreQuality)
+  const { rows: sorted, headerProps, sortIndicator } = useSortableTable<PickRow>(
+    initialSorted,
+    { key: 'conv', dir: 'desc' },
+    {
+      symbol: r => r.symbol, ltp: r => r.ltp,
+      dir: r => r.direction, conv: r => r.conviction,
+      vol5d: r => r.vol5dRatio ?? 0, smart: r => (r.smartMoneyUp ? 1 : 0),
+      fii: r => r.fiiDelta ?? 0,
+      entry: r => r.entryPrice, sl: r => r.stopLoss,
+      t1: r => r.target1, t2: r => r.target2, t3: r => r.target3,
+      rr: r => r.riskRewardRatio,
+    },
+  )
   // 2026-05-24: mirrored the Vercel public-page UX upgrade onto localhost.
   //   • Mobile (< md=768px) → vertical cards, no horizontal scroll.
   //   • Desktop (≥ md) → table inside max-h-75vh scroll container with
@@ -209,21 +231,24 @@ function PickTable({ title, rows }: { title: string; rows: PickRow[] }) {
         <table className="w-full text-[11px] border-separate" style={{ borderSpacing: 0, minWidth: 1600 }}>
           <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
             <tr>
-              <th className="text-left px-3 py-2 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Stock</th>
-              <th className="text-right px-3 py-2">LTP</th>
-              <th className="text-center px-3 py-2">Dir</th>
-              <th className="text-center px-3 py-2">Conv</th>
-              <th className="text-right px-3 py-2 text-accent-cyan">Entry</th>
+              <th {...headerProps('symbol')} className={`text-left px-3 py-2 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)] ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
+              <th {...headerProps('ltp')} className={`text-right px-3 py-2 ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
+              <th {...headerProps('dir')} className={`text-center px-3 py-2 ${headerProps('dir').className}`}>Dir {sortIndicator('dir')}</th>
+              <th {...headerProps('conv')} className={`text-center px-3 py-2 ${headerProps('conv').className}`}>Conv {sortIndicator('conv')}</th>
+              <th {...headerProps('vol5d')} className={`text-center px-3 py-2 ${headerProps('vol5d').className}`} title="Last 5 days avg / 20-day avg. >1.0 = recent volume acceleration.">5dVol× {sortIndicator('vol5d')}</th>
+              <th {...headerProps('smart')} className={`text-center px-3 py-2 ${headerProps('smart').className}`} title="🔥 = FII increasing (>+0.3% QoQ) AND Promoter not selling significantly.">Smart $ {sortIndicator('smart')}</th>
+              <th {...headerProps('fii')} className={`text-right px-3 py-2 ${headerProps('fii').className}`} title="FII delta QoQ in pp.">FIIΔ {sortIndicator('fii')}</th>
+              <th {...headerProps('entry')} className={`text-right px-3 py-2 text-accent-cyan ${headerProps('entry').className}`}>Entry {sortIndicator('entry')}</th>
               <th className="text-center px-3 py-2 text-accent-cyan">Entry by</th>
               <th className="text-center px-3 py-2 text-accent-cyan">Entry time</th>
-              <th className="text-right px-3 py-2 text-accent-red">SL</th>
-              <th className="text-right px-3 py-2 text-accent-green">T1 (8%)</th>
+              <th {...headerProps('sl')} className={`text-right px-3 py-2 text-accent-red ${headerProps('sl').className}`}>SL {sortIndicator('sl')}</th>
+              <th {...headerProps('t1')} className={`text-right px-3 py-2 text-accent-green ${headerProps('t1').className}`}>T1 (8%) {sortIndicator('t1')}</th>
               <th className="text-center px-3 py-2 text-accent-green">T1 by</th>
-              <th className="text-right px-3 py-2 text-accent-green">T2 (14%)</th>
+              <th {...headerProps('t2')} className={`text-right px-3 py-2 text-accent-green ${headerProps('t2').className}`}>T2 (14%) {sortIndicator('t2')}</th>
               <th className="text-center px-3 py-2 text-accent-green">T2 by</th>
-              <th className="text-right px-3 py-2 text-accent-green font-semibold">T3 (≥20%)</th>
+              <th {...headerProps('t3')} className={`text-right px-3 py-2 text-accent-green font-semibold ${headerProps('t3').className}`}>T3 (≥20%) {sortIndicator('t3')}</th>
               <th className="text-center px-3 py-2 text-accent-green">T3 by</th>
-              <th className="text-center px-3 py-2">RR</th>
+              <th {...headerProps('rr')} className={`text-center px-3 py-2 ${headerProps('rr').className}`}>RR {sortIndicator('rr')}</th>
               <th className="text-left px-3 py-2 text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
             </tr>
           </thead>
@@ -333,6 +358,15 @@ function PickRowView({ row }: { row: PickRow }) {
           </span>
         </td>
         <td className={clsx(td, 'text-center font-bold', convColor)}>{row.conviction}</td>
+        <td className={`${td} text-center ${row.vol5dRatio != null && row.vol5dRatio >= 1.3 ? 'text-accent-green font-bold' : row.vol5dRatio != null && row.vol5dRatio >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'}`}>
+          {row.vol5dRatio ? `${row.vol5dRatio}×` : '—'}
+        </td>
+        <td className={`${td} text-center`} title={row.smartMoneyUp ? `FII +${row.fiiDelta} · P ${(row.promoterDelta ?? 0) > 0 ? '+' : ''}${row.promoterDelta}` : 'FII not buying or Promoter selling'}>
+          {row.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-600">—</span>}
+        </td>
+        <td className={`${td} text-right text-[10px]`}>
+          {row.fiiDelta != null ? <span className={row.fiiDelta > 0 ? 'text-accent-green' : row.fiiDelta < 0 ? 'text-accent-red' : 'text-neutral-500'}>{row.fiiDelta > 0 ? '+' : ''}{row.fiiDelta}</span> : <span className="text-neutral-600">—</span>}
+        </td>
         <td className={`${td} text-right text-accent-cyan`}>
           {row.entryPriceLow != null && row.entryPriceHigh != null
             ? <>₹{row.entryPriceLow}–{row.entryPriceHigh}</>
@@ -361,7 +395,7 @@ function PickRowView({ row }: { row: PickRow }) {
       </tr>
       {open && (
         <tr className="bg-ink-700 border-t border-ink-500">
-          <td colSpan={16} className="px-4 py-3">
+          <td colSpan={19} className="px-4 py-3">
             <div className="grid grid-cols-1 md:grid-cols-5 gap-3 text-[11px]">
               <Reason label="🧠 SMC" text={row.smcNote} />
               <Reason label="📈 Trend" text={row.trendNote} />

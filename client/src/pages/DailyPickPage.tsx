@@ -30,6 +30,11 @@ interface DailyPickRow {
   reasons: string[]
   shareholdingNote?: string         // 2026-05-25: FII/DII/Promoter/Pledge/MC
   noBrainerBet?: boolean
+  vol5dRatio?: number               // 2026-05-26: 5d vs 20d vol acceleration
+  smartMoneyUp?: boolean            // FII↑ AND Promoter not selling
+  fiiDelta?: number
+  promoterDelta?: number
+  diiDelta?: number
   meta: {
     rsi: number
     distFrom52WH: number
@@ -230,11 +235,18 @@ function DailyPickCard({ row, isNew }: { row: DailyPickRow; isNew: boolean }) {
               </span>
             )}
           </div>
-          <div className="flex items-center gap-3 text-xs mt-1 font-mono">
+          <div className="flex items-center gap-3 text-xs mt-1 font-mono flex-wrap">
             <span className="text-neutral-200">₹{row.ltp.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</span>
             <span className="text-neutral-500">RSI {row.meta.rsi.toFixed(0)}</span>
             <span className="text-neutral-500">{row.meta.distFrom52WH.toFixed(0)}% off 52WH</span>
             <span className="text-neutral-500">vol {row.meta.volRatio.toFixed(1)}×</span>
+            {row.vol5dRatio != null && (
+              <span className={row.vol5dRatio >= 1.3 ? 'text-accent-green font-bold' : row.vol5dRatio >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'}
+                title="5d avg vs 20d avg vol — recent acceleration">5dV {row.vol5dRatio}×</span>
+            )}
+            {row.smartMoneyUp && (
+              <span className="text-accent-green font-bold" title={`FII +${row.fiiDelta} · P ${(row.promoterDelta ?? 0) > 0 ? '+' : ''}${row.promoterDelta}`}>🔥 Smart $</span>
+            )}
           </div>
           <div className="flex flex-wrap gap-x-3 gap-y-1 text-[11px] mt-1.5 font-mono">
             <span className="text-neutral-500">

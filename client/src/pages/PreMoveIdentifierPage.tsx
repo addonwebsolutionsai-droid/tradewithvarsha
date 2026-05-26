@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import clsx from 'clsx'
 import { StickyScrollBox, StickyTable, STICKY_THEAD, STICKY_FIRST_COL_HEADER, STICKY_FIRST_COL_BODY } from '../components/StickyTable'
+import { useSortableTable } from '../components/useSortableTable'
 
 /**
  * 5–20% Move — Pre-Move Identifier
@@ -44,6 +45,10 @@ interface Candidate {
   futuristicBucket?: { key: string; label: string; emoji: string }
   volumeRatio?: number
   volumeRatio5d?: number
+  smartMoneyUp?: boolean
+  fiiDelta?: number
+  promoterDelta?: number
+  diiDelta?: number
   entryDate?: string
   target1Date?: string; target2Date?: string; target3Date?: string
 }
@@ -99,7 +104,31 @@ export function PreMoveIdentifierPage(): JSX.Element {
   }
 
   const data = q.data
-  const candidates = (data?.candidates ?? []).filter(c => filter === 'ALL' || c.tier === filter)
+  const filtered = (data?.candidates ?? []).filter(c => filter === 'ALL' || c.tier === filter)
+  // 2026-05-26: column-wise sortable headers. Default = score desc (highest
+  // conviction first). Click a column header to sort by that field; second
+  // click reverses; third resets.
+  const { rows: candidates, headerProps, sortIndicator } = useSortableTable<Candidate>(
+    filtered,
+    { key: 'score', dir: 'desc' },
+    {
+      symbol: c => c.symbol,
+      ltp: c => c.ltp,
+      vol: c => c.volumeRatio ?? 0,
+      vol5d: c => c.volumeRatio5d ?? 0,
+      smart: c => (c.smartMoneyUp ? 1 : 0),
+      fii: c => c.fiiDelta ?? 0,
+      score: c => c.totalScore,
+      tier: c => -c.tier,                     // tier 1 = best, so invert for desc
+      entry: c => c.entry,
+      sl: c => c.stopLoss,
+      t1: c => c.target1,
+      t2: c => c.target2,
+      t3: c => c.target3,
+      rr: c => c.riskReward,
+      exp: c => c.expectedMovePct,
+    },
+  )
 
   return (
     <div className="space-y-4">
@@ -166,22 +195,25 @@ export function PreMoveIdentifierPage(): JSX.Element {
             <StickyTable minWidth={1500} className="text-[11px]">
               <thead className={STICKY_THEAD}>
                 <tr>
-                  <th className={`text-left px-3 py-2 ${STICKY_FIRST_COL_HEADER}`}>Stock</th>
-                  <th className="text-right px-2 py-2">LTP</th>
-                  <th className="text-center px-2 py-2" title="Today's volume / 20-day avg. ≥3× = unusual volume confirming move.">Vol×</th>
-                  <th className="text-center px-2 py-2">Score</th>
-                  <th className="text-center px-2 py-2">Tier</th>
-                  <th className="text-right px-2 py-2 text-accent-cyan">Entry</th>
+                  <th {...headerProps('symbol')} className={`text-left px-3 py-2 ${STICKY_FIRST_COL_HEADER} ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
+                  <th {...headerProps('ltp')} className={`text-right px-2 py-2 ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
+                  <th {...headerProps('vol')} className={`text-center px-2 py-2 ${headerProps('vol').className}`} title="Today's volume / 20-day avg. ≥3× = unusual volume confirming move.">Vol× {sortIndicator('vol')}</th>
+                  <th {...headerProps('vol5d')} className={`text-center px-2 py-2 ${headerProps('vol5d').className}`} title="Last 5 days avg / 20-day avg. >1.0 = recent volume acceleration.">5dVol× {sortIndicator('vol5d')}</th>
+                  <th {...headerProps('smart')} className={`text-center px-2 py-2 ${headerProps('smart').className}`} title="🔥 = FII increasing (>+0.3% QoQ) AND Promoter not selling significantly.">Smart $ {sortIndicator('smart')}</th>
+                  <th {...headerProps('fii')} className={`text-right px-2 py-2 ${headerProps('fii').className}`} title="FII delta in percentage points QoQ.">FIIΔ {sortIndicator('fii')}</th>
+                  <th {...headerProps('score')} className={`text-center px-2 py-2 ${headerProps('score').className}`}>Score {sortIndicator('score')}</th>
+                  <th {...headerProps('tier')} className={`text-center px-2 py-2 ${headerProps('tier').className}`}>Tier {sortIndicator('tier')}</th>
+                  <th {...headerProps('entry')} className={`text-right px-2 py-2 text-accent-cyan ${headerProps('entry').className}`}>Entry {sortIndicator('entry')}</th>
                   <th className="text-center px-2 py-2 text-accent-cyan">Entry by</th>
-                  <th className="text-right px-2 py-2 text-accent-red">SL</th>
-                  <th className="text-right px-2 py-2 text-accent-green">T1</th>
+                  <th {...headerProps('sl')} className={`text-right px-2 py-2 text-accent-red ${headerProps('sl').className}`}>SL {sortIndicator('sl')}</th>
+                  <th {...headerProps('t1')} className={`text-right px-2 py-2 text-accent-green ${headerProps('t1').className}`}>T1 {sortIndicator('t1')}</th>
                   <th className="text-center px-2 py-2 text-accent-green">T1 by</th>
-                  <th className="text-right px-2 py-2 text-accent-green">T2</th>
+                  <th {...headerProps('t2')} className={`text-right px-2 py-2 text-accent-green ${headerProps('t2').className}`}>T2 {sortIndicator('t2')}</th>
                   <th className="text-center px-2 py-2 text-accent-green">T2 by</th>
-                  <th className="text-right px-2 py-2 text-accent-green">T3</th>
+                  <th {...headerProps('t3')} className={`text-right px-2 py-2 text-accent-green ${headerProps('t3').className}`}>T3 {sortIndicator('t3')}</th>
                   <th className="text-center px-2 py-2 text-accent-green">T3 by</th>
-                  <th className="text-center px-2 py-2">R:R</th>
-                  <th className="text-center px-2 py-2">Exp%</th>
+                  <th {...headerProps('rr')} className={`text-center px-2 py-2 ${headerProps('rr').className}`}>R:R {sortIndicator('rr')}</th>
+                  <th {...headerProps('exp')} className={`text-center px-2 py-2 ${headerProps('exp').className}`}>Exp% {sortIndicator('exp')}</th>
                   <th className="text-left px-3 py-2">Primary signal</th>
                   <th className="text-left px-3 py-2 text-neutral-400">Stake (FII/DII/Promoter)</th>
                 </tr>
@@ -225,7 +257,18 @@ function CandidateRow({ c }: { c: Candidate }): JSX.Element {
           )}
         </td>
         <td className={`${td} text-right`}>₹{c.ltp.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-        <td className={`${td} text-center ${volCls(c.volumeRatio)}`} title={c.volumeRatio5d ? `5d avg ${c.volumeRatio5d}× of 60d avg` : ''}>{c.volumeRatio ? `${c.volumeRatio}×` : '—'}</td>
+        <td className={`${td} text-center ${volCls(c.volumeRatio)}`}>{c.volumeRatio ? `${c.volumeRatio}×` : '—'}</td>
+        <td className={`${td} text-center ${volCls(c.volumeRatio5d)}`} title="5d avg vs 20d avg — recent volume acceleration">{c.volumeRatio5d ? `${c.volumeRatio5d}×` : '—'}</td>
+        <td className={`${td} text-center`} title={c.smartMoneyUp ? `FII ${(c.fiiDelta ?? 0) > 0 ? '+' : ''}${c.fiiDelta} · P ${(c.promoterDelta ?? 0) > 0 ? '+' : ''}${c.promoterDelta}` : 'FII not buying or Promoter selling'}>
+          {c.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-600">—</span>}
+        </td>
+        <td className={`${td} text-right text-[10px]`} title="FII delta QoQ in percentage points">
+          {c.fiiDelta != null ? (
+            <span className={c.fiiDelta > 0 ? 'text-accent-green' : c.fiiDelta < 0 ? 'text-accent-red' : 'text-neutral-500'}>
+              {c.fiiDelta > 0 ? '+' : ''}{c.fiiDelta}
+            </span>
+          ) : <span className="text-neutral-600">—</span>}
+        </td>
         <td className={`${td} text-center font-bold ${tierCls(c.tier)}`}>{c.totalScore}/24</td>
         <td className={`${td} text-center text-[10px] font-bold ${tierCls(c.tier)}`}>{c.tierLabel}</td>
         <td className={`${td} text-right text-accent-cyan`}>₹{c.entry}</td>
@@ -248,7 +291,7 @@ function CandidateRow({ c }: { c: Candidate }): JSX.Element {
       </tr>
       {open && (
         <tr className="bg-ink-700 border-t border-ink-500">
-          <td colSpan={18} className="px-4 py-3">
+          <td colSpan={21} className="px-4 py-3">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] font-mono">
               <SignalCell n={1} label="Institutional" b={c.s1_institutional} />
               <SignalCell n={2} label="Volume" b={c.s2_volume} />
