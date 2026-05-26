@@ -2095,6 +2095,56 @@ cron.schedule('30 17 * * 1-5', async () => {
   } catch (e) { log.err('CRON', `catch-analyzer: ${(e as Error).message}`) }
 }, { timezone: 'Asia/Kolkata' })
 
+// ── PRE-MOVE IDENTIFIER — 16:00 IST weekdays after market close ──
+// 2026-05-26: Composes the 8-signal master framework (institutional /
+// volume / pattern / fundamentals / news / sector / pump-dump / entry-
+// timing) into a unified 24-point scorer. Reuses existing screeners +
+// shareholding + sector-rotation rather than re-implementing.
+cron.schedule('0 16 * * 1-5', async () => {
+  log.info('CRON', 'Pre-Move Identifier starting...')
+  try {
+    const { runPreMoveIdentifier } = await import('./engine/preMoveIdentifier')
+    const run = await runPreMoveIdentifier({ universe: 'NIFTY500', sample: 500, topN: 25 })
+    if (botState.bot && run.tier1Count + run.tier2Count > 0) {
+      const top5 = run.candidates.slice(0, 5).map(c =>
+        `${c.tier === 1 ? '🟢' : c.tier === 2 ? '🟡' : '🟠'} ${c.symbol} ${c.totalScore}/24 · entry ₹${c.entry} · SL ₹${c.stopLoss} · T1 ₹${c.target1} · ${c.primarySignal}`,
+      ).join('\n')
+      const lines = [
+        `🎯 *Pre-Move Identifier — ${new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10)}*`,
+        `Tier 1: ${run.tier1Count} · Tier 2: ${run.tier2Count} · Tier 3: ${run.tier3Count}`,
+        ``,
+        `*Top 5 candidates:*`,
+        top5 || '_no candidates_',
+      ].join('\n')
+      for (const cid of config.bots.telegramChatIds) {
+        try {
+          await botState.bot.api.sendMessage(cid, lines, { parse_mode: 'Markdown' })
+          recordTgPush('pre-move-identifier', `T1=${run.tier1Count} T2=${run.tier2Count}`, cid)
+        } catch { /* swallow */ }
+      }
+    }
+  } catch (e) { log.err('CRON', `pre-move-identifier: ${(e as Error).message}`) }
+}, { timezone: 'Asia/Kolkata' })
+
+app.get('/api/pre-move-identifier', async (_req, res) => {
+  try {
+    const { getLatestPreMoveRun } = await import('./engine/preMoveIdentifier')
+    const run = await getLatestPreMoveRun()
+    if (!run) return res.status(404).json({ error: 'No pre-move run yet — POST /api/pre-move-identifier/run' })
+    res.json(run)
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+app.post('/api/pre-move-identifier/run', async (_req, res) => {
+  try {
+    const { runPreMoveIdentifier } = await import('./engine/preMoveIdentifier')
+    res.json(await runPreMoveIdentifier({
+      universe: String(_req.query.universe ?? 'NIFTY500'),
+      sample: Math.max(50, Math.min(2000, Number(_req.query.sample ?? 500))),
+      topN: Math.max(10, Math.min(100, Number(_req.query.topN ?? 25))),
+    }))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
 app.get('/api/catch-rate', async (_req, res) => {
   try {
     const { getLatestCatchReport, getCatchRateRolling } = await import('./engine/dailyCatchAnalyzer')

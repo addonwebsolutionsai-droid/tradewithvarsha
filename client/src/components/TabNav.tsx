@@ -56,7 +56,8 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   // exists in code but no longer in nav → no user confusion.
   const tops = PUBLIC_MODE ? [
     { to: '/top-trades',   label: 'Top Trades',   icon: <Target size={14} /> },
-    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />, badge: 'NEW' },
+    { to: '/5-20-move',    label: '5–20% Move',   icon: <Rocket size={14} />, badge: 'NEW' },
+    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} /> },
     { to: '/weekly-pick',  label: 'Weekly Pick',  icon: <Briefcase size={14} /> },
     { to: '/daily-pick',   label: 'Daily Pick',   icon: <Bot size={14} /> },
     { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} /> },
@@ -66,7 +67,8 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // INTO the More dropdown — last-14-days lifecycle audit showed zero closed
     // signals from these sources. Top bar now focused on the primary workflow.
     { to: '/',          label: 'Dashboard',   icon: <LayoutDashboard size={14} /> },
-    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />, badge: 'NEW' },
+    { to: '/5-20-move', label: '5–20% Move',  icon: <Rocket size={14} />, badge: 'NEW' },
+    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} /> },
     { to: '/signals',   label: 'All Signals', icon: <Zap size={14} />, count: counts.all },
     { to: '/options',   label: 'Options',     icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
     { to: '/investment', label: 'Investment', icon: <Target size={14} />, isParent: true },

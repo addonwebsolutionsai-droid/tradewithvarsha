@@ -395,6 +395,21 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
     log.warn('PUBLIC-SNAP', `signals-history: ${(e as Error).message}`)
   }
 
+  // 6.5 Pre-Move Identifier (8-signal composite scorer for 5–20% moves)
+  // 2026-05-26: published as its own snapshot so the public Vercel page
+  // and localhost share the same data. Best-effort — if no run yet, file
+  // is omitted (page falls back to empty state).
+  try {
+    const { getLatestPreMoveRun } = await import('./preMoveIdentifier')
+    const pm = await getLatestPreMoveRun()
+    if (pm) {
+      await fs.writeFile(path.join(SNAP_DIR, 'pre-move-identifier.json'), JSON.stringify(pm, null, 2))
+      files.push('pre-move-identifier.json')
+    }
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `pre-move-identifier: ${(e as Error).message}`)
+  }
+
   // 7. Accuracy report (system-wide hit-rate, R-multiple, by source/tier)
   // 2026-05-18: published as a separate snapshot for the dashboard strip.
   // 2026-05-25: also includes catch-rate (% of NSE top-gainers our pre-move

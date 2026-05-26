@@ -37,8 +37,9 @@ import { TimeCyclePage } from './pages/TimeCyclePage'
 import { SymbolsPage } from './pages/SymbolsPage'
 import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
+import { PreMoveIdentifierPage } from './pages/PreMoveIdentifierPage'
 import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
-import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage } from './pages/PublicPages'
+import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage } from './pages/PublicPages'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -101,6 +102,7 @@ function Shell() {
             <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
             <Route path="/admin/users" element={<RequireAuth adminOnly><AdminUsersPage /></RequireAuth>} />
             <Route path="/top-trades" element={<PublicTopTradesPage />} />
+            <Route path="/5-20-move" element={<PublicPreMoveIdentifierPage />} />
             <Route path="/weekly-pick" element={<PublicWeeklyPickPage />} />
             <Route path="/daily-pick"  element={<PublicDailyPickPage />} />
             <Route path="/pre-move"    element={<PublicPreMovePage />} />
@@ -118,6 +120,7 @@ function Shell() {
 
           {/* Top Trades — single curated unified feed (the "anti-noise" view) */}
           <Route path="/top-trades" element={<TopTradesPage />} />
+          <Route path="/5-20-move" element={<PreMoveIdentifierPage />} />
 
           {/* Track Record — public signal history with outcomes (also on Vercel) */}
           <Route path="/track-record" element={<PublicSignalsHistoryPage />} />
