@@ -188,34 +188,30 @@ export function PreMoveIdentifierPage(): JSX.Element {
         {candidates.map((c, i) => <CandidateCard key={c.symbol + i} c={c} />)}
       </div>
 
-      {/* Desktop sticky table */}
+      {/* Desktop layout — two-row per pick:
+          Row 1 = compact numeric grid (sortable headers).
+          Row 2 = always-visible Stake (FII/DII/Promoter) + Signal mix.
+          T1/T2/T3 each combine the price + date into one cell.
+          Vol×, 5dVol×, Smart-$, FIIΔ collapsed into one "Money Flow" cell
+          showing all four signals stacked vertically. Reduces ~21 columns
+          → 12 so the whole row fits without horizontal scroll on 1280px+. */}
       {candidates.length > 0 && (
         <div className="hidden md:block">
           <StickyScrollBox>
-            <StickyTable minWidth={1500} className="text-[11px]">
+            <StickyTable minWidth={1240} className="text-[11px]">
               <thead className={STICKY_THEAD}>
                 <tr>
                   <th {...headerProps('symbol')} className={`text-left px-3 py-2 ${STICKY_FIRST_COL_HEADER} ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
                   <th {...headerProps('ltp')} className={`text-right px-2 py-2 ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
-                  <th {...headerProps('vol')} className={`text-center px-2 py-2 ${headerProps('vol').className}`} title="Today's volume / 20-day avg. ≥3× = unusual volume confirming move.">Vol× {sortIndicator('vol')}</th>
-                  <th {...headerProps('vol5d')} className={`text-center px-2 py-2 ${headerProps('vol5d').className}`} title="Last 5 days avg / 20-day avg. >1.0 = recent volume acceleration.">5dVol× {sortIndicator('vol5d')}</th>
-                  <th {...headerProps('smart')} className={`text-center px-2 py-2 ${headerProps('smart').className}`} title="🔥 = FII increasing (>+0.3% QoQ) AND Promoter not selling significantly.">Smart $ {sortIndicator('smart')}</th>
-                  <th {...headerProps('fii')} className={`text-right px-2 py-2 ${headerProps('fii').className}`} title="FII delta in percentage points QoQ.">FIIΔ {sortIndicator('fii')}</th>
+                  <th {...headerProps('smart')} className={`text-center px-2 py-2 ${headerProps('smart').className}`} title="Sort by Smart Money flag (🔥 first).">Money Flow {sortIndicator('smart')}</th>
                   <th {...headerProps('score')} className={`text-center px-2 py-2 ${headerProps('score').className}`}>Score {sortIndicator('score')}</th>
-                  <th {...headerProps('tier')} className={`text-center px-2 py-2 ${headerProps('tier').className}`}>Tier {sortIndicator('tier')}</th>
                   <th {...headerProps('entry')} className={`text-right px-2 py-2 text-accent-cyan ${headerProps('entry').className}`}>Entry {sortIndicator('entry')}</th>
-                  <th className="text-center px-2 py-2 text-accent-cyan">Entry by</th>
                   <th {...headerProps('sl')} className={`text-right px-2 py-2 text-accent-red ${headerProps('sl').className}`}>SL {sortIndicator('sl')}</th>
-                  <th {...headerProps('t1')} className={`text-right px-2 py-2 text-accent-green ${headerProps('t1').className}`}>T1 {sortIndicator('t1')}</th>
-                  <th className="text-center px-2 py-2 text-accent-green">T1 by</th>
-                  <th {...headerProps('t2')} className={`text-right px-2 py-2 text-accent-green ${headerProps('t2').className}`}>T2 {sortIndicator('t2')}</th>
-                  <th className="text-center px-2 py-2 text-accent-green">T2 by</th>
-                  <th {...headerProps('t3')} className={`text-right px-2 py-2 text-accent-green ${headerProps('t3').className}`}>T3 {sortIndicator('t3')}</th>
-                  <th className="text-center px-2 py-2 text-accent-green">T3 by</th>
+                  <th {...headerProps('t1')} className={`text-right px-2 py-2 text-accent-green ${headerProps('t1').className}`}>T1 · date {sortIndicator('t1')}</th>
+                  <th {...headerProps('t2')} className={`text-right px-2 py-2 text-accent-green ${headerProps('t2').className}`}>T2 · date {sortIndicator('t2')}</th>
+                  <th {...headerProps('t3')} className={`text-right px-2 py-2 text-accent-green ${headerProps('t3').className}`}>T3 · date {sortIndicator('t3')}</th>
                   <th {...headerProps('rr')} className={`text-center px-2 py-2 ${headerProps('rr').className}`}>R:R {sortIndicator('rr')}</th>
                   <th {...headerProps('exp')} className={`text-center px-2 py-2 ${headerProps('exp').className}`}>Exp% {sortIndicator('exp')}</th>
-                  <th className="text-left px-3 py-2">Primary signal</th>
-                  <th className="text-left px-3 py-2 text-neutral-400">Stake (FII/DII/Promoter)</th>
                 </tr>
               </thead>
               <tbody>
@@ -243,55 +239,78 @@ function tierCls(tier: number): string {
 function CandidateRow({ c }: { c: Candidate }): JSX.Element {
   const [open, setOpen] = useState(false)
   const rowBg = c.tier === 1 ? 'bg-accent-green/5' : 'bg-ink-800'
-  const td = `px-2 py-2 border-t border-ink-500 ${rowBg} group-hover:bg-ink-700 cursor-pointer`
+  const td = `px-2 py-2 ${rowBg} group-hover:bg-ink-700 cursor-pointer`
+  // Sub-row gets a slightly different bg so the two rows visually pair as one
+  // "card" while keeping table alignment for sortable numerics above.
+  const subBg = c.tier === 1 ? 'bg-accent-green/[0.025]' : 'bg-ink-900/40'
   return (
     <>
-      <tr className="group" onClick={() => setOpen(o => !o)}>
+      {/* Row 1 — main numeric grid */}
+      <tr className="group border-t border-ink-500" onClick={() => setOpen(o => !o)}>
         <td className={`${td} px-3 ${STICKY_FIRST_COL_BODY}`}>
-          <b className="text-neutral-200">{c.symbol}</b>
-          {c.futuristicBucket && (
-            <span className="ml-1.5 px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
-              title={`${c.futuristicBucket.label} — futuristic high-growth sector (+score bonus)`}>
-              {c.futuristicBucket.emoji} {c.futuristicBucket.key}
-            </span>
-          )}
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <b className="text-neutral-200">{c.symbol}</b>
+            {c.futuristicBucket && (
+              <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
+                title={`${c.futuristicBucket.label} — futuristic high-growth sector (+score bonus)`}>
+                {c.futuristicBucket.emoji}
+              </span>
+            )}
+          </div>
         </td>
         <td className={`${td} text-right`}>₹{c.ltp.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
-        <td className={`${td} text-center ${volCls(c.volumeRatio)}`}>{c.volumeRatio ? `${c.volumeRatio}×` : '—'}</td>
-        <td className={`${td} text-center ${volCls(c.volumeRatio5d)}`} title="5d avg vs 20d avg — recent volume acceleration">{c.volumeRatio5d ? `${c.volumeRatio5d}×` : '—'}</td>
-        <td className={`${td} text-center`} title={c.smartMoneyUp ? `FII ${(c.fiiDelta ?? 0) > 0 ? '+' : ''}${c.fiiDelta} · P ${(c.promoterDelta ?? 0) > 0 ? '+' : ''}${c.promoterDelta}` : 'FII not buying or Promoter selling'}>
-          {c.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-600">—</span>}
+        {/* Money Flow — stacked: today vol / 5d vol / smart-money badge / FIIΔ */}
+        <td className={`${td} text-center`} title="Vol = today×, 5dVol = 5d/20d avg, 🔥 = FII↑+Promoter stable">
+          <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight whitespace-nowrap">
+            <span className={volCls(c.volumeRatio)}>{c.volumeRatio ? `${c.volumeRatio}×` : '—'}</span>
+            <span className="text-neutral-700">·</span>
+            <span className={volCls(c.volumeRatio5d)}>5d {c.volumeRatio5d ? `${c.volumeRatio5d}×` : '—'}</span>
+            <span className="text-neutral-700">·</span>
+            {c.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-700">·</span>}
+            {c.fiiDelta != null && c.fiiDelta !== 0 && (
+              <span className={c.fiiDelta > 0 ? 'text-accent-green' : 'text-accent-red'}>FII {c.fiiDelta > 0 ? '+' : ''}{c.fiiDelta}</span>
+            )}
+          </div>
         </td>
-        <td className={`${td} text-right text-[10px]`} title="FII delta QoQ in percentage points">
-          {c.fiiDelta != null ? (
-            <span className={c.fiiDelta > 0 ? 'text-accent-green' : c.fiiDelta < 0 ? 'text-accent-red' : 'text-neutral-500'}>
-              {c.fiiDelta > 0 ? '+' : ''}{c.fiiDelta}
-            </span>
-          ) : <span className="text-neutral-600">—</span>}
+        <td className={`${td} text-center`}>
+          <div className={`font-bold ${tierCls(c.tier)}`}>{c.totalScore}/24</div>
+          <div className={`text-[9px] font-bold ${tierCls(c.tier)}`}>{c.tierLabel}</div>
         </td>
-        <td className={`${td} text-center font-bold ${tierCls(c.tier)}`}>{c.totalScore}/24</td>
-        <td className={`${td} text-center text-[10px] font-bold ${tierCls(c.tier)}`}>{c.tierLabel}</td>
-        <td className={`${td} text-right text-accent-cyan`}>₹{c.entry}</td>
-        <td className={`${td} text-center text-accent-cyan text-[10px]`}>{fmtD(c.entryDate)}</td>
+        <td className={`${td} text-right text-accent-cyan`}>
+          <div>₹{c.entry}</div>
+          <div className="text-[9px] text-accent-cyan/70">by {fmtD(c.entryDate)}</div>
+        </td>
         <td className={`${td} text-right text-accent-red`}>₹{c.stopLoss}</td>
-        <td className={`${td} text-right text-accent-green`}>₹{c.target1}</td>
-        <td className={`${td} text-center text-accent-green text-[10px]`}>{fmtD(c.target1Date)}</td>
-        <td className={`${td} text-right text-accent-green`}>₹{c.target2}</td>
-        <td className={`${td} text-center text-accent-green text-[10px]`}>{fmtD(c.target2Date)}</td>
-        <td className={`${td} text-right text-accent-green font-bold`}>₹{c.target3}</td>
-        <td className={`${td} text-center text-accent-green text-[10px] font-semibold`}>{fmtD(c.target3Date)}</td>
+        <td className={`${td} text-right text-accent-green`}>
+          <div>₹{c.target1}</div>
+          <div className="text-[9px] text-accent-green/70">{fmtD(c.target1Date)}</div>
+        </td>
+        <td className={`${td} text-right text-accent-green`}>
+          <div>₹{c.target2}</div>
+          <div className="text-[9px] text-accent-green/70">{fmtD(c.target2Date)}</div>
+        </td>
+        <td className={`${td} text-right text-accent-green font-bold`}>
+          <div>₹{c.target3}</div>
+          <div className="text-[9px] text-accent-green/70 font-normal">{fmtD(c.target3Date)}</div>
+        </td>
         <td className={`${td} text-center`}>1:{c.riskReward}</td>
         <td className={`${td} text-center text-accent-green`}>+{c.expectedMovePct}%</td>
-        <td className={`${td} px-3 text-left text-[10px] text-neutral-400`} style={{ maxWidth: 240, whiteSpace: 'normal' }}>
-          {c.primarySignal}
+      </tr>
+      {/* Row 2 — always-visible Stake + Signal mix sub-row */}
+      <tr className={`${subBg}`}>
+        <td className={`${subBg} px-3 py-1.5 ${STICKY_FIRST_COL_BODY} text-[10px] text-neutral-500`}>
+          {c.futuristicBucket?.label || ''}
         </td>
-        <td className={`${td} px-3 text-left text-[10px] text-neutral-400`} style={{ minWidth: 220, maxWidth: 340, whiteSpace: 'normal' }}>
-          {c.shareholdingNote || <span className="text-neutral-600">—</span>}
+        <td colSpan={10} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400`}>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+            <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {c.shareholdingNote || <span className="text-neutral-600">unavailable</span>}</span>
+            <span><span className="text-neutral-600 font-semibold">⚡ Setup:</span> {c.primarySignal}</span>
+          </div>
         </td>
       </tr>
       {open && (
-        <tr className="bg-ink-700 border-t border-ink-500">
-          <td colSpan={21} className="px-4 py-3">
+        <tr className="bg-ink-700">
+          <td colSpan={11} className="px-4 py-3">
             <div className="grid grid-cols-2 md:grid-cols-4 gap-2 text-[10px] font-mono">
               <SignalCell n={1} label="Institutional" b={c.s1_institutional} />
               <SignalCell n={2} label="Volume" b={c.s2_volume} />
@@ -303,7 +322,7 @@ function CandidateRow({ c }: { c: Candidate }): JSX.Element {
               <SignalCell n={8} label="Entry/Risk" b={c.s8_entryTiming} />
             </div>
             <div className="mt-2 text-[10px] text-neutral-500">
-              Risk {c.riskPct}% · Reward {c.rewardPct}% to T1 · expected +{c.expectedMovePct}% to T2
+              Risk {c.riskPct}% · Reward {c.rewardPct}% to T1 · expected +{c.expectedMovePct}% to T2 · Click row to collapse
             </div>
           </td>
         </tr>

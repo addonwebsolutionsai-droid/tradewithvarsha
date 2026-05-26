@@ -458,26 +458,19 @@ export function PublicWeeklyPickPage(): JSX.Element {
             className="hidden md:block overflow-auto rounded-lg border border-ink-500 bg-ink-800"
             style={{ maxHeight: '75vh' }}
           >
-            <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1500 }}>
+            <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1180 }}>
               <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
                 <tr>
                   <th {...headerProps('symbol')} className={`text-left px-4 py-3 whitespace-nowrap bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)] ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
                   <th {...headerProps('ltp')} className={`text-right px-4 py-3 whitespace-nowrap ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
                   <th {...headerProps('dir')} className={`text-center px-4 py-3 whitespace-nowrap ${headerProps('dir').className}`}>Direction {sortIndicator('dir')}</th>
                   <th {...headerProps('conv')} className={`text-center px-4 py-3 whitespace-nowrap ${headerProps('conv').className}`}>Conviction {sortIndicator('conv')}</th>
-                  <th {...headerProps('vol5d')} className={`text-center px-3 py-3 whitespace-nowrap ${headerProps('vol5d').className}`} title="Last 5 days avg / 20-day avg. >1.0 = recent volume acceleration.">5dVol× {sortIndicator('vol5d')}</th>
-                  <th {...headerProps('smart')} className={`text-center px-3 py-3 whitespace-nowrap ${headerProps('smart').className}`} title="🔥 = FII increasing AND Promoter not selling.">Smart $ {sortIndicator('smart')}</th>
-                  <th {...headerProps('fii')} className={`text-right px-3 py-3 whitespace-nowrap ${headerProps('fii').className}`}>FIIΔ {sortIndicator('fii')}</th>
-                  <th {...headerProps('entry')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-cyan ${headerProps('entry').className}`}>Entry Range {sortIndicator('entry')}</th>
-                  <th className="text-center px-2 py-3 whitespace-nowrap text-accent-cyan">Entry by</th>
-                  <th {...headerProps('sl')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-red ${headerProps('sl').className}`}>Stop Loss {sortIndicator('sl')}</th>
-                  <th {...headerProps('t1')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t1').className}`}>Target 1 {sortIndicator('t1')}</th>
-                  <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T1 by</th>
-                  <th {...headerProps('t2')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t2').className}`}>Target 2 {sortIndicator('t2')}</th>
-                  <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T2 by</th>
-                  <th {...headerProps('t3')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t3').className}`}>Target 3 {sortIndicator('t3')}</th>
-                  <th className="text-center px-2 py-3 whitespace-nowrap text-accent-green">T3 by</th>
-                  <th className="text-left px-4 py-3 text-neutral-400">Stake (FII/DII/Promoter/Pledge/MC)</th>
+                  <th {...headerProps('smart')} className={`text-center px-3 py-3 whitespace-nowrap ${headerProps('smart').className}`} title="5dVol · 🔥 Smart $ (FII↑+Promoter stable) · FIIΔ stacked.">Money Flow {sortIndicator('smart')}</th>
+                  <th {...headerProps('entry')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-cyan ${headerProps('entry').className}`}>Entry {sortIndicator('entry')}</th>
+                  <th {...headerProps('sl')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-red ${headerProps('sl').className}`}>SL {sortIndicator('sl')}</th>
+                  <th {...headerProps('t1')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t1').className}`}>T1 · date {sortIndicator('t1')}</th>
+                  <th {...headerProps('t2')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t2').className}`}>T2 · date {sortIndicator('t2')}</th>
+                  <th {...headerProps('t3')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t3').className}`}>T3 · date {sortIndicator('t3')}</th>
                 </tr>
               </thead>
               <tbody>
@@ -553,39 +546,69 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
   const strike = isLoss ? 'line-through' : 'none'
   const tdStyle = { textDecoration: strike } as React.CSSProperties
   const td = `px-2 py-3 whitespace-nowrap border-t border-ink-500 group-hover:bg-ink-700 ${rowBg} ${rowOpacity}`
+  const subBg = r.noBrainerBet && status === 'ACTIVE' ? 'bg-accent-amber/[0.025]'
+    : isHit ? 'bg-accent-green/[0.05]'
+    : isLoss ? 'bg-ink-900/40'
+    : 'bg-ink-900/40'
+  const tdNoBorder = `px-2 py-2 whitespace-nowrap group-hover:bg-ink-700 ${rowBg} ${rowOpacity}`
   return (
-    <tr className="group">
-      <td className={`${td} px-4 text-left sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={tdStyle}>
-        <b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
-        {r.bucket === 'WAVE_2' && status === 'ACTIVE' && (
-          <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
-            title="Wave-2: stock ran 10–30%, retraced 38–61%, now consolidating tight. Catching leg-2.">🔄 WAVE-2</span>
-        )}
-        <StatusChip r={r} status={status} />
-      </td>
-      <td className={`${td} px-2 text-right`} style={tdStyle}>₹{fmtPx(r.ltp)}</td>
-      <td className={`${td} px-4 text-center`}>
-        <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor, textDecoration: strike }}>{r.direction}</span>
-      </td>
-      <td className={`${td} px-4 text-center font-bold ${convCls}`} style={tdStyle}>{r.conviction}</td>
-      <td className={`${td} text-center ${r.vol5dRatio != null && r.vol5dRatio >= 1.3 ? 'text-accent-green font-bold' : r.vol5dRatio != null && r.vol5dRatio >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'}`} style={tdStyle}>{r.vol5dRatio ? `${r.vol5dRatio}×` : '—'}</td>
-      <td className={`${td} text-center`} style={tdStyle} title={r.smartMoneyUp ? `FII +${r.fiiDelta} · P ${(r.promoterDelta ?? 0) > 0 ? '+' : ''}${r.promoterDelta}` : 'FII not buying or Promoter selling'}>
-        {r.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-600">—</span>}
-      </td>
-      <td className={`${td} text-right text-[10px]`} style={tdStyle}>
-        {r.fiiDelta != null ? <span className={r.fiiDelta > 0 ? 'text-accent-green' : r.fiiDelta < 0 ? 'text-accent-red' : 'text-neutral-500'}>{r.fiiDelta > 0 ? '+' : ''}{r.fiiDelta}</span> : <span className="text-neutral-600">—</span>}
-      </td>
-      <td className={`${td} text-right text-accent-cyan`} style={tdStyle}>₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</td>
-      <td className={`${td} text-center text-accent-cyan text-[11px]`} style={tdStyle}>{fmtDate(r.entryDate)}</td>
-      <td className={`${td} text-right text-accent-red`} style={tdStyle}>₹{fmtPx(r.stopLoss)}</td>
-      <td className={`${td} text-right text-accent-green`} style={tdStyle}>₹{fmtPx(r.target1)}</td>
-      <td className={`${td} text-center text-accent-green text-[11px]`} style={tdStyle}>{fmtDate(r.target1Date)}</td>
-      <td className={`${td} text-right text-accent-green`} style={tdStyle}>₹{fmtPx(r.target2)}</td>
-      <td className={`${td} text-center text-accent-green text-[11px]`} style={tdStyle}>{fmtDate(r.target2Date)}</td>
-      <td className={`${td} text-right text-accent-green font-bold`} style={tdStyle}>₹{fmtPx(r.target3)}</td>
-      <td className={`${td} px-4 text-center text-accent-green text-[11px] font-semibold`} style={tdStyle}>{fmtDate(r.target3Date)}</td>
-      <td className={`${td} px-4 text-left text-neutral-300 text-[11px] leading-relaxed break-words`} style={{ ...tdStyle, minWidth: 220, maxWidth: 340, whiteSpace: 'normal' }}>{r.shareholdingNote || 'shareholding data unavailable'}</td>
-    </tr>
+    <>
+      {/* Row 1 — main numeric grid */}
+      <tr className="group border-t border-ink-500">
+        <td className={`${tdNoBorder} px-4 text-left sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={tdStyle}>
+          <b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+          {r.bucket === 'WAVE_2' && status === 'ACTIVE' && (
+            <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40">🔄 WAVE-2</span>
+          )}
+          <StatusChip r={r} status={status} />
+        </td>
+        <td className={`${tdNoBorder} px-2 text-right`} style={tdStyle}>₹{fmtPx(r.ltp)}</td>
+        <td className={`${tdNoBorder} px-4 text-center`}>
+          <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor, textDecoration: strike }}>{r.direction}</span>
+        </td>
+        <td className={`${tdNoBorder} px-4 text-center font-bold ${convCls}`} style={tdStyle}>{r.conviction}</td>
+        {/* Money Flow — stacked */}
+        <td className={`${tdNoBorder} text-center`} style={tdStyle}>
+          <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight whitespace-nowrap">
+            <span className={r.vol5dRatio != null && r.vol5dRatio >= 1.3 ? 'text-accent-green font-bold' : r.vol5dRatio != null && r.vol5dRatio >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'}>5d {r.vol5dRatio ? `${r.vol5dRatio}×` : '—'}</span>
+            <span className="text-neutral-700">·</span>
+            {r.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-700">·</span>}
+            {r.fiiDelta != null && r.fiiDelta !== 0 && (
+              <span className={r.fiiDelta > 0 ? 'text-accent-green' : 'text-accent-red'}>FII {r.fiiDelta > 0 ? '+' : ''}{r.fiiDelta}</span>
+            )}
+          </div>
+        </td>
+        <td className={`${tdNoBorder} text-right text-accent-cyan`} style={tdStyle}>
+          <div>₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</div>
+          <div className="text-[9px] text-accent-cyan/70">by {fmtDate(r.entryDate)}</div>
+        </td>
+        <td className={`${tdNoBorder} text-right text-accent-red`} style={tdStyle}>₹{fmtPx(r.stopLoss)}</td>
+        <td className={`${tdNoBorder} text-right text-accent-green`} style={tdStyle}>
+          <div>₹{fmtPx(r.target1)}</div>
+          <div className="text-[9px] text-accent-green/70">{fmtDate(r.target1Date)}</div>
+        </td>
+        <td className={`${tdNoBorder} text-right text-accent-green`} style={tdStyle}>
+          <div>₹{fmtPx(r.target2)}</div>
+          <div className="text-[9px] text-accent-green/70">{fmtDate(r.target2Date)}</div>
+        </td>
+        <td className={`${tdNoBorder} text-right text-accent-green font-bold`} style={tdStyle}>
+          <div>₹{fmtPx(r.target3)}</div>
+          <div className="text-[9px] text-accent-green/70 font-normal">{fmtDate(r.target3Date)}</div>
+        </td>
+      </tr>
+      {/* Row 2 — always-visible Stake sub-row */}
+      <tr className={subBg}>
+        <td className={`${subBg} px-4 py-1.5 sticky left-0 z-10 border-r border-ink-500 text-[10px] text-neutral-500 font-mono`} style={tdStyle}>
+          {/* spacer under Stock col */}
+        </td>
+        <td colSpan={9} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 font-mono leading-relaxed`} style={tdStyle}>
+          <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+            <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote || <span className="text-neutral-600">unavailable</span>}</span>
+            {r.flowNote && <span><span className="text-neutral-600 font-semibold">💧 Flow:</span> {r.flowNote}</span>}
+          </div>
+        </td>
+      </tr>
+    </>
   )
 }
 
@@ -901,77 +924,100 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && cs.length === 0 && <Empty msg="No candidates yet. Engine runs 16:00 IST weekdays." />}
+      {/* 2026-05-26: Two-row design per pick — main numeric grid + always-
+          visible Stake + Signal sub-row. T1/T2/T3 prices+dates consolidated
+          into one cell each. Money-Flow (Vol×, 5dVol×, 🔥 Smart $, FIIΔ)
+          collapsed into a single stacked cell. Result: ~11 columns instead
+          of 21, fits without horizontal scroll on 1280px+ screens; Stake
+          and Signal mix are ALWAYS visible. */}
       {!isLoading && !error && cs.length > 0 && (
-        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '75vh' }}>
-          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1500 }}>
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1240 }}>
             <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
               <tr>
                 <th {...headerProps('symbol')} className={`text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)] ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
                 <th {...headerProps('ltp')} className={`text-right px-2 py-3 ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
-                <th {...headerProps('vol')} className={`text-center px-2 py-3 ${headerProps('vol').className}`} title="Today's volume / 20-day avg. ≥3× = unusual volume confirming move.">Vol× {sortIndicator('vol')}</th>
-                <th {...headerProps('vol5d')} className={`text-center px-2 py-3 ${headerProps('vol5d').className}`} title="Last 5 days avg / 20-day avg. >1.0 = recent volume acceleration.">5dVol× {sortIndicator('vol5d')}</th>
-                <th {...headerProps('smart')} className={`text-center px-2 py-3 ${headerProps('smart').className}`} title="🔥 = FII increasing (>+0.3% QoQ) AND Promoter not selling significantly.">Smart $ {sortIndicator('smart')}</th>
-                <th {...headerProps('fii')} className={`text-right px-2 py-3 ${headerProps('fii').className}`} title="FII delta in percentage points QoQ.">FIIΔ {sortIndicator('fii')}</th>
+                <th {...headerProps('smart')} className={`text-center px-2 py-3 ${headerProps('smart').className}`} title="Vol× · 5dVol× · 🔥 Smart $ · FIIΔ stacked. Click to sort by Smart $.">Money Flow {sortIndicator('smart')}</th>
                 <th {...headerProps('score')} className={`text-center px-2 py-3 ${headerProps('score').className}`}>Score {sortIndicator('score')}</th>
-                <th {...headerProps('tier')} className={`text-center px-2 py-3 ${headerProps('tier').className}`}>Tier {sortIndicator('tier')}</th>
                 <th {...headerProps('entry')} className={`text-right px-2 py-3 text-accent-cyan ${headerProps('entry').className}`}>Entry {sortIndicator('entry')}</th>
-                <th className="text-center px-2 py-3 text-accent-cyan">Entry by</th>
                 <th {...headerProps('sl')} className={`text-right px-2 py-3 text-accent-red ${headerProps('sl').className}`}>SL {sortIndicator('sl')}</th>
-                <th {...headerProps('t1')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t1').className}`}>T1 {sortIndicator('t1')}</th>
-                <th className="text-center px-2 py-3 text-accent-green">T1 by</th>
-                <th {...headerProps('t2')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t2').className}`}>T2 {sortIndicator('t2')}</th>
-                <th className="text-center px-2 py-3 text-accent-green">T2 by</th>
-                <th {...headerProps('t3')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t3').className}`}>T3 {sortIndicator('t3')}</th>
-                <th className="text-center px-2 py-3 text-accent-green">T3 by</th>
+                <th {...headerProps('t1')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t1').className}`}>T1 · date {sortIndicator('t1')}</th>
+                <th {...headerProps('t2')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t2').className}`}>T2 · date {sortIndicator('t2')}</th>
+                <th {...headerProps('t3')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t3').className}`}>T3 · date {sortIndicator('t3')}</th>
                 <th {...headerProps('rr')} className={`text-center px-2 py-3 ${headerProps('rr').className}`}>R:R {sortIndicator('rr')}</th>
                 <th {...headerProps('exp')} className={`text-center px-2 py-3 ${headerProps('exp').className}`}>Exp% {sortIndicator('exp')}</th>
-                <th className="text-left px-3 py-3">Signal mix</th>
-                <th className="text-left px-3 py-3 text-neutral-400">Stake</th>
               </tr>
             </thead>
             <tbody>
               {cs.map((c, i) => {
                 const tcls = c.tier === 1 ? 'text-accent-green' : c.tier === 2 ? 'text-accent-cyan' : 'text-accent-amber'
                 const rowBg = c.tier === 1 ? 'bg-accent-green/5' : 'bg-ink-800'
-                const td = `px-2 py-3 border-t border-ink-500 ${rowBg} group-hover:bg-ink-700 font-mono`
+                const subBg = c.tier === 1 ? 'bg-accent-green/[0.025]' : 'bg-ink-900/40'
+                const td = `px-2 py-2 ${rowBg} group-hover:bg-ink-700 font-mono`
                 const vr = c.volumeRatio
                 const vcls = vr == null ? 'text-neutral-500' : vr >= 3 ? 'text-accent-green font-bold' : vr >= 1.5 ? 'text-accent-cyan' : vr < 0.8 ? 'text-accent-amber' : 'text-neutral-400'
+                const v5cls = c.volumeRatio5d == null ? 'text-neutral-500' : c.volumeRatio5d >= 1.3 ? 'text-accent-green font-bold' : c.volumeRatio5d >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'
                 return (
-                  <tr key={i} className="group">
-                    <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
-                      <b className="text-neutral-200">{c.symbol}</b>
-                      {c.futuristicBucket && (
-                        <span className="ml-1.5 px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
-                          title={`${c.futuristicBucket.label} — futuristic high-growth sector`}>
-                          {c.futuristicBucket.emoji} {c.futuristicBucket.key}
-                        </span>
-                      )}
-                    </td>
-                    <td className={`${td} text-right`}>₹{fmtPx(c.ltp)}</td>
-                    <td className={`${td} text-center ${vcls}`}>{vr ? `${vr}×` : '—'}</td>
-                    <td className={`${td} text-center ${c.volumeRatio5d != null && c.volumeRatio5d >= 1.3 ? 'text-accent-green font-bold' : c.volumeRatio5d != null && c.volumeRatio5d >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'}`} title="5d avg / 20d avg — recent volume acceleration">{c.volumeRatio5d ? `${c.volumeRatio5d}×` : '—'}</td>
-                    <td className={`${td} text-center`} title={c.smartMoneyUp ? `FII +${c.fiiDelta} · P ${c.promoterDelta > 0 ? '+' : ''}${c.promoterDelta}` : 'FII not buying or Promoter selling'}>
-                      {c.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-600">—</span>}
-                    </td>
-                    <td className={`${td} text-right text-[10px]`}>
-                      {c.fiiDelta != null ? <span className={c.fiiDelta > 0 ? 'text-accent-green' : c.fiiDelta < 0 ? 'text-accent-red' : 'text-neutral-500'}>{c.fiiDelta > 0 ? '+' : ''}{c.fiiDelta}</span> : <span className="text-neutral-600">—</span>}
-                    </td>
-                    <td className={`${td} text-center font-bold ${tcls}`}>{c.totalScore}/24</td>
-                    <td className={`${td} text-center text-[10px] font-bold ${tcls}`}>{c.tierLabel}</td>
-                    <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(c.entry)}</td>
-                    <td className={`${td} text-center text-accent-cyan text-[10px]`}>{fmtDate(c.entryDate)}</td>
-                    <td className={`${td} text-right text-accent-red`}>₹{fmtPx(c.stopLoss)}</td>
-                    <td className={`${td} text-right text-accent-green`}>₹{fmtPx(c.target1)}</td>
-                    <td className={`${td} text-center text-accent-green text-[10px]`}>{fmtDate(c.target1Date)}</td>
-                    <td className={`${td} text-right text-accent-green`}>₹{fmtPx(c.target2)}</td>
-                    <td className={`${td} text-center text-accent-green text-[10px]`}>{fmtDate(c.target2Date)}</td>
-                    <td className={`${td} text-right text-accent-green font-bold`}>₹{fmtPx(c.target3)}</td>
-                    <td className={`${td} text-center text-accent-green text-[10px] font-semibold`}>{fmtDate(c.target3Date)}</td>
-                    <td className={`${td} text-center`}>1:{c.riskReward}</td>
-                    <td className={`${td} text-center text-accent-green`}>+{c.expectedMovePct}%</td>
-                    <td className={`${td} px-3 text-left text-[11px] text-neutral-300 leading-relaxed break-words`} style={{ maxWidth: 280, whiteSpace: 'normal' }}>{c.primarySignal}</td>
-                    <td className={`${td} px-3 text-left text-[11px] text-neutral-300 leading-relaxed break-words`} style={{ minWidth: 220, maxWidth: 340, whiteSpace: 'normal' }}>{c.shareholdingNote || '—'}</td>
-                  </tr>
+                  <>
+                    <tr key={`${i}-main`} className="group border-t border-ink-500">
+                      <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <b className="text-neutral-200">{c.symbol}</b>
+                          {c.futuristicBucket && (
+                            <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
+                              title={`${c.futuristicBucket.label}`}>{c.futuristicBucket.emoji}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className={`${td} text-right`}>₹{fmtPx(c.ltp)}</td>
+                      <td className={`${td} text-center`} title="Vol = today×, 5dVol = 5d/20d avg, 🔥 = FII↑+Promoter stable">
+                        <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight whitespace-nowrap">
+                          <span className={vcls}>{vr ? `${vr}×` : '—'}</span>
+                          <span className="text-neutral-700">·</span>
+                          <span className={v5cls}>5d {c.volumeRatio5d ? `${c.volumeRatio5d}×` : '—'}</span>
+                          <span className="text-neutral-700">·</span>
+                          {c.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-700">·</span>}
+                          {c.fiiDelta != null && c.fiiDelta !== 0 && (
+                            <span className={c.fiiDelta > 0 ? 'text-accent-green' : 'text-accent-red'}>FII {c.fiiDelta > 0 ? '+' : ''}{c.fiiDelta}</span>
+                          )}
+                        </div>
+                      </td>
+                      <td className={`${td} text-center`}>
+                        <div className={`font-bold ${tcls}`}>{c.totalScore}/24</div>
+                        <div className={`text-[9px] font-bold ${tcls}`}>{c.tierLabel}</div>
+                      </td>
+                      <td className={`${td} text-right text-accent-cyan`}>
+                        <div>₹{fmtPx(c.entry)}</div>
+                        <div className="text-[9px] text-accent-cyan/70">by {fmtDate(c.entryDate)}</div>
+                      </td>
+                      <td className={`${td} text-right text-accent-red`}>₹{fmtPx(c.stopLoss)}</td>
+                      <td className={`${td} text-right text-accent-green`}>
+                        <div>₹{fmtPx(c.target1)}</div>
+                        <div className="text-[9px] text-accent-green/70">{fmtDate(c.target1Date)}</div>
+                      </td>
+                      <td className={`${td} text-right text-accent-green`}>
+                        <div>₹{fmtPx(c.target2)}</div>
+                        <div className="text-[9px] text-accent-green/70">{fmtDate(c.target2Date)}</div>
+                      </td>
+                      <td className={`${td} text-right text-accent-green font-bold`}>
+                        <div>₹{fmtPx(c.target3)}</div>
+                        <div className="text-[9px] text-accent-green/70 font-normal">{fmtDate(c.target3Date)}</div>
+                      </td>
+                      <td className={`${td} text-center`}>1:{c.riskReward}</td>
+                      <td className={`${td} text-center text-accent-green`}>+{c.expectedMovePct}%</td>
+                    </tr>
+                    <tr key={`${i}-sub`} className={subBg}>
+                      <td className={`${subBg} px-3 py-1.5 sticky left-0 z-10 border-r border-ink-500 text-[10px] text-neutral-500 font-mono`}>
+                        {c.futuristicBucket?.label || ''}
+                      </td>
+                      <td colSpan={10} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 font-mono`}>
+                        <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+                          <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {c.shareholdingNote || <span className="text-neutral-600">unavailable</span>}</span>
+                          <span><span className="text-neutral-600 font-semibold">⚡ Setup:</span> {c.primarySignal}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </>
                 )
               })}
             </tbody>
