@@ -2104,7 +2104,7 @@ cron.schedule('0 16 * * 1-5', async () => {
   log.info('CRON', 'Pre-Move Identifier starting...')
   try {
     const { runPreMoveIdentifier } = await import('./engine/preMoveIdentifier')
-    const run = await runPreMoveIdentifier({ universe: 'NIFTY500', sample: 500, topN: 25 })
+    const run = await runPreMoveIdentifier({ universe: 'MARKET_ALL', sample: 8000, topN: 50, maxRuntimeMs: 15 * 60_000 })
     if (botState.bot && run.tier1Count + run.tier2Count > 0) {
       const top5 = run.candidates.slice(0, 5).map(c =>
         `${c.tier === 1 ? '🟢' : c.tier === 2 ? '🟡' : '🟠'} ${c.symbol} ${c.totalScore}/24 · entry ₹${c.entry} · SL ₹${c.stopLoss} · T1 ₹${c.target1} · ${c.primarySignal}`,
@@ -2138,9 +2138,10 @@ app.post('/api/pre-move-identifier/run', async (_req, res) => {
   try {
     const { runPreMoveIdentifier } = await import('./engine/preMoveIdentifier')
     res.json(await runPreMoveIdentifier({
-      universe: String(_req.query.universe ?? 'NIFTY500'),
-      sample: Math.max(50, Math.min(2000, Number(_req.query.sample ?? 500))),
-      topN: Math.max(10, Math.min(100, Number(_req.query.topN ?? 25))),
+      universe: String(_req.query.universe ?? 'MARKET_ALL'),
+      sample: Math.max(50, Math.min(10000, Number(_req.query.sample ?? 8000))),
+      topN: Math.max(10, Math.min(200, Number(_req.query.topN ?? 50))),
+      maxRuntimeMs: Math.max(60_000, Math.min(20 * 60_000, Number(_req.query.maxRuntimeMs ?? 15 * 60_000))),
     }))
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })

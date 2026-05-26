@@ -399,11 +399,16 @@ async function evaluateOne(symbol: string, candles: Candle[]): Promise<PreMoveCa
 }
 
 // ── Top-level runner ──
-export async function runPreMoveIdentifier(opts: { universe?: string; sample?: number; topN?: number } = {}): Promise<PreMoveRun> {
+export async function runPreMoveIdentifier(opts: { universe?: string; sample?: number; topN?: number; maxRuntimeMs?: number } = {}): Promise<PreMoveRun> {
   const t0 = Date.now()
-  const universeKey = opts.universe ?? 'NIFTY500'
-  const sample = opts.sample ?? 500
-  const topN = opts.topN ?? 25
+  // 2026-05-26: default universe is now MARKET_ALL (NSE + BSE deduplicated,
+  // ~7000 stocks) per user directive: "This should cover all stocks from
+  // CNXMidcap, CNX500, CNXSmallCap and all 7000 listed stocks". Sample
+  // defaults to 8000 so the cap is effectively the full universe.
+  const universeKey = opts.universe ?? 'MARKET_ALL'
+  const sample = opts.sample ?? 8000
+  const topN = opts.topN ?? 50
+  const maxRuntimeMs = opts.maxRuntimeMs ?? 12 * 60_000        // 12-min hard cap
   await fs.mkdir(LEARNING_DIR, { recursive: true }).catch(() => {})
 
   // Ensure we have a sector snapshot. If stale, refresh.
@@ -414,14 +419,20 @@ export async function runPreMoveIdentifier(opts: { universe?: string; sample?: n
   // Resolve universe
   const all = await resolveUniverse(universeKey).catch(() => [] as string[])
   const universe = all.slice(0, sample)
-  log.info('PRE-MOVE', `Scanning ${universe.length} symbols (${universeKey})...`)
+  log.info('PRE-MOVE', `Scanning ${universe.length} symbols (${universeKey}) · maxRuntime ${maxRuntimeMs / 1000}s...`)
 
   const candidates: PreMoveCandidate[] = []
   let qualityPassed = 0
   let cursor = 0
-  const concurrency = 5
+  let timedOut = false
+  // 2026-05-26: concurrency bumped 5 → 16 to handle 7000-symbol universe.
+  // Angel SmartAPI rate-limit allows comfortable parallelism on candle reads.
+  // Each worker pulls the next symbol from the shared cursor until exhausted
+  // or until the runtime cap is hit (whichever first).
+  const concurrency = 16
   await Promise.all(Array.from({ length: concurrency }, async () => {
     while (cursor < universe.length) {
+      if (Date.now() - t0 > maxRuntimeMs) { timedOut = true; break }
       const sym = universe[cursor++]
       try {
         const candles = await data.getCandles(sym, '1D', 150).catch(() => [] as Candle[])
@@ -433,6 +444,7 @@ export async function runPreMoveIdentifier(opts: { universe?: string; sample?: n
       } catch { /* skip */ }
     }
   }))
+  if (timedOut) log.warn('PRE-MOVE', `Runtime cap hit at ${cursor}/${universe.length} symbols — partial result`)
 
   candidates.sort((a, b) => b.totalScore - a.totalScore)
   const top = candidates.filter(c => c.passedQualityFilter && c.tier <= 3).slice(0, topN)
@@ -440,12 +452,13 @@ export async function runPreMoveIdentifier(opts: { universe?: string; sample?: n
   const tier2 = top.filter(c => c.tier === 2).length
   const tier3 = top.filter(c => c.tier === 3).length
 
+  const scanned = cursor
   const notes = [
-    `Universe: ${universeKey} (${universe.length} sampled of ${all.length} total)`,
-    `Quality filter passed: ${qualityPassed} · Pump-dump rejected: ${candidates.length === 0 ? 0 : (universe.length - candidates.length - (universe.length - qualityPassed))}`,
+    `Universe: ${universeKey} (${scanned} scanned of ${all.length} total${timedOut ? ' — runtime cap hit' : ''})`,
+    `Quality filter passed: ${qualityPassed} · Pump-dump rejected silently`,
     `Tier 1 buy-alerts: ${tier1} · Tier 2 watchlist: ${tier2} · Tier 3 monitor: ${tier3}`,
     `Note: signal 5 (news/catalyst) scores 0 by default — full NLP integration pending.`,
-    `Runtime: ${((Date.now() - t0) / 1000).toFixed(1)}s`,
+    `Runtime: ${((Date.now() - t0) / 1000).toFixed(1)}s (concurrency=${concurrency})`,
   ]
 
   const run: PreMoveRun = {
