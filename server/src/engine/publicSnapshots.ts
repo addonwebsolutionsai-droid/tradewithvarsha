@@ -390,9 +390,27 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   try {
     const { loadStore } = await import('./signalLifecycle')
     const lcStore = await loadStore()
-    const entries = Object.values(lcStore.entries)
-      .sort((a, b) => (a.firstSeenAt < b.firstSeenAt ? 1 : -1))    // newest first
-      .slice(0, 500)                                                // cap to 500 most recent
+    // 2026-05-27: DEDUP. The store accumulates a fresh lifecycle entry every
+    // time an engine re-emits the same setup (weekly pick reruns hourly), so
+    // KIMS/BAJAJ-AUTO etc. piled up 6-9× each. Collapse to ONE record per
+    // (symbol | direction | source), keeping the most-recently-updated entry.
+    // An entry counts as "newer" by max(statusChangedAt, lastSeenAt,
+    // firstSeenAt). The superseded duplicates are dropped from the feed —
+    // but the LATEST entry retains its real status (incl. SUPERSEDED) so the
+    // new Superseded tab still has data.
+    const newestTs = (e: any): string => {
+      const ts = [e.statusChangedAt, e.lastSeenAt, e.firstSeenAt].filter(Boolean) as string[]
+      return ts.sort().slice(-1)[0] ?? e.firstSeenAt ?? ''
+    }
+    const dedup = new Map<string, any>()
+    for (const e of Object.values(lcStore.entries)) {
+      const key = `${e.symbol}|${e.direction}|${e.source}`
+      const prev = dedup.get(key)
+      if (!prev || newestTs(e) > newestTs(prev)) dedup.set(key, e)
+    }
+    const entries = Array.from(dedup.values())
+      .sort((a, b) => (newestTs(a) < newestTs(b) ? 1 : -1))         // newest first
+      .slice(0, 500)
       .map(e => {
         const isTerminal = ['T1_HIT', 'T2_HIT', 'T3_HIT', 'SL_HIT', 'EXPIRED', 'INVALIDATED'].includes(e.status)
         const realisedPct = (() => {
@@ -418,6 +436,7 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
           hitAt: e.hitAt ?? null,
           realisedPct,
           conviction: e.conviction,
+          shareholdingNote: (e as any).shareholdingNote ?? '',
           reason: e.reasoning || e.statusReason || '',
         }
       })

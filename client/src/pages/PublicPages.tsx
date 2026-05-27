@@ -7,7 +7,7 @@
  */
 import { useQuery } from '@tanstack/react-query'
 import { snapshots } from '../api'
-import { useState } from 'react'
+import React, { useState } from 'react'
 import { useSortableTable } from '../components/useSortableTable'
 
 const fmtDate = (iso?: string) => {
@@ -176,14 +176,23 @@ export function PublicSignalsHistoryPage(): JSX.Element {
     queryKey: ['public-signals-history'], queryFn: () => snapshots.signalsHistory(),
     refetchInterval: 5 * 60_000, retry: false,
   })
+  // 2026-05-27: two top-level views — ACTIVE (default) and SUPERSEDED — per
+  // user request. SUPERSEDED = signals replaced by a newer call; shown in
+  // their own view sorted by conviction then FII-stake (high → low).
+  const [view, setView] = useState<'ACTIVE' | 'SUPERSEDED'>('ACTIVE')
   const [filter, setFilter] = useState<string>('ALL')
   const [src, setSrc] = useState<string>('ALL')
   const [sort, setSort] = useState<'newest' | 'return-desc' | 'return-asc' | 'conviction-desc'>('newest')
-  const all: any[] = data?.signals ?? []
-  // 2026-05-20: granular filters per user request — separate T1/T2/T3/SL
-  // outcome buckets so users can see exact accuracy per target tier.
+  const allRaw: any[] = data?.signals ?? []
+  // Split the universe by SUPERSEDED status first.
+  const fiiOf = (r: any): number => {
+    const m = /FII\s+([\d.]+)%/.exec(r.shareholdingNote || '')
+    return m ? parseFloat(m[1]) : -1
+  }
+  const all = allRaw.filter(r => view === 'SUPERSEDED' ? r.status === 'SUPERSEDED' : r.status !== 'SUPERSEDED')
   const rows = all.filter(r => {
     if (src !== 'ALL' && r.source !== src) return false
+    if (view === 'SUPERSEDED') return true
     switch (filter) {
       case 'ALL': return true
       case 'RUNNING': return r.status === 'ACTIVE' || r.status === 'PENDING'
@@ -196,6 +205,12 @@ export function PublicSignalsHistoryPage(): JSX.Element {
       default: return true
     }
   }).sort((a, b) => {
+    // SUPERSEDED view: high conviction first, then high FII stake.
+    if (view === 'SUPERSEDED') {
+      const cv = (b.conviction ?? 0) - (a.conviction ?? 0)
+      if (cv !== 0) return cv
+      return fiiOf(b) - fiiOf(a)
+    }
     if (sort === 'newest') return (b.generatedAt || '').localeCompare(a.generatedAt || '')
     if (sort === 'return-desc') return (b.realisedPct ?? -Infinity) - (a.realisedPct ?? -Infinity)
     if (sort === 'return-asc') return (a.realisedPct ?? Infinity) - (b.realisedPct ?? Infinity)
@@ -213,31 +228,51 @@ export function PublicSignalsHistoryPage(): JSX.Element {
     sl: c(r => r.status === 'SL_HIT'),
     exp: c(r => r.status === 'EXPIRED' || r.status === 'INVALIDATED'),
   }
+  const supersededCount = allRaw.filter(r => r.status === 'SUPERSEDED').length
+  const activeCount = allRaw.filter(r => r.status !== 'SUPERSEDED').length
   const wins = counts.t1 + counts.t2 + counts.t3
   const overallHit = counts.completed > 0 ? +(wins / counts.completed * 100).toFixed(1) : 0
   const sources = Array.from(new Set(all.map(r => r.source))).sort()
   return (
     <div className="space-y-4">
       <Banner emoji="📈" title="Track Record"
-        subtitle={`${all.length} signals tracked · ${counts.completed} completed · hit rate ${overallHit}% · fully transparent`}
+        subtitle={`${activeCount} active · ${supersededCount} superseded · ${counts.completed} completed · hit rate ${overallHit}% · fully transparent`}
         ts={data?.generatedAt} />
-      <div className="flex flex-wrap gap-2">
-        {[
-          { k: 'ALL',       l: `All (${counts.all})` },
-          { k: 'RUNNING',   l: `🎯 Running (${counts.running})`, c: 'text-accent-cyan' },
-          { k: 'COMPLETED', l: `📋 Completed (${counts.completed})` },
-          { k: 'T1',        l: `✅ T1 hit (${counts.t1})`, c: 'text-accent-green' },
-          { k: 'T2',        l: `✅✅ T2 hit (${counts.t2})`, c: 'text-accent-green' },
-          { k: 'T3',        l: `🚀 T3 hit (${counts.t3})`, c: 'text-accent-green' },
-          { k: 'SL',        l: `❌ SL hit (${counts.sl})`, c: 'text-accent-red' },
-          { k: 'EXPIRED',   l: `⏰ Expired (${counts.exp})`, c: 'text-neutral-500' },
-        ].map(b => (
-          <button key={b.k} onClick={() => setFilter(b.k)}
-            className={`px-3 py-1 rounded text-[12px] font-bold border ${filter === b.k ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-400'} ${b.c ?? ''}`}>
-            {b.l}
-          </button>
-        ))}
+      {/* Active vs Superseded — the two top-level "tabs". */}
+      <div className="flex gap-2">
+        <button onClick={() => { setView('ACTIVE'); setFilter('ALL') }}
+          className={`px-4 py-1.5 rounded-lg text-[13px] font-bold border ${view === 'ACTIVE' ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}>
+          🎯 Active Signals ({activeCount})
+        </button>
+        <button onClick={() => setView('SUPERSEDED')}
+          className={`px-4 py-1.5 rounded-lg text-[13px] font-bold border ${view === 'SUPERSEDED' ? 'bg-accent-amber/20 border-accent-amber text-accent-amber' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}>
+          🔁 Superseded ({supersededCount})
+        </button>
       </div>
+      {view === 'SUPERSEDED' && (
+        <div className="text-[11px] text-neutral-500 bg-ink-800 border border-ink-500 rounded-lg px-3 py-2">
+          Signals replaced by a newer call from the same engine. Sorted by conviction, then FII stake (highest first) — so the strongest dropped setups surface at the top for review.
+        </div>
+      )}
+      {view === 'ACTIVE' && (
+        <div className="flex flex-wrap gap-2">
+          {[
+            { k: 'ALL',       l: `All (${counts.all})` },
+            { k: 'RUNNING',   l: `🎯 Running (${counts.running})`, c: 'text-accent-cyan' },
+            { k: 'COMPLETED', l: `📋 Completed (${counts.completed})` },
+            { k: 'T1',        l: `✅ T1 hit (${counts.t1})`, c: 'text-accent-green' },
+            { k: 'T2',        l: `✅✅ T2 hit (${counts.t2})`, c: 'text-accent-green' },
+            { k: 'T3',        l: `🚀 T3 hit (${counts.t3})`, c: 'text-accent-green' },
+            { k: 'SL',        l: `❌ SL hit (${counts.sl})`, c: 'text-accent-red' },
+            { k: 'EXPIRED',   l: `⏰ Expired (${counts.exp})`, c: 'text-neutral-500' },
+          ].map(b => (
+            <button key={b.k} onClick={() => setFilter(b.k)}
+              className={`px-3 py-1 rounded text-[12px] font-bold border ${filter === b.k ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-400'} ${b.c ?? ''}`}>
+              {b.l}
+            </button>
+          ))}
+        </div>
+      )}
       <div className="flex flex-wrap items-center gap-2 text-[11px]">
         <span className="text-neutral-500">Sort:</span>
         {[
@@ -267,14 +302,11 @@ export function PublicSignalsHistoryPage(): JSX.Element {
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No signals match these filters yet." />}
       {!isLoading && !error && rows.length > 0 && (
-        <div className="overflow-x-auto rounded-lg border border-ink-500">
-          <table className="w-full text-[12px] bg-ink-800" style={{ minWidth: 1600 }}>
-            <thead className="bg-ink-700 text-neutral-400">
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1080 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
               <tr>
-                <th className="text-center px-3 py-3 whitespace-nowrap">Generated</th>
-                <th className="text-left px-3 py-3 whitespace-nowrap">Symbol</th>
-                <th className="text-center px-3 py-3 whitespace-nowrap">Source</th>
-                <th className="text-center px-3 py-3 whitespace-nowrap">Direction</th>
+                <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Stock</th>
                 <th className="text-center px-3 py-3 whitespace-nowrap">Conviction</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">SL</th>
@@ -283,42 +315,58 @@ export function PublicSignalsHistoryPage(): JSX.Element {
                 <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T3</th>
                 <th className="text-center px-3 py-3 whitespace-nowrap">Status</th>
                 <th className="text-right px-2 py-3 whitespace-nowrap">% Return</th>
-                <th className="text-left px-3 py-3">Reason for trade</th>
               </tr>
             </thead>
             <tbody>
               {rows.slice(0, 200).map((r, i) => {
                 const isWin = ['T1_HIT', 'T2_HIT', 'T3_HIT'].includes(r.status)
                 const isLoss = r.status === 'SL_HIT'
-                const bg = isWin ? 'bg-accent-green/10' : isLoss ? 'bg-accent-red/10' : ''
+                const rowBg = isWin ? 'bg-accent-green/10' : isLoss ? 'bg-accent-red/10' : 'bg-ink-800'
+                const subBg = isWin ? 'bg-accent-green/[0.04]' : isLoss ? 'bg-accent-red/[0.04]' : 'bg-ink-900/40'
                 const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
-                const statusBadge = isWin ? '✅' : isLoss ? '❌' : r.status === 'ACTIVE' ? '🎯' : r.status === 'PENDING' ? '⏳' : '⏰'
+                const statusBadge = isWin ? '✅' : isLoss ? '❌' : r.status === 'ACTIVE' ? '🎯' : r.status === 'PENDING' ? '⏳' : r.status === 'SUPERSEDED' ? '🔁' : '⏰'
+                const td = `px-2 py-2 ${rowBg} group-hover:bg-ink-700 font-mono`
                 return (
-                  <tr key={i} className={`border-t border-ink-500 hover:bg-ink-700 font-mono ${bg}`}>
-                    <td className="px-3 py-3 text-center text-[10px] text-neutral-500 whitespace-nowrap">{fmtDate(r.generatedAt)}</td>
-                    <td className="px-3 py-3 whitespace-nowrap"><b>{r.symbol}</b></td>
-                    <td className="px-3 py-3 text-center text-[10px] text-neutral-400">{r.source}</td>
-                    <td className="px-3 py-3 text-center">
-                      <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
-                    </td>
-                    <td className="px-3 py-3 text-center font-bold">
-                      <span className={r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : r.conviction >= 40 ? 'text-accent-amber' : 'text-neutral-500'}>
-                        {r.conviction ?? '—'}
-                      </span>
-                    </td>
-                    <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.entry)}</td>
-                    <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.stopLoss)}</td>
-                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target1)}</td>
-                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
-                    <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target3)}</td>
-                    <td className="px-3 py-3 text-center whitespace-nowrap">
-                      <span className="text-[11px]">{statusBadge} {r.status}</span>
-                    </td>
-                    <td className="px-2 py-3 text-right whitespace-nowrap" style={{ color: r.realisedPct == null ? '#666' : (r.realisedPct >= 0 ? '#00c853' : '#ff1744') }}>
-                      {r.realisedPct == null ? '—' : `${r.realisedPct >= 0 ? '+' : ''}${r.realisedPct}%`}
-                    </td>
-                    <td className="px-3 py-3 text-left text-neutral-300 text-[11px] leading-relaxed break-words" style={{ minWidth: 240, maxWidth: 360, whiteSpace: 'normal' }}>{r.reason || '—'}</td>
-                  </tr>
+                  <React.Fragment key={i}>
+                    {/* Row 1 — numerics */}
+                    <tr className="group border-t border-ink-500">
+                      <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
+                        <div className="flex items-center gap-1.5 flex-wrap">
+                          <b className="text-neutral-100">{r.symbol}</b>
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                          <span className="text-[9px] text-neutral-500">{r.source}</span>
+                        </div>
+                      </td>
+                      <td className={`${td} text-center font-bold`}>
+                        <span className={r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : r.conviction >= 40 ? 'text-accent-amber' : 'text-neutral-500'}>
+                          {r.conviction ?? '—'}
+                        </span>
+                      </td>
+                      <td className={`${td} text-right text-accent-cyan whitespace-nowrap`}>₹{fmtPx(r.entry)}</td>
+                      <td className={`${td} text-right text-accent-red whitespace-nowrap`}>₹{fmtPx(r.stopLoss)}</td>
+                      <td className={`${td} text-right text-accent-green whitespace-nowrap`}>₹{fmtPx(r.target1)}</td>
+                      <td className={`${td} text-right text-accent-green whitespace-nowrap`}>₹{fmtPx(r.target2)}</td>
+                      <td className={`${td} text-right text-accent-green whitespace-nowrap`}>₹{fmtPx(r.target3)}</td>
+                      <td className={`${td} text-center whitespace-nowrap`}>
+                        <span className="text-[11px]">{statusBadge} {r.status}</span>
+                      </td>
+                      <td className={`${td} text-right whitespace-nowrap`} style={{ color: r.realisedPct == null ? '#666' : (r.realisedPct >= 0 ? '#00c853' : '#ff1744') }}>
+                        {r.realisedPct == null ? '—' : `${r.realisedPct >= 0 ? '+' : ''}${r.realisedPct}%`}
+                      </td>
+                    </tr>
+                    {/* Row 2 — Stake + Setup under the stock name */}
+                    <tr className={subBg}>
+                      <td className={`${subBg} px-3 py-1.5 sticky left-0 z-10 border-r border-ink-500 text-[9px] text-neutral-600`}>
+                        {fmtDate(r.generatedAt)}
+                      </td>
+                      <td colSpan={8} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 leading-relaxed`}>
+                        <div className="flex flex-wrap gap-x-4 gap-y-0.5">
+                          {r.shareholdingNote && <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote}</span>}
+                          <span><span className="text-neutral-600 font-semibold">⚡ Setup:</span> {r.reason || '—'}</span>
+                        </div>
+                      </td>
+                    </tr>
+                  </React.Fragment>
                 )
               })}
             </tbody>
