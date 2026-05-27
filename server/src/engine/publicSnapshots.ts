@@ -189,8 +189,21 @@ function publicDailyRows(rows: any[]): any[] {
 }
 
 function publicPreMoveRows(rows: any[]): any[] {
-  return (rows ?? [])
-    .filter(r => r.score >= 7)
+  // 2026-05-27: DEDUP by symbol. The pre-move scan emits one row per
+  // screener hit, so a stock matching 3 patterns (e.g. JSWSTEEL) showed 3×.
+  // Collapse to ONE row per symbol — keep the highest-score hit and merge
+  // the distinct pattern tags so the user still sees every signal that fired.
+  const bySym = new Map<string, any>()
+  for (const r of (rows ?? []).filter(r => r.score >= 7)) {
+    const prev = bySym.get(r.symbol)
+    if (!prev) { bySym.set(r.symbol, { ...r, tags: [...(r.tags ?? [])] }); continue }
+    // merge tags (dedup), keep the higher-score row's trade plan
+    const mergedTags = Array.from(new Set([...(prev.tags ?? []), ...(r.tags ?? [])]))
+    if (r.score > prev.score) bySym.set(r.symbol, { ...r, tags: mergedTags })
+    else prev.tags = mergedTags
+  }
+  return Array.from(bySym.values())
+    .sort((a, b) => b.score - a.score)
     .slice(0, 40)
     .map(r => ({
       symbol: r.symbol,
@@ -204,6 +217,7 @@ function publicPreMoveRows(rows: any[]): any[] {
       suggestedTarget: r.suggestedTarget,
       expectedMovePct: r.expectedMovePct,
       timeframeLabel: r.timeframeLabel,
+      shareholdingNote: r.shareholdingNote ?? '',
     }))
 }
 
