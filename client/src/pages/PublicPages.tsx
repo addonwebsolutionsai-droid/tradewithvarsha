@@ -923,44 +923,54 @@ export function PublicIntradayPage(): JSX.Element {
 }
 
 function SignalTable({ rows }: { rows: any[] }): JSX.Element {
+  // 2026-05-27: consistent 2-row design (Options + Intraday). Row 1 numerics,
+  // Row 2 = ⚡ Setup reasoning under the instrument name. Sticky header +
+  // sticky first column + 78vh scroll, matching every other public tab.
   return (
-    <div className="overflow-x-auto rounded-lg border border-ink-500">
-      <table className="w-full text-[12px] bg-ink-800" style={{ minWidth: 1500 }}>
-        <thead className="bg-ink-700 text-neutral-400">
+    <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
+      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 980 }}>
+        <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
           <tr>
-            <th className="text-center px-4 py-3 whitespace-nowrap">Time (IST)</th>
-            <th className="text-left px-4 py-3 whitespace-nowrap">Instrument</th>
-            <th className="text-center px-4 py-3 whitespace-nowrap">Direction</th>
-            <th className="text-center px-4 py-3 whitespace-nowrap">Grade</th>
-            <th className="text-center px-4 py-3 whitespace-nowrap">Score</th>
-            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry Price</th>
-            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">Stop Loss</th>
-            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 1</th>
-            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">Target 2</th>
-            <th className="text-center px-4 py-3 whitespace-nowrap">Risk:Reward</th>
-            <th className="text-left px-4 py-3 text-neutral-400">Reasoning</th>
+            <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Instrument</th>
+            <th className="text-center px-2 py-3 whitespace-nowrap">Grade</th>
+            <th className="text-center px-2 py-3 whitespace-nowrap">Score</th>
+            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry</th>
+            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">SL</th>
+            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T1</th>
+            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T2</th>
+            <th className="text-center px-2 py-3 whitespace-nowrap">R:R</th>
           </tr>
         </thead>
         <tbody>
           {rows.map((r, i) => {
             const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
             const ts = new Date(r.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })
+            const td = `px-2 py-2 bg-ink-800 group-hover:bg-ink-700 font-mono`
+            const subBg = 'bg-ink-900/40'
             return (
-              <tr key={i} className="border-t border-ink-500 hover:bg-ink-700 font-mono">
-                <td className="px-4 py-3 text-center text-[11px] text-neutral-400 whitespace-nowrap">{ts}</td>
-                <td className="px-4 py-3 whitespace-nowrap"><b>{r.instrument}</b></td>
-                <td className="px-4 py-3 text-center">
-                  <span className="px-2 py-0.5 rounded text-[11px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
-                </td>
-                <td className="px-4 py-3 text-center text-accent-amber font-bold">{r.grade}</td>
-                <td className="px-4 py-3 text-center font-bold">{r.score?.toFixed?.(1)}</td>
-                <td className="px-2 py-3 text-right text-accent-cyan whitespace-nowrap">₹{fmtPx(r.entry)}</td>
-                <td className="px-2 py-3 text-right text-accent-red whitespace-nowrap">₹{fmtPx(r.stopLoss)}</td>
-                <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target1)}</td>
-                <td className="px-2 py-3 text-right text-accent-green whitespace-nowrap">₹{fmtPx(r.target2)}</td>
-                <td className="px-4 py-3 text-center whitespace-nowrap">{r.riskReward ?? '—'}</td>
-                <td className="px-4 py-3 text-left text-neutral-300 text-[11px] leading-relaxed break-words" style={{ minWidth: 220, maxWidth: 340, whiteSpace: 'normal' }}>{(r.reasons ?? []).slice(0, 2).join(' · ')}</td>
-              </tr>
+              <React.Fragment key={i}>
+                <tr className="group border-t border-ink-500">
+                  <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <b className="text-neutral-100">{r.instrument}</b>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                    </div>
+                  </td>
+                  <td className={`${td} text-center text-accent-amber font-bold`}>{r.grade}</td>
+                  <td className={`${td} text-center font-bold`}>{r.score?.toFixed?.(1)}</td>
+                  <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(r.entry)}</td>
+                  <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
+                  <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
+                  <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
+                  <td className={`${td} text-center`}>{r.riskReward ?? '—'}</td>
+                </tr>
+                <tr className={subBg}>
+                  <td className={`${subBg} px-3 py-1.5 sticky left-0 z-10 border-r border-ink-500 text-[9px] text-neutral-600`}>{ts} IST</td>
+                  <td colSpan={7} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 font-mono leading-relaxed`}>
+                    <span><span className="text-neutral-600 font-semibold">⚡ Setup:</span> {(r.reasons ?? []).slice(0, 3).join(' · ') || '—'}</span>
+                  </td>
+                </tr>
+              </React.Fragment>
             )
           })}
         </tbody>
