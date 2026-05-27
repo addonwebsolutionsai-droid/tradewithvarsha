@@ -963,6 +963,13 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
                       <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
                         <div className="flex items-center gap-1.5 flex-wrap">
                           <b className="text-neutral-200">{c.symbol}</b>
+                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold"
+                            style={{
+                              background: c.direction === 'BUY' ? '#00c85322' : '#ff174422',
+                              color: c.direction === 'BUY' ? '#00c853' : '#ff1744',
+                            }}>
+                            {c.direction || 'BUY'}
+                          </span>
                           {c.futuristicBucket && (
                             <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
                               title={`${c.futuristicBucket.label}`}>{c.futuristicBucket.emoji}</span>

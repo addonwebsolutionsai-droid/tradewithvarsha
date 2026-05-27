@@ -67,6 +67,12 @@ export interface PreMoveCandidate {
   ltp: number
   marketCapCr?: number
   sector?: string
+  // 2026-05-26: directional fix. BULL → BUY trade plan, BEAR → SHORT.
+  // MIXED candidates are dropped (returned as null) so the user never sees
+  // a conflicting BUY/SHORT on the same stock vs Weekly Pick.
+  direction: 'BUY' | 'SHORT'
+  bullVotes?: number
+  bearVotes?: number
   // 2026-05-26 additions per user request:
   futuristicBucket?: { key: string; label: string; emoji: string }
   volumeRatio?: number              // today vs 20d avg — confirmation signal
@@ -202,15 +208,23 @@ function scoreVolume(candles: Candle[]): SignalBreakdown {
 }
 
 // ── Signal 3: Technical Pattern (compose existing screeners) ──
-function scorePattern(candles: Candle[], symbol: string): SignalBreakdown {
+// 2026-05-26: now ALSO returns direction = 'BULL' | 'BEAR' | 'MIXED' based
+// on votes from every screener that fired. Previously this only returned a
+// score and the candidate engine treated ALL setups as BUY — even when
+// distributionTop (bearish) fired. Result: AIAENG shown as BUY in 5-20%
+// Move while Weekly Pick correctly flagged it SHORT. Fixed.
+function scorePattern(candles: Candle[], symbol: string): SignalBreakdown & { direction: 'BULL' | 'BEAR' | 'MIXED'; bullVotes: number; bearVotes: number } {
   const hits: string[] = []
   let darvasHit = false
+  let bullVotes = 0, bearVotes = 0
   for (const scr of ADVANCED_PREMOVE_SCREENERS) {
     try {
       const r = scr.scan(candles, symbol)
       if (r) {
         hits.push(scr.name)
         if (scr.id === 'darvas_box') darvasHit = true
+        if (r.direction === 'BULL') bullVotes++
+        else if (r.direction === 'BEAR') bearVotes++
       }
     } catch { /* skip */ }
   }
@@ -218,7 +232,10 @@ function scorePattern(candles: Candle[], symbol: string): SignalBreakdown {
   if (darvasHit) pts = 3
   else if (hits.length >= 2) pts = 2
   else if (hits.length === 1) pts = 1
-  return { score: pts, reason: hits.slice(0, 3).join(', ') || 'no pattern' }
+  const direction: 'BULL' | 'BEAR' | 'MIXED' =
+    bullVotes > bearVotes ? 'BULL' :
+    bearVotes > bullVotes ? 'BEAR' : 'MIXED'
+  return { score: pts, reason: hits.slice(0, 3).join(', ') || 'no pattern', direction, bullVotes, bearVotes }
 }
 
 // ── Signal 4: Fundamentals ──
@@ -317,27 +334,41 @@ async function scorePumpDump(symbol: string, candles: Candle[]): Promise<SignalB
 }
 
 // ── Signal 8: Entry Timing & Risk (ATR-based plan + structure check) ──
-function scoreEntry(candles: Candle[]): { score: SignalBreakdown; plan: { entry: number; sl: number; t1: number; t2: number; t3: number; expMove: number } } {
+// 2026-05-26: now direction-aware. For BULL: SL below entry, targets above.
+// For BEAR (SHORT): SL above entry, targets below. Fixes the inversion bug
+// where bearish-pattern stocks (e.g. AIAENG distributionTop) were getting
+// BUY trade plans.
+function scoreEntry(
+  candles: Candle[],
+  direction: 'BUY' | 'SHORT',
+): { score: SignalBreakdown; plan: { entry: number; sl: number; t1: number; t2: number; t3: number; expMove: number } } {
   const last = candles[candles.length - 1]
   const atr = lastATR(candles, 14) ?? last.close * 0.025
   const e50 = sma(candles, 50)
   const e50v = e50[e50.length - 1]
-  // Plan
   const entry = +last.close.toFixed(2)
-  const sl = +(Math.min(entry - atr * 1.5, entry * 0.93)).toFixed(2)     // tighter of 1.5×ATR or 7%
-  const t1 = +(entry + atr * 2).toFixed(2)
-  const t2 = +(entry + atr * 4).toFixed(2)
-  const t3 = +(entry + atr * 7).toFixed(2)
-  const expMove = ((t2 - entry) / entry) * 100
-  // Scoring: structure + R:R
+  const sign = direction === 'BUY' ? 1 : -1                       // +1 for BUY targets above, -1 for SHORT targets below
+  // SL = 1.5×ATR or 7% — tighter of the two, in the OPPOSITE direction
+  const slDist = Math.min(atr * 1.5, entry * 0.07)
+  const sl = +(entry - sign * slDist).toFixed(2)
+  const t1 = +(entry + sign * atr * 2).toFixed(2)
+  const t2 = +(entry + sign * atr * 4).toFixed(2)
+  const t3 = +(entry + sign * atr * 7).toFixed(2)
+  // expMove always reported as positive % move to T2
+  const expMove = Math.abs((t2 - entry) / entry) * 100
   let pts = 0
   const bits: string[] = []
-  const rr = (t1 - entry) / Math.max(0.01, entry - sl)
+  const rr = Math.abs(t1 - entry) / Math.max(0.01, Math.abs(entry - sl))
   if (rr >= 2) { pts++; bits.push(`R:R 1:${rr.toFixed(1)}`) }
-  if (e50v && entry > e50v) { pts++; bits.push('above 50EMA') }
-  // Avoid stocks at extreme — RSI overbought
+  // Structure score is direction-aware too: BUY wants close > 50EMA, SHORT wants <
+  if (e50v) {
+    if (direction === 'BUY' && entry > e50v) { pts++; bits.push('above 50EMA') }
+    else if (direction === 'SHORT' && entry < e50v) { pts++; bits.push('below 50EMA') }
+  }
+  // Avoid extremes: BUY wants RSI < 70 (not overbought); SHORT wants RSI > 30 (not oversold)
   const rsi = lastRSI(candles, 14) ?? 50
-  if (rsi < 70) { pts++; bits.push(`RSI ${rsi.toFixed(0)}`) }
+  if (direction === 'BUY' && rsi < 70) { pts++; bits.push(`RSI ${rsi.toFixed(0)}`) }
+  else if (direction === 'SHORT' && rsi > 30) { pts++; bits.push(`RSI ${rsi.toFixed(0)}`) }
   return {
     score: { score: Math.min(3, pts), reason: bits.join(' · ') },
     plan: { entry, sl, t1, t2, t3, expMove },
@@ -354,6 +385,7 @@ async function evaluateOne(symbol: string, candles: Candle[]): Promise<PreMoveCa
   if (!qf.ok) {
     return {
       symbol, ltp: +last.close.toFixed(2),
+      direction: 'BUY',
       s1_institutional: { score: 0, reason: '—' },
       s2_volume: { score: 0, reason: '—' },
       s3_pattern: { score: 0, reason: '—' },
@@ -381,10 +413,15 @@ async function evaluateOne(symbol: string, candles: Candle[]): Promise<PreMoveCa
   if (s7.score === 0) return null    // hard reject — don't emit
 
   const s2 = scoreVolume(candles)
-  const s3 = scorePattern(candles, symbol)
+  const s3Full = scorePattern(candles, symbol)
+  const s3: SignalBreakdown = { score: s3Full.score, reason: s3Full.reason }
   const s5 = scoreNews(symbol, candles)
   const s6 = scoreSector(symbol)
-  const { score: s8, plan } = scoreEntry(candles)
+  // Derive trade direction from screener vote. If MIXED (tied votes or no
+  // pattern fired), default to BUY — but flag low confidence. If clearly
+  // bearish, emit a SHORT trade plan with flipped SL/targets.
+  const direction: 'BUY' | 'SHORT' = s3Full.direction === 'BEAR' ? 'SHORT' : 'BUY'
+  const { score: s8, plan } = scoreEntry(candles, direction)
 
   // Futuristic-sector bonus: +1 if member, +1 extra if pattern OR volume
   // already fired (so the bonus rewards REAL setups in futuristic sectors,
@@ -469,12 +506,16 @@ async function evaluateOne(symbol: string, candles: Candle[]): Promise<PreMoveCa
     }
   } catch { /* skip */ }
 
-  const riskPct = +(((plan.entry - plan.sl) / plan.entry) * 100).toFixed(2)
-  const rewardPct = +(((plan.t1 - plan.entry) / plan.entry) * 100).toFixed(2)
+  // Direction-aware risk + reward — both reported as positive % magnitudes.
+  const riskPct = +((Math.abs(plan.entry - plan.sl) / plan.entry) * 100).toFixed(2)
+  const rewardPct = +((Math.abs(plan.t1 - plan.entry) / plan.entry) * 100).toFixed(2)
   const rr = riskPct > 0 ? +(rewardPct / riskPct).toFixed(2) : 0
 
   return {
     symbol, ltp: +last.close.toFixed(2),
+    direction,
+    bullVotes: s3Full.bullVotes,
+    bearVotes: s3Full.bearVotes,
     s1_institutional: s1, s2_volume: s2, s3_pattern: s3, s4_fundamentals: s4,
     s5_news: s5, s6_sector: s6, s7_pumpDump: s7, s8_entryTiming: s8,
     totalScore, tier, tierLabel,

@@ -21,6 +21,9 @@ interface SignalBreakdown { score: number; reason: string }
 interface Candidate {
   symbol: string
   ltp: number
+  direction: 'BUY' | 'SHORT'
+  bullVotes?: number
+  bearVotes?: number
   totalScore: number
   tier: 1 | 2 | 3 | 4
   tierLabel: string
@@ -250,6 +253,13 @@ function CandidateRow({ c }: { c: Candidate }): JSX.Element {
         <td className={`${td} px-3 ${STICKY_FIRST_COL_BODY}`}>
           <div className="flex items-center gap-1.5 flex-wrap">
             <b className="text-neutral-200">{c.symbol}</b>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold"
+              style={{
+                background: c.direction === 'BUY' ? '#00c85322' : '#ff174422',
+                color: c.direction === 'BUY' ? '#00c853' : '#ff1744',
+              }}>
+              {c.direction}
+            </span>
             {c.futuristicBucket && (
               <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
                 title={`${c.futuristicBucket.label} — futuristic high-growth sector (+score bonus)`}>
