@@ -324,14 +324,21 @@ function PickRowView({ row }: { row: PickRow }) {
   // Row tint moved to each cell so the sticky-left Stock cell matches the
   // hover/no-brainer background of the rest of the row.
   const rowBg = row.noBrainerBet ? 'bg-accent-amber/5' : 'bg-ink-800'
-  const td = `px-3 py-2 border-t border-ink-500 ${rowBg} group-hover:bg-ink-700 cursor-pointer`
+  const td = `px-3 py-2 align-top border-t border-ink-500 ${rowBg} group-hover:bg-ink-700 cursor-pointer`
   return (
     <>
       <tr className="group" onClick={() => setOpen(o => !o)}>
-        <td className={`${td} sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
-          <div className="flex items-center gap-1.5">
+        {/* Stock column — wide; name+stars, 📊 Stake, ⚡ Setup stacked under it. */}
+        <td className={`${td} sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 320, maxWidth: 360, whiteSpace: 'normal' }}>
+          <div className="flex items-center gap-1.5 flex-wrap">
             <b className="text-neutral-200">{row.noBrainerBet && '⭐ '}{row.symbol}</b>
             <Stars count={stars} className="text-[10px]" />
+          </div>
+          <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed font-mono">
+            <span className="text-neutral-600 font-semibold">📊 Stake:</span> {row.shareholdingNote || <span className="text-neutral-600">unavailable</span>}
+          </div>
+          <div className="text-[10px] text-neutral-400 leading-relaxed font-mono">
+            <span className="text-neutral-600 font-semibold">⚡ Setup:</span> {row.entryNote || '—'} · exp {row.expectedReturnPct >= 0 ? '+' : ''}{row.expectedReturnPct}%
           </div>
         </td>
         <td className={`${td} text-right`}>
@@ -387,18 +394,6 @@ function PickRowView({ row }: { row: PickRow }) {
           <div className="text-[9px] text-accent-green/70 font-normal">{shortDate(row.target3Date)}</div>
         </td>
         <td className={`${td} text-center`}>{row.riskRewardRatio}:1</td>
-      </tr>
-      {/* Sub-row — always-visible Stake + Setup notes */}
-      <tr className={`${row.noBrainerBet ? 'bg-accent-amber/[0.025]' : 'bg-ink-900/40'}`}>
-        <td className={`${row.noBrainerBet ? 'bg-accent-amber/[0.025]' : 'bg-ink-900/40'} px-3 py-1.5 sticky left-0 z-10 border-r border-ink-500 text-[10px] text-neutral-500 font-mono`}>
-          {/* spacer-left under Stock col */}
-        </td>
-        <td colSpan={10} className={`${row.noBrainerBet ? 'bg-accent-amber/[0.025]' : 'bg-ink-900/40'} px-3 py-1.5 text-[10px] text-neutral-400 font-mono`}>
-          <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-            <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {row.shareholdingNote || <span className="text-neutral-600">unavailable</span>}</span>
-            <span><span className="text-neutral-600 font-semibold">⚡ Setup:</span> {row.entryNote || '—'} · expected {row.expectedReturnPct >= 0 ? '+' : ''}{row.expectedReturnPct}%</span>
-          </div>
-        </td>
       </tr>
       {open && (
         <tr className="bg-ink-700">

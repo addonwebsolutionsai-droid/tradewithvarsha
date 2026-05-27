@@ -322,51 +322,45 @@ export function PublicSignalsHistoryPage(): JSX.Element {
                 const isWin = ['T1_HIT', 'T2_HIT', 'T3_HIT'].includes(r.status)
                 const isLoss = r.status === 'SL_HIT'
                 const rowBg = isWin ? 'bg-accent-green/10' : isLoss ? 'bg-accent-red/10' : 'bg-ink-800'
-                const subBg = isWin ? 'bg-accent-green/[0.04]' : isLoss ? 'bg-accent-red/[0.04]' : 'bg-ink-900/40'
                 const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
                 const statusBadge = isWin ? '✅' : isLoss ? '❌' : r.status === 'ACTIVE' ? '🎯' : r.status === 'PENDING' ? '⏳' : r.status === 'SUPERSEDED' ? '🔁' : '⏰'
-                const td = `px-2 py-2 ${rowBg} group-hover:bg-ink-700 font-mono`
+                const td = `px-2 py-2 align-top ${rowBg} group-hover:bg-ink-700 font-mono`
                 return (
-                  <React.Fragment key={i}>
-                    {/* Row 1 — numerics */}
-                    <tr className="group border-t border-ink-500">
-                      <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <b className="text-neutral-100">{r.symbol}</b>
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
-                          <span className="text-[9px] text-neutral-500">{r.source}</span>
+                  <tr key={i} className="group border-t border-ink-500">
+                    {/* Stock column — wide; name+badges, 📊 Stake, ⚡ Setup stacked. */}
+                    <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 320, maxWidth: 360 }}>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <b className="text-neutral-100">{r.symbol}</b>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                        <span className="text-[9px] text-neutral-500">{r.source}</span>
+                        <span className="text-[9px] text-neutral-600">{fmtDate(r.generatedAt)}</span>
+                      </div>
+                      {r.shareholdingNote && (
+                        <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+                          <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote}
                         </div>
-                      </td>
-                      <td className={`${td} text-center font-bold`}>
-                        <span className={r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : r.conviction >= 40 ? 'text-accent-amber' : 'text-neutral-500'}>
-                          {r.conviction ?? '—'}
-                        </span>
-                      </td>
-                      <td className={`${td} text-right text-accent-cyan whitespace-nowrap`}>₹{fmtPx(r.entry)}</td>
-                      <td className={`${td} text-right text-accent-red whitespace-nowrap`}>₹{fmtPx(r.stopLoss)}</td>
-                      <td className={`${td} text-right text-accent-green whitespace-nowrap`}>₹{fmtPx(r.target1)}</td>
-                      <td className={`${td} text-right text-accent-green whitespace-nowrap`}>₹{fmtPx(r.target2)}</td>
-                      <td className={`${td} text-right text-accent-green whitespace-nowrap`}>₹{fmtPx(r.target3)}</td>
-                      <td className={`${td} text-center whitespace-nowrap`}>
-                        <span className="text-[11px]">{statusBadge} {r.status}</span>
-                      </td>
-                      <td className={`${td} text-right whitespace-nowrap`} style={{ color: r.realisedPct == null ? '#666' : (r.realisedPct >= 0 ? '#00c853' : '#ff1744') }}>
-                        {r.realisedPct == null ? '—' : `${r.realisedPct >= 0 ? '+' : ''}${r.realisedPct}%`}
-                      </td>
-                    </tr>
-                    {/* Row 2 — Stake + Setup under the stock name */}
-                    <tr className={subBg}>
-                      <td className={`${subBg} px-3 py-1.5 sticky left-0 z-10 border-r border-ink-500 text-[9px] text-neutral-600`}>
-                        {fmtDate(r.generatedAt)}
-                      </td>
-                      <td colSpan={8} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 leading-relaxed`}>
-                        <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-                          {r.shareholdingNote && <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote}</span>}
-                          <span><span className="text-neutral-600 font-semibold">⚡ Setup:</span> {r.reason || '—'}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  </React.Fragment>
+                      )}
+                      <div className="text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+                        <span className="text-neutral-600 font-semibold">⚡ Setup:</span> {r.reason || '—'}
+                      </div>
+                    </td>
+                    <td className={`${td} text-center font-bold`}>
+                      <span className={r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : r.conviction >= 40 ? 'text-accent-amber' : 'text-neutral-500'}>
+                        {r.conviction ?? '—'}
+                      </span>
+                    </td>
+                    <td className={`${td} text-right text-accent-cyan whitespace-nowrap`}>₹{fmtPx(r.entry)}</td>
+                    <td className={`${td} text-right text-accent-red whitespace-nowrap`}>₹{fmtPx(r.stopLoss)}</td>
+                    <td className={`${td} text-right text-accent-green whitespace-nowrap`}>₹{fmtPx(r.target1)}</td>
+                    <td className={`${td} text-right text-accent-green whitespace-nowrap`}>₹{fmtPx(r.target2)}</td>
+                    <td className={`${td} text-right text-accent-green whitespace-nowrap`}>₹{fmtPx(r.target3)}</td>
+                    <td className={`${td} text-center whitespace-nowrap`}>
+                      <span className="text-[11px]">{statusBadge} {r.status}</span>
+                    </td>
+                    <td className={`${td} text-right whitespace-nowrap`} style={{ color: r.realisedPct == null ? '#666' : (r.realisedPct >= 0 ? '#00c853' : '#ff1744') }}>
+                      {r.realisedPct == null ? '—' : `${r.realisedPct >= 0 ? '+' : ''}${r.realisedPct}%`}
+                    </td>
+                  </tr>
                 )
               })}
             </tbody>
@@ -424,45 +418,38 @@ export function PublicTopTradesPage(): JSX.Element {
                 const sourceColor = r.source === 'WEEKLY' ? '#5dade2' : r.source === 'DAILY' ? '#f5c518' : '#aaa'
                 const isWave2 = r.lifecycleStatus !== 'SUPERSEDED' && (r.bucket === 'WAVE_2' || (r.reasoning || '').includes('WAVE-2'))
                 const rowBg = r.noBrainer ? 'bg-accent-amber/5' : 'bg-ink-800'
-                const subBg = r.noBrainer ? 'bg-accent-amber/[0.025]' : 'bg-ink-900/40'
-                const td = `px-2 py-2 ${rowBg} group-hover:bg-ink-700 font-mono`
+                const td = `px-2 py-2 align-top ${rowBg} group-hover:bg-ink-700 font-mono`
                 return (
-                  <React.Fragment key={i}>
-                    {/* Row 1 — numerics */}
-                    <tr className="group border-t border-ink-500">
-                      <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <b className="text-neutral-100">{r.noBrainer && '⭐ '}{r.symbol}</b>
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
-                          <span className="px-1 py-0.5 rounded text-[9px] font-bold" style={{ background: `${sourceColor}22`, color: sourceColor }}>{r.source}</span>
-                          {isWave2 && <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40">🔄</span>}
-                        </div>
-                      </td>
-                      <td className={`${td} text-right`}>₹{fmtPx(r.ltp)}</td>
-                      <td className={`${td} text-center font-bold ${convCls}`}>{r.conviction}</td>
-                      <td className={`${td} text-right text-accent-cyan`}>
-                        <div>₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</div>
-                        <div className="text-[9px] text-accent-cyan/70">by {fmtDate(r.entryDate)}</div>
-                      </td>
-                      <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
-                      <td className={`${td} text-right text-accent-green`}>
-                        <div>₹{fmtPx(r.target1)}</div>
-                        <div className="text-[9px] text-accent-green/70">{fmtDate(r.target1Date)}</div>
-                      </td>
-                      <td className={`${td} text-right text-accent-green`}>
-                        <div>₹{fmtPx(r.target2)}</div>
-                        <div className="text-[9px] text-accent-green/70">{fmtDate(r.target2Date)}</div>
-                      </td>
-                      <td className={`${td} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
-                    </tr>
-                    {/* Row 2 — Stake under stock name */}
-                    <tr className={subBg}>
-                      <td className={`${subBg} px-3 py-1.5 sticky left-0 z-10 border-r border-ink-500`} />
-                      <td colSpan={7} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 font-mono leading-relaxed`}>
-                        <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote || <span className="text-neutral-600">unavailable</span>}</span>
-                      </td>
-                    </tr>
-                  </React.Fragment>
+                  <tr key={i} className="group border-t border-ink-500">
+                    {/* Stock column — wide; name+badges, 📊 Stake stacked. */}
+                    <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 300, maxWidth: 360 }}>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <b className="text-neutral-100">{r.noBrainer && '⭐ '}{r.symbol}</b>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                        <span className="px-1 py-0.5 rounded text-[9px] font-bold" style={{ background: `${sourceColor}22`, color: sourceColor }}>{r.source}</span>
+                        {isWave2 && <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40">🔄</span>}
+                      </div>
+                      <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+                        <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote || <span className="text-neutral-600">unavailable</span>}
+                      </div>
+                    </td>
+                    <td className={`${td} text-right`}>₹{fmtPx(r.ltp)}</td>
+                    <td className={`${td} text-center font-bold ${convCls}`}>{r.conviction}</td>
+                    <td className={`${td} text-right text-accent-cyan`}>
+                      <div>₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</div>
+                      <div className="text-[9px] text-accent-cyan/70">by {fmtDate(r.entryDate)}</div>
+                    </td>
+                    <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
+                    <td className={`${td} text-right text-accent-green`}>
+                      <div>₹{fmtPx(r.target1)}</div>
+                      <div className="text-[9px] text-accent-green/70">{fmtDate(r.target1Date)}</div>
+                    </td>
+                    <td className={`${td} text-right text-accent-green`}>
+                      <div>₹{fmtPx(r.target2)}</div>
+                      <div className="text-[9px] text-accent-green/70">{fmtDate(r.target2Date)}</div>
+                    </td>
+                    <td className={`${td} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
+                  </tr>
                 )
               })}
             </tbody>
@@ -615,21 +602,27 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
   const strike = isLoss ? 'line-through' : 'none'
   const tdStyle = { textDecoration: strike } as React.CSSProperties
   const td = `px-2 py-3 whitespace-nowrap border-t border-ink-500 group-hover:bg-ink-700 ${rowBg} ${rowOpacity}`
-  const subBg = r.noBrainerBet && status === 'ACTIVE' ? 'bg-accent-amber/[0.025]'
-    : isHit ? 'bg-accent-green/[0.05]'
-    : isLoss ? 'bg-ink-900/40'
-    : 'bg-ink-900/40'
-  const tdNoBorder = `px-2 py-2 whitespace-nowrap group-hover:bg-ink-700 ${rowBg} ${rowOpacity}`
+  const tdNoBorder = `px-2 py-2 align-top whitespace-nowrap group-hover:bg-ink-700 ${rowBg} ${rowOpacity}`
   return (
     <>
-      {/* Row 1 — main numeric grid */}
+      {/* Single row — Stock column holds name+badges, 📊 Stake, 💧 Flow stacked. */}
       <tr className="group border-t border-ink-500">
-        <td className={`${tdNoBorder} px-4 text-left sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={tdStyle}>
-          <b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
-          {r.bucket === 'WAVE_2' && status === 'ACTIVE' && (
-            <span className="ml-2 px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40">🔄 WAVE-2</span>
+        <td className={`${tdNoBorder} px-4 text-left sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ ...tdStyle, minWidth: 320, maxWidth: 360, whiteSpace: 'normal' }}>
+          <div className="flex items-center gap-1.5 flex-wrap">
+            <b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+            {r.bucket === 'WAVE_2' && status === 'ACTIVE' && (
+              <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40">🔄 WAVE-2</span>
+            )}
+            <StatusChip r={r} status={status} />
+          </div>
+          <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed">
+            <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote || <span className="text-neutral-600">unavailable</span>}
+          </div>
+          {r.flowNote && (
+            <div className="text-[10px] text-neutral-400 leading-relaxed">
+              <span className="text-neutral-600 font-semibold">💧 Flow:</span> {r.flowNote}
+            </div>
           )}
-          <StatusChip r={r} status={status} />
         </td>
         <td className={`${tdNoBorder} px-2 text-right`} style={tdStyle}>₹{fmtPx(r.ltp)}</td>
         <td className={`${tdNoBorder} px-4 text-center`}>
@@ -663,18 +656,6 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
         <td className={`${tdNoBorder} text-right text-accent-green font-bold`} style={tdStyle}>
           <div>₹{fmtPx(r.target3)}</div>
           <div className="text-[9px] text-accent-green/70 font-normal">{fmtDate(r.target3Date)}</div>
-        </td>
-      </tr>
-      {/* Row 2 — always-visible Stake sub-row */}
-      <tr className={subBg}>
-        <td className={`${subBg} px-4 py-1.5 sticky left-0 z-10 border-r border-ink-500 text-[10px] text-neutral-500 font-mono`} style={tdStyle}>
-          {/* spacer under Stock col */}
-        </td>
-        <td colSpan={9} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 font-mono leading-relaxed`} style={tdStyle}>
-          <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-            <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote || <span className="text-neutral-600">unavailable</span>}</span>
-            {r.flowNote && <span><span className="text-neutral-600 font-semibold">💧 Flow:</span> {r.flowNote}</span>}
-          </div>
         </td>
       </tr>
     </>
@@ -757,48 +738,43 @@ export function PublicDailyPickPage(): JSX.Element {
                 const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
                 const convCls = r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : 'text-accent-amber'
                 const v5cls = r.vol5dRatio != null && r.vol5dRatio >= 1.3 ? 'text-accent-green font-bold' : r.vol5dRatio != null && r.vol5dRatio >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'
-                const td = `px-2 py-2 bg-ink-800 group-hover:bg-ink-700 font-mono`
-                const subBg = 'bg-ink-900/40'
+                const td = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono`
                 return (
-                  <React.Fragment key={i}>
-                    {/* Row 1 — numerics */}
-                    <tr className="group border-t border-ink-500">
-                      <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <b className="text-neutral-100">{r.symbol}</b>
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                  <tr key={i} className="group border-t border-ink-500">
+                    {/* Stock column — wide; name+badge, 📊 Stake, ⚡ Pattern stacked. */}
+                    <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 300, maxWidth: 360 }}>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <b className="text-neutral-100">{r.symbol}</b>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                      </div>
+                      <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+                        <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote || <span className="text-neutral-600">unavailable</span>}
+                      </div>
+                      {r.pattern && (
+                        <div className="text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+                          <span className="text-neutral-600 font-semibold">⚡ Pattern:</span> {r.pattern}
                         </div>
-                      </td>
-                      <td className={`${td} text-right`}>₹{fmtPx(r.ltp)}</td>
-                      <td className={`${td} text-center font-bold ${convCls}`}>{r.conviction}</td>
-                      <td className={`${td} text-center`}>
-                        <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight whitespace-nowrap">
-                          <span className={v5cls}>5d {r.vol5dRatio ? `${r.vol5dRatio}×` : '—'}</span>
-                          <span className="text-neutral-700">·</span>
-                          {r.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-700">·</span>}
-                          {r.fiiDelta != null && r.fiiDelta !== 0 && (
-                            <span className={r.fiiDelta > 0 ? 'text-accent-green' : 'text-accent-red'}>FII {r.fiiDelta > 0 ? '+' : ''}{r.fiiDelta}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(r.entryPrice)}</td>
-                      <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
-                      <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
-                      <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
-                      <td className={`${td} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
-                      <td className={`${td} text-center`}>{r.riskReward ?? '—'}:1</td>
-                    </tr>
-                    {/* Row 2 — Stake + Pattern under stock name */}
-                    <tr className={subBg}>
-                      <td className={`${subBg} px-3 py-1.5 sticky left-0 z-10 border-r border-ink-500`} />
-                      <td colSpan={9} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 font-mono leading-relaxed`}>
-                        <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-                          <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote || <span className="text-neutral-600">unavailable</span>}</span>
-                          {r.pattern && <span><span className="text-neutral-600 font-semibold">⚡ Pattern:</span> {r.pattern}</span>}
-                        </div>
-                      </td>
-                    </tr>
-                  </React.Fragment>
+                      )}
+                    </td>
+                    <td className={`${td} text-right`}>₹{fmtPx(r.ltp)}</td>
+                    <td className={`${td} text-center font-bold ${convCls}`}>{r.conviction}</td>
+                    <td className={`${td} text-center`}>
+                      <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight whitespace-nowrap">
+                        <span className={v5cls}>5d {r.vol5dRatio ? `${r.vol5dRatio}×` : '—'}</span>
+                        <span className="text-neutral-700">·</span>
+                        {r.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-700">·</span>}
+                        {r.fiiDelta != null && r.fiiDelta !== 0 && (
+                          <span className={r.fiiDelta > 0 ? 'text-accent-green' : 'text-accent-red'}>FII {r.fiiDelta > 0 ? '+' : ''}{r.fiiDelta}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(r.entryPrice)}</td>
+                    <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
+                    <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
+                    <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
+                    <td className={`${td} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
+                    <td className={`${td} text-center`}>{r.riskReward ?? '—'}:1</td>
+                  </tr>
                 )
               })}
             </tbody>
@@ -843,33 +819,32 @@ export function PublicPreMovePage(): JSX.Element {
             <tbody>
               {rows.map((r, i) => {
                 const dirColor = r.direction === 'BULL' ? '#00c853' : r.direction === 'BEAR' ? '#ff1744' : '#9aa0a6'
-                const td = `px-2 py-2 bg-ink-800 group-hover:bg-ink-700 font-mono`
-                const subBg = 'bg-ink-900/40'
+                const td = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono`
                 return (
-                  <React.Fragment key={i}>
-                    <tr className="group border-t border-ink-500">
-                      <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <b className="text-neutral-100">{r.symbol}</b>
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                  <tr key={i} className="group border-t border-ink-500">
+                    {/* Stock column — wide; name+badge, 📊 Stake, ⚡ Setup stacked. */}
+                    <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 300, maxWidth: 360 }}>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <b className="text-neutral-100">{r.symbol}</b>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                      </div>
+                      {r.shareholdingNote && (
+                        <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+                          <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote}
                         </div>
-                      </td>
-                      <td className={`${td} text-right`}>₹{fmtPx(r.price)}</td>
-                      <td className={`${td} text-center text-[11px]`}>{r.tier}</td>
-                      <td className={`${td} text-center font-bold`}>{r.score?.toFixed?.(1)}</td>
-                      <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(r.suggestedEntry)}</td>
-                      <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.suggestedSL)}</td>
-                      <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.suggestedTarget)}</td>
-                      <td className={`${td} text-center text-accent-green text-[11px]`}>{r.expectedMovePct?.toFixed?.(1)}%</td>
-                    </tr>
-                    <tr className={subBg}>
-                      <td className={`${subBg} px-3 py-1.5 sticky left-0 z-10 border-r border-ink-500`} />
-                      <td colSpan={7} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 font-mono leading-relaxed`}>
-                        {r.shareholdingNote && <span className="mr-4"><span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote}</span>}
-                        <span><span className="text-neutral-600 font-semibold">⚡ Setup:</span> {(r.tags ?? []).slice(0, 4).join(' · ') || '—'}</span>
-                      </td>
-                    </tr>
-                  </React.Fragment>
+                      )}
+                      <div className="text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+                        <span className="text-neutral-600 font-semibold">⚡ Setup:</span> {(r.tags ?? []).slice(0, 4).join(' · ') || '—'}
+                      </div>
+                    </td>
+                    <td className={`${td} text-right`}>₹{fmtPx(r.price)}</td>
+                    <td className={`${td} text-center text-[11px]`}>{r.tier}</td>
+                    <td className={`${td} text-center font-bold`}>{r.score?.toFixed?.(1)}</td>
+                    <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(r.suggestedEntry)}</td>
+                    <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.suggestedSL)}</td>
+                    <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.suggestedTarget)}</td>
+                    <td className={`${td} text-center text-accent-green text-[11px]`}>{r.expectedMovePct?.toFixed?.(1)}%</td>
+                  </tr>
                 )
               })}
             </tbody>
@@ -945,32 +920,28 @@ function SignalTable({ rows }: { rows: any[] }): JSX.Element {
           {rows.map((r, i) => {
             const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
             const ts = new Date(r.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })
-            const td = `px-2 py-2 bg-ink-800 group-hover:bg-ink-700 font-mono`
-            const subBg = 'bg-ink-900/40'
+            const td = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono`
             return (
-              <React.Fragment key={i}>
-                <tr className="group border-t border-ink-500">
-                  <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
-                    <div className="flex items-center gap-1.5 flex-wrap">
-                      <b className="text-neutral-100">{r.instrument}</b>
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
-                    </div>
-                  </td>
-                  <td className={`${td} text-center text-accent-amber font-bold`}>{r.grade}</td>
-                  <td className={`${td} text-center font-bold`}>{r.score?.toFixed?.(1)}</td>
-                  <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(r.entry)}</td>
-                  <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
-                  <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
-                  <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
-                  <td className={`${td} text-center`}>{r.riskReward ?? '—'}</td>
-                </tr>
-                <tr className={subBg}>
-                  <td className={`${subBg} px-3 py-1.5 sticky left-0 z-10 border-r border-ink-500 text-[9px] text-neutral-600`}>{ts} IST</td>
-                  <td colSpan={7} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 font-mono leading-relaxed`}>
-                    <span><span className="text-neutral-600 font-semibold">⚡ Setup:</span> {(r.reasons ?? []).slice(0, 3).join(' · ') || '—'}</span>
-                  </td>
-                </tr>
-              </React.Fragment>
+              <tr key={i} className="group border-t border-ink-500">
+                {/* Instrument column — wide; name+badge+time, ⚡ Setup stacked. */}
+                <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 300, maxWidth: 380 }}>
+                  <div className="flex items-center gap-1.5 flex-wrap">
+                    <b className="text-neutral-100">{r.instrument}</b>
+                    <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                    <span className="text-[9px] text-neutral-600">{ts} IST</span>
+                  </div>
+                  <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+                    <span className="text-neutral-600 font-semibold">⚡ Setup:</span> {(r.reasons ?? []).slice(0, 3).join(' · ') || '—'}
+                  </div>
+                </td>
+                <td className={`${td} text-center text-accent-amber font-bold`}>{r.grade}</td>
+                <td className={`${td} text-center font-bold`}>{r.score?.toFixed?.(1)}</td>
+                <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(r.entry)}</td>
+                <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
+                <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
+                <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
+                <td className={`${td} text-center`}>{r.riskReward ?? '—'}</td>
+              </tr>
             )
           })}
         </tbody>
@@ -1054,79 +1025,72 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
               {cs.map((c, i) => {
                 const tcls = c.tier === 1 ? 'text-accent-green' : c.tier === 2 ? 'text-accent-cyan' : 'text-accent-amber'
                 const rowBg = c.tier === 1 ? 'bg-accent-green/5' : 'bg-ink-800'
-                const subBg = c.tier === 1 ? 'bg-accent-green/[0.025]' : 'bg-ink-900/40'
-                const td = `px-2 py-2 ${rowBg} group-hover:bg-ink-700 font-mono`
+                const td = `px-2 py-2 align-top ${rowBg} group-hover:bg-ink-700 font-mono`
                 const vr = c.volumeRatio
                 const vcls = vr == null ? 'text-neutral-500' : vr >= 3 ? 'text-accent-green font-bold' : vr >= 1.5 ? 'text-accent-cyan' : vr < 0.8 ? 'text-accent-amber' : 'text-neutral-400'
                 const v5cls = c.volumeRatio5d == null ? 'text-neutral-500' : c.volumeRatio5d >= 1.3 ? 'text-accent-green font-bold' : c.volumeRatio5d >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'
                 return (
-                  <>
-                    <tr key={`${i}-main`} className="group border-t border-ink-500">
-                      <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`}>
-                        <div className="flex items-center gap-1.5 flex-wrap">
-                          <b className="text-neutral-200">{c.symbol}</b>
-                          <span className="px-1.5 py-0.5 rounded text-[9px] font-bold"
-                            style={{
-                              background: c.direction === 'BUY' ? '#00c85322' : '#ff174422',
-                              color: c.direction === 'BUY' ? '#00c853' : '#ff1744',
-                            }}>
-                            {c.direction || 'BUY'}
-                          </span>
-                          {c.futuristicBucket && (
-                            <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
-                              title={`${c.futuristicBucket.label}`}>{c.futuristicBucket.emoji}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className={`${td} text-right`}>₹{fmtPx(c.ltp)}</td>
-                      <td className={`${td} text-center`} title="Vol = today×, 5dVol = 5d/20d avg, 🔥 = FII↑+Promoter stable">
-                        <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight whitespace-nowrap">
-                          <span className={vcls}>{vr ? `${vr}×` : '—'}</span>
-                          <span className="text-neutral-700">·</span>
-                          <span className={v5cls}>5d {c.volumeRatio5d ? `${c.volumeRatio5d}×` : '—'}</span>
-                          <span className="text-neutral-700">·</span>
-                          {c.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-700">·</span>}
-                          {c.fiiDelta != null && c.fiiDelta !== 0 && (
-                            <span className={c.fiiDelta > 0 ? 'text-accent-green' : 'text-accent-red'}>FII {c.fiiDelta > 0 ? '+' : ''}{c.fiiDelta}</span>
-                          )}
-                        </div>
-                      </td>
-                      <td className={`${td} text-center`}>
-                        <div className={`font-bold ${tcls}`}>{c.totalScore}/24</div>
-                        <div className={`text-[9px] font-bold ${tcls}`}>{c.tierLabel}</div>
-                      </td>
-                      <td className={`${td} text-right text-accent-cyan`}>
-                        <div>₹{fmtPx(c.entry)}</div>
-                        <div className="text-[9px] text-accent-cyan/70">by {fmtDate(c.entryDate)}</div>
-                      </td>
-                      <td className={`${td} text-right text-accent-red`}>₹{fmtPx(c.stopLoss)}</td>
-                      <td className={`${td} text-right text-accent-green`}>
-                        <div>₹{fmtPx(c.target1)}</div>
-                        <div className="text-[9px] text-accent-green/70">{fmtDate(c.target1Date)}</div>
-                      </td>
-                      <td className={`${td} text-right text-accent-green`}>
-                        <div>₹{fmtPx(c.target2)}</div>
-                        <div className="text-[9px] text-accent-green/70">{fmtDate(c.target2Date)}</div>
-                      </td>
-                      <td className={`${td} text-right text-accent-green font-bold`}>
-                        <div>₹{fmtPx(c.target3)}</div>
-                        <div className="text-[9px] text-accent-green/70 font-normal">{fmtDate(c.target3Date)}</div>
-                      </td>
-                      <td className={`${td} text-center`}>1:{c.riskReward}</td>
-                      <td className={`${td} text-center text-accent-green`}>+{c.expectedMovePct}%</td>
-                    </tr>
-                    <tr key={`${i}-sub`} className={subBg}>
-                      <td className={`${subBg} px-3 py-1.5 sticky left-0 z-10 border-r border-ink-500 text-[10px] text-neutral-500 font-mono`}>
-                        {c.futuristicBucket?.label || ''}
-                      </td>
-                      <td colSpan={10} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400 font-mono`}>
-                        <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-                          <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {c.shareholdingNote || <span className="text-neutral-600">unavailable</span>}</span>
-                          <span><span className="text-neutral-600 font-semibold">⚡ Setup:</span> {c.primarySignal}</span>
-                        </div>
-                      </td>
-                    </tr>
-                  </>
+                  <tr key={i} className="group border-t border-ink-500">
+                    {/* Stock column — wide; name+badges, 📊 Stake, ⚡ Setup stacked. */}
+                    <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 320, maxWidth: 360 }}>
+                      <div className="flex items-center gap-1.5 flex-wrap">
+                        <b className="text-neutral-200">{c.symbol}</b>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold"
+                          style={{
+                            background: c.direction === 'BUY' ? '#00c85322' : '#ff174422',
+                            color: c.direction === 'BUY' ? '#00c853' : '#ff1744',
+                          }}>
+                          {c.direction || 'BUY'}
+                        </span>
+                        {c.futuristicBucket && (
+                          <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
+                            title={`${c.futuristicBucket.label}`}>{c.futuristicBucket.emoji} {c.futuristicBucket.key}</span>
+                        )}
+                      </div>
+                      <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+                        <span className="text-neutral-600 font-semibold">📊 Stake:</span> {c.shareholdingNote || <span className="text-neutral-600">unavailable</span>}
+                      </div>
+                      <div className="text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+                        <span className="text-neutral-600 font-semibold">⚡ Setup:</span> {c.primarySignal}
+                      </div>
+                    </td>
+                    <td className={`${td} text-right`}>₹{fmtPx(c.ltp)}</td>
+                    <td className={`${td} text-center`} title="Vol = today×, 5dVol = 5d/20d avg, 🔥 = FII↑+Promoter stable">
+                      <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight whitespace-nowrap">
+                        <span className={vcls}>{vr ? `${vr}×` : '—'}</span>
+                        <span className="text-neutral-700">·</span>
+                        <span className={v5cls}>5d {c.volumeRatio5d ? `${c.volumeRatio5d}×` : '—'}</span>
+                        <span className="text-neutral-700">·</span>
+                        {c.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-700">·</span>}
+                        {c.fiiDelta != null && c.fiiDelta !== 0 && (
+                          <span className={c.fiiDelta > 0 ? 'text-accent-green' : 'text-accent-red'}>FII {c.fiiDelta > 0 ? '+' : ''}{c.fiiDelta}</span>
+                        )}
+                      </div>
+                    </td>
+                    <td className={`${td} text-center`}>
+                      <div className={`font-bold ${tcls}`}>{c.totalScore}/24</div>
+                      <div className={`text-[9px] font-bold ${tcls}`}>{c.tierLabel}</div>
+                    </td>
+                    <td className={`${td} text-right text-accent-cyan`}>
+                      <div>₹{fmtPx(c.entry)}</div>
+                      <div className="text-[9px] text-accent-cyan/70">by {fmtDate(c.entryDate)}</div>
+                    </td>
+                    <td className={`${td} text-right text-accent-red`}>₹{fmtPx(c.stopLoss)}</td>
+                    <td className={`${td} text-right text-accent-green`}>
+                      <div>₹{fmtPx(c.target1)}</div>
+                      <div className="text-[9px] text-accent-green/70">{fmtDate(c.target1Date)}</div>
+                    </td>
+                    <td className={`${td} text-right text-accent-green`}>
+                      <div>₹{fmtPx(c.target2)}</div>
+                      <div className="text-[9px] text-accent-green/70">{fmtDate(c.target2Date)}</div>
+                    </td>
+                    <td className={`${td} text-right text-accent-green font-bold`}>
+                      <div>₹{fmtPx(c.target3)}</div>
+                      <div className="text-[9px] text-accent-green/70 font-normal">{fmtDate(c.target3Date)}</div>
+                    </td>
+                    <td className={`${td} text-center`}>1:{c.riskReward}</td>
+                    <td className={`${td} text-center text-accent-green`}>+{c.expectedMovePct}%</td>
+                  </tr>
                 )
               })}
             </tbody>

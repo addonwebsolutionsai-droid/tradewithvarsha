@@ -243,14 +243,12 @@ function CandidateRow({ c }: { c: Candidate }): JSX.Element {
   const [open, setOpen] = useState(false)
   const rowBg = c.tier === 1 ? 'bg-accent-green/5' : 'bg-ink-800'
   const td = `px-2 py-2 ${rowBg} group-hover:bg-ink-700 cursor-pointer`
-  // Sub-row gets a slightly different bg so the two rows visually pair as one
-  // "card" while keeping table alignment for sortable numerics above.
-  const subBg = c.tier === 1 ? 'bg-accent-green/[0.025]' : 'bg-ink-900/40'
   return (
     <>
       {/* Row 1 — main numeric grid */}
       <tr className="group border-t border-ink-500" onClick={() => setOpen(o => !o)}>
-        <td className={`${td} px-3 ${STICKY_FIRST_COL_BODY}`}>
+        {/* Stock column — wide; holds name+badges, 📊 Stake, ⚡ Setup stacked. */}
+        <td className={`${td} px-3 align-top ${STICKY_FIRST_COL_BODY}`} style={{ minWidth: 330, maxWidth: 360 }}>
           <div className="flex items-center gap-1.5 flex-wrap">
             <b className="text-neutral-200">{c.symbol}</b>
             <span className="px-1.5 py-0.5 rounded text-[9px] font-bold"
@@ -263,14 +261,20 @@ function CandidateRow({ c }: { c: Candidate }): JSX.Element {
             {c.futuristicBucket && (
               <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
                 title={`${c.futuristicBucket.label} — futuristic high-growth sector (+score bonus)`}>
-                {c.futuristicBucket.emoji}
+                {c.futuristicBucket.emoji} {c.futuristicBucket.key}
               </span>
             )}
           </div>
+          <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+            <span className="text-neutral-600 font-semibold">📊 Stake:</span> {c.shareholdingNote || <span className="text-neutral-600">unavailable</span>}
+          </div>
+          <div className="text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
+            <span className="text-neutral-600 font-semibold">⚡ Setup:</span> {c.primarySignal}
+          </div>
         </td>
-        <td className={`${td} text-right`}>₹{c.ltp.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
+        <td className={`${td} align-top text-right`}>₹{c.ltp.toLocaleString('en-IN', { maximumFractionDigits: 2 })}</td>
         {/* Money Flow — stacked: today vol / 5d vol / smart-money badge / FIIΔ */}
-        <td className={`${td} text-center`} title="Vol = today×, 5dVol = 5d/20d avg, 🔥 = FII↑+Promoter stable">
+        <td className={`${td} align-top text-center`} title="Vol = today×, 5dVol = 5d/20d avg, 🔥 = FII↑+Promoter stable">
           <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight whitespace-nowrap">
             <span className={volCls(c.volumeRatio)}>{c.volumeRatio ? `${c.volumeRatio}×` : '—'}</span>
             <span className="text-neutral-700">·</span>
@@ -282,41 +286,29 @@ function CandidateRow({ c }: { c: Candidate }): JSX.Element {
             )}
           </div>
         </td>
-        <td className={`${td} text-center`}>
+        <td className={`${td} align-top text-center`}>
           <div className={`font-bold ${tierCls(c.tier)}`}>{c.totalScore}/24</div>
           <div className={`text-[9px] font-bold ${tierCls(c.tier)}`}>{c.tierLabel}</div>
         </td>
-        <td className={`${td} text-right text-accent-cyan`}>
+        <td className={`${td} align-top text-right text-accent-cyan`}>
           <div>₹{c.entry}</div>
           <div className="text-[9px] text-accent-cyan/70">by {fmtD(c.entryDate)}</div>
         </td>
-        <td className={`${td} text-right text-accent-red`}>₹{c.stopLoss}</td>
-        <td className={`${td} text-right text-accent-green`}>
+        <td className={`${td} align-top text-right text-accent-red`}>₹{c.stopLoss}</td>
+        <td className={`${td} align-top text-right text-accent-green`}>
           <div>₹{c.target1}</div>
           <div className="text-[9px] text-accent-green/70">{fmtD(c.target1Date)}</div>
         </td>
-        <td className={`${td} text-right text-accent-green`}>
+        <td className={`${td} align-top text-right text-accent-green`}>
           <div>₹{c.target2}</div>
           <div className="text-[9px] text-accent-green/70">{fmtD(c.target2Date)}</div>
         </td>
-        <td className={`${td} text-right text-accent-green font-bold`}>
+        <td className={`${td} align-top text-right text-accent-green font-bold`}>
           <div>₹{c.target3}</div>
           <div className="text-[9px] text-accent-green/70 font-normal">{fmtD(c.target3Date)}</div>
         </td>
-        <td className={`${td} text-center`}>1:{c.riskReward}</td>
-        <td className={`${td} text-center text-accent-green`}>+{c.expectedMovePct}%</td>
-      </tr>
-      {/* Row 2 — always-visible Stake + Signal mix sub-row */}
-      <tr className={`${subBg}`}>
-        <td className={`${subBg} px-3 py-1.5 ${STICKY_FIRST_COL_BODY} text-[10px] text-neutral-500`}>
-          {c.futuristicBucket?.label || ''}
-        </td>
-        <td colSpan={10} className={`${subBg} px-3 py-1.5 text-[10px] text-neutral-400`}>
-          <div className="flex flex-wrap gap-x-4 gap-y-0.5">
-            <span><span className="text-neutral-600 font-semibold">📊 Stake:</span> {c.shareholdingNote || <span className="text-neutral-600">unavailable</span>}</span>
-            <span><span className="text-neutral-600 font-semibold">⚡ Setup:</span> {c.primarySignal}</span>
-          </div>
-        </td>
+        <td className={`${td} align-top text-center`}>1:{c.riskReward}</td>
+        <td className={`${td} align-top text-center text-accent-green`}>+{c.expectedMovePct}%</td>
       </tr>
       {open && (
         <tr className="bg-ink-700">
