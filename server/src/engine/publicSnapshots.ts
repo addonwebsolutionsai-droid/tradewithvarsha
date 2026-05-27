@@ -313,8 +313,38 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   if (opts.weeklyPick) {
     let wRows: any[]
     if (opts.weeklyPick.lifecycle?.length) {
-      // Lifecycle view: each entry already has full shape; project to public schema
-      wRows = opts.weeklyPick.lifecycle.map(e => ({
+      // 2026-05-27: DEDUP + FILTER. The lifecycle array accumulates every
+      // historical entry (1355 rows: 497 superseded + 511 pending + dupes —
+      // AIAENG appeared 5×). Weekly Pick must show ONE row per symbol and
+      // must NOT show SUPERSEDED/EXPIRED (those live in Track Record's
+      // Superseded tab). Keep the most relevant entry per symbol by status
+      // priority: T*_HIT/ACTIVE > PENDING > terminal, then most-recent.
+      const STATUS_RANK: Record<string, number> = {
+        T3_HIT: 9, T2_HIT: 8, T1_HIT: 7, ACTIVE: 6, PENDING: 5,
+        SL_HIT: 2, EXPIRED: 1, SUPERSEDED: 0, INVALIDATED: 0,
+      }
+      const newestTs = (e: any): string =>
+        [e.statusChangedAt, e.lastSeenAt, e.firstSeenAt].filter(Boolean).sort().slice(-1)[0] ?? ''
+      // Dedup by SYMBOL ONLY — a stock must never appear as both BUY and
+      // SHORT. When stale opposite-direction signals collide, pick the best
+      // by: status rank → conviction → recency.
+      const bestPerSym = new Map<string, any>()
+      for (const e of opts.weeklyPick.lifecycle) {
+        const key = e.symbol
+        const prev = bestPerSym.get(key)
+        if (!prev) { bestPerSym.set(key, e); continue }
+        const rNew = STATUS_RANK[e.status] ?? 3
+        const rOld = STATUS_RANK[prev.status] ?? 3
+        const better =
+          rNew !== rOld ? rNew > rOld :
+          (e.conviction ?? 0) !== (prev.conviction ?? 0) ? (e.conviction ?? 0) > (prev.conviction ?? 0) :
+          newestTs(e) > newestTs(prev)
+        if (better) bestPerSym.set(key, e)
+      }
+      // Drop superseded/expired/invalidated from the active Weekly Pick feed.
+      const HIDE = new Set(['SUPERSEDED', 'EXPIRED', 'INVALIDATED'])
+      const deduped = Array.from(bestPerSym.values()).filter(e => !HIDE.has(e.status))
+      wRows = deduped.map(e => ({
         symbol: e.symbol,
         direction: e.direction,
         conviction: e.conviction,
