@@ -2728,7 +2728,10 @@ async function stakeLineFor(symbol: string): Promise<string> {
 async function dispatchDailyPickAlerts(pick: Awaited<ReturnType<typeof runDailyPick>>): Promise<void> {
   if (!botState.bot) return
   if (!pick.newSinceLastRun.length) return
-  const fresh = pick.rows.filter(r => pick.newSinceLastRun.includes(r.symbol)).slice(0, 3)
+  // 2026-05-28: elite-only — conviction ≥ 90 (was: any new pick).
+  const fresh = pick.rows
+    .filter(r => pick.newSinceLastRun.includes(r.symbol) && (r.conviction ?? 0) >= 90)
+    .slice(0, 3)
   if (!fresh.length) return
   const lines: string[] = []
   lines.push(`🎯 *Daily Pick — ${fresh.length} new setup${fresh.length !== 1 ? 's' : ''}*`)
@@ -2761,7 +2764,10 @@ async function dispatchDailyPickAlerts(pick: Awaited<ReturnType<typeof runDailyP
 const masterSetupSentToday = new Set<string>()
 async function dispatchMasterSetupAlerts(run: Awaited<ReturnType<typeof refreshMasterSetup>>): Promise<void> {
   if (!botState.bot) return
-  const elite = run.setups.filter(s => s.stars >= 4)
+  // 2026-05-28: 5★ ONLY (was 4★+). User wants ≥9 quality on Telegram.
+  // The user's bad NIFTY signal was a 4.5/10 score / Grade C — exactly what
+  // this raise eliminates.
+  const elite = run.setups.filter(s => s.stars >= 5)
   if (!elite.length) return
   const fresh = elite.filter(s => {
     const key = `${s.symbol}|${s.direction}|${s.entryDate}`
@@ -2795,7 +2801,8 @@ async function dispatchMasterSetupAlerts(run: Awaited<ReturnType<typeof refreshM
  */
 async function dispatchHarmonicAlerts(hits: Awaited<ReturnType<typeof runHarmonicScan>>['hits']): Promise<void> {
   if (!botState.bot) return
-  const eligible = hits.filter(h => h.confidence >= 70)
+  // 2026-05-28: confidence ≥ 90 (was 70). Telegram = elite only.
+  const eligible = hits.filter(h => h.confidence >= 90)
   if (!eligible.length) return
   const fresh = takeFreshHarmonicHits(eligible)
   if (!fresh.length) return
@@ -2821,7 +2828,8 @@ async function dispatchHarmonicAlerts(hits: Awaited<ReturnType<typeof runHarmoni
  */
 async function dispatchTurtleSoupAlerts(run: Awaited<ReturnType<typeof runTurtleSoupScan>>): Promise<void> {
   if (!botState.bot) return
-  const fresh = takeFreshTurtleSoupSignals(run)
+  // 2026-05-28: confidence ≥ 85 (was: no gate). Telegram = elite only.
+  const fresh = takeFreshTurtleSoupSignals(run).filter(s => (s.confidence ?? 0) >= 85)
   if (!fresh.length) return
   // Append stake summary line per signal (only equity instruments will return
   // anything; index futures/options resolve to '' and skip).
@@ -2849,7 +2857,12 @@ async function dispatchTurtleSoupAlerts(run: Awaited<ReturnType<typeof runTurtle
 async function dispatchFibLrcAlerts(run: Awaited<ReturnType<typeof import('./engine/fibLrcEngine').runFibLrcScan>>): Promise<void> {
   if (!botState.bot) return
   const { takeFreshFibLrcSignals, formatFibLrcForTelegram } = await import('./engine/fibLrcEngine')
-  const fresh = takeFreshFibLrcSignals(run)
+  // 2026-05-28: only push fib-LRC if confidence/score ≥ 9 (elite only).
+  const fresh = takeFreshFibLrcSignals(run).filter(s => {
+    const score = (s as any).score ?? (s as any).confidence ?? 0
+    // confidence is 0-100; score is 0-10. Normalise: confidence ≥ 90 OR score ≥ 9.
+    return score >= 90 || score >= 9
+  })
   if (!fresh.length) return
   const stakeLines: string[] = []
   for (const s of fresh) {
@@ -2935,9 +2948,12 @@ async function dispatchWeeklyPickAlerts(pick: Awaited<ReturnType<typeof runWeekl
   // 2026-05-04: prioritise NO-BRAINERs in the dispatch. Take top 3 no-brainers
   // (FII↑+promoter stable+pledge<5%) plus top 4 by conviction = max 7 names.
   // No-brainers stay top regardless of raw conviction so user sees them first.
+  // 2026-05-28: Telegram = elite only. NO-BRAINERS always allowed (they're
+  // already the highest stake-anchored quality). For non-no-brainers,
+  // require conviction ≥ 90 (was: top 4 regardless).
   const curated = pick.rows.filter(r => r.source === 'CURATED')
   const noBrainers = curated.filter(r => r.noBrainerBet).slice(0, 3)
-  const others = curated.filter(r => !r.noBrainerBet).sort((a, b) => b.conviction - a.conviction).slice(0, 4)
+  const others = curated.filter(r => !r.noBrainerBet && (r.conviction ?? 0) >= 90).sort((a, b) => b.conviction - a.conviction).slice(0, 4)
   let top = [...noBrainers, ...others]
   if (!top.length) return
   // 2026-05-05: re-anchor every row to fresh LTP. Drops rows where LTP differs
@@ -2993,7 +3009,13 @@ async function dispatchWeeklyPickAlerts(pick: Awaited<ReturnType<typeof runWeekl
  */
 async function dispatchFnoOptionAlerts(signals: Signal[], tag: string): Promise<void> {
   if (!signals.length) return
-  for (const s of signals) {
+  // 2026-05-28: Telegram = elite only. Score ≥ 9 AND Grade A required.
+  const elite = signals.filter(s => s.score >= 9 && s.grade === 'A')
+  if (!elite.length) {
+    log.info('FNO', `dispatchFnoOptionAlerts: ${signals.length} signals dropped (none ≥ 9/A)`)
+    return
+  }
+  for (const s of elite) {
     try {
       await broadcastSignal(s)
       recordTgPush(`fno-${tag}`, s.instrument)

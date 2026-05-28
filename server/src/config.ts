@@ -58,8 +58,10 @@ export const config = {
   },
   alerts: {
     onNewSignal: bool(process.env.ALERT_ON_NEW_SIGNAL, true),
-    minGrade: (process.env.ALERT_MIN_GRADE ?? 'B') as 'A' | 'B' | 'C' | 'D',
-    minScore: num(process.env.ALERT_MIN_SCORE, 6),
+    // 2026-05-28: user — "On Telegram I only want high quality setups above 9,
+    // nothing else." Raised minScore 6→9 and minGrade B→A.
+    minGrade: (process.env.ALERT_MIN_GRADE ?? 'A') as 'A' | 'B' | 'C' | 'D',
+    minScore: num(process.env.ALERT_MIN_SCORE, 9),
   },
   backtest: {
     startDate: process.env.BACKTEST_START_DATE ?? '2022-01-01',
