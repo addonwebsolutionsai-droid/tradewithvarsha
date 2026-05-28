@@ -67,6 +67,40 @@ function diffCalendarDays(target: Date, from: Date): number {
 }
 
 /** Pick the right expiry for a NIFTY / FINNIFTY index option. */
+/**
+ * 2026-05-28: Pick from REAL listed NSE expiries (passed in from Angel's
+ * ScripMaster via listIndexExpiries()). This is the correct source of
+ * truth — NSE has shifted weekly schedules multiple times and discontinued
+ * some entirely. Calculated "next Thursday" math is unreliable.
+ *
+ * Picks the first expiry > PROXIMITY_WEEKLY_DAYS away (avoid same-day or
+ * T-1 theta wipe). Returns null if the list is empty so the caller can
+ * fall back to the legacy calculated logic.
+ */
+export function selectIndexExpiryFromList(expiries: string[], now: Date = new Date()): ExpiryChoice | null {
+  if (!expiries || !expiries.length) return null
+  const futureOrToday = expiries
+    .slice()
+    .sort()
+    .map(s => ({ s, d: new Date(s + 'T00:00:00Z') }))
+    .filter(e => !Number.isNaN(e.d.getTime()) && diffCalendarDays(e.d, now) >= 0)
+  if (!futureOrToday.length) return null
+  const tradable = futureOrToday.filter(e => diffCalendarDays(e.d, now) > PROXIMITY_WEEKLY_DAYS)
+  const picked = tradable.length ? tradable[0] : futureOrToday[futureOrToday.length - 1]
+  const dte = diffCalendarDays(picked.d, now)
+  const bucket: ExpiryBucket = dte > 14 ? 'MONTHLY' : 'WEEKLY'
+  const isFirst = futureOrToday[0].s === picked.s
+  const tag: ExpiryTag = bucket === 'MONTHLY'
+    ? (isFirst ? 'current-month' : 'next-month')
+    : (isFirst ? 'current-week' : 'next-week')
+  return {
+    expiry: picked.s,
+    daysToExpiry: dte,
+    tag, bucket,
+    reason: `Picked from ${expiries.length} NSE-listed expiries · ${dte}d to expiry.`,
+  }
+}
+
 export function selectIndexExpiry(now: Date = new Date()): ExpiryChoice {
   const monthlyThis = lastThursdayOfMonth(now.getUTCFullYear(), now.getUTCMonth())
   const monthlyNext = lastThursdayOfMonth(now.getUTCFullYear(), now.getUTCMonth() + 1)

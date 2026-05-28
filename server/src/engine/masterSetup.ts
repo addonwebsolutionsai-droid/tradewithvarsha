@@ -38,7 +38,8 @@ import { astroBiasFor } from '../astro'
 import { resolveUniverse } from '../screeners/universe'
 import { addDays } from '../util/time'
 import { log } from '../util/logger'
-import { selectIndexExpiry, selectStockExpiry, type ExpiryChoice } from '../options/expirySelector'
+import { selectIndexExpiry, selectIndexExpiryFromList, selectStockExpiry, type ExpiryChoice } from '../options/expirySelector'
+import { listIndexExpiries } from '../data/angel'
 import { atmStrike, blackScholesPrice } from '../options/premium'
 import { getLatestSectorRotation, runSectorRotationScan, SECTOR_BASKETS, type SectorKey } from './sectorRotation'
 import { logSignal } from './signalLogger'
@@ -358,11 +359,19 @@ async function evaluateSymbol(
     let options: MasterSetup['options'] | undefined
     if (FNO_NAMES.has(symbol) || ['NIFTY', 'FINNIFTY', 'GOLD', 'CRUDE'].includes(symbol.toUpperCase())) {
       const isIndex = ['NIFTY', 'FINNIFTY'].includes(symbol.toUpperCase())
-      const choice = isIndex
-        ? selectIndexExpiry(today)
-        : (symbol === 'GOLD' || symbol === 'CRUDE'
-            ? selectIndexExpiry(today)         // MCX weekly expiry semantics close enough
-            : selectStockExpiry(today))
+      // 2026-05-28: prefer REAL NSE-listed expiries over calculated Thursdays.
+      // The calculated logic produced wrong dates (e.g. "exp 4-Jun" on 28-May
+      // when NSE schedule had shifted) → wrong DTE → wrong Black-Scholes
+      // premium → wrong SL/T1. Fall back to legacy only if scrip-master empty.
+      let choice: ExpiryChoice
+      if (isIndex) {
+        const expiries = await listIndexExpiries(symbol.toUpperCase() as 'NIFTY' | 'FINNIFTY').catch(() => [])
+        choice = selectIndexExpiryFromList(expiries, today) ?? selectIndexExpiry(today)
+      } else if (symbol === 'GOLD' || symbol === 'CRUDE') {
+        choice = selectIndexExpiry(today)         // MCX semantics
+      } else {
+        choice = selectStockExpiry(today)
+      }
       const strike = atmStrike(ltp, symbol.toUpperCase())
       const side: 'CE' | 'PE' = direction === 'BUY' ? 'CE' : 'PE'
       const dte = Math.max(1, choice.daysToExpiry)

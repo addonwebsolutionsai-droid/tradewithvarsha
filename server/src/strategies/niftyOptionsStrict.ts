@@ -327,10 +327,12 @@ export function niftyOptionsStrictSignal(ctx: StrategyContext): Signal | null {
   const side: 'CE' | 'PE' = bullish ? 'CE' : 'PE'
   const strike = roundNiftyStrike(last.close)
 
-  // Smart expiry — rolls to next-month if monthly expiry within 3d (avoids
-  // theta wipe on the last day of the cycle).
-  const expiryChoice = selectIndexExpiry(new Date())
-  const expiry = expiryChoice.expiry
+  // 2026-05-28: prefer the REAL expiry from the live option chain
+  // (ctx.optionChain.expiry) over calculated "next Thursday" math. The
+  // chain reflects what NSE has actually listed — schedules have shifted
+  // multiple times and the old logic produced wrong dates.
+  const expiry = ctx.optionChain?.expiry || selectIndexExpiry(new Date()).expiry
+  const expiryChoice = { expiry, tag: ctx.optionChain ? 'current-week' : selectIndexExpiry(new Date()).tag }
   const resolution = resolvePremium({
     spot: last.close, strike, side,
     daysToExpiry: daysUntil(expiry),

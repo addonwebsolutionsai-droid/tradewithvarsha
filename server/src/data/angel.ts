@@ -400,6 +400,29 @@ export async function getCandles(
 
 // ── Option Chain (built from scripmaster + LTP batch) ───────────
 
+/**
+ * 2026-05-28: List ALL real listed expiries for an index from Angel's
+ * ScripMaster — the source of truth for what NSE has actually listed.
+ * Previously the engines invented "next Thursday" / "last Thursday of
+ * month" which produced wrong dates. Returns YYYY-MM-DD strings, sorted
+ * ascending. Empty array if chain isn't loaded yet.
+ */
+export async function listIndexExpiries(underlying: 'NIFTY' | 'BANKNIFTY' | 'FINNIFTY'): Promise<string[]> {
+  await loadScripMaster()
+  if (!scripMaster) return []
+  const rows = scripMaster.filter(
+    s => s.exch_seg === 'NFO' && s.instrumenttype === 'OPTIDX' && s.name === underlying,
+  )
+  const set = new Set<string>()
+  for (const r of rows) {
+    if (!r.expiry) continue
+    const d = new Date(r.expiry)
+    if (Number.isNaN(d.getTime())) continue
+    set.add(d.toISOString().slice(0, 10))
+  }
+  return Array.from(set).sort()
+}
+
 export async function getOptionChain(underlying: 'NIFTY' | 'BANKNIFTY'): Promise<OptionChain | null> {
   return cached(oiCache, `angel-oc-${underlying}`, async () => {
     const t = await ensureAuth()
