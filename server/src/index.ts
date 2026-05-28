@@ -2725,13 +2725,38 @@ async function stakeLineFor(symbol: string): Promise<string> {
   }
 }
 
+/**
+ * 2026-05-28: Quality-stake override per user — "stocks where FII and DII
+ * stake is increasing, promoters stake is increasing and volume condition
+ * is match, such stocks should be sent even if score is not matched."
+ *
+ * Returns true if the row has the institutional-accumulation signature
+ * regardless of conviction/score. Lets us push setups the score gate
+ * would otherwise filter out — the user is willing to hold them longer
+ * because the smart-money footprint is real.
+ *
+ *   FII delta  > +0.2 pp QoQ (real buying, not noise)
+ *   DII delta  > +0.2 pp QoQ
+ *   Promoter   ≥  0   pp QoQ (stable or buying — never selling)
+ *   Volume     5d-avg / 20d-avg > 1.0 (recent acceleration)
+ */
+function isQualityStakeOverride(r: any): boolean {
+  const fiiUp = (r.fiiDelta ?? 0) > 0.2
+  const diiUp = (r.diiDelta ?? 0) > 0.2
+  const promoterStableOrUp = (r.promoterDelta ?? 0) >= 0
+  const volOK = (r.vol5dRatio ?? 0) > 1.0 || (r.smartMoneyUp === true)
+  return fiiUp && diiUp && promoterStableOrUp && volOK
+}
+
 async function dispatchDailyPickAlerts(pick: Awaited<ReturnType<typeof runDailyPick>>): Promise<void> {
   if (!botState.bot) return
   if (!pick.newSinceLastRun.length) return
-  // 2026-05-28: elite-only — conviction ≥ 90 (was: any new pick).
+  // 2026-05-28: elite-only — conviction ≥ 90 OR quality-stake override
+  // (FII↑ + DII↑ + Promoter stable+ + vol acceleration).
   const fresh = pick.rows
-    .filter(r => pick.newSinceLastRun.includes(r.symbol) && (r.conviction ?? 0) >= 90)
-    .slice(0, 3)
+    .filter(r => pick.newSinceLastRun.includes(r.symbol) &&
+      ((r.conviction ?? 0) >= 90 || isQualityStakeOverride(r)))
+    .slice(0, 5)
   if (!fresh.length) return
   const lines: string[] = []
   lines.push(`🎯 *Daily Pick — ${fresh.length} new setup${fresh.length !== 1 ? 's' : ''}*`)
@@ -2949,11 +2974,16 @@ async function dispatchWeeklyPickAlerts(pick: Awaited<ReturnType<typeof runWeekl
   // (FII↑+promoter stable+pledge<5%) plus top 4 by conviction = max 7 names.
   // No-brainers stay top regardless of raw conviction so user sees them first.
   // 2026-05-28: Telegram = elite only. NO-BRAINERS always allowed (they're
-  // already the highest stake-anchored quality). For non-no-brainers,
-  // require conviction ≥ 90 (was: top 4 regardless).
+  // already the highest stake-anchored quality). For non-no-brainers, allow
+  // EITHER conviction ≥ 90 OR isQualityStakeOverride (FII↑+DII↑+Promoter
+  // stable+ + vol acceleration) — per user: "we should not miss any quality
+  // stocks where FII/DII increasing + promoter increasing + volume matches."
   const curated = pick.rows.filter(r => r.source === 'CURATED')
   const noBrainers = curated.filter(r => r.noBrainerBet).slice(0, 3)
-  const others = curated.filter(r => !r.noBrainerBet && (r.conviction ?? 0) >= 90).sort((a, b) => b.conviction - a.conviction).slice(0, 4)
+  const others = curated
+    .filter(r => !r.noBrainerBet && ((r.conviction ?? 0) >= 90 || isQualityStakeOverride(r)))
+    .sort((a, b) => (b.conviction ?? 0) - (a.conviction ?? 0))
+    .slice(0, 5)
   let top = [...noBrainers, ...others]
   if (!top.length) return
   // 2026-05-05: re-anchor every row to fresh LTP. Drops rows where LTP differs
@@ -3009,10 +3039,14 @@ async function dispatchWeeklyPickAlerts(pick: Awaited<ReturnType<typeof runWeekl
  */
 async function dispatchFnoOptionAlerts(signals: Signal[], tag: string): Promise<void> {
   if (!signals.length) return
-  // 2026-05-28: Telegram = elite only. Score ≥ 9 AND Grade A required.
-  const elite = signals.filter(s => s.score >= 9 && s.grade === 'A')
+  // 2026-05-28: Telegram = elite only. Score ≥ 9 AND Grade A OR quality-
+  // stake override (FII↑+DII↑+Promoter stable+ + vol acceleration on the
+  // underlying — fields populated by enrichRowsWithMoneyFlow).
+  const elite = signals.filter(s =>
+    (s.score >= 9 && s.grade === 'A') || isQualityStakeOverride(s as any),
+  )
   if (!elite.length) {
-    log.info('FNO', `dispatchFnoOptionAlerts: ${signals.length} signals dropped (none ≥ 9/A)`)
+    log.info('FNO', `dispatchFnoOptionAlerts: ${signals.length} signals dropped (none ≥ 9/A and no stake-quality override)`)
     return
   }
   for (const s of elite) {
