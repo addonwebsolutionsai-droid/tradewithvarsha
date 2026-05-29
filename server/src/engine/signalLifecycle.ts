@@ -503,7 +503,18 @@ export async function buildAccuracyReport(opts: { source?: string; daysBack?: nu
   let triggered = 0, totalPending = 0, wins = 0, sl = 0, activeOrTerminal = 0
   let rSum = 0, rCount = 0
   const bySource: AccuracyReport['bySource'] = {}
-  const tierBucket = (c: number): string => c >= 80 ? '80+' : c >= 60 ? '60-79' : c >= 40 ? '40-59' : '<40'
+  // 2026-05-29: finer conviction-band granularity. Live data audit showed
+  // counterintuitive pattern — conv ≥ 90 has WORSE WR than conv 70-79
+  // (extended setups stop-out; coiled-spring sweet spot wins). Surfacing
+  // the 70-79 band as the "Premium / Sweet Spot" tier in the UI so users
+  // see the real high-WR cohort instead of chasing 90+ in vain.
+  const tierBucket = (c: number): string =>
+    c >= 90 ? '90+'
+    : c >= 80 ? '80-89'
+    : c >= 70 ? '70-79'   // ← sweet spot (live WR ≈ 82%)
+    : c >= 60 ? '60-69'
+    : c >= 40 ? '40-59'
+    : '<40'
   const byTier: AccuracyReport['byConvictionTier'] = {}
 
   for (const e of inWindow) {

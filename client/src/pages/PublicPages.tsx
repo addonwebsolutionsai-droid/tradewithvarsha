@@ -66,6 +66,14 @@ function AccuracyStrip(): JSX.Element | null {
   })
   if (!data || !data.total) return null
   const tierEntries = Object.entries(data.byConvictionTier || {}).sort(([a], [b]) => b.localeCompare(a))
+  // 2026-05-29: surface the Sweet-Spot Band (conviction 70-79) — empirically
+  // the highest win-rate cohort on live data. Counter to intuition: chasing
+  // 90+ conviction picks gives WORSE outcomes (extended setups stop out)
+  // than this coiled-spring zone. Users target this band for "money-magnet"
+  // quality.
+  const sweetSpot = (data.byConvictionTier as any)?.['70-79']
+  const sweetSpotWR = sweetSpot ? sweetSpot.winRate : null
+  const sweetSpotN = sweetSpot ? sweetSpot.total : 0
   // 2026-05-25: catch-rate row shows the user's #1 KPI — % of NSE top-100
   // gainers our pre-move screeners caught on T-1 (day before the move).
   // Auto-replayed every weekday 17:30 IST against the actual day's gainers
@@ -77,6 +85,9 @@ function AccuracyStrip(): JSX.Element | null {
     <details className="bg-ink-700 border border-ink-500 rounded-lg p-3 mb-3">
       <summary className="text-[11px] font-semibold text-neutral-300 cursor-pointer select-none">
         📊 System accuracy ({data.daysBack}d) — {data.total} signals · Triggered {data.triggeredRate}% · Win rate <span className="text-accent-green">{data.winRate}%</span> · SL rate <span className="text-accent-red">{data.slRate}%</span> · Avg R-multiple <b>{data.avgRMultiple > 0 ? '+' : ''}{data.avgRMultiple}</b>
+        {sweetSpotWR != null && (
+          <span className="ml-2"> · 💎 Sweet-Spot (conv 70-79): <span className={sweetSpotWR >= 80 ? 'text-accent-green font-bold' : 'text-accent-cyan'}>{sweetSpotWR}%</span> <span className="text-neutral-500 font-normal">(n={sweetSpotN})</span></span>
+        )}
       </summary>
       {crRolling && crRolling.runs > 0 && (
         <div className="mt-2 mb-2 px-2 py-1.5 rounded bg-ink-800 border border-ink-500 text-[11px] flex items-center gap-3 flex-wrap">

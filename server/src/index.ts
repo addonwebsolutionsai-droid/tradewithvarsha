@@ -2751,11 +2751,17 @@ function isQualityStakeOverride(r: any): boolean {
 async function dispatchDailyPickAlerts(pick: Awaited<ReturnType<typeof runDailyPick>>): Promise<void> {
   if (!botState.bot) return
   if (!pick.newSinceLastRun.length) return
-  // 2026-05-28: elite-only — conviction ≥ 90 OR quality-stake override
-  // (FII↑ + DII↑ + Promoter stable+ + vol acceleration).
+  // 2026-05-29: PREFER THE SWEET-SPOT BAND (conv 70-89). Live audit:
+  // conv 70-79 hits 82% WR · conv 80-89 hits 50% · conv ≥ 90 only 33%
+  // (extreme picks are extended → stop out). Push if conv 70-89 OR
+  // quality-stake override fires. The 90+ chasers are silently dropped.
+  const isSweetSpot = (r: any): boolean => {
+    const c = r.conviction ?? 0
+    return c >= 70 && c < 90
+  }
   const fresh = pick.rows
     .filter(r => pick.newSinceLastRun.includes(r.symbol) &&
-      ((r.conviction ?? 0) >= 90 || isQualityStakeOverride(r)))
+      (isSweetSpot(r) || isQualityStakeOverride(r)))
     .slice(0, 5)
   if (!fresh.length) return
   const lines: string[] = []
@@ -2981,7 +2987,9 @@ async function dispatchWeeklyPickAlerts(pick: Awaited<ReturnType<typeof runWeekl
   const curated = pick.rows.filter(r => r.source === 'CURATED')
   const noBrainers = curated.filter(r => r.noBrainerBet).slice(0, 3)
   const others = curated
-    .filter(r => !r.noBrainerBet && ((r.conviction ?? 0) >= 90 || isQualityStakeOverride(r)))
+    // 2026-05-29: sweet-spot band (conv 70-89, empirical WR 82%) beats
+    // chasing 90+ (only 33%). No-brainers always allowed.
+    .filter(r => !r.noBrainerBet && (((r.conviction ?? 0) >= 70 && (r.conviction ?? 0) < 90) || isQualityStakeOverride(r)))
     .sort((a, b) => (b.conviction ?? 0) - (a.conviction ?? 0))
     .slice(0, 5)
   let top = [...noBrainers, ...others]
