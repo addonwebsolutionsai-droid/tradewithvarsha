@@ -5,6 +5,8 @@ import {
   Layers, ListChecks, Rocket, Star, Target,
   TrendingUp, Wind, Zap, ChevronDown, ClipboardList, Triangle,
 } from 'lucide-react'
+import { useQuery } from '@tanstack/react-query'
+import { snapshots } from '../api'
 
 /**
  * Top-level navigation — 6 sections.
@@ -55,14 +57,36 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   // 2026-05-25: Intraday tab REMOVED — live lifecycle WR 28.6% (7 closed,
   // 5 SL). Engine dropped from signalEngine.ts strategy lists. Page still
   // exists in code but no longer in nav → no user confusion.
-  // 2026-05-29: minimal 4-tab nav per user — "designs more congested and
-  // many tabs, simplify". /picks is a hub with internal segment toggle
-  // for Top Trades · 5–20% Move · Weekly · Daily (4 sub-views → 1 tab).
+  // 2026-05-29: 4-tab nav with PER-TAB ACCURACY badge.
+  // Pulls bySource win-rates from the public accuracy snapshot once and
+  // surfaces a small "72%" pill next to each label, colour-coded so users
+  // can compare quality across sections at a glance.
+  const { data: accSnap } = PUBLIC_MODE ? useQuery({
+    queryKey: ['nav-accuracy'], queryFn: () => snapshots.accuracy(),
+    staleTime: 5 * 60_000, refetchInterval: 5 * 60_000, retry: false,
+  }) : { data: undefined }
+  const bySrc: Record<string, { winRate?: number; total?: number }> =
+    (accSnap?.bySource as any) || {}
+  const wr = (key: string): number | null => {
+    const v = bySrc[key]?.winRate
+    return typeof v === 'number' ? v : null
+  }
+  // Tab → composite accuracy mapping.
+  const picksAcc = (() => {
+    const w = bySrc.WEEKLY, d = bySrc.DAILY
+    const tot = (w?.total ?? 0) + (d?.total ?? 0)
+    const wins = ((w?.winRate ?? 0) * (w?.total ?? 0) + (d?.winRate ?? 0) * (d?.total ?? 0))
+    return tot > 0 ? wins / tot : null
+  })()
+  const trackAcc = (accSnap as any)?.winRate ?? null
   const tops = PUBLIC_MODE ? [
-    { to: '/picks',        label: 'Picks',        icon: <Target size={14} /> },
-    { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} /> },
-    { to: '/options',      label: 'Options',      icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
-    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} /> },
+    { to: '/picks',        label: 'Picks',        icon: <Target size={14} />,       acc: picksAcc },
+    { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} />,         acc: wr('PREMOVE') },
+    { to: '/options',      label: 'F&O',          icon: <Layers size={14} />,
+      count: (counts.options ?? 0) + (counts.futures ?? 0),
+      acc: wr('OPTIONS'),
+      title: 'Options + Futures (NIFTY / BANKNIFTY / Stock derivatives) — single source for all F&O trades.' },
+    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />,   acc: trackAcc },
   ] : [
     // 2026-05-25: Niche tabs (Gann / TimeCycle / Harmonic / Turtle Soup) moved
     // INTO the More dropdown — last-14-days lifecycle audit showed zero closed
@@ -102,14 +126,15 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
               ? location.pathname === '/'
               : t.to === '/picks'
                 ? onPicksHub
-                : t.isParent
+                : (t as any).isParent
                   ? onInvestment
                   : location.pathname === t.to || location.pathname.startsWith(t.to + '/')
             return (
               <button
                 key={t.to}
+                title={(t as any).title}
                 onClick={() => {
-                  if (t.isParent) navigate('/investment/symbols')
+                  if ((t as any).isParent) navigate('/investment/symbols')
                   else navigate(t.to)
                 }}
                 className={clsx(
@@ -121,7 +146,7 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
               >
                 {t.icon}
                 {t.label}
-                {t.isParent && <ChevronDown size={11} />}
+                {(t as any).isParent && <ChevronDown size={11} />}
                 {(t as any).badge && (
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-accent-green text-ink-900 leading-none">
                     {(t as any).badge}
@@ -132,6 +157,19 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
                     'text-[10px] px-1.5 py-0.5 rounded-full',
                     active ? 'bg-accent-cyan/10 text-accent-cyan' : 'bg-ink-500 text-neutral-500',
                   )}>{(t as any).count}</span>
+                )}
+                {/* 2026-05-29: per-tab accuracy pill — green ≥70%, cyan ≥50%, amber <50%. */}
+                {typeof (t as any).acc === 'number' && (
+                  <span
+                    title={`${t.label} historical win-rate (30-day rolling)`}
+                    className={clsx(
+                      'text-[9px] font-bold px-1.5 py-0.5 rounded-full leading-none',
+                      (t as any).acc >= 70 ? 'bg-accent-green/15 text-accent-green' :
+                      (t as any).acc >= 50 ? 'bg-accent-cyan/15 text-accent-cyan' :
+                      'bg-accent-amber/15 text-accent-amber',
+                    )}>
+                    {Math.round((t as any).acc)}%
+                  </span>
                 )}
               </button>
             )
