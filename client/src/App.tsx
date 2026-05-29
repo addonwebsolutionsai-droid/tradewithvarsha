@@ -39,7 +39,7 @@ import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
 import { PreMoveIdentifierPage } from './pages/PreMoveIdentifierPage'
 import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
-import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage } from './pages/PublicPages'
+import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub } from './pages/PublicPages'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -101,16 +101,21 @@ function Shell() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
             <Route path="/admin/users" element={<RequireAuth adminOnly><AdminUsersPage /></RequireAuth>} />
-            <Route path="/top-trades" element={<PublicTopTradesPage />} />
-            <Route path="/5-20-move" element={<PublicPreMoveIdentifierPage />} />
-            <Route path="/weekly-pick" element={<PublicWeeklyPickPage />} />
-            <Route path="/daily-pick"  element={<PublicDailyPickPage />} />
-            <Route path="/pre-move"    element={<PublicPreMovePage />} />
-            <Route path="/options"     element={<PublicOptionsPage />} />
-            <Route path="/intraday"    element={<PublicIntradayPage />} />
+            {/* 2026-05-29: 4-tab nav. /picks = unified hub for Top Trades /
+                5-20% Move / Weekly / Daily (internal segment toggle). Old
+                routes kept as bookmarkable backwards-compat redirects. */}
+            <Route path="/picks"        element={<PublicPicksHub />} />
+            <Route path="/pre-move"     element={<PublicPreMovePage />} />
+            <Route path="/options"      element={<PublicOptionsPage />} />
             <Route path="/track-record" element={<PublicSignalsHistoryPage />} />
-            <Route path="/" element={<Navigate to="/top-trades" replace />} />
-            <Route path="*" element={<Navigate to="/top-trades" replace />} />
+            {/* legacy deep links — still render the pages directly */}
+            <Route path="/top-trades"   element={<PublicTopTradesPage />} />
+            <Route path="/5-20-move"    element={<PublicPreMoveIdentifierPage />} />
+            <Route path="/weekly-pick"  element={<PublicWeeklyPickPage />} />
+            <Route path="/daily-pick"   element={<PublicDailyPickPage />} />
+            <Route path="/intraday"     element={<PublicIntradayPage />} />
+            <Route path="/" element={<Navigate to="/picks" replace />} />
+            <Route path="*" element={<Navigate to="/picks" replace />} />
           </Routes>
         ) : (
         <Routes>

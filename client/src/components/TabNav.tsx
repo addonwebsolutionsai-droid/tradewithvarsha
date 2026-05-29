@@ -55,14 +55,14 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   // 2026-05-25: Intraday tab REMOVED — live lifecycle WR 28.6% (7 closed,
   // 5 SL). Engine dropped from signalEngine.ts strategy lists. Page still
   // exists in code but no longer in nav → no user confusion.
+  // 2026-05-29: minimal 4-tab nav per user — "designs more congested and
+  // many tabs, simplify". /picks is a hub with internal segment toggle
+  // for Top Trades · 5–20% Move · Weekly · Daily (4 sub-views → 1 tab).
   const tops = PUBLIC_MODE ? [
-    { to: '/top-trades',   label: 'Top Trades',   icon: <Target size={14} /> },
-    { to: '/5-20-move',    label: '5–20% Move',   icon: <Rocket size={14} />, badge: 'NEW' },
-    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} /> },
-    { to: '/weekly-pick',  label: 'Weekly Pick',  icon: <Briefcase size={14} /> },
-    { to: '/daily-pick',   label: 'Daily Pick',   icon: <Bot size={14} /> },
+    { to: '/picks',        label: 'Picks',        icon: <Target size={14} /> },
     { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} /> },
     { to: '/options',      label: 'Options',      icon: <Layers size={14} />, count: (counts.options ?? 0) + (counts.futures ?? 0) },
+    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} /> },
   ] : [
     // 2026-05-25: Niche tabs (Gann / TimeCycle / Harmonic / Turtle Soup) moved
     // INTO the More dropdown — last-14-days lifecycle audit showed zero closed
@@ -77,6 +77,10 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   ]
 
   const onInvestment = location.pathname.startsWith('/investment')
+  // /picks hub also "owns" the legacy pick deep-links so the Picks tab
+  // stays highlighted when a user lands on a bookmarked sub-route.
+  const PICKS_HUB_PATHS = ['/picks', '/top-trades', '/5-20-move', '/weekly-pick', '/daily-pick']
+  const onPicksHub = PICKS_HUB_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'))
 
   return (
     <>
@@ -96,9 +100,11 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
           {tops.map(t => {
             const active = t.to === '/'
               ? location.pathname === '/'
-              : t.isParent
-                ? onInvestment
-                : location.pathname === t.to || location.pathname.startsWith(t.to + '/')
+              : t.to === '/picks'
+                ? onPicksHub
+                : t.isParent
+                  ? onInvestment
+                  : location.pathname === t.to || location.pathname.startsWith(t.to + '/')
             return (
               <button
                 key={t.to}

@@ -1100,3 +1100,45 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
     </div>
   )
 }
+
+// ── PICKS HUB — unified entry point (2026-05-29) ─────────────────
+// 2026-05-29: user — "designs more congested and many tabs, simplify."
+// Consolidates 4 pick variants (Top Trades · 5–20% Move · Weekly · Daily)
+// into one tab with a segment-toggle at the top. Keeps each child page's
+// existing table intact — this is pure composition, no UI rewrite.
+export function PublicPicksHub(): JSX.Element {
+  type Seg = 'top' | 'move' | 'weekly' | 'daily'
+  const segments: Array<{ key: Seg; label: string; emoji: string }> = [
+    { key: 'top',    label: 'Top Trades',  emoji: '🎯' },
+    { key: 'move',   label: '5–20% Move',  emoji: '🚀' },
+    { key: 'weekly', label: 'Weekly Pick', emoji: '📋' },
+    { key: 'daily',  label: 'Daily Pick',  emoji: '🤖' },
+  ]
+  // Persist tab across reloads.
+  const initial = (typeof window !== 'undefined' && (window.localStorage.getItem('picks-hub-seg') as Seg)) || 'top'
+  const [seg, setSeg] = useState<Seg>(initial)
+  const pick = (k: Seg): void => {
+    setSeg(k)
+    if (typeof window !== 'undefined') window.localStorage.setItem('picks-hub-seg', k)
+  }
+  return (
+    <div className="space-y-3">
+      <div className="flex flex-wrap gap-1 p-1 bg-ink-800 border border-ink-500 rounded-lg">
+        {segments.map(s => (
+          <button key={s.key} onClick={() => pick(s.key)}
+            className={`flex-1 min-w-[120px] px-3 py-1.5 rounded text-[12px] font-semibold transition-colors ${
+              seg === s.key
+                ? 'bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/50'
+                : 'text-neutral-400 hover:text-neutral-200 hover:bg-ink-700'
+            }`}>
+            {s.emoji} {s.label}
+          </button>
+        ))}
+      </div>
+      {seg === 'top'    && <PublicTopTradesPage />}
+      {seg === 'move'   && <PublicPreMoveIdentifierPage />}
+      {seg === 'weekly' && <PublicWeeklyPickPage />}
+      {seg === 'daily'  && <PublicDailyPickPage />}
+    </div>
+  )
+}
