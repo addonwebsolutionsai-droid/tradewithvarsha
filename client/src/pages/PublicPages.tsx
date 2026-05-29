@@ -74,7 +74,7 @@ function AccuracyStrip(): JSX.Element | null {
   const crLatest = cr?.latest
   const crRolling = cr?.rolling
   return (
-    <details className="bg-ink-700 border border-ink-500 rounded-lg p-3 mb-3" open>
+    <details className="bg-ink-700 border border-ink-500 rounded-lg p-3 mb-3">
       <summary className="text-[11px] font-semibold text-neutral-300 cursor-pointer select-none">
         📊 System accuracy ({data.daysBack}d) — {data.total} signals · Triggered {data.triggeredRate}% · Win rate <span className="text-accent-green">{data.winRate}%</span> · SL rate <span className="text-accent-red">{data.slRate}%</span> · Avg R-multiple <b>{data.avgRMultiple > 0 ? '+' : ''}{data.avgRMultiple}</b>
       </summary>
