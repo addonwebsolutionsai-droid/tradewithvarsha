@@ -80,13 +80,24 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   })()
   const trackAcc = (accSnap as any)?.winRate ?? null
   const tops = PUBLIC_MODE ? [
-    { to: '/picks',        label: 'Picks',        icon: <Target size={14} />,       acc: picksAcc },
-    { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} />,         acc: wr('PREMOVE') },
+    // 2026-05-29: labels explicit about segment. Cash / Equity tab is the
+    // hub for all equity picks (swing 1-4w via Weekly · short-term 1-15d
+    // via Daily · early-stage via 5-20% Move + Top Trades). F&O tab is
+    // dedicated to derivatives. Maps directly to how traders think: cash
+    // segment vs F&O segment.
+    { to: '/picks',        label: 'Cash / Equity', icon: <Target size={14} />,
+      acc: picksAcc,
+      title: 'Cash / Equity picks — swing (Weekly · 1-4 weeks) + short-term (Daily · 1-15 days) + early-stage (5-20% Move) + Top Trades curated stream.' },
+    { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} />,
+      acc: wr('PREMOVE'),
+      title: 'Cash / Equity early-stage signals — pre-breakout setups (VCP / Wyckoff / volume dry-up).' },
     { to: '/options',      label: 'F&O',          icon: <Layers size={14} />,
       count: (counts.options ?? 0) + (counts.futures ?? 0),
       acc: wr('OPTIONS'),
       title: 'Options + Futures (NIFTY / BANKNIFTY / Stock derivatives) — single source for all F&O trades.' },
-    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />,   acc: trackAcc },
+    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />,
+      acc: trackAcc,
+      title: 'History + win-rate of every signal across cash + F&O — fully transparent accuracy log.' },
   ] : [
     // 2026-05-25: Niche tabs (Gann / TimeCycle / Harmonic / Turtle Soup) moved
     // INTO the More dropdown — last-14-days lifecycle audit showed zero closed

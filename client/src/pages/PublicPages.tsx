@@ -1108,11 +1108,13 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
 // existing table intact — this is pure composition, no UI rewrite.
 export function PublicPicksHub(): JSX.Element {
   type Seg = 'top' | 'move' | 'weekly' | 'daily'
-  const segments: Array<{ key: Seg; label: string; emoji: string }> = [
-    { key: 'top',    label: 'Top Trades',  emoji: '🎯' },
-    { key: 'move',   label: '5–20% Move',  emoji: '🚀' },
-    { key: 'weekly', label: 'Weekly Pick', emoji: '📋' },
-    { key: 'daily',  label: 'Daily Pick',  emoji: '🤖' },
+  // Segment labels carry the holding horizon explicitly so the trader
+  // immediately knows the time-frame they're picking from.
+  const segments: Array<{ key: Seg; label: string; emoji: string; horizon: string }> = [
+    { key: 'top',    label: 'Top Trades',  emoji: '🎯', horizon: 'curated elite' },
+    { key: 'move',   label: '5–20% Move',  emoji: '🚀', horizon: 'pre-breakout' },
+    { key: 'weekly', label: 'Weekly Pick', emoji: '📋', horizon: 'swing · 1–4 wks' },
+    { key: 'daily',  label: 'Daily Pick',  emoji: '🤖', horizon: 'short-term · 1–15 d' },
   ]
   // Persist tab across reloads.
   const initial = (typeof window !== 'undefined' && (window.localStorage.getItem('picks-hub-seg') as Seg)) || 'top'
@@ -1126,12 +1128,14 @@ export function PublicPicksHub(): JSX.Element {
       <div className="flex flex-wrap gap-1 p-1 bg-ink-800 border border-ink-500 rounded-lg">
         {segments.map(s => (
           <button key={s.key} onClick={() => pick(s.key)}
-            className={`flex-1 min-w-[120px] px-3 py-1.5 rounded text-[12px] font-semibold transition-colors ${
+            className={`flex-1 min-w-[140px] px-3 py-2 rounded text-[12px] font-semibold transition-colors text-left ${
               seg === s.key
                 ? 'bg-accent-cyan/20 text-accent-cyan border border-accent-cyan/50'
                 : 'text-neutral-400 hover:text-neutral-200 hover:bg-ink-700'
-            }`}>
-            {s.emoji} {s.label}
+            }`}
+            title={`${s.label} — ${s.horizon}`}>
+            <div>{s.emoji} {s.label}</div>
+            <div className={`text-[9px] font-normal mt-0.5 ${seg === s.key ? 'text-accent-cyan/70' : 'text-neutral-600'}`}>{s.horizon}</div>
           </button>
         ))}
       </div>
