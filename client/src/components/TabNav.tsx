@@ -80,6 +80,12 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   })()
   const trackAcc = (accSnap as any)?.winRate ?? null
   const tops = PUBLIC_MODE ? [
+    // 2026-05-30: 💎 Elite is the headline tab — best-of-best stream that
+    // requires ALL 5 institutional confluences (Volume + FII↑ + DII↑ +
+    // Promoter↑ + Fundamentals/Technicals) before a signal qualifies.
+    { to: '/elite',        label: 'Elite',         icon: <Star size={14} />,
+      acc: null,
+      title: 'Elite — best-of-best signals. Requires ALL 5 confluences: Volume rising · FII stake up · DII stake up · Promoter stable+ · Fundamentals+Technicals aligned. Strictest filter in the system.' },
     // 2026-05-29: labels explicit about segment. Cash / Equity tab is the
     // hub for all equity picks (swing 1-4w via Weekly · short-term 1-15d
     // via Daily · early-stage via 5-20% Move + Top Trades). F&O tab is

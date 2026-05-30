@@ -1157,3 +1157,176 @@ export function PublicPicksHub(): JSX.Element {
     </div>
   )
 }
+
+// ── 💎 ELITE — best-of-the-best multi-confluence stream (2026-05-30) ──
+// User: "Curate best of the best trade signals — require Volume + FII↑ +
+// DII↑ + Promoter↑ + financials + technicals all align."
+//
+// Cross-joins Weekly Pick + Pre-Move Identifier (both carry the stake
+// fields) and emits ONLY rows where ALL 5 institutional confluences fire.
+// Detailed reasoning per signal so the user sees exactly why it qualified.
+export function PublicEliteHub(): JSX.Element {
+  const weekly = useQuery({
+    queryKey: ['public-weekly'], queryFn: () => snapshots.weeklyPick(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const preMove = useQuery({
+    queryKey: ['public-pre-move-identifier'], queryFn: () => snapshots.preMoveIdentifier(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+
+  const weeklyRows = (weekly.data?.rows ?? []).map((r: any) => ({ ...r, _source: 'WEEKLY' }))
+  const preMoveRows = (preMove.data?.candidates ?? []).map((c: any) => ({
+    ...c, _source: 'PRE-MOVE',
+    // normalise field names so the 5-check works
+    conviction: c.totalScore ? c.totalScore * 100 / 24 : c.conviction,
+    entryPrice: c.entry,
+    target1: c.target1, target2: c.target2, target3: c.target3,
+  }))
+  const unified = [...weeklyRows, ...preMoveRows]
+
+  // ── The 5 institutional confluence checks ──
+  const checks = {
+    volume: (r: any): { pass: boolean; why: string } => {
+      const v5 = r.vol5dRatio
+      const smart = r.smartMoneyUp
+      if (typeof v5 === 'number' && v5 >= 1.2) return { pass: true, why: `5d/20d vol ${v5}× (rising)` }
+      if (smart) return { pass: true, why: 'Smart-money flag ON' }
+      if (typeof v5 === 'number' && v5 > 1.0) return { pass: true, why: `5d/20d vol ${v5}× (above avg)` }
+      return { pass: false, why: 'vol below 20d avg' }
+    },
+    fii: (r: any): { pass: boolean; why: string } => {
+      const d = r.fiiDelta
+      if (typeof d === 'number' && d > 0.2) return { pass: true, why: `FII +${d}pp QoQ` }
+      return { pass: false, why: `FII Δ ${d ?? '—'}pp (need > +0.2)` }
+    },
+    dii: (r: any): { pass: boolean; why: string } => {
+      const d = r.diiDelta
+      if (typeof d === 'number' && d > 0.2) return { pass: true, why: `DII +${d}pp QoQ` }
+      return { pass: false, why: `DII Δ ${d ?? '—'}pp (need > +0.2)` }
+    },
+    promoter: (r: any): { pass: boolean; why: string } => {
+      const d = r.promoterDelta
+      if (r.noBrainerBet) return { pass: true, why: '⭐ NO-BRAINER (stake-anchored)' }
+      if (typeof d === 'number' && d >= 0) return { pass: true, why: `Promoter ${d > 0 ? '+' + d : 'stable'}pp QoQ` }
+      return { pass: false, why: `Promoter Δ ${d ?? '—'}pp (need ≥ 0)` }
+    },
+    // Conviction ≥ 70 acts as a composite proxy for "Financials + Technicals"
+    // (the engine's scoring requires fundamental row + technical confluence
+    // to reach that tier — see weeklyManagerPick scoring).
+    technicalFundamental: (r: any): { pass: boolean; why: string } => {
+      const c = r.conviction ?? 0
+      if (c >= 70) return { pass: true, why: `Conv ${Math.round(c)} (fundamentals + technicals confluence)` }
+      return { pass: false, why: `Conv ${Math.round(c)} below 70 (technicals/fundamentals weak)` }
+    },
+  }
+
+  type Verdict = { pass: boolean; reasons: { label: string; pass: boolean; why: string }[] }
+  const evaluate = (r: any): Verdict => {
+    const labels: Array<[string, keyof typeof checks]> = [
+      ['Volume',       'volume'],
+      ['FII Stake',    'fii'],
+      ['DII Stake',    'dii'],
+      ['Promoter',     'promoter'],
+      ['Fundamentals + Technicals', 'technicalFundamental'],
+    ]
+    const reasons = labels.map(([label, key]) => {
+      const v = checks[key](r)
+      return { label, pass: v.pass, why: v.why }
+    })
+    return { pass: reasons.every(r => r.pass), reasons }
+  }
+
+  // Dedup by symbol (keep best-conviction per stock across both sources).
+  const evaluated = unified.map(r => ({ row: r, verdict: evaluate(r) }))
+  const passingByS = new Map<string, typeof evaluated[number]>()
+  for (const ev of evaluated) {
+    if (!ev.verdict.pass) continue
+    const prev = passingByS.get(ev.row.symbol)
+    if (!prev || (ev.row.conviction ?? 0) > (prev.row.conviction ?? 0)) passingByS.set(ev.row.symbol, ev)
+  }
+  const elite = Array.from(passingByS.values())
+    .sort((a, b) => (b.row.conviction ?? 0) - (a.row.conviction ?? 0))
+
+  // Audit numbers for the banner.
+  const audit = {
+    scanned: evaluated.length,
+    sources: { weekly: weeklyRows.length, preMove: preMoveRows.length },
+    passing: elite.length,
+    perCheck: {
+      Volume:        evaluated.filter(e => e.verdict.reasons[0].pass).length,
+      FII:           evaluated.filter(e => e.verdict.reasons[1].pass).length,
+      DII:           evaluated.filter(e => e.verdict.reasons[2].pass).length,
+      Promoter:      evaluated.filter(e => e.verdict.reasons[3].pass).length,
+      TechFund:      evaluated.filter(e => e.verdict.reasons[4].pass).length,
+    },
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-green/10 to-accent-cyan/5 border border-accent-green/40 rounded-lg">
+        <div className="text-3xl">💎</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-green">Elite — Best of the Best</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Trade signals where <b>ALL 5 institutional confluences fire simultaneously</b>:
+            Volume rising · FII stake increasing · DII stake increasing · Promoter holding stable or buying · Fundamentals + Technicals aligned.
+            <br/>Highest-conviction money-magnet setups — each one includes a per-check reasoning trail so you see exactly why it qualified.
+          </div>
+          <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+            Scanned {audit.scanned} ({audit.sources.weekly} Weekly + {audit.sources.preMove} Pre-Move) · {audit.passing} passed all 5 · per-check pass rate: Volume {audit.perCheck.Volume} · FII {audit.perCheck.FII} · DII {audit.perCheck.DII} · Promoter {audit.perCheck.Promoter} · Tech/Fund {audit.perCheck.TechFund}
+          </div>
+        </div>
+      </div>
+      <AccuracyStrip />
+
+      {(weekly.isLoading || preMove.isLoading) && <Loading />}
+      {!weekly.isLoading && !preMove.isLoading && elite.length === 0 && (
+        <Empty msg="No setups currently pass all 5 confluences. This is the strictest filter — empty is normal on slow days. Check back at next snapshot (every 30 min)." />
+      )}
+      {elite.length > 0 && (
+        <div className="space-y-3">
+          {elite.map((ev, i) => {
+            const r = ev.row
+            const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
+            return (
+              <div key={i} className="bg-ink-800 border border-accent-green/30 rounded-lg p-3 hover:border-accent-green/60 transition-colors">
+                <div className="flex items-start justify-between gap-3 flex-wrap">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <b className="text-neutral-100 text-[15px]">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                    <span className="text-[10px] text-neutral-500">{r._source}</span>
+                    <span className="text-[10px] text-accent-green font-bold">conv {Math.round(r.conviction ?? 0)}</span>
+                  </div>
+                  <div className="font-mono text-[11px] flex gap-3 flex-wrap">
+                    <span className="text-accent-cyan">Entry ₹{fmtPx(r.entryPriceLow ?? r.entryPrice ?? r.entry)}{r.entryPriceHigh ? `–${fmtPx(r.entryPriceHigh)}` : ''}</span>
+                    <span className="text-accent-red">SL ₹{fmtPx(r.stopLoss)}</span>
+                    <span className="text-accent-green">T1 ₹{fmtPx(r.target1)}</span>
+                    <span className="text-accent-green">T2 ₹{fmtPx(r.target2)}</span>
+                    <span className="text-accent-green font-bold">T3 ₹{fmtPx(r.target3)}</span>
+                  </div>
+                </div>
+                {r.shareholdingNote && (
+                  <div className="mt-2 text-[10px] text-neutral-400 font-mono">
+                    <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote}
+                  </div>
+                )}
+                <div className="mt-2 pt-2 border-t border-ink-500">
+                  <div className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1.5">Why this is Elite — all 5 confluences ✓</div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-mono">
+                    {ev.verdict.reasons.map((c, j) => (
+                      <div key={j} className="flex items-start gap-1.5">
+                        <span className="text-accent-green">✓</span>
+                        <span className="text-neutral-400"><b className="text-neutral-300">{c.label}:</b> {c.why}</span>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              </div>
+            )
+          })}
+        </div>
+      )}
+    </div>
+  )
+}

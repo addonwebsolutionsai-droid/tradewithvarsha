@@ -39,7 +39,7 @@ import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
 import { PreMoveIdentifierPage } from './pages/PreMoveIdentifierPage'
 import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
-import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub } from './pages/PublicPages'
+import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub, PublicEliteHub } from './pages/PublicPages'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -101,6 +101,8 @@ function Shell() {
             <Route path="/signup" element={<SignupPage />} />
             <Route path="/profile" element={<RequireAuth><ProfilePage /></RequireAuth>} />
             <Route path="/admin/users" element={<RequireAuth adminOnly><AdminUsersPage /></RequireAuth>} />
+            {/* 2026-05-30: /elite = best-of-best stream (all 5 confluences). */}
+            <Route path="/elite"        element={<PublicEliteHub />} />
             {/* 2026-05-29: 4-tab nav. /picks = unified hub for Top Trades /
                 5-20% Move / Weekly / Daily (internal segment toggle). Old
                 routes kept as bookmarkable backwards-compat redirects. */}
