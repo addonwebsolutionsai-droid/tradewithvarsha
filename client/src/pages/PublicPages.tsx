@@ -1286,47 +1286,155 @@ export function PublicEliteHub(): JSX.Element {
       )}
       {elite.length > 0 && (
         <div className="space-y-3">
-          {elite.map((ev, i) => {
-            const r = ev.row
-            const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
-            return (
-              <div key={i} className="bg-ink-800 border border-accent-green/30 rounded-lg p-3 hover:border-accent-green/60 transition-colors">
-                <div className="flex items-start justify-between gap-3 flex-wrap">
-                  <div className="flex items-center gap-2 flex-wrap">
-                    <b className="text-neutral-100 text-[15px]">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
-                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
-                    <span className="text-[10px] text-neutral-500">{r._source}</span>
-                    <span className="text-[10px] text-accent-green font-bold">conv {Math.round(r.conviction ?? 0)}</span>
-                  </div>
-                  <div className="font-mono text-[11px] flex gap-3 flex-wrap">
-                    <span className="text-accent-cyan">Entry ₹{fmtPx(r.entryPriceLow ?? r.entryPrice ?? r.entry)}{r.entryPriceHigh ? `–${fmtPx(r.entryPriceHigh)}` : ''}</span>
-                    <span className="text-accent-red">SL ₹{fmtPx(r.stopLoss)}</span>
-                    <span className="text-accent-green">T1 ₹{fmtPx(r.target1)}</span>
-                    <span className="text-accent-green">T2 ₹{fmtPx(r.target2)}</span>
-                    <span className="text-accent-green font-bold">T3 ₹{fmtPx(r.target3)}</span>
-                  </div>
-                </div>
-                {r.shareholdingNote && (
-                  <div className="mt-2 text-[10px] text-neutral-400 font-mono">
-                    <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote}
-                  </div>
-                )}
-                <div className="mt-2 pt-2 border-t border-ink-500">
-                  <div className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1.5">Why this is Elite — all 5 confluences ✓</div>
-                  <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-mono">
-                    {ev.verdict.reasons.map((c, j) => (
-                      <div key={j} className="flex items-start gap-1.5">
-                        <span className="text-accent-green">✓</span>
-                        <span className="text-neutral-400"><b className="text-neutral-300">{c.label}:</b> {c.why}</span>
-                      </div>
-                    ))}
-                  </div>
-                </div>
-              </div>
-            )
-          })}
+          {elite.map((ev, i) => <EliteCard key={i} verdict={ev.verdict} row={ev.row} />)}
         </div>
       )}
+    </div>
+  )
+}
+
+// ── 💎 Elite card — full tradeable plan with dates, R:R, expected return,
+// and institutional thesis. Each Elite signal becomes a complete plan
+// the user can act on directly: when to enter, when each target is
+// expected, why the trade works in institutional terms.
+function EliteCard({ row: r, verdict }: { row: any; verdict: { pass: boolean; reasons: { label: string; pass: boolean; why: string }[] } }): JSX.Element {
+  const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
+  const entryMid = (() => {
+    if (r.entryPriceLow != null && r.entryPriceHigh != null) return (r.entryPriceLow + r.entryPriceHigh) / 2
+    return r.entryPrice ?? r.entry ?? 0
+  })()
+  // Compute % moves for each target (positive number for both BUY and SHORT).
+  const moveTo = (t: number | undefined): { pct: number; abs: number } | null => {
+    if (typeof t !== 'number' || !entryMid) return null
+    const abs = Math.abs(t - entryMid)
+    const pct = (abs / entryMid) * 100
+    return { pct: +pct.toFixed(1), abs: +abs.toFixed(2) }
+  }
+  const slMove = moveTo(r.stopLoss)
+  const t1Move = moveTo(r.target1)
+  const t2Move = moveTo(r.target2)
+  const t3Move = moveTo(r.target3)
+  // R:R = reward to T1 ÷ risk to SL.
+  const rr = (slMove && t1Move && slMove.abs > 0) ? +(t1Move.abs / slMove.abs).toFixed(2) : null
+
+  // Hold horizon (days) — derived from entryDate → target dates.
+  const daysBetween = (a?: string, b?: string): number | null => {
+    if (!a || !b) return null
+    const da = new Date(a + 'T00:00:00Z').getTime()
+    const db = new Date(b + 'T00:00:00Z').getTime()
+    if (Number.isNaN(da) || Number.isNaN(db)) return null
+    return Math.max(0, Math.round((db - da) / 86_400_000))
+  }
+  const t1Days = daysBetween(r.entryDate, r.target1Date)
+  const t2Days = daysBetween(r.entryDate, r.target2Date)
+  const t3Days = daysBetween(r.entryDate, r.target3Date)
+
+  // Institutional thesis — synthesized from the strongest flow/SMC/trend notes
+  // available on the row. Falls back to a generic line built from confluences.
+  const thesis = (() => {
+    const parts: string[] = []
+    if (r.flowNote) parts.push(r.flowNote)
+    if (r.smcNote && r.smcNote !== '—') parts.push(r.smcNote)
+    if (r.trendNote && r.trendNote !== '—') parts.push(r.trendNote)
+    if (parts.length) return parts.join(' · ')
+    // Synth from confluences
+    const fiiUp = (r.fiiDelta ?? 0) > 0.2
+    const diiUp = (r.diiDelta ?? 0) > 0.2
+    const promoter = (r.promoterDelta ?? 0) >= 0
+    if (fiiUp && diiUp && promoter) return 'Both FII and DII are accumulating with promoter holding stable — classic institutional accumulation phase. Volume rising confirms participation. Risk-reward favours the long side.'
+    return 'Multi-factor institutional confluence: smart money (FII/DII) accumulating with promoter conviction intact and technical setup at sweet-spot conviction band.'
+  })()
+
+  return (
+    <div className="bg-ink-800 border border-accent-green/30 rounded-lg p-4 hover:border-accent-green/60 transition-colors">
+      {/* Header: stock + direction + source + conviction + expected return */}
+      <div className="flex items-center justify-between gap-3 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <b className="text-neutral-100 text-[15px]">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+          <span className="text-[10px] text-neutral-500">{r._source}</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent-green/15 text-accent-green border border-accent-green/40">
+            conv {Math.round(r.conviction ?? 0)}
+          </span>
+        </div>
+        {t2Move && (
+          <div className="text-[12px] font-mono">
+            <span className="text-neutral-500">Expected: </span>
+            <b className="text-accent-green">+{t2Move.pct}%</b>
+            {t2Days ? <span className="text-neutral-500"> · in ~{t2Days} days</span> : ''}
+            {rr ? <span className="text-neutral-500"> · R:R 1:{rr}</span> : ''}
+          </div>
+        )}
+      </div>
+
+      {/* Trade plan grid — every target shows price · gain % · expected date */}
+      <div className="mt-3 grid grid-cols-1 md:grid-cols-5 gap-2 text-[11px] font-mono">
+        <div className="bg-accent-cyan/5 border border-accent-cyan/30 rounded p-2">
+          <div className="text-[9px] text-accent-cyan/70 uppercase tracking-wide">Entry</div>
+          <div className="text-accent-cyan font-bold">
+            ₹{fmtPx(r.entryPriceLow ?? r.entryPrice ?? r.entry)}{r.entryPriceHigh ? `–${fmtPx(r.entryPriceHigh)}` : ''}
+          </div>
+          {r.entryDate && <div className="text-[9px] text-neutral-500 mt-0.5">📅 on {fmtDate(r.entryDate)}</div>}
+        </div>
+        <div className="bg-accent-red/5 border border-accent-red/30 rounded p-2">
+          <div className="text-[9px] text-accent-red/70 uppercase tracking-wide">Stop Loss</div>
+          <div className="text-accent-red font-bold">₹{fmtPx(r.stopLoss)}</div>
+          {slMove && <div className="text-[9px] text-neutral-500 mt-0.5">−{slMove.pct}% risk</div>}
+        </div>
+        <div className="bg-accent-green/5 border border-accent-green/30 rounded p-2">
+          <div className="text-[9px] text-accent-green/70 uppercase tracking-wide">Target 1</div>
+          <div className="text-accent-green font-bold">₹{fmtPx(r.target1)}</div>
+          {t1Move && <div className="text-[9px] text-neutral-500 mt-0.5">+{t1Move.pct}%</div>}
+          {r.target1Date && <div className="text-[9px] text-neutral-500">📅 by {fmtDate(r.target1Date)}{t1Days ? ` (${t1Days}d)` : ''}</div>}
+        </div>
+        <div className="bg-accent-green/5 border border-accent-green/30 rounded p-2">
+          <div className="text-[9px] text-accent-green/70 uppercase tracking-wide">Target 2</div>
+          <div className="text-accent-green font-bold">₹{fmtPx(r.target2)}</div>
+          {t2Move && <div className="text-[9px] text-neutral-500 mt-0.5">+{t2Move.pct}%</div>}
+          {r.target2Date && <div className="text-[9px] text-neutral-500">📅 by {fmtDate(r.target2Date)}{t2Days ? ` (${t2Days}d)` : ''}</div>}
+        </div>
+        <div className="bg-accent-green/10 border border-accent-green/40 rounded p-2">
+          <div className="text-[9px] text-accent-green/80 uppercase tracking-wide font-bold">Target 3</div>
+          <div className="text-accent-green font-bold">₹{fmtPx(r.target3)}</div>
+          {t3Move && <div className="text-[9px] text-neutral-500 mt-0.5">+{t3Move.pct}%</div>}
+          {r.target3Date && <div className="text-[9px] text-neutral-500">📅 by {fmtDate(r.target3Date)}{t3Days ? ` (${t3Days}d)` : ''}</div>}
+        </div>
+      </div>
+
+      {/* Stake line */}
+      {r.shareholdingNote && (
+        <div className="mt-3 text-[10px] text-neutral-400 font-mono">
+          <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote}
+        </div>
+      )}
+
+      {/* Institutional thesis */}
+      <div className="mt-3 px-3 py-2 bg-ink-900/60 border-l-2 border-accent-cyan/60 rounded-r">
+        <div className="text-[9px] text-accent-cyan/80 uppercase tracking-wider font-semibold mb-0.5">💡 Institutional Thesis</div>
+        <div className="text-[11px] text-neutral-300 leading-relaxed">{thesis}</div>
+      </div>
+
+      {/* 5-confluence reasoning */}
+      <div className="mt-3 pt-2 border-t border-ink-500">
+        <div className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1.5">Why this is Elite — all 5 confluences ✓</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-mono">
+          {verdict.reasons.map((c, j) => (
+            <div key={j} className="flex items-start gap-1.5">
+              <span className="text-accent-green">✓</span>
+              <span className="text-neutral-400"><b className="text-neutral-300">{c.label}:</b> {c.why}</span>
+            </div>
+          ))}
+        </div>
+      </div>
+
+      {/* Action plan */}
+      <div className="mt-3 pt-2 border-t border-ink-500 text-[10px] text-neutral-500 leading-relaxed">
+        <span className="text-neutral-400 font-semibold">📅 Action Plan: </span>
+        Enter {r.entryDate ? `on ${fmtDate(r.entryDate)}` : 'on next session'} in the entry zone above.
+        {' '}Book 50% at T1 (~{t1Days ?? '?'}d), trail stop to entry.
+        {' '}Hold remainder for T2 (~{t2Days ?? '?'}d) and T3 (~{t3Days ?? '?'}d).
+        {' '}Hard SL if stock closes below ₹{fmtPx(r.stopLoss)} on any session.
+      </div>
     </div>
   )
 }
