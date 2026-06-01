@@ -8,6 +8,8 @@ import { log } from '../util/logger'
 import { addDays } from '../util/time'
 import type { OptionChain, OptionChainRow, Signal } from '../types'
 import { analyzeOiFlow, type StrikeFlow, type OiFlowAnalysis } from './oiFlowAnalyzer'
+import * as fs from 'fs'
+import * as path from 'path'
 
 /**
  * OI Monitor — 1-min option-chain polling + strike-by-strike flow analysis.
@@ -39,6 +41,34 @@ const dedupe: Record<string, number> = {}
 const DEDUPE_WINDOW_MS = 10 * 60_000       // same (strike × side × kind) won't fire again for 10 min
 
 const MIN_STRENGTH = 40        // only fire signals on flows with strength ≥ 40/100
+
+// 2026-06-01: persist last meaningful analysis (with strikeFlows) so the
+// public OI-Build-up snapshot still has rows after market hours and after
+// server restarts. `analyzeOiFlow` needs a prior chain to compute deltas;
+// off-cron callers can't reconstruct that, so we cache the latest non-empty
+// analysis here AND mirror it to disk.
+const lastAnalysis: Record<string, { ts: number; analysis: OiFlowAnalysis }> = {}
+const ANALYSIS_CACHE_FILE = path.join(process.cwd(), 'server', 'data', 'oi-analysis-cache.json')
+
+function loadAnalysisCacheFromDisk(): void {
+  try {
+    const raw = fs.readFileSync(ANALYSIS_CACHE_FILE, 'utf8')
+    const obj = JSON.parse(raw)
+    for (const [k, v] of Object.entries(obj || {})) {
+      if (v && (v as any).analysis) lastAnalysis[k] = v as any
+    }
+  } catch { /* first run / corrupt — ignore */ }
+}
+loadAnalysisCacheFromDisk()
+
+function persistAnalysisCache(): void {
+  try {
+    fs.mkdirSync(path.dirname(ANALYSIS_CACHE_FILE), { recursive: true })
+    fs.writeFileSync(ANALYSIS_CACHE_FILE, JSON.stringify(lastAnalysis, null, 2))
+  } catch (e) {
+    log.warn('OI-MONITOR', `persist cache: ${(e as Error).message}`)
+  }
+}
 
 function roundStrike(spot: number, underlying: string): number {
   const step = underlying === 'BANKNIFTY' ? 100 : 50
@@ -154,6 +184,13 @@ export async function tickOiMonitor(): Promise<Signal[]> {
       // Always store current as new prev
       lastSnap[underlying] = { ts: Date.now(), chain }
 
+      // Cache analysis if it has meaningful flows — preserves last-known
+      // institutional positioning across server restarts + after-hours.
+      if (analysis.strikeFlows.length > 0) {
+        lastAnalysis[underlying] = { ts: Date.now(), analysis }
+        persistAnalysisCache()
+      }
+
       // Tick every option premium so any OPEN option trades have their
       // SL/T1/T2 evaluated against the actual chain LTP — not underlying spot.
       for (const row of chain.rows) {
@@ -206,13 +243,59 @@ export async function tickOiMonitor(): Promise<Signal[]> {
   return out
 }
 
-/** Expose latest analysis for API consumers (dashboard widget etc). */
+/** Expose latest analysis for API consumers (dashboard widget etc).
+ *  Prefers the cached analysis from the last live tick (which has real
+ *  OI deltas + strike flows). Falls back to a synthetic "where institutions
+ *  are parked" analysis built from absolute OI when no live tick has run
+ *  yet (cold start, pre-first-market-open, restart). */
 export function getLatestOiAnalysis(): Record<string, OiFlowAnalysis | null> {
   const result: Record<string, OiFlowAnalysis | null> = {}
   for (const u of ['NIFTY']) {
+    const cached = lastAnalysis[u]
+    if (cached) { result[u] = cached.analysis; continue }
     const s = lastSnap[u]
     if (!s) { result[u] = null; continue }
-    result[u] = analyzeOiFlow(s.chain, null)
+    const base = analyzeOiFlow(s.chain, null)
+    // Synthesize parked-OI flows from the chain itself — top CE/PE strikes
+    // by absolute OI in a ±5% band around spot.
+    result[u] = enrichWithParkedFlows(base, s.chain)
   }
   return result
+}
+
+function enrichWithParkedFlows(base: OiFlowAnalysis, chain: OptionChain): OiFlowAnalysis {
+  const spot = chain.spot
+  const band = chain.rows.filter(r => Math.abs(r.strike - spot) / spot * 100 <= 5)
+  const ceTop = [...band]
+    .filter(r => r.strike >= spot && r.callOI > 0)
+    .sort((a, b) => b.callOI - a.callOI)
+    .slice(0, 3)
+    .map(r => ({
+      strike: r.strike, side: 'CE' as const, kind: 'CE_WRITING' as any, bias: 'BEARISH' as any,
+      strength: 45,
+      oiChange: 0, ltpChange: 0, ltpChangePct: 0,
+      currentOI: r.callOI, currentLTP: r.callLTP, currentIV: r.callIV, currentVol: r.callVolume,
+      spotDistancePct: +(((r.strike - spot) / spot) * 100).toFixed(2),
+      note: `Heavy call writing parked at ${r.strike} (OI ${r.callOI.toLocaleString('en-IN')}) — institutional resistance ceiling`,
+    }))
+  const peTop = [...band]
+    .filter(r => r.strike <= spot && r.putOI > 0)
+    .sort((a, b) => b.putOI - a.putOI)
+    .slice(0, 3)
+    .map(r => ({
+      strike: r.strike, side: 'PE' as const, kind: 'PE_WRITING' as any, bias: 'BULLISH' as any,
+      strength: 45,
+      oiChange: 0, ltpChange: 0, ltpChangePct: 0,
+      currentOI: r.putOI, currentLTP: r.putLTP, currentIV: r.putIV, currentVol: r.putVolume,
+      spotDistancePct: +(((r.strike - spot) / spot) * 100).toFixed(2),
+      note: `Heavy put writing parked at ${r.strike} (OI ${r.putOI.toLocaleString('en-IN')}) — institutional support floor`,
+    }))
+  const synthetic = [...peTop, ...ceTop] as any[]
+  return {
+    ...base,
+    strikeFlows: synthetic,
+    top3Bullish: peTop as any,
+    top3Bearish: ceTop as any,
+    summary: base.summary + ' · Showing institutional positioning (parked OI) — fresh deltas resume at next market tick.',
+  }
 }

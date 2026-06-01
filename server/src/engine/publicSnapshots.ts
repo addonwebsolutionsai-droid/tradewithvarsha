@@ -512,16 +512,42 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   // (already running on the live cron). We project to a public schema with
   // entry/SL/T1 levels derived from the spot + ATR proxy for each flow row.
   try {
-    const { getLatestOiAnalysis } = await import('./oiMonitor')
-    const oi = getLatestOiAnalysis()
+    const { getLatestOiAnalysis, tickOiMonitor } = await import('./oiMonitor')
+    let oi = getLatestOiAnalysis()
+    // Cold-start path: if no cached analysis exists yet (server just booted,
+    // or first run before the cron has fired) run a tick now so we at least
+    // populate lastSnap → parked-OI flows in getLatestOiAnalysis().
+    if (!Object.values(oi).some(v => v && (v as any).strikeFlows?.length)) {
+      try { await tickOiMonitor() } catch { /* fall through */ }
+      oi = getLatestOiAnalysis()
+    }
     const buildupRows: any[] = []
     for (const [underlying, a] of Object.entries(oi)) {
       if (!a) continue
       // Combine top bullish + bearish flows; cap strength at 100 and only emit
       // signals with strength ≥ 35 (filters out noise from minor strikes).
-      const flows = [...(a.top3Bullish ?? []), ...(a.top3Bearish ?? [])]
+      let flows = [...(a.top3Bullish ?? []), ...(a.top3Bearish ?? [])]
         .filter((f: any) => (f?.strength ?? 0) >= 35)
         .slice(0, 8)
+      // 2026-06-01 fallback: when no delta-driven flows exist (cold start,
+      // weekend, before first market tick), surface the strikes with the
+      // largest *absolute* OI — i.e. where institutions are currently
+      // parked. CE-heavy strikes above spot = resistance (bearish bias);
+      // PE-heavy strikes below spot = support (bullish bias).
+      if (flows.length === 0 && (a as any).strikeFlows && (a as any).strikeFlows.length) {
+        const all = (a as any).strikeFlows as any[]
+        const ceHeavy = all
+          .filter(f => f.side === 'CE' && f.strike >= a.spot)
+          .sort((x, y) => (y.currentOI ?? 0) - (x.currentOI ?? 0))
+          .slice(0, 3)
+          .map(f => ({ ...f, bias: 'BEARISH', kind: f.kind || 'CE_PARKED', strength: Math.max(f.strength ?? 0, 35), note: f.note || `Heavy CE writing parked at ${f.strike} — institutional resistance` }))
+        const peHeavy = all
+          .filter(f => f.side === 'PE' && f.strike <= a.spot)
+          .sort((x, y) => (y.currentOI ?? 0) - (x.currentOI ?? 0))
+          .slice(0, 3)
+          .map(f => ({ ...f, bias: 'BULLISH', kind: f.kind || 'PE_PARKED', strength: Math.max(f.strength ?? 0, 35), note: f.note || `Heavy PE writing parked at ${f.strike} — institutional support` }))
+        flows = [...peHeavy, ...ceHeavy]
+      }
       for (const f of flows) {
         // ATR proxy: 0.5 % of spot for NIFTY. Used to size SL/T1/T2 around
         // the strike since OI flows imply mean-reversion or breakout zones.
@@ -582,8 +608,14 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
       summary: a.summary,
       biasBreakdown: a.biasBreakdown,
     }))
-    let dataMode: 'LIVE' | 'END_OF_DAY' | 'PRE_OPEN' = 'LIVE'
-    let lastFlowAt: string | null = ts
+    // dataMode = LIVE only when real intraday deltas exist (oiChange !== 0).
+    // Synthetic parked-OI rows (deltas all zero) indicate the page is showing
+    // institutional positioning at last close → label END_OF_DAY / PRE_OPEN.
+    const hasLiveDeltas = buildupRows.some(r => Math.abs(r.oiChange ?? 0) > 0)
+    let dataMode: 'LIVE' | 'END_OF_DAY' | 'PRE_OPEN' = hasLiveDeltas
+      ? 'LIVE'
+      : (isMarketHours ? 'PRE_OPEN' : 'END_OF_DAY')
+    let lastFlowAt: string | null = hasLiveDeltas ? ts : null
     let rowsOut = buildupRows
     let summaryOut = summary
     if (buildupRows.length === 0) {
@@ -597,7 +629,14 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
           lastFlowAt = prev.lastFlowAt ?? prev.generatedAt
         }
       } catch { /* no prior file → keep empty */ }
-      dataMode = isMarketHours ? 'PRE_OPEN' : 'END_OF_DAY'
+    } else if (!hasLiveDeltas) {
+      // Synthetic parked-OI rows present. Preserve the lastFlowAt from prior
+      // non-empty snapshot if available so the UI can show "Last live capture".
+      try {
+        const prevRaw = await fs.readFile(path.join(SNAP_DIR, 'oi-buildup.json'), 'utf8')
+        const prev = JSON.parse(prevRaw)
+        if (prev.lastFlowAt) lastFlowAt = prev.lastFlowAt
+      } catch { /* ignore */ }
     }
     const oiOut = {
       generatedAt: ts,
