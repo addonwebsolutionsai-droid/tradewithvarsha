@@ -562,17 +562,51 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
         })
       }
     }
+    // 2026-05-31: dataMode tag + last-known-good preservation.
+    // After market hours (or on weekends) the OI feed has no fresh delta,
+    // so buildupRows is empty. Instead of overwriting the page with "no
+    // data", we preserve the LAST snapshot that had real rows (which
+    // captures end-of-day positioning) and tag the dataMode so the UI
+    // knows whether to show "Live" or "End-of-Day" labels.
+    const istNow = new Date(Date.now() + 5.5 * 3600_000)
+    const istDow = istNow.getUTCDay()   // 0=Sun, 6=Sat
+    const istHour = istNow.getUTCHours()
+    const istMin = istNow.getUTCMinutes()
+    const minOfDay = istHour * 60 + istMin
+    // NSE F&O hours: 09:15–15:30 IST. Mon-Fri only.
+    const isMarketHours = istDow >= 1 && istDow <= 5 && minOfDay >= 9 * 60 + 15 && minOfDay < 15 * 60 + 30
+    const summary = Object.entries(oi).filter(([, a]) => a).map(([u, a]: any) => ({
+      underlying: u,
+      spot: a.spot, pcr: a.pcr, maxPain: a.maxPain,
+      dominantBias: a.dominantBias,
+      summary: a.summary,
+      biasBreakdown: a.biasBreakdown,
+    }))
+    let dataMode: 'LIVE' | 'END_OF_DAY' | 'PRE_OPEN' = 'LIVE'
+    let lastFlowAt: string | null = ts
+    let rowsOut = buildupRows
+    let summaryOut = summary
+    if (buildupRows.length === 0) {
+      // Try to preserve the last non-empty snapshot from disk.
+      try {
+        const prevRaw = await fs.readFile(path.join(SNAP_DIR, 'oi-buildup.json'), 'utf8')
+        const prev = JSON.parse(prevRaw)
+        if ((prev.rows ?? []).length > 0) {
+          rowsOut = prev.rows
+          summaryOut = prev.summary ?? summary
+          lastFlowAt = prev.lastFlowAt ?? prev.generatedAt
+        }
+      } catch { /* no prior file → keep empty */ }
+      dataMode = isMarketHours ? 'PRE_OPEN' : 'END_OF_DAY'
+    }
     const oiOut = {
       generatedAt: ts,
+      dataMode,
+      isMarketHours,
+      lastFlowAt,
       symbols: Object.keys(oi).filter(k => oi[k]),
-      summary: Object.entries(oi).filter(([, a]) => a).map(([u, a]: any) => ({
-        underlying: u,
-        spot: a.spot, pcr: a.pcr, maxPain: a.maxPain,
-        dominantBias: a.dominantBias,
-        summary: a.summary,
-        biasBreakdown: a.biasBreakdown,
-      })),
-      rows: buildupRows,
+      summary: summaryOut,
+      rows: rowsOut,
     }
     await fs.writeFile(path.join(SNAP_DIR, 'oi-buildup.json'), JSON.stringify(oiOut, null, 2))
     files.push('oi-buildup.json')

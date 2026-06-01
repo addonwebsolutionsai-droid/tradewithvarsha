@@ -1457,15 +1457,33 @@ export function PublicOIBuildupPage(): JSX.Element {
   })
   const rows: any[] = data?.rows ?? []
   const summary: any[] = data?.summary ?? []
+  const dataMode: 'LIVE' | 'END_OF_DAY' | 'PRE_OPEN' = ((data as any)?.dataMode || 'LIVE') as any
+  const isMarketHours = (data as any)?.isMarketHours
+  const lastFlowAt = (data as any)?.lastFlowAt as string | undefined
+  const modeBadge: Record<string, { emoji: string; text: string; cls: string; sub: string }> = {
+    LIVE:       { emoji: '🟢', text: 'LIVE',       cls: 'bg-accent-green/15 text-accent-green border-accent-green/40',
+                  sub: 'Real-time OI deltas during market hours · refreshes every 2 min.' },
+    END_OF_DAY: { emoji: '🌙', text: 'END-OF-DAY', cls: 'bg-accent-cyan/15 text-accent-cyan border-accent-cyan/40',
+                  sub: 'Market closed — showing positioning captured at the last market session close.' },
+    PRE_OPEN:   { emoji: '🌅', text: 'PRE-OPEN',   cls: 'bg-accent-amber/15 text-accent-amber border-accent-amber/40',
+                  sub: 'Market is open but no fresh OI delta yet — waiting for first tick.' },
+  }
+  const mb = modeBadge[dataMode]
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-cyan/10 to-accent-violet/5 border border-accent-cyan/40 rounded-lg">
         <div className="text-3xl">🌊</div>
         <div className="flex-1">
-          <div className="text-sm font-bold text-accent-cyan">F&O OI Build-up — Institutional Positioning Feed</div>
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="text-sm font-bold text-accent-cyan">F&O OI Build-up — Institutional Positioning Feed</div>
+            <span className={`text-[10px] font-bold px-1.5 py-0.5 rounded border ${mb.cls}`}>{mb.emoji} {mb.text}</span>
+          </div>
           <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
             Real-time NIFTY option-chain flow. Long buildup (price↑ + OI↑) signals momentum entry · Short covering (price↑ + OI↓) signals a squeeze in progress · Put writing at strike = institutional support · Call writing at strike = institutional resistance.
-            <br/>Refreshes every 2 minutes during market hours.
+            <br/><span className="text-neutral-500">{mb.sub}</span>
+            {dataMode === 'END_OF_DAY' && lastFlowAt && (
+              <span className="text-neutral-500"> Last live capture: {fmtTs(lastFlowAt)} IST.</span>
+            )}
           </div>
           {summary.map((s, i) => (
             <div key={i} className="text-[11px] text-neutral-300 mt-2 font-mono">
@@ -1478,9 +1496,13 @@ export function PublicOIBuildupPage(): JSX.Element {
       </div>
       <AccuracyStrip />
       {isLoading && <Loading />}
-      {error && <Empty msg="Couldn't load OI feed. Active during market hours (9:15–15:30 IST)." />}
+      {error && <Empty msg="Couldn't load OI feed. Snapshots refresh every 30 min." />}
       {!isLoading && !error && rows.length === 0 && (
-        <Empty msg="No high-strength OI flows right now. Active during market hours; strongest signals 10:00–14:00 IST." />
+        <Empty msg={
+          isMarketHours
+            ? '🌅 Market just opened — waiting for first OI delta tick (usually within 5 min).'
+            : '🌙 No closing OI snapshot captured yet. Will populate after the next market session (9:15–15:30 IST Mon–Fri).'
+        } />
       )}
       {rows.length > 0 && (
         <div className="space-y-3">
