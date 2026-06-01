@@ -506,6 +506,80 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
     log.warn('PUBLIC-SNAP', `pre-move-identifier: ${(e as Error).message}`)
   }
 
+  // 6.6 F&O OI Build-up — NIFTY option-chain flow analysis (long buildup,
+  // short covering, writing). 2026-05-31: published so Vercel can show
+  // real-time-ish institutional positioning. Source = oiMonitor.tickOiMonitor
+  // (already running on the live cron). We project to a public schema with
+  // entry/SL/T1 levels derived from the spot + ATR proxy for each flow row.
+  try {
+    const { getLatestOiAnalysis } = await import('./oiMonitor')
+    const oi = getLatestOiAnalysis()
+    const buildupRows: any[] = []
+    for (const [underlying, a] of Object.entries(oi)) {
+      if (!a) continue
+      // Combine top bullish + bearish flows; cap strength at 100 and only emit
+      // signals with strength ≥ 35 (filters out noise from minor strikes).
+      const flows = [...(a.top3Bullish ?? []), ...(a.top3Bearish ?? [])]
+        .filter((f: any) => (f?.strength ?? 0) >= 35)
+        .slice(0, 8)
+      for (const f of flows) {
+        // ATR proxy: 0.5 % of spot for NIFTY. Used to size SL/T1/T2 around
+        // the strike since OI flows imply mean-reversion or breakout zones.
+        const atrProxy = a.spot * 0.005
+        const bullish = f.bias === 'BULLISH'
+        const entry = +(f.currentLTP ?? 0).toFixed(2)   // option premium at the strike
+        // Underlying-level move targets — what the trader actually watches.
+        const spotEntry = a.spot
+        const spotSL = bullish ? +(spotEntry - atrProxy * 2).toFixed(2) : +(spotEntry + atrProxy * 2).toFixed(2)
+        const spotT1 = bullish ? +(spotEntry + atrProxy * 2).toFixed(2) : +(spotEntry - atrProxy * 2).toFixed(2)
+        const spotT2 = bullish ? +(spotEntry + atrProxy * 4).toFixed(2) : +(spotEntry - atrProxy * 4).toFixed(2)
+        buildupRows.push({
+          underlying,
+          strike: f.strike,
+          side: f.side,
+          kind: f.kind,                   // AGGR_CE_BUY / PE_WRITING / CE_COVERING / etc.
+          bias: f.bias,                   // BULLISH | BEARISH
+          strength: Math.round(f.strength ?? 0),
+          oiChange: f.oiChange,
+          oiChangePct: f.currentOI > 0 ? +(f.oiChange / f.currentOI * 100).toFixed(1) : null,
+          ltpChange: f.ltpChange,
+          ltpChangePct: f.ltpChangePct,
+          currentOI: f.currentOI,
+          currentLTP: f.currentLTP,
+          currentIV: f.currentIV,
+          currentVol: f.currentVol,
+          spot: a.spot,
+          pcr: a.pcr,
+          maxPain: a.maxPain,
+          note: f.note,
+          // Trade plan (option premium space — for option-buyers)
+          entry,
+          stopLoss: +(entry * (bullish ? 0.7 : 0.7)).toFixed(2),  // 30% premium SL
+          target1: +(entry * 1.4).toFixed(2),                      // 40% premium gain
+          target2: +(entry * 1.8).toFixed(2),                      // 80% premium gain
+          // Spot-level levels (for futures / spot directional trade)
+          spotEntry, spotSL, spotT1, spotT2,
+        })
+      }
+    }
+    const oiOut = {
+      generatedAt: ts,
+      symbols: Object.keys(oi).filter(k => oi[k]),
+      summary: Object.entries(oi).filter(([, a]) => a).map(([u, a]: any) => ({
+        underlying: u,
+        spot: a.spot, pcr: a.pcr, maxPain: a.maxPain,
+        dominantBias: a.dominantBias,
+        summary: a.summary,
+        biasBreakdown: a.biasBreakdown,
+      })),
+      rows: buildupRows,
+    }
+    await fs.writeFile(path.join(SNAP_DIR, 'oi-buildup.json'), JSON.stringify(oiOut, null, 2))
+    files.push('oi-buildup.json')
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `oi-buildup: ${(e as Error).message}`)
+  }
+
   // 7. Accuracy report (system-wide hit-rate, R-multiple, by source/tier)
   // 2026-05-18: published as a separate snapshot for the dashboard strip.
   // 2026-05-25: also includes catch-rate (% of NSE top-gainers our pre-move

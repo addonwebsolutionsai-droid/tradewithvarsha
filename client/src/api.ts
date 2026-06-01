@@ -42,6 +42,7 @@ export const snapshots = {
   accuracy: () => snapshot<{ generatedAt: string; daysBack: number; total: number; byStatus: Record<string, number>; triggeredRate: number; winRate: number; slRate: number; avgRMultiple: number; bySource: any; byConvictionTier: any }>('accuracy.json'),
   signalsHistory: () => snapshot<{ generatedAt: string; total: number; signals: any[] }>('signals-history.json'),
   preMoveIdentifier: () => snapshot<{ generatedAt: string; universeSize: number; evaluated: number; qualityPassed: number; candidates: any[]; tier1Count: number; tier2Count: number; tier3Count: number; notes: string[] }>('pre-move-identifier.json'),
+  oiBuildup: () => snapshot<{ generatedAt: string; symbols: string[]; summary: any[]; rows: any[] }>('oi-buildup.json'),
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {
