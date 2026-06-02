@@ -48,7 +48,9 @@ const MIN_STRENGTH = 40        // only fire signals on flows with strength ≥ 4
 // off-cron callers can't reconstruct that, so we cache the latest non-empty
 // analysis here AND mirror it to disk.
 const lastAnalysis: Record<string, { ts: number; analysis: OiFlowAnalysis }> = {}
-const ANALYSIS_CACHE_FILE = path.join(process.cwd(), 'server', 'data', 'oi-analysis-cache.json')
+// Resolve relative to source file so the path is correct whether ts-node-dev
+// is launched from the repo root or from server/.
+const ANALYSIS_CACHE_FILE = path.resolve(__dirname, '../../data/oi-analysis-cache.json')
 
 function loadAnalysisCacheFromDisk(): void {
   try {
@@ -207,18 +209,27 @@ export async function tickOiMonitor(): Promise<Signal[]> {
       // Need a prior snapshot to have meaningful deltas
       if (!prev) continue
 
-      // PER USER DIRECTIVE: NIFTY OI signals were producing too many losing
-      // PE trades. The OI monitor now ONLY tracks chain (for tradeTracker
-      // option-premium ticks above) and does NOT emit signals for NIFTY.
-      // The strict 9/21 EMA-cross + Marabozu strategy is the sole NIFTY
-      // options producer. Keeping the OI monitor running is still valuable
-      // because it routes real option premium to open trades' SL/T1/T2.
-      const enableSignals = false
-      if (!enableSignals) continue
-
+      // 2026-06-02: Re-enabled SELECTIVELY. The original blanket-off was due
+      // to too many losing PE trades. We now emit only CLEAN bullish or
+      // bearish accumulation patterns with strength ≥ 60, and the trade leg
+      // matches the bias (BULLISH → BUY ATM CE; BEARISH → BUY ATM PE) via
+      // buildSignalFromFlow's existing logic. This captures real-time
+      // call-accumulation moves like the 23290 → 23545 rally we missed.
+      const HIGH_QUALITY_KINDS = new Set([
+        'AGGR_CE_BUY',     // calls being bought aggressively → BULLISH
+        'CE_COVERING',     // call writers covering / squeeze → BULLISH
+        'PE_WRITING',      // institutional support build → BULLISH
+        'AGGR_PE_BUY',     // puts being bought aggressively → BEARISH
+        'PE_COVERING',     // put writers covering / support giving → BEARISH
+        'CE_WRITING',      // institutional resistance build → BEARISH
+      ])
+      const STRONG_MIN = 60   // higher bar than the old 40
       const strong = analysis.strikeFlows
-        .filter(f => f.strength >= MIN_STRENGTH)
-        .filter(f => analysis.dominantBias === 'NEUTRAL' || f.bias === analysis.dominantBias || f.strength >= 60)
+        .filter(f => HIGH_QUALITY_KINDS.has(f.kind))
+        .filter(f => f.strength >= STRONG_MIN)
+        // chain bias confirmation: only fire if the overall chain agrees,
+        // or this single flow is dominant (strength ≥ 75).
+        .filter(f => analysis.dominantBias === f.bias || f.strength >= 75)
         .sort((a, b) => b.strength - a.strength)
         .slice(0, 2)
 

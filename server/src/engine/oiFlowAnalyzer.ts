@@ -64,6 +64,12 @@ export interface OiFlowAnalysis {
   top3Bearish: StrikeFlow[]
   biasBreakdown: { bullish: number; bearish: number; net: number }
   summary: string                 // top-line narrative
+  // 2026-06-02: ATM option-leg pricing so consumers can render a
+  // bias-aligned trade plan (BULLISH → BUY ATM CE, BEARISH → BUY ATM PE).
+  // Optional — only present when the analyzer has a chain to read from.
+  atmStrike?: number
+  atmCeLtp?: number
+  atmPeLtp?: number
 }
 
 interface ChainRowPrev {
@@ -143,6 +149,13 @@ export function analyzeOiFlow(
   // Summary narrative
   const summary = buildSummary(spot, chain.pcr, chain.maxPain, dominantBias, sortedBull, sortedBear)
 
+  // ATM option leg — closest strike (round to nearest 50 for NIFTY).
+  // Used by consumers to render a bias-aligned trade plan.
+  const atmStrike = Math.round(spot / 50) * 50
+  const atmRow = chain.rows.find(r => r.strike === atmStrike)
+  const atmCeLtp = atmRow?.callLTP || undefined
+  const atmPeLtp = atmRow?.putLTP || undefined
+
   return {
     spot,
     pcr: chain.pcr,
@@ -157,6 +170,7 @@ export function analyzeOiFlow(
       net: Math.round(net),
     },
     summary,
+    atmStrike, atmCeLtp, atmPeLtp,
   }
 }
 

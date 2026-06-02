@@ -1237,22 +1237,61 @@ export function PublicEliteHub(): JSX.Element {
     return { pass: reasons.every(r => r.pass), reasons }
   }
 
-  // Dedup by symbol (keep best-conviction per stock across both sources).
-  const evaluated = unified.map(r => ({ row: r, verdict: evaluate(r) }))
+  // 2026-06-02: Tiered confluence system. The strict 5/5 filter was too
+  // tight in practice (FII↑ and DII↑ in the same quarter is rare —
+  // institutions often trade against each other), leaving the tab empty
+  // on most days. We now tier setups by confluence count so the user
+  // sees more high-conviction options:
+  //   5/5 → ELITE (diamond, top priority)
+  //   4/5 → STRONG (gold, second priority)
+  //   3/5 → QUALITY (silver, still meets institutional standard)
+  // Conviction ≥ 70 is required for every tier (the technicalFundamental
+  // check), so we never drop below the engine's quality floor.
+  const evaluated = unified.map(r => {
+    const verdict = evaluate(r)
+    const passCount = verdict.reasons.filter(x => x.pass).length
+    const techFundPass = verdict.reasons[4].pass   // hard floor — always required
+    let tier: 'ELITE' | 'STRONG' | 'QUALITY' | null = null
+    if (techFundPass) {
+      if (passCount === 5) tier = 'ELITE'
+      else if (passCount === 4) tier = 'STRONG'
+      else if (passCount === 3) tier = 'QUALITY'
+    }
+    return { row: r, verdict, tier, passCount }
+  })
+
+  // Dedup by symbol — keep best tier, fall back to conviction.
+  const tierRank = { ELITE: 3, STRONG: 2, QUALITY: 1 } as const
   const passingByS = new Map<string, typeof evaluated[number]>()
   for (const ev of evaluated) {
-    if (!ev.verdict.pass) continue
+    if (!ev.tier) continue
     const prev = passingByS.get(ev.row.symbol)
-    if (!prev || (ev.row.conviction ?? 0) > (prev.row.conviction ?? 0)) passingByS.set(ev.row.symbol, ev)
+    if (!prev) { passingByS.set(ev.row.symbol, ev); continue }
+    const prevRank = tierRank[prev.tier as keyof typeof tierRank] ?? 0
+    const evRank = tierRank[ev.tier as keyof typeof tierRank] ?? 0
+    if (evRank > prevRank) { passingByS.set(ev.row.symbol, ev); continue }
+    if (evRank === prevRank && (ev.row.conviction ?? 0) > (prev.row.conviction ?? 0)) {
+      passingByS.set(ev.row.symbol, ev)
+    }
   }
   const elite = Array.from(passingByS.values())
-    .sort((a, b) => (b.row.conviction ?? 0) - (a.row.conviction ?? 0))
+    .sort((a, b) => {
+      const ar = tierRank[a.tier as keyof typeof tierRank] ?? 0
+      const br = tierRank[b.tier as keyof typeof tierRank] ?? 0
+      if (br !== ar) return br - ar
+      return (b.row.conviction ?? 0) - (a.row.conviction ?? 0)
+    })
 
   // Audit numbers for the banner.
   const audit = {
     scanned: evaluated.length,
     sources: { weekly: weeklyRows.length, preMove: preMoveRows.length },
     passing: elite.length,
+    tierCounts: {
+      ELITE:   elite.filter(e => e.tier === 'ELITE').length,
+      STRONG:  elite.filter(e => e.tier === 'STRONG').length,
+      QUALITY: elite.filter(e => e.tier === 'QUALITY').length,
+    },
     perCheck: {
       Volume:        evaluated.filter(e => e.verdict.reasons[0].pass).length,
       FII:           evaluated.filter(e => e.verdict.reasons[1].pass).length,
@@ -1269,12 +1308,19 @@ export function PublicEliteHub(): JSX.Element {
         <div className="flex-1">
           <div className="text-sm font-bold text-accent-green">Elite — Best of the Best</div>
           <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
-            Trade signals where <b>ALL 5 institutional confluences fire simultaneously</b>:
-            Volume rising · FII stake increasing · DII stake increasing · Promoter holding stable or buying · Fundamentals + Technicals aligned.
-            <br/>Highest-conviction money-magnet setups — each one includes a per-check reasoning trail so you see exactly why it qualified.
+            Trade signals tiered by institutional confluence count:
+            {' '}<span className="text-accent-cyan font-semibold">💎 ELITE</span> = 5/5 ·
+            {' '}<span className="text-accent-amber font-semibold">⭐ STRONG</span> = 4/5 ·
+            {' '}<span className="text-neutral-300 font-semibold">✓ QUALITY</span> = 3/5.
+            Checks: Volume rising · FII stake ↑ · DII stake ↑ · Promoter holding stable/buying · Fundamentals + Technicals (conviction ≥ 70 required for every tier).
+            <br/>FII↑ AND DII↑ in the same quarter is rare — they often trade against each other — so 4/5 and 3/5 are still institutionally serious setups, not weak ones.
           </div>
           <div className="text-[10px] text-neutral-500 mt-2 font-mono">
-            Scanned {audit.scanned} ({audit.sources.weekly} Weekly + {audit.sources.preMove} Pre-Move) · {audit.passing} passed all 5 · per-check pass rate: Volume {audit.perCheck.Volume} · FII {audit.perCheck.FII} · DII {audit.perCheck.DII} · Promoter {audit.perCheck.Promoter} · Tech/Fund {audit.perCheck.TechFund}
+            <b className="text-accent-cyan">💎 {audit.tierCounts.ELITE}</b> Elite ·
+            {' '}<b className="text-accent-amber">⭐ {audit.tierCounts.STRONG}</b> Strong ·
+            {' '}<b className="text-neutral-300">✓ {audit.tierCounts.QUALITY}</b> Quality
+            {' '}· scanned {audit.scanned} ({audit.sources.weekly} Weekly + {audit.sources.preMove} Pre-Move)
+            <br/>per-check pass rate: Volume {audit.perCheck.Volume} · FII {audit.perCheck.FII} · DII {audit.perCheck.DII} · Promoter {audit.perCheck.Promoter} · Tech/Fund {audit.perCheck.TechFund}
           </div>
         </div>
       </div>
@@ -1282,11 +1328,11 @@ export function PublicEliteHub(): JSX.Element {
 
       {(weekly.isLoading || preMove.isLoading) && <Loading />}
       {!weekly.isLoading && !preMove.isLoading && elite.length === 0 && (
-        <Empty msg="No setups currently pass all 5 confluences. This is the strictest filter — empty is normal on slow days. Check back at next snapshot (every 30 min)." />
+        <Empty msg="No setups currently pass even 3/5 confluences. Engine still requires conviction ≥ 70 floor — empty is normal on slow days. Check back at next snapshot (every 30 min)." />
       )}
       {elite.length > 0 && (
         <div className="space-y-3">
-          {elite.map((ev, i) => <EliteCard key={i} verdict={ev.verdict} row={ev.row} />)}
+          {elite.map((ev, i) => <EliteCard key={i} verdict={ev.verdict} row={ev.row} tier={ev.tier as any} />)}
         </div>
       )}
     </div>
@@ -1297,7 +1343,14 @@ export function PublicEliteHub(): JSX.Element {
 // and institutional thesis. Each Elite signal becomes a complete plan
 // the user can act on directly: when to enter, when each target is
 // expected, why the trade works in institutional terms.
-function EliteCard({ row: r, verdict }: { row: any; verdict: { pass: boolean; reasons: { label: string; pass: boolean; why: string }[] } }): JSX.Element {
+function EliteCard({ row: r, verdict, tier }: { row: any; verdict: { pass: boolean; reasons: { label: string; pass: boolean; why: string }[] }; tier?: 'ELITE' | 'STRONG' | 'QUALITY' }): JSX.Element {
+  const tierBadge = tier === 'ELITE'
+    ? { emoji: '💎', label: 'ELITE 5/5', cls: 'bg-accent-cyan/15 text-accent-cyan border-accent-cyan/50' }
+    : tier === 'STRONG'
+      ? { emoji: '⭐', label: 'STRONG 4/5', cls: 'bg-accent-amber/15 text-accent-amber border-accent-amber/50' }
+      : tier === 'QUALITY'
+        ? { emoji: '✓', label: 'QUALITY 3/5', cls: 'bg-neutral-700/40 text-neutral-200 border-neutral-500/50' }
+        : null
   const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
   const entryMid = (() => {
     if (r.entryPriceLow != null && r.entryPriceHigh != null) return (r.entryPriceLow + r.entryPriceHigh) / 2
@@ -1347,10 +1400,15 @@ function EliteCard({ row: r, verdict }: { row: any; verdict: { pass: boolean; re
 
   return (
     <div className="bg-ink-800 border border-accent-green/30 rounded-lg p-4 hover:border-accent-green/60 transition-colors">
-      {/* Header: stock + direction + source + conviction + expected return */}
+      {/* Header: stock + tier + direction + source + conviction + expected return */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <b className="text-neutral-100 text-[15px]">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+          {tierBadge && (
+            <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${tierBadge.cls}`}>
+              {tierBadge.emoji} {tierBadge.label}
+            </span>
+          )}
           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
           <span className="text-[10px] text-neutral-500">{r._source}</span>
           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent-green/15 text-accent-green border border-accent-green/40">
@@ -1414,14 +1472,18 @@ function EliteCard({ row: r, verdict }: { row: any; verdict: { pass: boolean; re
         <div className="text-[11px] text-neutral-300 leading-relaxed">{thesis}</div>
       </div>
 
-      {/* 5-confluence reasoning */}
+      {/* Confluence reasoning — shows which checks fired (✓) vs missed (✗) */}
       <div className="mt-3 pt-2 border-t border-ink-500">
-        <div className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1.5">Why this is Elite — all 5 confluences ✓</div>
+        <div className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1.5">
+          {tier ? `${tierBadge?.label} — confluence breakdown` : 'Confluence breakdown'}
+        </div>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-1 text-[11px] font-mono">
           {verdict.reasons.map((c, j) => (
             <div key={j} className="flex items-start gap-1.5">
-              <span className="text-accent-green">✓</span>
-              <span className="text-neutral-400"><b className="text-neutral-300">{c.label}:</b> {c.why}</span>
+              <span className={c.pass ? 'text-accent-green' : 'text-neutral-600'}>{c.pass ? '✓' : '✗'}</span>
+              <span className={c.pass ? 'text-neutral-400' : 'text-neutral-600'}>
+                <b className={c.pass ? 'text-neutral-300' : 'text-neutral-500'}>{c.label}:</b> {c.why}
+              </span>
             </div>
           ))}
         </div>
@@ -1544,10 +1606,18 @@ function OIFlowCard({ row: r }: { row: any }): JSX.Element {
         </div>
       </div>
 
-      {/* Trade plan grid — option premium AND underlying-spot levels */}
+      {/* Trade plan grid — option premium AND underlying-spot levels.
+          The option leg is BIAS-ALIGNED (BULLISH → BUY ATM CE,
+          BEARISH → BUY ATM PE). r.side is the institutional WRITING side
+          and is informational only; the actual trade is r.tradeInstrument. */}
       <div className="mt-3 grid grid-cols-1 md:grid-cols-2 gap-2">
         <div className="bg-ink-900/40 border border-ink-500 rounded p-2">
-          <div className="text-[10px] text-neutral-500 uppercase mb-1">Option leg ({r.side})</div>
+          <div className="text-[10px] text-neutral-500 uppercase mb-1 flex items-center gap-1.5">
+            <span>Option leg</span>
+            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${biasColor}22`, color: biasColor }}>
+              {r.tradeAction || `BUY ${r.underlying} ${r.tradeStrike ?? r.strike} ${r.tradeSide ?? r.side}`}
+            </span>
+          </div>
           <div className="grid grid-cols-4 gap-2 text-[11px] font-mono">
             <div><div className="text-[9px] text-accent-cyan/70">Entry</div><div className="text-accent-cyan">₹{fmtPx(r.entry)}</div></div>
             <div><div className="text-[9px] text-accent-red/70">SL</div><div className="text-accent-red">₹{fmtPx(r.stopLoss)}</div></div>

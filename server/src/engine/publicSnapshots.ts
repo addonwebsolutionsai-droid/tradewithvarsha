@@ -553,7 +553,16 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
         // the strike since OI flows imply mean-reversion or breakout zones.
         const atrProxy = a.spot * 0.005
         const bullish = f.bias === 'BULLISH'
-        const entry = +(f.currentLTP ?? 0).toFixed(2)   // option premium at the strike
+        // 2026-06-02 — trade leg must MATCH the bias, not the institutional
+        // writing side. PE_WRITING at 23200 (bias=BULLISH) means spot stays
+        // above 23200, so the directional trade is BUY ATM CE — NOT buy the
+        // PE that institutions are writing (that's the opposite bet).
+        const tradeSide: 'CE' | 'PE' = bullish ? 'CE' : 'PE'
+        const tradeStrike = (a as any).atmStrike ?? Math.round(a.spot / 50) * 50
+        const tradeLtp = bullish
+          ? ((a as any).atmCeLtp ?? +(a.spot * 0.01).toFixed(2))
+          : ((a as any).atmPeLtp ?? +(a.spot * 0.01).toFixed(2))
+        const entry = +tradeLtp.toFixed(2)
         // Underlying-level move targets — what the trader actually watches.
         const spotEntry = a.spot
         const spotSL = bullish ? +(spotEntry - atrProxy * 2).toFixed(2) : +(spotEntry + atrProxy * 2).toFixed(2)
@@ -562,7 +571,7 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
         buildupRows.push({
           underlying,
           strike: f.strike,
-          side: f.side,
+          side: f.side,                   // institutional writing side (informational)
           kind: f.kind,                   // AGGR_CE_BUY / PE_WRITING / CE_COVERING / etc.
           bias: f.bias,                   // BULLISH | BEARISH
           strength: Math.round(f.strength ?? 0),
@@ -578,11 +587,15 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
           pcr: a.pcr,
           maxPain: a.maxPain,
           note: f.note,
-          // Trade plan (option premium space — for option-buyers)
+          // Trade plan — bias-aligned (BULLISH → BUY ATM CE; BEARISH → BUY ATM PE)
+          tradeSide,
+          tradeStrike,
+          tradeInstrument: `${underlying} ${tradeStrike} ${tradeSide}`,
+          tradeAction: `BUY ${underlying} ${tradeStrike} ${tradeSide}`,
           entry,
-          stopLoss: +(entry * (bullish ? 0.7 : 0.7)).toFixed(2),  // 30% premium SL
-          target1: +(entry * 1.4).toFixed(2),                      // 40% premium gain
-          target2: +(entry * 1.8).toFixed(2),                      // 80% premium gain
+          stopLoss: +(entry * 0.7).toFixed(2),     // 30% premium SL
+          target1:  +(entry * 1.4).toFixed(2),     // 40% premium gain
+          target2:  +(entry * 1.8).toFixed(2),     // 80% premium gain
           // Spot-level levels (for futures / spot directional trade)
           spotEntry, spotSL, spotT1, spotT2,
         })
@@ -608,13 +621,14 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
       summary: a.summary,
       biasBreakdown: a.biasBreakdown,
     }))
-    // dataMode = LIVE only when real intraday deltas exist (oiChange !== 0).
-    // Synthetic parked-OI rows (deltas all zero) indicate the page is showing
-    // institutional positioning at last close → label END_OF_DAY / PRE_OPEN.
+    // dataMode rules:
+    //   LIVE        — market is currently open AND we have real deltas
+    //   PRE_OPEN    — market is open but no deltas yet (waiting for first tick)
+    //   END_OF_DAY  — market is closed (data shown is from last session)
     const hasLiveDeltas = buildupRows.some(r => Math.abs(r.oiChange ?? 0) > 0)
-    let dataMode: 'LIVE' | 'END_OF_DAY' | 'PRE_OPEN' = hasLiveDeltas
-      ? 'LIVE'
-      : (isMarketHours ? 'PRE_OPEN' : 'END_OF_DAY')
+    let dataMode: 'LIVE' | 'END_OF_DAY' | 'PRE_OPEN'
+    if (isMarketHours) dataMode = hasLiveDeltas ? 'LIVE' : 'PRE_OPEN'
+    else dataMode = 'END_OF_DAY'
     let lastFlowAt: string | null = hasLiveDeltas ? ts : null
     let rowsOut = buildupRows
     let summaryOut = summary
