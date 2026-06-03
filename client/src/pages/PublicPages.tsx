@@ -16,6 +16,17 @@ const fmtDate = (iso?: string) => {
   return isNaN(d.getTime()) ? iso : `${d.getDate()}/${d.getMonth() + 1}`
 }
 const fmtTs = (iso?: string) => iso ? new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—'
+// Expiry as "8-Jun" — accepts both "YYYY-MM-DD" and Angel's "08JUN2026".
+const fmtExpiry = (s?: string | null): string => {
+  if (!s) return '—'
+  const d = new Date(s)
+  if (!isNaN(d.getTime())) {
+    return `${d.getUTCDate()}-${d.toLocaleString('en-US', { month: 'short', timeZone: 'UTC' })}`
+  }
+  const m = /^(\d{1,2})([A-Z]{3})(\d{4})$/.exec(s)
+  if (m) return `${parseInt(m[1], 10)}-${m[2][0] + m[2].slice(1).toLowerCase()}`
+  return s
+}
 /** 2-decimal price formatter — used for Entry/SL/Target across every tab. */
 const fmtPx = (n: any): string => {
   const v = typeof n === 'number' ? n : Number(n)
@@ -1547,13 +1558,22 @@ export function PublicOIBuildupPage(): JSX.Element {
               <span className="text-neutral-500"> Last live capture: {fmtTs(lastFlowAt)} IST.</span>
             )}
           </div>
-          {summary.map((s, i) => (
-            <div key={i} className="text-[11px] text-neutral-300 mt-2 font-mono">
-              <b>{s.underlying}</b> spot ₹{fmtPx(s.spot)} · PCR {s.pcr?.toFixed?.(2)} · Max-Pain ₹{fmtPx(s.maxPain)} ·
-              <span className={s.dominantBias === 'BULLISH' ? 'text-accent-green' : s.dominantBias === 'BEARISH' ? 'text-accent-red' : 'text-neutral-400'}> {s.dominantBias}</span>
-              <div className="text-[10px] text-neutral-500 mt-0.5">{s.summary}</div>
-            </div>
-          ))}
+          {summary.map((s, i) => {
+            const expiryLabel = s.expiry ? fmtExpiry(s.expiry) : null
+            const expiryStale = typeof s.daysToExpiry === 'number' && s.daysToExpiry < 0
+            return (
+              <div key={i} className="text-[11px] text-neutral-300 mt-2 font-mono">
+                <b>{s.underlying}</b> spot ₹{fmtPx(s.spot)} · PCR {s.pcr?.toFixed?.(2)} · Max-Pain ₹{fmtPx(s.maxPain)} ·
+                <span className={s.dominantBias === 'BULLISH' ? 'text-accent-green' : s.dominantBias === 'BEARISH' ? 'text-accent-red' : 'text-neutral-400'}> {s.dominantBias}</span>
+                {expiryLabel && (
+                  <span className={`ml-2 px-1.5 py-0.5 rounded text-[10px] border ${expiryStale ? 'bg-accent-red/15 text-accent-red border-accent-red/40' : 'bg-accent-cyan/15 text-accent-cyan border-accent-cyan/40'}`}>
+                    📅 Expiry {expiryLabel}{typeof s.daysToExpiry === 'number' ? ` · ${s.daysToExpiry}d` : ''}{expiryStale ? ' EXPIRED' : ''}
+                  </span>
+                )}
+                <div className="text-[10px] text-neutral-500 mt-0.5">{s.summary}</div>
+              </div>
+            )
+          })}
         </div>
       </div>
       <AccuracyStrip />
@@ -1601,8 +1621,13 @@ function OIFlowCard({ row: r }: { row: any }): JSX.Element {
             strength {r.strength}
           </span>
         </div>
-        <div className="text-[11px] font-mono text-neutral-400">
-          Spot ₹{fmtPx(r.spot)} · PCR {r.pcr?.toFixed?.(2)} · MaxPain ₹{fmtPx(r.maxPain)}
+        <div className="text-[11px] font-mono text-neutral-400 flex items-center gap-2 flex-wrap">
+          <span>Spot ₹{fmtPx(r.spot)} · PCR {r.pcr?.toFixed?.(2)} · MaxPain ₹{fmtPx(r.maxPain)}</span>
+          {r.expiry && (
+            <span className={`px-1.5 py-0.5 rounded text-[10px] border ${typeof r.daysToExpiry === 'number' && r.daysToExpiry < 0 ? 'bg-accent-red/15 text-accent-red border-accent-red/40' : 'bg-accent-cyan/15 text-accent-cyan border-accent-cyan/40'}`}>
+              📅 {fmtExpiry(r.expiry)}{typeof r.daysToExpiry === 'number' ? ` · ${r.daysToExpiry}d` : ''}
+            </span>
+          )}
         </div>
       </div>
 

@@ -70,6 +70,10 @@ export interface OiFlowAnalysis {
   atmStrike?: number
   atmCeLtp?: number
   atmPeLtp?: number
+  // Expiry context for the chain being analysed — surfaced so the UI can
+  // show "Expiry: 8-Jun (5d)" and refuse to display expired data.
+  expiry?: string
+  daysToExpiry?: number
 }
 
 interface ChainRowPrev {
@@ -156,6 +160,21 @@ export function analyzeOiFlow(
   const atmCeLtp = atmRow?.callLTP || undefined
   const atmPeLtp = atmRow?.putLTP || undefined
 
+  // 2026-06-03: propagate expiry context so consumers can verify the chain
+  // is from a CURRENT expiry, not an expired one. expiry is whatever the
+  // upstream chain provider tagged (NSE: "03-Jun-2026" or "03JUN2026";
+  // Angel: ISO yyyy-mm-dd-ish from ScripMaster).
+  const expiry = chain.expiry || undefined
+  let daysToExpiry: number | undefined
+  if (expiry) {
+    const t = Date.parse(expiry)
+    if (!Number.isNaN(t)) {
+      const istNow = new Date(Date.now() + 5.5 * 3600_000)
+      const todayUtc = Date.UTC(istNow.getUTCFullYear(), istNow.getUTCMonth(), istNow.getUTCDate())
+      daysToExpiry = Math.max(0, Math.round((t - todayUtc) / 86_400_000))
+    }
+  }
+
   return {
     spot,
     pcr: chain.pcr,
@@ -171,6 +190,7 @@ export function analyzeOiFlow(
     },
     summary,
     atmStrike, atmCeLtp, atmPeLtp,
+    expiry, daysToExpiry,
   }
 }
 

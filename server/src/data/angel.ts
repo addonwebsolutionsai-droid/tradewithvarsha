@@ -161,17 +161,26 @@ export interface ScripRow {
 
 let scripMaster: ScripRow[] | null = null
 let scripIndex: Map<string, ScripRow> = new Map()
+let scripMasterLoadedAt = 0
+// 2026-06-03: refresh at least once per day. NSE rolls expired expiries
+// off ScripMaster overnight (the Tuesday-expiry rolls off after Tue close),
+// so an in-process cache without TTL serves stale expiries the next day —
+// e.g. picks expired 2-Jun on a 3-Jun snapshot. 18h TTL guarantees a fresh
+// pull each morning before market open.
+const SCRIPMASTER_TTL_MS = 18 * 3600_000
 
-export async function loadScripMaster(): Promise<ScripRow[]> {
-  if (scripMaster) return scripMaster
+export async function loadScripMaster(force = false): Promise<ScripRow[]> {
+  const stale = Date.now() - scripMasterLoadedAt > SCRIPMASTER_TTL_MS
+  if (scripMaster && !force && !stale) return scripMaster
   return cached(dailyCache, 'angel-scripmaster', async () => {
-    log.info('ANGEL', 'Loading ScripMaster (~25MB JSON)...')
+    log.info('ANGEL', stale ? 'Refreshing ScripMaster (stale, >18h)...' : 'Loading ScripMaster (~25MB JSON)...')
     const res = await axios.get(SCRIPMASTER_URL, { timeout: 60_000 })
     scripMaster = res.data as ScripRow[]
     scripIndex = new Map()
     for (const s of scripMaster) {
       scripIndex.set(`${s.exch_seg}:${s.symbol}`, s)
     }
+    scripMasterLoadedAt = Date.now()
     log.ok('ANGEL', `Loaded ${scripMaster.length} instruments`)
     return scripMaster
   }) ?? []
@@ -438,8 +447,24 @@ export async function getOptionChain(underlying: 'NIFTY' | 'BANKNIFTY'): Promise
 
     const expiries = [...new Set(chain.map(s => s.expiry).filter(Boolean))]
       .sort((a, b) => new Date(a!).getTime() - new Date(b!).getTime())
-    const nearest = expiries[0]
+    // 2026-06-03: filter out EXPIRED expiries. Previously we picked
+    // expiries[0] which could be Mon's 2-Jun expiry served on Tue's
+    // 3-Jun snapshot — the OI Build-up was reading a dead chain.
+    // Keep today (the expiry day itself is still tradable until 15:30 IST).
+    const istToday = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(0, 10)
+    const validExpiries = expiries.filter(e => {
+      if (!e) return false
+      const ymd = new Date(e).toISOString().slice(0, 10)
+      return ymd >= istToday
+    })
+    if (validExpiries.length === 0) {
+      log.warn('ANGEL', `${underlying}: no valid future expiries in ScripMaster (had ${expiries.length} total) — forcing refresh`)
+      // Force a ScripMaster refresh next call by zeroing the timestamp.
+      scripMasterLoadedAt = 0
+    }
+    const nearest = validExpiries[0] ?? expiries[0]
     const thisExpiry = chain.filter(s => s.expiry === nearest)
+    log.info('ANGEL', `${underlying} chain → expiry ${nearest} (${validExpiries.length} future · ${expiries.length - validExpiries.length} expired skipped)`)
 
     // Spot price
     const spotToken = await findIndexToken(underlying)

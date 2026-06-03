@@ -570,6 +570,10 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
         const spotT2 = bullish ? +(spotEntry + atrProxy * 4).toFixed(2) : +(spotEntry - atrProxy * 4).toFixed(2)
         buildupRows.push({
           underlying,
+          // 2026-06-03: expiry surfaced per-row so the OIFlowCard can show
+          // "Expiry 8-Jun (5d)" and the user can verify it's not stale.
+          expiry: (a as any).expiry ?? null,
+          daysToExpiry: (a as any).daysToExpiry ?? null,
           strike: f.strike,
           side: f.side,                   // institutional writing side (informational)
           kind: f.kind,                   // AGGR_CE_BUY / PE_WRITING / CE_COVERING / etc.
@@ -614,8 +618,27 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
     const minOfDay = istHour * 60 + istMin
     // NSE F&O hours: 09:15–15:30 IST. Mon-Fri only.
     const isMarketHours = istDow >= 1 && istDow <= 5 && minOfDay >= 9 * 60 + 15 && minOfDay < 15 * 60 + 30
+    // 2026-06-03: hard guard — if the analysis reports an expired expiry
+    // (daysToExpiry < 0), drop the rows. Better to show "no data" than to
+    // mislead the user with a dead chain. Per user directive.
+    const expiredAnalysis: string[] = []
+    for (const [u, a] of Object.entries(oi)) {
+      if (a && typeof (a as any).daysToExpiry === 'number' && (a as any).daysToExpiry < 0) {
+        expiredAnalysis.push(`${u}@${(a as any).expiry}`)
+      }
+    }
+    if (expiredAnalysis.length) {
+      log.warn('PUBLIC-SNAP', `oi-buildup: dropping expired chain(s): ${expiredAnalysis.join(', ')}`)
+      // wipe rows whose underlying is in the expired set
+      for (let i = buildupRows.length - 1; i >= 0; i--) {
+        const r = buildupRows[i]
+        if (expiredAnalysis.some(x => x.startsWith(r.underlying + '@'))) buildupRows.splice(i, 1)
+      }
+    }
     const summary = Object.entries(oi).filter(([, a]) => a).map(([u, a]: any) => ({
       underlying: u,
+      expiry: a.expiry ?? null,
+      daysToExpiry: a.daysToExpiry ?? null,
       spot: a.spot, pcr: a.pcr, maxPain: a.maxPain,
       dominantBias: a.dominantBias,
       summary: a.summary,

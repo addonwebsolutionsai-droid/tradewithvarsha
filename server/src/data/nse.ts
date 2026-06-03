@@ -105,7 +105,19 @@ function parseOptionChain(data: any, symbol: string): OptionChain | null {
   if (!records || !filtered?.data) return null
 
   const spot: number = records.underlyingValue ?? 0
-  const expiry: string = records.expiryDates?.[0] ?? ''
+  // 2026-06-03: filter out EXPIRED expiries. NSE sometimes still lists
+  // last week's expiry in expiryDates[] — pick the nearest one whose date
+  // is today-or-later (IST). Expiry strings are in "DD-MMM-YYYY" format.
+  const allExpiries: string[] = Array.isArray(records.expiryDates) ? records.expiryDates : []
+  const istTodayMs = (() => {
+    const istDate = new Date(Date.now() + 5.5 * 3600_000)
+    return Date.UTC(istDate.getUTCFullYear(), istDate.getUTCMonth(), istDate.getUTCDate())
+  })()
+  const validExpiries = allExpiries.filter(e => {
+    const t = Date.parse(e)
+    return !Number.isNaN(t) && t >= istTodayMs
+  })
+  const expiry: string = validExpiries[0] ?? allExpiries[0] ?? ''
   const frontMonth = filtered.data.filter((r: any) => r.expiryDate === expiry || !r.expiryDate)
 
   const rows: OptionChainRow[] = frontMonth.map((r: any) => ({
