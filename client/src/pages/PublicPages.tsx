@@ -1678,3 +1678,137 @@ function OIFlowCard({ row: r }: { row: any }): JSX.Element {
     </div>
   )
 }
+
+// ── 📊 F&O STOCK-FUTURES — pre-breakout / pre-breakdown daily curation ──
+// Scans every NSE F&O underlying (~211 names) at every snapshot publish
+// and surfaces the TIGHTEST coils with EMA-stacked trend + volume rising
+// + institutional FII/promoter confirmation. Goal: catch the move BEFORE
+// it happens — not after. Each card has entry / SL / T1 / T2 / T3 with
+// target dates so users can act directly.
+export function PublicFnoFuturesPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-fno-futures'], queryFn: () => snapshots.fnoFutures(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const rows: any[] = data?.rows ?? []
+  const longs = rows.filter(r => r.side === 'LONG')
+  const shorts = rows.filter(r => r.side === 'SHORT')
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/10 to-accent-green/5 border border-accent-amber/40 rounded-lg">
+        <div className="text-3xl">📊</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-amber">F&O Stock-Futures — Pre-Breakout Watch</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Curated daily scan across the entire NSE F&O futures universe (~211 underlyings).
+            Multi-lens filter: EMA-stacked trend · at 20d high/low · tight Bollinger coil · volume rising 1.3×+ ·
+            productive RSI band · FII stake ↑ · promoter stable.
+            Designed to identify setups <b>BEFORE the move starts</b> — names already running &gt;8% in 5d are penalised.
+          </div>
+          <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+            Scanned {data?.universeSize ?? 211} · {data?.total ?? 0} passed · 💎 HIGH {data?.highConvCount ?? 0} · ⭐ MED {data?.medConvCount ?? 0} · refreshes every 30 min during market hours
+          </div>
+        </div>
+      </div>
+      <AccuracyStrip />
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load F&O scan. Snapshots refresh every 30 min." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No setups currently pass the pre-breakout filter. Scan re-runs every 30 min during market hours." />}
+      {longs.length > 0 && (
+        <div>
+          <div className="text-[12px] font-bold text-accent-green mb-2">🟢 LONG · {longs.length} setups</div>
+          <div className="space-y-3">
+            {longs.map((r, i) => <FnoFuturesCard key={'L' + i} row={r} />)}
+          </div>
+        </div>
+      )}
+      {shorts.length > 0 && (
+        <div className="mt-4">
+          <div className="text-[12px] font-bold text-accent-red mb-2">🔴 SHORT · {shorts.length} setups</div>
+          <div className="space-y-3">
+            {shorts.map((r, i) => <FnoFuturesCard key={'S' + i} row={r} />)}
+          </div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function FnoFuturesCard({ row: r }: { row: any }): JSX.Element {
+  const long = r.side === 'LONG'
+  const dirColor = long ? '#00c853' : '#ff1744'
+  const confBadge = r.confidence === 'HIGH'
+    ? { label: '💎 HIGH', cls: 'bg-accent-cyan/15 text-accent-cyan border-accent-cyan/50' }
+    : { label: '⭐ MED', cls: 'bg-accent-amber/15 text-accent-amber border-accent-amber/50' }
+  const movePct = (px: number) => +(Math.abs(px - r.entry) / r.entry * 100).toFixed(1)
+  return (
+    <div className="bg-ink-800 border border-accent-amber/20 rounded-lg p-4 hover:border-accent-amber/50 transition-colors">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <b className="text-neutral-100 text-[14px]">{r.symbol}</b>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.side}</span>
+          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${confBadge.cls}`}>{confBadge.label}</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent-green/15 text-accent-green border border-accent-green/40">
+            score {r.score}
+          </span>
+          {r.fiiDelta != null && r.fiiDelta > 0.2 && (
+            <span className="text-[9px] text-accent-green">FII +{r.fiiDelta.toFixed(2)}pp</span>
+          )}
+        </div>
+        <div className="text-[11px] font-mono text-neutral-400">
+          LTP ₹{fmtPx(r.price)}{r.marketCapCr ? ` · MCap ₹${(r.marketCapCr / 1000).toFixed(1)}k Cr` : ''}
+        </div>
+      </div>
+      {/* Trade plan grid */}
+      <div className="mt-3 grid grid-cols-2 md:grid-cols-5 gap-2 text-[11px] font-mono">
+        <div className="bg-accent-cyan/5 border border-accent-cyan/30 rounded p-2">
+          <div className="text-[9px] text-accent-cyan/70 uppercase">Entry</div>
+          <div className="text-accent-cyan font-bold">₹{fmtPx(r.entry)}</div>
+        </div>
+        <div className="bg-accent-red/5 border border-accent-red/30 rounded p-2">
+          <div className="text-[9px] text-accent-red/70 uppercase">Stop Loss</div>
+          <div className="text-accent-red font-bold">₹{fmtPx(r.stopLoss)}</div>
+          <div className="text-[9px] text-neutral-500">−{movePct(r.stopLoss)}% risk</div>
+        </div>
+        <div className="bg-accent-green/5 border border-accent-green/30 rounded p-2">
+          <div className="text-[9px] text-accent-green/70 uppercase">T1 (+6%)</div>
+          <div className="text-accent-green font-bold">₹{fmtPx(r.target1)}</div>
+          {r.target1Date && <div className="text-[9px] text-neutral-500">📅 {fmtDate(r.target1Date)}</div>}
+        </div>
+        <div className="bg-accent-green/5 border border-accent-green/30 rounded p-2">
+          <div className="text-[9px] text-accent-green/70 uppercase">T2 (+12%)</div>
+          <div className="text-accent-green font-bold">₹{fmtPx(r.target2)}</div>
+          {r.target2Date && <div className="text-[9px] text-neutral-500">📅 {fmtDate(r.target2Date)}</div>}
+        </div>
+        <div className="bg-accent-green/10 border border-accent-green/40 rounded p-2">
+          <div className="text-[9px] text-accent-green/80 uppercase font-bold">T3 (+20%)</div>
+          <div className="text-accent-green font-bold">₹{fmtPx(r.target3)}</div>
+          {r.target3Date && <div className="text-[9px] text-neutral-500">📅 {fmtDate(r.target3Date)}</div>}
+        </div>
+      </div>
+      {/* Feature strip */}
+      <div className="mt-3 text-[10px] text-neutral-400 font-mono flex flex-wrap gap-x-4 gap-y-0.5">
+        <span>RSI <b className="text-neutral-200">{r.features?.rsi14?.toFixed?.(0)}</b></span>
+        <span>5d <b className={r.features?.ret5d > 0 ? 'text-accent-green' : 'text-accent-red'}>{r.features?.ret5d?.toFixed?.(1)}%</b></span>
+        <span>20d <b className={r.features?.ret20d > 0 ? 'text-accent-green' : 'text-accent-red'}>{r.features?.ret20d?.toFixed?.(1)}%</b></span>
+        <span>Vol <b className="text-neutral-200">{r.features?.volRatio?.toFixed?.(2)}×</b></span>
+        <span>BB-w <b className="text-neutral-200">{r.features?.bbWidthPct?.toFixed?.(1)}%</b></span>
+        <span>{long ? '20d-Hi' : '20d-Lo'} <b className="text-neutral-200">{long ? r.features?.distFromHigh20?.toFixed?.(1) : r.features?.distFromLow20?.toFixed?.(1)}%</b></span>
+      </div>
+      {/* Confluence breakdown */}
+      <div className="mt-3 pt-2 border-t border-ink-500">
+        <div className="text-[10px] text-neutral-500 uppercase tracking-wider mb-1">Why this is here</div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-x-4 gap-y-0.5 text-[11px] font-mono">
+          {(r.confluences ?? []).map((c: any, j: number) => (
+            <div key={j} className="flex items-start gap-1.5">
+              <span className={c.pass ? 'text-accent-green' : 'text-neutral-600'}>{c.pass ? '✓' : '✗'}</span>
+              <span className={c.pass ? 'text-neutral-400' : 'text-neutral-600'}>
+                <b className={c.pass ? 'text-neutral-300' : 'text-neutral-500'}>{c.name}:</b> {c.detail}
+              </span>
+            </div>
+          ))}
+        </div>
+      </div>
+    </div>
+  )
+}

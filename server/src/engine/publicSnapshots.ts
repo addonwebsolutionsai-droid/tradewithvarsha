@@ -67,13 +67,16 @@ async function enrichShareholdingNotes(rows: any[]): Promise<void> {
         r.diiDelta = +shp.diiDeltaQoQ.toFixed(2)
         r.smartMoneyUp = r.fiiDelta > 0.3 && r.promoterDelta >= -0.2
         if (!r.shareholdingNote || r.shareholdingNote.includes('unavailable')) {
-          const fiiArr = shp.fiiDeltaQoQ > 0.1 ? '↑' : shp.fiiDeltaQoQ < -0.1 ? '↓' : '→'
-          const pArr = shp.promoterDeltaQoQ > 0.1 ? '↑' : shp.promoterDeltaQoQ < -0.1 ? '↓' : '→'
-          const dArr = shp.diiDeltaQoQ > 0.1 ? '↑' : shp.diiDeltaQoQ < -0.1 ? '↓' : '→'
+          // 2026-06-04: matches new Weekly Pick format — bracketed QoQ delta.
+          const fmtDelta = (d: number) => {
+            if (d > 0.1) return ` (${d.toFixed(2)}%↑)`
+            if (d < -0.1) return ` (${Math.abs(d).toFixed(2)}%↓)`
+            return '→'
+          }
           const mc = shp.marketCapCr >= 1000
             ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
             : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
-          r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fiiArr} · DII ${shp.diiPct.toFixed(1)}%${dArr} · P ${shp.promoterPct.toFixed(1)}%${pArr} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mc}`
+          r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fmtDelta(shp.fiiDeltaQoQ)} · DII ${shp.diiPct.toFixed(1)}%${fmtDelta(shp.diiDeltaQoQ)} · P ${shp.promoterPct.toFixed(1)}%${fmtDelta(shp.promoterDeltaQoQ)} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mc}`
         }
       } catch { /* skip */ }
     }
@@ -314,6 +317,39 @@ function publicHitLog(entries: any[]): any[] {
       outcome: e.outcome,
       daysSince: e.daysSince,
     }))
+}
+
+// F&O futures scan — async/throttled. Min 25 min between scans so we don't
+// re-scan every snapshot publish (those run every 30 min anyway).
+let fnoScanInflight: Promise<void> | null = null
+let fnoLastScanAt = 0
+const FNO_SCAN_MIN_INTERVAL_MS = 25 * 60_000
+
+async function triggerFnoScan(): Promise<void> {
+  if (fnoScanInflight) return fnoScanInflight
+  if (Date.now() - fnoLastScanAt < FNO_SCAN_MIN_INTERVAL_MS) return
+  fnoScanInflight = (async () => {
+    const startedAt = new Date().toISOString()
+    try {
+      const { scanFnoFutures } = await import('./fnoFuturesScanner')
+      const rows = await scanFnoFutures({ limit: 25 })
+      const out = {
+        generatedAt: startedAt,
+        universeSize: 211,
+        total: rows.length,
+        highConvCount: rows.filter(r => r.confidence === 'HIGH').length,
+        medConvCount: rows.filter(r => r.confidence === 'MED').length,
+        rows,
+      }
+      await fs.writeFile(path.join(SNAP_DIR, 'fno-futures.json'), JSON.stringify(out, null, 2))
+      fnoLastScanAt = Date.now()
+      log.ok('PUBLIC-SNAP', `fno-futures: ${rows.length} picks written (async)`)
+    } catch (e) {
+      log.warn('PUBLIC-SNAP', `fno-futures async: ${(e as Error).message}`)
+    } finally {
+      fnoScanInflight = null
+    }
+  })()
 }
 
 export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ files: string[]; ts: string }> {
@@ -689,6 +725,13 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   } catch (e) {
     log.warn('PUBLIC-SNAP', `oi-buildup: ${(e as Error).message}`)
   }
+
+  // 6.7 F&O Stock-Futures pre-breakout scan (2026-06-03)
+  // Heavy scan over ~211 underlyings — DECOUPLED from the synchronous
+  // publish so the rest of the snapshot doesn't block. Fires async, writes
+  // fno-futures.json on its own when done. The next publish already sees
+  // the file. Throttled — only one scan in flight at a time.
+  triggerFnoScan().catch(() => { /* logged inside */ })
 
   // 7. Accuracy report (system-wide hit-rate, R-multiple, by source/tier)
   // 2026-05-18: published as a separate snapshot for the dashboard strip.

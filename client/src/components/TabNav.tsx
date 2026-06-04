@@ -100,6 +100,13 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/oi-buildup',   label: 'OI Build-up',  icon: <Activity size={14} />,
       acc: null,
       title: 'F&O OI Build-up — live institutional positioning. Long buildup · short covering · put-writing support · call-writing resistance. Refreshes every 2 min during market hours.' },
+    // 2026-06-03: F&O Futures pre-breakout scan — runs every snapshot
+    // publish across all ~211 NSE F&O underlyings. Multi-lens overlay
+    // (EMA stack · tight coil · vol surging · FII↑ · promoter stable) to
+    // identify moves BEFORE they start. Per user directive.
+    { to: '/fno-futures',  label: 'F&O Futures',  icon: <BarChart3 size={14} />,
+      acc: null,
+      title: 'F&O Stock-Futures — pre-breakout daily scan across all ~211 NSE F&O underlyings. Multi-lens overlay: EMA stack + tight coil + at 20d high/low + volume rising + FII stake up + promoter stable. Identifies setups BEFORE the move happens.' },
     { to: '/options',      label: 'F&O',          icon: <Layers size={14} />,
       count: (counts.options ?? 0) + (counts.futures ?? 0),
       acc: wr('OPTIONS'),

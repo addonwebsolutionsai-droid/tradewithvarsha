@@ -836,12 +836,21 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
         r.noBrainerBet = verdict.isNoBrainer
         if (verdict.shp) {
           const shp = verdict.shp
-          const fiiArrow = shp.fiiDeltaQoQ > 0.1 ? '↑' : shp.fiiDeltaQoQ < -0.1 ? '↓' : '→'
-          const pArrow = shp.promoterDeltaQoQ > 0.1 ? '↑' : shp.promoterDeltaQoQ < -0.1 ? '↓' : '→'
+          // 2026-06-04: format with QoQ delta in brackets so the user can
+          // tell apart "current stake %" vs "how it changed last quarter".
+          // FII 16.1% (1.5%↑) · DII 8.0% (1.5%↑) · P 39.5%→ · Pledge 0.0% · MC ₹12.7KCr
+          const fmtDelta = (d: number) => {
+            if (d > 0.1) return ` (${d.toFixed(2)}%↑)`
+            if (d < -0.1) return ` (${Math.abs(d).toFixed(2)}%↓)`
+            return '→'   // flat — no bracket, just arrow appended
+          }
+          const fiiPart = `FII ${shp.fiiPct.toFixed(1)}%${fmtDelta(shp.fiiDeltaQoQ)}`
+          const diiPart = `DII ${shp.diiPct.toFixed(1)}%${fmtDelta(shp.diiDeltaQoQ)}`
+          const pPart   = `P ${shp.promoterPct.toFixed(1)}%${fmtDelta(shp.promoterDeltaQoQ)}`
           const mcStr = shp.marketCapCr >= 1000
             ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
             : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
-          r.shareholdingNote = `FII ${shp.fiiPct.toFixed(1)}%${fiiArrow} · P ${shp.promoterPct.toFixed(1)}%${pArrow} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mcStr}`
+          r.shareholdingNote = `${fiiPart} · ${diiPart} · ${pPart} · Pledge ${shp.promoterPledgePct.toFixed(1)}% · MC ₹${mcStr}`
         }
         if (verdict.isNoBrainer) {
           r.conviction = Math.min(100, r.conviction + 5)

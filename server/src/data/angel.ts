@@ -169,21 +169,31 @@ let scripMasterLoadedAt = 0
 // pull each morning before market open.
 const SCRIPMASTER_TTL_MS = 18 * 3600_000
 
+// In-flight guard — collapses concurrent loadScripMaster() calls into one
+// HTTP fetch so a burst of parallel callers (e.g. F&O scan + OI build-up
+// during snapshot publish) doesn't hammer the endpoint or thrash memory.
+let scripMasterInflight: Promise<ScripRow[]> | null = null
+
 export async function loadScripMaster(force = false): Promise<ScripRow[]> {
   const stale = Date.now() - scripMasterLoadedAt > SCRIPMASTER_TTL_MS
   if (scripMaster && !force && !stale) return scripMaster
-  return cached(dailyCache, 'angel-scripmaster', async () => {
-    log.info('ANGEL', stale ? 'Refreshing ScripMaster (stale, >18h)...' : 'Loading ScripMaster (~25MB JSON)...')
-    const res = await axios.get(SCRIPMASTER_URL, { timeout: 60_000 })
-    scripMaster = res.data as ScripRow[]
-    scripIndex = new Map()
-    for (const s of scripMaster) {
-      scripIndex.set(`${s.exch_seg}:${s.symbol}`, s)
+  if (scripMasterInflight) return scripMasterInflight
+  scripMasterInflight = (async () => {
+    try {
+      log.info('ANGEL', stale ? 'Refreshing ScripMaster (stale, >18h)...' : 'Loading ScripMaster (~25MB JSON)...')
+      const res = await axios.get(SCRIPMASTER_URL, { timeout: 60_000 })
+      const data = res.data as ScripRow[]
+      scripMaster = data
+      scripIndex = new Map()
+      for (const s of data) scripIndex.set(`${s.exch_seg}:${s.symbol}`, s)
+      scripMasterLoadedAt = Date.now()
+      log.ok('ANGEL', `Loaded ${data.length} instruments`)
+      return data
+    } finally {
+      scripMasterInflight = null
     }
-    scripMasterLoadedAt = Date.now()
-    log.ok('ANGEL', `Loaded ${scripMaster.length} instruments`)
-    return scripMaster
-  }) ?? []
+  })()
+  return scripMasterInflight
 }
 
 export async function findScrip(exchSeg: string, tradingSymbol: string): Promise<ScripRow | null> {
