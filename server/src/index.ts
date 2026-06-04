@@ -2355,6 +2355,17 @@ cron.schedule('0 16 * * 1-5', async () => {
 // cycle-alerts (16:30) on the same Angel quota.
 cron.schedule('35 16 * * 1-5', () => runWeeklyPickCron('daily-postclose', 'MARKET_ALL'), { timezone: 'Asia/Kolkata' })
 cron.schedule('0 18 * * 0',    () => runWeeklyPickCron('sunday-weekly',  'MARKET_ALL'), { timezone: 'Asia/Kolkata' })
+// 2026-06-04: INTRADAY-LIVE refresh during market hours (every 30 min, M-F).
+// Uses CNX500 (500 names) so a full scan completes in ~3-4 min and stays
+// well within Angel's daily quota. The lifecycle store dedupes by
+// symbol|direction so picks identified intraday don't duplicate the
+// post-close ones — they get merged on next publish.
+// Per user: "we should scan real time live market signals too" — yes,
+// because the daily candle's "close" during market hours = current LTP,
+// so features (EMA stack, BB width, ret20d, dist from 20d high) DO
+// shift intraday, and we'd otherwise miss day-0 entries on setups that
+// trigger between 9:15 and 16:35.
+cron.schedule('*/30 9-15 * * 1-5', () => runWeeklyPickCron('intraday-live', 'CNX500'), { timezone: 'Asia/Kolkata' })
 
 // ── SUNDAY 18:00 IST WEEKEND SYSTEM AUDIT ──
 // 2026-05-03: replaces the previous /schedule cloud routine that pointed at
