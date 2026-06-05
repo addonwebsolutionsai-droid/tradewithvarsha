@@ -787,6 +787,71 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   triggerFnoScan().catch(() => { /* logged inside */ })
   triggerOldWeeklyScan().catch(() => { /* logged inside */ })
 
+  // 6.8 Sector Rotation — 12 NIFTY sectoral indices ranked by relative
+  // strength. Synchronous (only 12 candle fetches, fast).
+  try {
+    // Sector-rotation: reuses the existing `runSectorRotationScan` engine
+    // (stock-basket based — 14 baskets) and remaps the rich output to a
+    // simpler public schema. NIFTY sectoral index symbols (CNXBANK etc)
+    // don't resolve through the unified data layer, so we use the
+    // engine's stock-basket aggregation which is already proven.
+    const { runSectorRotationScan } = await import('./sectorRotation')
+    const snap = await Promise.race<any>([
+      runSectorRotationScan(),
+      new Promise<any>((_, rej) => setTimeout(() => rej(new Error('sector-rotation timeout')), 120_000)),
+    ])
+    const rows = (snap?.baskets ?? []).map((b: any) => {
+      const trend = b.rotatingIn ? 'LEADING' :
+        b.rotatingOut ? 'LAGGING' :
+        (b.relStr5d > 0 && b.relStr20d > 0) ? 'IMPROVING' :
+        (b.relStr5d < 0 && b.relStr20d < 0) ? 'WEAKENING' : 'NEUTRAL'
+      const rotationScore = +(b.relStr20d * 0.5 + b.relStr5d * 0.3 + (b.pctAboveEma21 - 50) / 5).toFixed(1)
+      return {
+        index: b.key, label: b.label,
+        ltp: 0,    // basket has no single LTP
+        ret5d: b.ret5d, ret20d: b.ret20d, ret60d: 0,
+        relStr5d: b.relStr5d, relStr20d: b.relStr20d,
+        pctAboveEma21: b.pctAboveEma21, pctAboveEma50: b.pctAboveEma50,
+        volRatio5_20: b.volRatio,
+        rotationScore, trend,
+        reasons: [
+          `20d ${b.ret20d >= 0 ? '+' : ''}${b.ret20d.toFixed(1)}% (vs NIFTY ${b.relStr20d >= 0 ? '+' : ''}${b.relStr20d.toFixed(1)}%)`,
+          `5d ${b.ret5d >= 0 ? '+' : ''}${b.ret5d.toFixed(1)}% (vs NIFTY ${b.relStr5d >= 0 ? '+' : ''}${b.relStr5d.toFixed(1)}%)`,
+          `${b.pctAboveEma21.toFixed(0)}% above EMA21`,
+          `vol ${b.volRatio.toFixed(2)}× 30d`,
+        ],
+        topMovers: b.topMovers ?? [],
+        note: b.note,
+      }
+    }).sort((a: any, b: any) => b.rotationScore - a.rotationScore)
+    const out = {
+      generatedAt: ts,
+      niftyRet5d: snap?.niftyRet5d ?? 0,
+      niftyRet20d: snap?.niftyRet20d ?? 0,
+      total: rows.length,
+      leading: rows.filter((s: any) => s.trend === 'LEADING').map((s: any) => s.label),
+      lagging: rows.filter((s: any) => s.trend === 'LAGGING').map((s: any) => s.label),
+      oneLineSummary: snap?.oneLineSummary ?? '',
+      rows,
+    }
+    await fs.writeFile(path.join(SNAP_DIR, 'sector-rotation.json'), JSON.stringify(out, null, 2))
+    files.push('sector-rotation.json')
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `sector-rotation: ${(e as Error).message}`)
+  }
+
+  // 6.9 Cross-Engine Confluence — aggregates Weekly/Pre-Move/F&O Futures/
+  // Daily/Old-Weekly snapshots into a single ULTRA list. Pure file read,
+  // no API calls. Runs LAST so all upstream snapshots above are fresh.
+  try {
+    const { aggregateConfluence } = await import('./crossEngineConfluence')
+    const conf = await aggregateConfluence()
+    await fs.writeFile(path.join(SNAP_DIR, 'cross-confluence.json'), JSON.stringify(conf, null, 2))
+    files.push('cross-confluence.json')
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `cross-confluence: ${(e as Error).message}`)
+  }
+
   // 7. Accuracy report (system-wide hit-rate, R-multiple, by source/tier)
   // 2026-05-18: published as a separate snapshot for the dashboard strip.
   // 2026-05-25: also includes catch-rate (% of NSE top-gainers our pre-move

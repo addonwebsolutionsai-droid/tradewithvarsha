@@ -110,6 +110,13 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/old-weekly',   label: 'Old-WeeklyPick', icon: <ListChecks size={14} />,
       acc: null,
       title: 'Old-WeeklyPick — runs the same engine with the pre-4fca35e momentum-chasing prerank restored and no freshness-reject. Compare against current Weekly Pick to see what the stricter filter is dropping. Not pushed to Telegram.' },
+    // 2026-06-05: weekend autonomous additions
+    { to: '/confluence',   label: 'Ultra Picks',  icon: <Star size={14} />,
+      acc: null,
+      title: 'Cross-Engine Confluence — names flagged by ≥2 independent engines (Weekly + Pre-Move + F&O Futures + Daily + Old-Weekly). When multiple scanners with different criteria agree, conviction is structurally higher.' },
+    { to: '/sectors',      label: 'Sectors',      icon: <BarChart3 size={14} />,
+      acc: null,
+      title: 'Sector Rotation — 12 NIFTY sectoral indices ranked LEADING → LAGGING by composite (20d ret · 5d ret · RSI). Align stock picks with sector tailwind.' },
     { to: '/fno-futures',  label: 'F&O Futures',  icon: <BarChart3 size={14} />,
       acc: null,
       title: 'F&O Stock-Futures — pre-breakout daily scan across all ~211 NSE F&O underlyings. Multi-lens overlay: EMA stack + tight coil + at 20d high/low + volume rising + FII stake up + promoter stable. Identifies setups BEFORE the move happens.' },

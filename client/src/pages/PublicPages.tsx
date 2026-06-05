@@ -1679,6 +1679,173 @@ function OIFlowCard({ row: r }: { row: any }): JSX.Element {
   )
 }
 
+// ── 🔄 SECTOR ROTATION — leading/lagging baskets ──
+// Daily scan of 12 NIFTY sector indices. Helps user align stock picks
+// with sector tailwind. Leading sectors = more reliable long setups;
+// lagging sectors = more reliable shorts.
+export function PublicSectorRotationPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-sector-rotation'], queryFn: () => snapshots.sectorRotation(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const rows: any[] = data?.rows ?? []
+  const trendColor: Record<string, string> = {
+    LEADING: '#00c853', IMPROVING: '#00bcd4', NEUTRAL: '#9e9e9e',
+    WEAKENING: '#ff9800', LAGGING: '#ff1744',
+  }
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-violet/10 to-accent-cyan/5 border border-accent-violet/40 rounded-lg">
+        <div className="text-3xl">🔄</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-violet">Sector Rotation — Leading vs Lagging</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Daily ranking of NIFTY sectoral indices by composite strength
+            (20d return · 5d return · RSI). Align long picks with leading sectors,
+            shorts with lagging — adds the sector tailwind lens to every stock setup.
+          </div>
+          {data && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              <span className="text-accent-green">Leading: {data.leading?.join(', ') || '—'}</span>
+              {' · '}
+              <span className="text-accent-red">Lagging: {data.lagging?.join(', ') || '—'}</span>
+            </div>
+          )}
+        </div>
+      </div>
+      <AccuracyStrip />
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load sector rotation. Refreshes every 30 min." />}
+      {rows.length > 0 && (
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800">
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 900 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th className="text-left px-3 py-3">Sector</th>
+                <th className="text-center px-2 py-3">Trend</th>
+                <th className="text-right px-2 py-3">Score</th>
+                <th className="text-right px-2 py-3">LTP</th>
+                <th className="text-right px-2 py-3">5d</th>
+                <th className="text-right px-2 py-3">20d</th>
+                <th className="text-right px-2 py-3">5d (vs NIFTY)</th>
+                <th className="text-right px-2 py-3">20d (vs NIFTY)</th>
+                <th className="text-right px-2 py-3">EMA21 breadth</th>
+                <th className="text-right px-2 py-3">Vol×</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r: any, i: number) => {
+                const color = trendColor[r.trend] || '#9e9e9e'
+                const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+                return (
+                  <tr key={r.index} className="group border-t border-ink-500">
+                    <td className={`${tdb} px-3 font-bold text-neutral-100`}>{i + 1}. {r.label}</td>
+                    <td className={`${tdb} text-center`}>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${color}22`, color }}>{r.trend}</span>
+                    </td>
+                    <td className={`${tdb} text-right font-bold`} style={{ color }}>{r.rotationScore.toFixed(1)}</td>
+                    <td className={`${tdb} text-right ${(r.ret5d ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                      {(r.ret5d ?? 0) > 0 ? '+' : ''}{(r.ret5d ?? 0).toFixed(1)}%
+                      {r.relStr5d != null && (
+                        <span className={`ml-1 text-[9px] ${r.relStr5d >= 0 ? 'text-accent-green/70' : 'text-accent-red/70'}`}>
+                          ({r.relStr5d > 0 ? '+' : ''}{r.relStr5d.toFixed(1)})
+                        </span>
+                      )}
+                    </td>
+                    <td className={`${tdb} text-right ${(r.ret20d ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                      {(r.ret20d ?? 0) > 0 ? '+' : ''}{(r.ret20d ?? 0).toFixed(1)}%
+                      {r.relStr20d != null && (
+                        <span className={`ml-1 text-[9px] ${r.relStr20d >= 0 ? 'text-accent-green/70' : 'text-accent-red/70'}`}>
+                          ({r.relStr20d > 0 ? '+' : ''}{r.relStr20d.toFixed(1)})
+                        </span>
+                      )}
+                    </td>
+                    <td className={`${tdb} text-right text-neutral-200`}>{(r.pctAboveEma21 ?? 0).toFixed(0)}%</td>
+                    <td className={`${tdb} text-right text-neutral-300`}>{(r.volRatio5_20 ?? 1).toFixed(2)}×</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
+// ── ⚡ CROSS-ENGINE CONFLUENCE — names flagged by ≥2 engines ──
+// Pure aggregator: reads existing Weekly/Pre-Move/F&O/Daily/Old-Weekly
+// snapshots and surfaces names with multi-source agreement. Strict dedup.
+export function PublicCrossConfluencePage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-cross-confluence'], queryFn: () => snapshots.crossConfluence(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const raw: any[] = data?.rows ?? []
+  // Defense-in-depth dedup at render
+  const rows: any[] = (() => {
+    const seen = new Set<string>()
+    const out: any[] = []
+    for (const r of raw) {
+      if (seen.has(r.symbol)) continue
+      seen.add(r.symbol)
+      out.push(r)
+    }
+    return out
+  })()
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/15 to-accent-green/5 border border-accent-amber/50 rounded-lg">
+        <div className="text-3xl">⚡</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-amber">Cross-Engine Confluence · Ultra Picks</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Names flagged by <b>≥2 independent engines</b> (Weekly · Pre-Move · F&O Futures · Daily · Old-Weekly).
+            When multiple scanners with different criteria all agree, the conviction is structurally higher than any single engine alone.
+            <br/>⚡ <b>ULTRA</b> = 3+ engines agree · ⭐ <b>STRONG</b> = 2 engines agree.
+          </div>
+          {data && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              ⚡ ULTRA {data.ultraCount ?? 0} · ⭐ STRONG {data.strongCount ?? 0} · evaluated {data.totalEvaluated ?? 0} names
+            </div>
+          )}
+        </div>
+      </div>
+      <AccuracyStrip />
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load confluence. Refreshes every 30 min." />}
+      {rows.length === 0 && !isLoading && !error && <Empty msg="No multi-engine agreement right now. Check back at next publish." />}
+      {rows.length > 0 && (
+        <div className="space-y-2">
+          {rows.map((r) => (
+            <div key={r.symbol} className="bg-ink-800 border border-accent-amber/30 rounded-lg p-3 hover:border-accent-amber/60 transition-colors">
+              <div className="flex items-center justify-between gap-2 flex-wrap">
+                <div className="flex items-center gap-2 flex-wrap">
+                  <b className="text-neutral-100 text-[13px]">{r.symbol}</b>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: r.direction === 'BUY' ? '#00c85322' : '#ff174422', color: r.direction === 'BUY' ? '#00c853' : '#ff1744' }}>{r.direction}</span>
+                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${r.sources.length >= 3 ? 'bg-accent-amber/15 text-accent-amber border-accent-amber/50' : 'bg-accent-cyan/15 text-accent-cyan border-accent-cyan/50'}`}>
+                    {r.sources.length >= 3 ? '⚡ ULTRA' : '⭐ STRONG'} · {r.sources.length} engines
+                  </span>
+                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent-green/15 text-accent-green border border-accent-green/40">score {r.ultraScore.toFixed(0)}</span>
+                </div>
+                <div className="text-[11px] font-mono text-neutral-400">
+                  LTP {r.ltp != null ? `₹${fmtPx(r.ltp)}` : '—'} · Entry {r.entry != null ? `₹${fmtPx(r.entry)}` : '—'} · T2 {r.target2 != null ? `₹${fmtPx(r.target2)}` : '—'}
+                </div>
+              </div>
+              <div className="mt-2 text-[10px] text-neutral-400 font-mono">
+                Sources: <span className="text-neutral-200">{r.sources.join(' + ')}</span>
+              </div>
+              <div className="mt-1 text-[10px] text-neutral-500" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                {(r.reasoning || []).join(' · ')}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── 📜 OLD-WEEKLYPICK — comparison tab (momentum-chasing prerank, no
 // freshness reject). Same engine as current Weekly Pick but with the
 // pre-4fca35e prerank restored, for the user to compare against the

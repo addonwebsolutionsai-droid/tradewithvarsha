@@ -45,6 +45,8 @@ export const snapshots = {
   oiBuildup: () => snapshot<{ generatedAt: string; symbols: string[]; summary: any[]; rows: any[] }>('oi-buildup.json'),
   fnoFutures: () => snapshot<{ generatedAt: string; universeSize: number; total: number; highConvCount: number; medConvCount: number; rows: any[] }>('fno-futures.json'),
   oldWeeklyPick: () => snapshot<{ generatedAt: string; weekOf: string; regime: string; universe: string; preRankMode: string; rowCount: number; rows: any[] }>('old-weekly-pick.json'),
+  sectorRotation: () => snapshot<{ generatedAt: string; total: number; leading: string[]; lagging: string[]; rows: any[] }>('sector-rotation.json'),
+  crossConfluence: () => snapshot<{ generatedAt: string; totalEvaluated: number; ultraCount: number; strongCount: number; rows: any[] }>('cross-confluence.json'),
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {
