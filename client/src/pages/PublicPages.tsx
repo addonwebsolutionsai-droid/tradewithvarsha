@@ -1765,8 +1765,25 @@ function OldWeeklyTable({ rows }: { rows: any[] }): JSX.Element {
                 <td className={`${tdb} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
                 <td className={`${tdb} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
                 <td className={`${tdb} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
-                <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 260, whiteSpace: 'normal' }}>
-                  {(r.flowNote || r.shareholdingNote || '').toString().slice(0, 160)}
+                <td className={`${tdb} text-left text-neutral-400`} style={{ width: 320, maxWidth: 320, whiteSpace: 'normal' }}>
+                  {/* Two stacked lines — line 1 = institutional stake (FII/DII/Promoter
+                      with QoQ delta), line 2 = trade rationale. Both clamped to 1
+                      line each via -webkit-line-clamp so the column never expands. */}
+                  {r.shareholdingNote && (
+                    <div className="text-[10px] text-neutral-300 mb-0.5"
+                      style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      title={r.shareholdingNote}>
+                      📊 {r.shareholdingNote}
+                    </div>
+                  )}
+                  {r.flowNote && (
+                    <div className="text-[10px] text-neutral-500"
+                      style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      title={r.flowNote}>
+                      ⚡ {r.flowNote}
+                    </div>
+                  )}
+                  {!r.shareholdingNote && !r.flowNote && <span className="text-neutral-600">—</span>}
                 </td>
               </tr>
             )
