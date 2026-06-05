@@ -1679,6 +1679,104 @@ function OIFlowCard({ row: r }: { row: any }): JSX.Element {
   )
 }
 
+// ── 📜 OLD-WEEKLYPICK — comparison tab (momentum-chasing prerank, no
+// freshness reject). Same engine as current Weekly Pick but with the
+// pre-4fca35e prerank restored, for the user to compare against the
+// current pre-breakout output. Simpler single-row table — no Stake/Setup
+// stacked under the stock name.
+// Rendered RIGHT-AS-IS — never modifies anything that current Weekly Pick depends on.
+export function PublicOldWeeklyPickPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-old-weekly-pick'], queryFn: () => snapshots.oldWeeklyPick(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  // Defense-in-depth dedup — never trust upstream to be unique. One row
+  // per symbol (highest conviction wins). Applies to every render.
+  const rows: any[] = (() => {
+    const raw: any[] = data?.rows ?? []
+    const bySym = new Map<string, any>()
+    for (const r of raw) {
+      const prev = bySym.get(r.symbol)
+      if (!prev || (r.conviction ?? 0) > (prev.conviction ?? 0)) bySym.set(r.symbol, r)
+    }
+    return Array.from(bySym.values()).sort((a, b) => (b.conviction ?? 0) - (a.conviction ?? 0))
+  })()
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-neutral-700/20 to-neutral-800/10 border border-neutral-600/40 rounded-lg">
+        <div className="text-3xl">📜</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-neutral-200">Old-WeeklyPick · Momentum-Chasing Comparison</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Comparison tab — runs the SAME engine as Weekly Pick but with the <b>pre-4fca35e prerank restored</b>:
+            <span className="font-mono text-neutral-300"> rank = |mom5d|×0.6 + volBurst×4</span>,
+            and <b>no freshness-reject</b> (extended names that current scanner drops are kept here).
+            Purpose: visualise what the OLD scanner would have surfaced today, so you can compare against the current pre-breakout output.
+            <br/>Universe: CNX500 · refreshes every 30 min during market hours · NOT pushed to Telegram.
+          </div>
+          <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+            {data?.rowCount ?? rows.length} unique picks · weekOf {data?.weekOf ?? '—'} · regime {data?.regime ?? '—'}
+          </div>
+        </div>
+      </div>
+      <AccuracyStrip />
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load Old-WeeklyPick snapshot. Refreshes every 30 min." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="Scanner not run yet — first scan kicks in at the next snapshot publish." />}
+      {rows.length > 0 && <OldWeeklyTable rows={rows} />}
+    </div>
+  )
+}
+
+function OldWeeklyTable({ rows }: { rows: any[] }): JSX.Element {
+  return (
+    <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '80vh' }}>
+      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1100 }}>
+        <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+          <tr>
+            <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
+            <th className="text-center px-2 py-3">Dir</th>
+            <th className="text-center px-2 py-3">Conv</th>
+            <th className="text-right px-2 py-3 text-neutral-300">LTP</th>
+            <th className="text-right px-2 py-3 text-accent-cyan">Entry</th>
+            <th className="text-right px-2 py-3 text-accent-red">SL</th>
+            <th className="text-right px-2 py-3 text-accent-green">T1</th>
+            <th className="text-right px-2 py-3 text-accent-green">T2</th>
+            <th className="text-right px-2 py-3 text-accent-green">T3</th>
+            <th className="text-left px-3 py-3">Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((r, i) => {
+            const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
+            const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+            return (
+              <tr key={r.symbol + i} className="group border-t border-ink-500">
+                <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500`} style={{ minWidth: 140 }}>
+                  <b className="text-neutral-100">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+                </td>
+                <td className={`${tdb} text-center`}>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                </td>
+                <td className={`${tdb} text-center font-bold text-accent-green`}>{Math.round(r.conviction ?? 0)}</td>
+                <td className={`${tdb} text-right text-neutral-200`}>₹{fmtPx(r.ltp)}</td>
+                <td className={`${tdb} text-right text-accent-cyan`}>₹{fmtPx(r.entryPrice ?? r.entryPriceLow)}</td>
+                <td className={`${tdb} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
+                <td className={`${tdb} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
+                <td className={`${tdb} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
+                <td className={`${tdb} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
+                <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 260, whiteSpace: 'normal' }}>
+                  {(r.flowNote || r.shareholdingNote || '').toString().slice(0, 160)}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
+    </div>
+  )
+}
+
 // ── 📊 F&O STOCK-FUTURES — pre-breakout / pre-breakdown daily curation ──
 // Scans every NSE F&O underlying (~211 names) at every snapshot publish
 // and surfaces the TIGHTEST coils with EMA-stacked trend + volume rising

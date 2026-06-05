@@ -556,8 +556,18 @@ function buildPickRow(
 }
 
 /** Run the full weekly pick — watchlist (always evaluated) + curated NIFTY100 sweep. */
-export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | 'NSE_ALL' | 'MARKET_ALL'): Promise<WeeklyPick> {
-  log.info('PICK', 'Weekly Manager Pick starting...')
+/**
+ * 2026-06-04: opts.preRankMode allows the comparison Old-WeeklyPick tab
+ * to re-run the SAME engine with the pre-4fca35e momentum-chasing prerank
+ * + no freshness-reject. Default is unchanged ('pre-breakout') so all
+ * existing callers behave identically.
+ */
+export async function runWeeklyPick(
+  extraUniverseKey?: 'NIFTY100' | 'CNX500' | 'NSE_ALL' | 'MARKET_ALL',
+  opts?: { preRankMode?: 'pre-breakout' | 'momentum-old' },
+): Promise<WeeklyPick> {
+  const preRankMode = opts?.preRankMode ?? 'pre-breakout'
+  log.info('PICK', `Weekly Manager Pick starting (preRank=${preRankMode})...`)
   const today = new Date()
   const watchlist = await getWatchlist()
   const regime = await getMarketRegime().catch(() => null)
@@ -679,7 +689,10 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
         // ── LANE A: FIRST-BASE PRE-BREAKOUT ──
         // HARD freshness reject — already-extended names that DON'T match
         // wave-2 pattern (above) are dropped. Hunting fresh first-base only.
-        if (Math.abs(ret5d) > 6 || Math.abs(ret20d) > 25) {
+        // 2026-06-04: skipped entirely in 'momentum-old' mode (Old-WeeklyPick
+        // comparison tab — restores pre-4fca35e behaviour where extended
+        // names were KEPT and the scanner chased momentum).
+        if (preRankMode === 'pre-breakout' && (Math.abs(ret5d) > 6 || Math.abs(ret20d) > 25)) {
           rejectedExtended++
           continue
         }
@@ -719,7 +732,15 @@ export async function runWeeklyPick(extraUniverseKey?: 'NIFTY100' | 'CNX500' | '
         preBreakoutScore -= Math.min(20, Math.abs(ret5d) * 2)
         preBreakoutScore -= Math.min(15, Math.abs(ret20d) * 0.5)
         const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.5 : avgTurnoverCr >= 5 ? 1.2 : 1.0
-        const rank = Math.max(0, preBreakoutScore) * visibilityMult
+        let rank = Math.max(0, preBreakoutScore) * visibilityMult
+        // 2026-06-04: in 'momentum-old' mode use the pre-4fca35e formula
+        // (rank = |mom5| × 0.6 + volBurst × 4). This rewards extended names
+        // and is intentionally INCLUDED ONLY for the Old-WeeklyPick tab so
+        // user can compare against current pre-breakout output.
+        if (preRankMode === 'momentum-old') {
+          const volBurst = volRatio5      // 5d / 60d avg
+          rank = Math.abs(ret5d) * 0.6 + volBurst * 4
+        }
         prerank.push({ symbol: sym, preBreakoutScore, ret5d, ret20d, rank, candles: candlesD, avgTurnoverCr, reasons, bucket: 'FIRST_BASE' })
       } catch { /* skip */ }
     }

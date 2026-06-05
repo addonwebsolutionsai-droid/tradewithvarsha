@@ -44,6 +44,7 @@ export const snapshots = {
   preMoveIdentifier: () => snapshot<{ generatedAt: string; universeSize: number; evaluated: number; qualityPassed: number; candidates: any[]; tier1Count: number; tier2Count: number; tier3Count: number; notes: string[] }>('pre-move-identifier.json'),
   oiBuildup: () => snapshot<{ generatedAt: string; symbols: string[]; summary: any[]; rows: any[] }>('oi-buildup.json'),
   fnoFutures: () => snapshot<{ generatedAt: string; universeSize: number; total: number; highConvCount: number; medConvCount: number; rows: any[] }>('fno-futures.json'),
+  oldWeeklyPick: () => snapshot<{ generatedAt: string; weekOf: string; regime: string; universe: string; preRankMode: string; rowCount: number; rows: any[] }>('old-weekly-pick.json'),
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {

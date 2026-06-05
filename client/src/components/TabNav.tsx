@@ -104,6 +104,12 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // publish across all ~211 NSE F&O underlyings. Multi-lens overlay
     // (EMA stack · tight coil · vol surging · FII↑ · promoter stable) to
     // identify moves BEFORE they start. Per user directive.
+    // 2026-06-04: Old-WeeklyPick comparison tab — momentum-chasing prerank
+    // (pre-4fca35e) + no freshness-reject. Side-by-side vs current Weekly
+    // Pick to surface what the stricter pre-breakout filter is dropping.
+    { to: '/old-weekly',   label: 'Old-WeeklyPick', icon: <ListChecks size={14} />,
+      acc: null,
+      title: 'Old-WeeklyPick — runs the same engine with the pre-4fca35e momentum-chasing prerank restored and no freshness-reject. Compare against current Weekly Pick to see what the stricter filter is dropping. Not pushed to Telegram.' },
     { to: '/fno-futures',  label: 'F&O Futures',  icon: <BarChart3 size={14} />,
       acc: null,
       title: 'F&O Stock-Futures — pre-breakout daily scan across all ~211 NSE F&O underlyings. Multi-lens overlay: EMA stack + tight coil + at 20d high/low + volume rising + FII stake up + promoter stable. Identifies setups BEFORE the move happens.' },

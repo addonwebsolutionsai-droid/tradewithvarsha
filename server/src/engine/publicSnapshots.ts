@@ -325,6 +325,59 @@ let fnoScanInflight: Promise<void> | null = null
 let fnoLastScanAt = 0
 const FNO_SCAN_MIN_INTERVAL_MS = 25 * 60_000
 
+// Old-WeeklyPick comparison scan — async/throttled. Min 25 min between
+// scans. Runs the SAME engine with preRankMode='momentum-old' which
+// restores the pre-4fca35e momentum-chasing prerank (rank = |mom5|×0.6 +
+// volBurst×4) and removes the freshness-reject so the user can compare
+// against current pre-breakout output side-by-side.
+let oldWpInflight: Promise<void> | null = null
+let oldWpLastScanAt = 0
+const OLD_WP_MIN_INTERVAL_MS = 25 * 60_000
+
+async function triggerOldWeeklyScan(): Promise<void> {
+  if (oldWpInflight) return oldWpInflight
+  if (Date.now() - oldWpLastScanAt < OLD_WP_MIN_INTERVAL_MS) return
+  oldWpInflight = (async () => {
+    const startedAt = new Date().toISOString()
+    try {
+      const { runWeeklyPick } = await import('./weeklyManagerPick')
+      // CNX500 keeps the scan under ~4 min during market hours; matches
+      // the universe used by the regular intraday-live cron so the two
+      // tabs are comparing the same name pool with different prerank.
+      const pick = await runWeeklyPick('CNX500', { preRankMode: 'momentum-old' })
+
+      // Dedup by symbol — never show a stock twice in the same tab.
+      // Pick the highest-conviction row per symbol; tie-break by recency.
+      const bySym = new Map<string, any>()
+      for (const r of pick.rows ?? []) {
+        const prev = bySym.get(r.symbol)
+        if (!prev || (r.conviction ?? 0) > (prev.conviction ?? 0)) {
+          bySym.set(r.symbol, r)
+        }
+      }
+      const dedupedRows = Array.from(bySym.values())
+        .sort((a, b) => (b.conviction ?? 0) - (a.conviction ?? 0))
+      await enrichShareholdingNotes(dedupedRows)
+      const out = {
+        generatedAt: startedAt,
+        weekOf: pick.weekOf,
+        regime: pick.regime,
+        universe: 'CNX500',
+        preRankMode: 'momentum-old',
+        rowCount: dedupedRows.length,
+        rows: dedupedRows,
+      }
+      await fs.writeFile(path.join(SNAP_DIR, 'old-weekly-pick.json'), JSON.stringify(out, null, 2))
+      oldWpLastScanAt = Date.now()
+      log.ok('PUBLIC-SNAP', `old-weekly-pick: ${dedupedRows.length} unique picks written (async, momentum-old)`)
+    } catch (e) {
+      log.warn('PUBLIC-SNAP', `old-weekly-pick async: ${(e as Error).message}`)
+    } finally {
+      oldWpInflight = null
+    }
+  })()
+}
+
 async function triggerFnoScan(): Promise<void> {
   if (fnoScanInflight) return fnoScanInflight
   if (Date.now() - fnoLastScanAt < FNO_SCAN_MIN_INTERVAL_MS) return
@@ -732,6 +785,7 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   // fno-futures.json on its own when done. The next publish already sees
   // the file. Throttled — only one scan in flight at a time.
   triggerFnoScan().catch(() => { /* logged inside */ })
+  triggerOldWeeklyScan().catch(() => { /* logged inside */ })
 
   // 7. Accuracy report (system-wide hit-rate, R-multiple, by source/tier)
   // 2026-05-18: published as a separate snapshot for the dashboard strip.
