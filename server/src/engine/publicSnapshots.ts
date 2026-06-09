@@ -325,6 +325,43 @@ let fnoScanInflight: Promise<void> | null = null
 let fnoLastScanAt = 0
 const FNO_SCAN_MIN_INTERVAL_MS = 25 * 60_000
 
+// Accumulation/Distribution divergence scan — finds names where smart-money
+// flow (OBV / A/D / CMF) DIVERGES from price action. Pre-move signal.
+// Async/throttled (same pattern as fno scan), min 25 min between runs.
+let adInflight: Promise<void> | null = null
+let adLastScanAt = 0
+const AD_MIN_INTERVAL_MS = 25 * 60_000
+
+async function triggerAdDivergenceScan(): Promise<void> {
+  if (adInflight) return adInflight
+  if (Date.now() - adLastScanAt < AD_MIN_INTERVAL_MS) return
+  adInflight = (async () => {
+    const startedAt = new Date().toISOString()
+    try {
+      const { scanAccumulationDistribution } = await import('./accumulationDistribution')
+      const { resolveUniverse } = await import('../screeners/universe')
+      const symbols = await resolveUniverse('CNX500')
+      const rows = await scanAccumulationDistribution(symbols)
+      const out = {
+        generatedAt: startedAt,
+        universe: 'CNX500',
+        universeSize: symbols.length,
+        total: rows.length,
+        accumulationCount: rows.filter(r => r.side === 'ACCUMULATION').length,
+        distributionCount: rows.filter(r => r.side === 'DISTRIBUTION').length,
+        rows,
+      }
+      await fs.writeFile(path.join(SNAP_DIR, 'ad-divergence.json'), JSON.stringify(out, null, 2))
+      adLastScanAt = Date.now()
+      log.ok('PUBLIC-SNAP', `ad-divergence: ${rows.length} picks · ${out.accumulationCount} accum · ${out.distributionCount} dist`)
+    } catch (e) {
+      log.warn('PUBLIC-SNAP', `ad-divergence async: ${(e as Error).message}`)
+    } finally {
+      adInflight = null
+    }
+  })()
+}
+
 // Old-WeeklyPick comparison scan — async/throttled. Min 25 min between
 // scans. Runs the SAME engine with preRankMode='momentum-old' which
 // restores the pre-4fca35e momentum-chasing prerank (rank = |mom5|×0.6 +
@@ -786,6 +823,7 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   // the file. Throttled — only one scan in flight at a time.
   triggerFnoScan().catch(() => { /* logged inside */ })
   triggerOldWeeklyScan().catch(() => { /* logged inside */ })
+  triggerAdDivergenceScan().catch(() => { /* logged inside */ })
 
   // 6.8 Sector Rotation — 12 NIFTY sectoral indices ranked by relative
   // strength. Synchronous (only 12 candle fetches, fast).

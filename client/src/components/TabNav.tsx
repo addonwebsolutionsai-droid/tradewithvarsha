@@ -117,6 +117,10 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/sectors',      label: 'Sectors',      icon: <BarChart3 size={14} />,
       acc: null,
       title: 'Sector Rotation — 12 NIFTY sectoral indices ranked LEADING → LAGGING by composite (20d ret · 5d ret · RSI). Align stock picks with sector tailwind.' },
+    // 2026-06-05: Smart-Money divergence — OBV/CMF/A-D Line vs price.
+    { to: '/smart-money',  label: 'Smart Money',  icon: <Activity size={14} />,
+      acc: null,
+      title: 'Accumulation / Distribution divergence — detects names where institutional flow (OBV · A/D Line · CMF) diverges from price action. Catches setups BEFORE price moves.' },
     { to: '/fno-futures',  label: 'F&O Futures',  icon: <BarChart3 size={14} />,
       acc: null,
       title: 'F&O Stock-Futures — pre-breakout daily scan across all ~211 NSE F&O underlyings. Multi-lens overlay: EMA stack + tight coil + at 20d high/low + volume rising + FII stake up + promoter stable. Identifies setups BEFORE the move happens.' },

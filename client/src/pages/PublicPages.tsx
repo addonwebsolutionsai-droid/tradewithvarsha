@@ -1846,6 +1846,95 @@ export function PublicCrossConfluencePage(): JSX.Element {
   )
 }
 
+// ── 🧲 SMART MONEY / Accumulation-Distribution divergence ──
+// Detects names where OBV / A/D Line / CMF DIVERGE from price action.
+// Bullish accumulation: price flat/down + smart-money buying (institutions
+// loading while retail thinks it's dead). Bearish distribution: opposite.
+// Catches setups BEFORE price moves.
+export function PublicAdDivergencePage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-ad-divergence'], queryFn: () => snapshots.adDivergence(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const raw: any[] = data?.rows ?? []
+  const rows: any[] = (() => {
+    const seen = new Set<string>(); const out: any[] = []
+    for (const r of raw) { if (seen.has(r.symbol)) continue; seen.add(r.symbol); out.push(r) }
+    return out
+  })()
+  const accum = rows.filter(r => r.side === 'ACCUMULATION')
+  const dist = rows.filter(r => r.side === 'DISTRIBUTION')
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-cyan/15 to-accent-violet/5 border border-accent-cyan/50 rounded-lg">
+        <div className="text-3xl">🧲</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-cyan">Smart Money · Accumulation / Distribution Divergence</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Detects names where institutional flow (OBV · A/D Line · CMF) <b>diverges from price action</b>.
+            🟢 <b>ACCUMULATION</b> — price flat or down BUT smart-money buying (institutions loading while retail thinks the stock is dead).
+            🔴 <b>DISTRIBUTION</b> — price flat or up BUT smart-money selling (institutions unloading into retail strength).
+            <br/>Catches setups BEFORE price confirms — the divergence is the leading signal.
+          </div>
+          {data && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              🟢 {data.accumulationCount ?? 0} accumulation · 🔴 {data.distributionCount ?? 0} distribution · scanned {data.universeSize ?? 500} CNX500 names
+            </div>
+          )}
+        </div>
+      </div>
+      <AccuracyStrip />
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load divergence scan. Refreshes every 30 min." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No clean divergences right now. Most names price-volume agree — check back at next snapshot." />}
+      {accum.length > 0 && (
+        <div>
+          <div className="text-[12px] font-bold text-accent-green mb-2">🟢 ACCUMULATION · {accum.length}</div>
+          <div className="space-y-2">{accum.map((r, i) => <AdCard key={'A' + i} row={r} />)}</div>
+        </div>
+      )}
+      {dist.length > 0 && (
+        <div className="mt-4">
+          <div className="text-[12px] font-bold text-accent-red mb-2">🔴 DISTRIBUTION · {dist.length}</div>
+          <div className="space-y-2">{dist.map((r, i) => <AdCard key={'D' + i} row={r} />)}</div>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AdCard({ row: r }: { row: any }): JSX.Element {
+  const accum = r.side === 'ACCUMULATION'
+  const color = accum ? '#00c853' : '#ff1744'
+  return (
+    <div className="bg-ink-800 border border-accent-cyan/20 rounded-lg p-3 hover:border-accent-cyan/50 transition-colors">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <b className="text-neutral-100 text-[13px]">{r.symbol}</b>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${color}22`, color }}>
+            {accum ? '🟢 ACCUMULATION' : '🔴 DISTRIBUTION'}
+          </span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent-cyan/15 text-accent-cyan border border-accent-cyan/40">
+            strength {r.divergenceStrength}
+          </span>
+        </div>
+        <div className="text-[11px] font-mono text-neutral-400">
+          ₹{fmtPx(r.price)} · 20d {r.ret20d > 0 ? '+' : ''}{r.ret20d.toFixed(1)}%
+        </div>
+      </div>
+      <div className="mt-2 text-[10px] text-neutral-400 font-mono flex flex-wrap gap-x-4 gap-y-0.5">
+        <span>OBV slope <b className={r.obvSlope20 > 0 ? 'text-accent-green' : 'text-accent-red'}>{r.obvSlope20 > 0 ? '+' : ''}{(r.obvSlope20 * 100).toFixed(0)}%</b></span>
+        <span>A/D slope <b className={r.adlSlope20 > 0 ? 'text-accent-green' : 'text-accent-red'}>{r.adlSlope20 > 0 ? '+' : ''}{(r.adlSlope20 * 100).toFixed(0)}%</b></span>
+        <span>CMF20 <b className={r.cmf20 > 0 ? 'text-accent-green' : 'text-accent-red'}>{r.cmf20 > 0 ? '+' : ''}{r.cmf20.toFixed(2)}</b></span>
+      </div>
+      <div className="mt-1 text-[10px] text-neutral-500"
+        style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+        {(r.reasons || []).join(' · ')}
+      </div>
+    </div>
+  )
+}
+
 // ── 📜 OLD-WEEKLYPICK — comparison tab (momentum-chasing prerank, no
 // freshness reject). Same engine as current Weekly Pick but with the
 // pre-4fca35e prerank restored, for the user to compare against the

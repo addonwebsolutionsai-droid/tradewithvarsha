@@ -47,6 +47,7 @@ export const snapshots = {
   oldWeeklyPick: () => snapshot<{ generatedAt: string; weekOf: string; regime: string; universe: string; preRankMode: string; rowCount: number; rows: any[] }>('old-weekly-pick.json'),
   sectorRotation: () => snapshot<{ generatedAt: string; total: number; leading: string[]; lagging: string[]; rows: any[] }>('sector-rotation.json'),
   crossConfluence: () => snapshot<{ generatedAt: string; totalEvaluated: number; ultraCount: number; strongCount: number; rows: any[] }>('cross-confluence.json'),
+  adDivergence: () => snapshot<{ generatedAt: string; universe: string; universeSize: number; total: number; accumulationCount: number; distributionCount: number; rows: any[] }>('ad-divergence.json'),
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {
