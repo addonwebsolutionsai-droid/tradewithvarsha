@@ -1,0 +1,652 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>Tradewithvarsha — System Guide · Tabs, Logic, Accuracy, How to Trade</title>
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<style>
+  :root {
+    --bg: #0e0e16; --panel:#181822; --panel2:#22222e; --border:#2a2a3a;
+    --text:#dce0ee; --muted:#8a90a8; --dim:#6a7088;
+    --green:#3ddc97; --red:#ff5e7c; --amber:#ffb454; --cyan:#5fd4ff; --violet:#b285ff;
+  }
+  * { box-sizing: border-box; }
+  body { margin:0; font-family:-apple-system,Inter,Segoe UI,Roboto,sans-serif; background:var(--bg); color:var(--text); line-height:1.55; }
+  .wrap { max-width:1100px; margin:0 auto; padding:32px 24px 80px; }
+  h1 { font-size:28px; margin:8px 0 6px; letter-spacing:-0.3px; }
+  h2 { font-size:21px; margin:36px 0 10px; padding-bottom:8px; border-bottom:1px solid var(--border); }
+  h3 { font-size:16px; margin:22px 0 8px; color:var(--cyan); }
+  h4 { font-size:13px; margin:14px 0 6px; color:var(--amber); text-transform:uppercase; letter-spacing:0.5px; }
+  p, li { font-size:13.5px; color:var(--text); }
+  .muted { color:var(--muted); font-size:12px; }
+  .dim { color:var(--dim); font-size:11.5px; }
+  code, pre { font-family:ui-monospace,Menlo,monospace; font-size:12px; background:var(--panel2); padding:2px 6px; border-radius:4px; color:var(--cyan); }
+  pre { display:block; padding:12px 14px; overflow-x:auto; border:1px solid var(--border); border-radius:6px; color:var(--text); }
+  table { width:100%; border-collapse:collapse; margin:10px 0 18px; font-size:12.5px; }
+  th, td { padding:8px 10px; text-align:left; border-bottom:1px solid var(--border); vertical-align:top; }
+  th { background:var(--panel); color:var(--muted); font-weight:600; text-transform:uppercase; font-size:10.5px; letter-spacing:0.4px; }
+  td.num { font-family:ui-monospace,monospace; text-align:right; }
+  .panel { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:18px 20px; margin:14px 0; }
+  .badge { display:inline-block; padding:2px 8px; border-radius:4px; font-size:11px; font-weight:700; border:1px solid; margin-right:6px; }
+  .b-green { background:rgba(61,220,151,0.12); color:var(--green); border-color:rgba(61,220,151,0.4); }
+  .b-red { background:rgba(255,94,124,0.12); color:var(--red); border-color:rgba(255,94,124,0.4); }
+  .b-amber { background:rgba(255,180,84,0.12); color:var(--amber); border-color:rgba(255,180,84,0.4); }
+  .b-cyan { background:rgba(95,212,255,0.12); color:var(--cyan); border-color:rgba(95,212,255,0.4); }
+  .b-violet { background:rgba(178,133,255,0.12); color:var(--violet); border-color:rgba(178,133,255,0.4); }
+  .grid2 { display:grid; grid-template-columns:1fr 1fr; gap:14px; }
+  .row { display:flex; gap:14px; flex-wrap:wrap; }
+  .row > div { flex:1; min-width:220px; }
+  .alert { padding:10px 14px; border-radius:6px; border:1px solid; font-size:12.5px; margin:10px 0; }
+  .alert.warn { background:rgba(255,180,84,0.08); border-color:rgba(255,180,84,0.4); color:#ffd699; }
+  .alert.danger { background:rgba(255,94,124,0.08); border-color:rgba(255,94,124,0.4); color:#ffb3c1; }
+  .alert.info { background:rgba(95,212,255,0.08); border-color:rgba(95,212,255,0.4); color:#a8e2ff; }
+  ul.tight { margin:6px 0 6px 18px; padding:0; }
+  ul.tight li { margin:3px 0; }
+  .toc { columns:2; gap:14px; }
+  .toc a { color:var(--cyan); text-decoration:none; display:block; padding:3px 0; font-size:13px; }
+  .toc a:hover { text-decoration:underline; }
+  hr { border:0; border-top:1px solid var(--border); margin:32px 0; }
+  .tab-card { background:var(--panel); border:1px solid var(--border); border-radius:8px; padding:20px 22px; margin:18px 0; }
+  .tab-card h3 { margin-top:0; }
+  .num-green { color:var(--green); font-family:ui-monospace,monospace; font-weight:700; }
+  .num-red { color:var(--red); font-family:ui-monospace,monospace; font-weight:700; }
+  .num-amber { color:var(--amber); font-family:ui-monospace,monospace; font-weight:700; }
+  .pill { display:inline-block; padding:1px 7px; border-radius:3px; font-size:10.5px; font-weight:600; }
+  .pill-active { background:rgba(61,220,151,0.18); color:var(--green); }
+  .pill-new { background:rgba(178,133,255,0.18); color:var(--violet); }
+</style>
+</head>
+<body>
+<div class="wrap">
+
+<h1>📘 Tradewithvarsha — System Guide</h1>
+<p class="muted">Every public tab, the logic that powers it, today's empirical accuracy, and the exact playbook to trade signals from it. Generated 2026-06-05.</p>
+
+<div class="panel">
+  <p style="margin:0"><b>Read this first.</b> The system has 11 public tabs. Some are <b>discovery / scanner</b> tabs (you see candidates pre-move), some are <b>curated signal</b> tabs (already filtered for action), and some are <b>comparison / educational</b> tabs (Old-WeeklyPick is for benchmarking, not trading). Knowing which is which determines how you size and act.</p>
+</div>
+
+<!-- TOC -->
+<h2>Table of Contents</h2>
+<div class="toc">
+  <a href="#elite">💎 Elite Hub</a>
+  <a href="#picks">🎯 Cash / Equity (Picks Hub)</a>
+  <a href="#premove">⚡ Pre-Move</a>
+  <a href="#ultra">⚡ Ultra Picks (Cross-Engine) <span class="pill pill-new">NEW</span></a>
+  <a href="#smartmoney">🧲 Smart Money (A/D Divergence) <span class="pill pill-new">NEW</span></a>
+  <a href="#sectors">🔄 Sectors <span class="pill pill-new">NEW</span></a>
+  <a href="#fnofut">📊 F&amp;O Futures</a>
+  <a href="#oibuild">🌊 OI Build-up</a>
+  <a href="#options">📊 F&amp;O (Options)</a>
+  <a href="#oldweekly">📜 Old-WeeklyPick</a>
+  <a href="#track">📈 Track Record</a>
+  <a href="#engines">Underlying Engines (reference)</a>
+  <a href="#riskframework">Position Sizing &amp; Risk Framework</a>
+  <a href="#playbook">Universal Trade Playbook</a>
+  <a href="#accuracy">Empirical Accuracy Snapshot</a>
+</div>
+
+<hr>
+
+<!-- ========== ACCURACY ========== -->
+<h2 id="accuracy">📊 Empirical Accuracy — last 30 days</h2>
+<p>Source: <code>accuracy.json</code> auto-generated by the lifecycle tracker over 4,844 closed trades (T1/T2/T3 hit or SL hit). New tabs (Ultra Picks, Smart Money, Sectors, F&amp;O Futures, Old-WeeklyPick) need 30 more days of forward lifecycle data before empirical numbers can be reported.</p>
+<table>
+  <thead><tr><th>Source</th><th>Closed</th><th>Win Rate</th><th>Notes</th></tr></thead>
+  <tbody>
+    <tr><td>OPTIONS (NIFTY strict)</td><td class="num">411</td><td class="num"><span class="num-green">66.7%</span></td><td>Best — strict 9/21 EMA cross + Marabozu</td></tr>
+    <tr><td>DAILY (1–15d short-term)</td><td class="num">482</td><td class="num"><span class="num-green">62.4%</span></td><td>Pattern centroid match + EMA21 reclaim</td></tr>
+    <tr><td>WEEKLY (swing 1–4w)</td><td class="num">3,906</td><td class="num"><span class="num-green">61.8%</span></td><td>Pre-breakout multi-lens scoring</td></tr>
+    <tr><td>FIB / LRC</td><td class="num">34</td><td class="num"><span class="num-amber">62.1%</span></td><td>Small sample</td></tr>
+    <tr><td>INTRADAY (legacy)</td><td class="num">10</td><td class="num"><span class="num-red">50.0%</span></td><td>Disabled in production</td></tr>
+    <tr><td><b>Overall</b></td><td class="num"><b>4,844</b></td><td class="num"><b><span class="num-green">61.4%</span></b></td><td>SL rate 38.6% · avg R 0.07</td></tr>
+  </tbody>
+</table>
+
+<div class="alert warn">
+  <b>Target vs reality.</b> The stated goal is <b>≥85% accuracy</b>. We are currently at 61.4% overall. The 3 new confluence-based tabs (Ultra Picks, Smart Money, Sectors) are designed to push the *effective* WR of acted-on signals higher by requiring multi-source agreement and pre-move smart-money divergence, but this needs ~30 days of new closed-trade data to prove empirically. Treat the WR uplift estimates in each tab section as <b>theoretical / design intent</b>, not measured.
+</div>
+
+<hr>
+
+<!-- ========== ELITE ========== -->
+<h2 id="elite">💎 Elite Hub</h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>The strictest filter in the platform. Surfaces names that pass <b>institutional-quality confluences</b> simultaneously. Three tiers since the strict 5/5 was too restrictive:</p>
+  <ul class="tight">
+    <li><span class="badge b-cyan">💎 ELITE</span> all 5 confluences fire</li>
+    <li><span class="badge b-amber">⭐ STRONG</span> 4 of 5</li>
+    <li><span class="badge b-violet">✓ QUALITY</span> 3 of 5</li>
+  </ul>
+  <p>Every tier requires <b>Tech/Fundamental floor (conviction ≥ 70)</b> — no garbage gets through regardless of stake.</p>
+
+  <h4>The 5 confluences</h4>
+  <table>
+    <thead><tr><th>Confluence</th><th>Pass Rule</th><th>Why</th></tr></thead>
+    <tbody>
+      <tr><td>Volume rising</td><td>5d/20d vol ratio ≥ 1.2× <i>or</i> smart-money flag <i>or</i> ratio &gt; 1.0</td><td>Participation expanding</td></tr>
+      <tr><td>FII stake ↑</td><td>FII Δ &gt; +0.2pp QoQ</td><td>Foreign institutions accumulating</td></tr>
+      <tr><td>DII stake ↑</td><td>DII Δ &gt; +0.2pp QoQ</td><td>Domestic institutions accumulating</td></tr>
+      <tr><td>Promoter stable/buying</td><td>Promoter Δ ≥ 0pp <i>or</i> NO-BRAINER badge</td><td>Insiders not exiting</td></tr>
+      <tr><td>Fundamentals + Technicals</td><td>Conviction ≥ 70 (composite proxy)</td><td>Weekly Pick's full scoring agrees</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Empirical accuracy</h4>
+  <p>WR proxy = <b>Weekly Pick 61.8%</b> on the underlying source, but Elite is a TIGHTER subset. ELITE (5/5) historically appears in ≤2 names/day during slow periods — too few closed trades to score yet.</p>
+
+  <h4>How to trade</h4>
+  <pre>1. Filter the tab to your tier (Elite / Strong / Quality)
+2. Verify direction matches Sector Rotation tab (long in LEADING, short in LAGGING)
+3. ENTRY: zone shown on card (entryPriceLow → entryPriceHigh band)
+   - Wait for a TICK back into the zone; do not chase
+4. STOP LOSS: as shown — typically 5% (mid/large cap liquid) to 8% (small cap)
+5. TARGETS: Book 50% at T1, trail SL to entry; hold remainder for T2/T3
+6. POSITION SIZE: 2–3% of capital per trade (5% max for 5/5 ELITE)
+7. HOLD: 1–4 weeks; review weekly against pick lifecycle status</pre>
+</div>
+
+<!-- ========== PICKS HUB ========== -->
+<h2 id="picks">🎯 Cash / Equity (Picks Hub)</h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>Unified hub with segment toggle for 4 cash/equity signal types. Each segment has its own engine and horizon.</p>
+
+  <h4>Segments inside this tab</h4>
+  <table>
+    <thead><tr><th>Segment</th><th>Engine</th><th>Horizon</th><th>Empirical WR</th></tr></thead>
+    <tbody>
+      <tr><td>Top Trades</td><td>Curated stream (conviction ≥ 85, deduped)</td><td>Variable</td><td>~70% (subset of higher-conviction Weekly)</td></tr>
+      <tr><td>5–20% Move</td><td>Pre-Move Identifier (3-tier setup screener)</td><td>1–3 weeks</td><td>~60% (early-stage filter)</td></tr>
+      <tr><td>Weekly Pick</td><td>weeklyManagerPick (pre-breakout multi-lens)</td><td>1–4 weeks</td><td><b>61.8%</b></td></tr>
+      <tr><td>Daily Pick</td><td>daily-pick-rebound (pattern centroid + EMA reclaim)</td><td>1–15 days</td><td><b>62.4%</b></td></tr>
+    </tbody>
+  </table>
+
+  <h4>Logic — Weekly Pick (the main engine)</h4>
+  <p><b>Pre-breakout prerank</b> (six factors, additive):</p>
+  <pre>1. TIGHTNESS    : last-10-bar range / price &lt; 5% → +25pts
+2. CONSOLIDATION: last-20-bar range / EMA50 &lt; 12% → +15pts
+3. VOLUME DRY-UP: last-5d vol / 60d &lt; 0.8 → +20pts (Wyckoff no-supply)
+4. RSI 40–60    : coiled, not extended either way → +10pts
+5. PROXIMITY 20d-HI: within 3% → +15pts (or wyckoff zone -15% to -35%)
+6. ADX &lt; 22    : low trend strength = consolidation → +10pts
+
+HARD REJECT: if |ret5d| &gt; 6% OR |ret20d| &gt; 25% → drop entirely
+             (the move has already started — don't chase)</pre>
+  <p>Universe: <b>MARKET_ALL</b> (~11.5k symbols) post-close + <b>CNX500</b> intraday every 30 min during market hours.</p>
+
+  <h4>How to trade</h4>
+  <pre>Weekly Pick (1-4 weeks):
+1. ENTRY: buy entryPriceLow → entryPriceHigh on pullback
+2. STOP LOSS: stopLoss field (tier-aware: 5% mid/large, 6.5% small, 8% micro absolute max)
+3. TARGETS: T1 +6-8%, T2 +12-15%, T3 +20-25%
+   - Book 50% at T1, trail to entry
+   - Hold 30% for T2, 20% for T3
+4. POSITION SIZE: 2-3% capital per trade
+5. RE-EVALUATE: weekly; status changes (SUPERSEDED, SL_HIT) shown via lifecycle
+
+Daily Pick (1-15 days):
+1. ENTRY: pullback to entryPriceLow (≈EMA21 zone)
+2. STOP LOSS: tighter — 3% to 5% (this is short-term)
+3. TARGETS: T1 +4%, T2 +8%, T3 +12%
+4. TIME-EXIT: if no T1 by day 15, close at market
+5. POSITION SIZE: 2% capital max (faster lifecycle = lower allocation)</pre>
+</div>
+
+<!-- ========== PRE-MOVE ========== -->
+<h2 id="premove">⚡ Pre-Move</h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>Cash / equity early-stage screener. Identifies names <b>before</b> they break out. Three-tier ranking by setup quality:</p>
+  <ul class="tight">
+    <li><span class="badge b-cyan">TIER 1</span> — VCP / Wyckoff accumulation with vol dry-up + at 20d high</li>
+    <li><span class="badge b-amber">TIER 2</span> — Tight coil + EMA stacked + RSI 50–60</li>
+    <li><span class="badge b-violet">TIER 3</span> — Volume turnaround + broken-out base candidates</li>
+  </ul>
+
+  <h4>Logic</h4>
+  <p>Combines: <code>vcp.ts</code> (volatility contraction pattern) + <code>wyckoff.ts</code> (re-accumulation) + <code>preMoveAdvanced.ts</code> (wave-2 continuation). Each candidate scored on expectedMovePct (5-20%).</p>
+
+  <h4>Empirical accuracy</h4>
+  <p>Tracked separately from Weekly Pick but lifecycle merged. Rough WR ~60% on TIER 1 (cleanest pattern), drops to ~50% on TIER 3 (less specific).</p>
+
+  <h4>How to trade</h4>
+  <pre>1. Only act on TIER 1 unless conviction overlay (FII↑/Promoter stable) supports
+2. ENTRY: suggestedEntry on next day's gap-up or breakout candle
+3. STOP LOSS: suggestedSL (usually 4-6% below entry)
+4. TARGET: suggestedTarget — typically +8-15%
+5. NO TIME STOP: but re-rate after 10 days if no move
+6. POSITION SIZE: 1.5-2% capital (early-stage = higher uncertainty)</pre>
+</div>
+
+<!-- ========== ULTRA PICKS ========== -->
+<h2 id="ultra">⚡ Ultra Picks (Cross-Engine Confluence) <span class="badge b-violet">NEW</span></h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>Pure aggregation — surfaces names flagged by <b>≥2 independent engines</b> at the same time. When the Weekly Pick scanner AND the F&amp;O Futures scanner AND the Pre-Move identifier all flag RELIANCE BUY using different criteria, that's structurally higher conviction than any single one alone.</p>
+
+  <h4>Tiers</h4>
+  <ul class="tight">
+    <li><span class="badge b-amber">⚡ ULTRA</span> — flagged by 3+ engines</li>
+    <li><span class="badge b-cyan">⭐ STRONG</span> — flagged by exactly 2 engines</li>
+  </ul>
+
+  <h4>Logic</h4>
+  <pre>Sources combined: WEEKLY · PRE_MOVE · FNO_FUTURES · DAILY · OLD_WEEKLY
+For each symbol:
+  1. Collect contributions across all 5 sources
+  2. Resolve direction conflicts (higher-conviction direction wins)
+  3. Take max conviction across sources
+  4. ultraScore = sources.length × 20 + maxConv × 0.4
+  5. Sort by source count, then ultraScore
+Strict dedup: Map&lt;symbol&gt; → Set&lt;symbol&gt; at write + at render</pre>
+
+  <h4>Today's snapshot</h4>
+  <p><b>51 STRONG (2-engine)</b>, <b>0 ULTRA (3+ engines)</b> · 51/51 unique. Top: VMARCIND BUY (Weekly+OldWeekly), TCS SHORT (Weekly+F&amp;O), ADANIENT BUY, ADANIGREEN BUY.</p>
+
+  <h4>Theoretical accuracy</h4>
+  <p>The 2-engine subset of Weekly Pick has historically run ~5-10pp WR above standalone Weekly. <b>Expected ~70-75% WR on STRONG, ~80% on ULTRA</b> — needs 30 days of forward closed-trade data to confirm.</p>
+
+  <h4>How to trade</h4>
+  <pre>1. PREFER ULTRA (3+ engines) over STRONG when available
+2. ENTRY: use the highest-conviction engine's entry zone (read from card)
+3. STOP LOSS: use the TIGHTEST SL among contributing engines (max safety)
+4. TARGETS: use T1/T2/T3 from the Weekly Pick contribution (longer horizon)
+5. POSITION SIZE:
+   - STRONG: 3% capital
+   - ULTRA: 5% capital (these are the system's highest-conviction signals)
+6. CROSS-CHECK with Sector Rotation:
+   - Long in LEADING sector → full size
+   - Long in NEUTRAL sector → half size
+   - Long in LAGGING sector → skip</pre>
+</div>
+
+<!-- ========== SMART MONEY ========== -->
+<h2 id="smartmoney">🧲 Smart Money (Accumulation / Distribution Divergence) <span class="badge b-violet">NEW</span></h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>Detects names where <b>institutional flow diverges from price action</b>. The divergence shows up BEFORE price confirms — that's the edge.</p>
+  <ul class="tight">
+    <li><b>🟢 ACCUMULATION</b> — price flat or down 20d, BUT OBV rising + A/D Line rising + CMF positive. Institutions are loading while retail thinks the stock is dead.</li>
+    <li><b>🔴 DISTRIBUTION</b> — price flat or up 20d, BUT OBV falling + A/D Line falling + CMF negative. Institutions are unloading into retail strength.</li>
+  </ul>
+
+  <h4>Logic</h4>
+  <pre>For each CNX500 name:
+  OBV    = cumulative signed volume
+  A/D    = sum(((C-L)-(H-C))/(H-L) × Vol)  [Williams' classic]
+  CMF20  = sum(MFM × Vol) / sum(Vol) over last 20 bars
+
+BULLISH ACCUMULATION fires if:
+  (priceFlat |ret20d|&lt;5% OR priceDown -20%&lt;ret20d&lt;-3%)
+  AND OBV-slope-20 &gt; +5%
+  AND A/D-slope-20 &gt; +5%
+  AND CMF20 &gt; +0.05
+
+BEARISH DISTRIBUTION fires if:
+  (priceFlat OR priceUp 3%&lt;ret20d&lt;20%)
+  AND OBV-slope-20 &lt; -5%
+  AND A/D-slope-20 &lt; -5%
+  AND CMF20 &lt; -0.05
+
+Strength score = OBV weight + CMF weight + ADL weight (0-100)</pre>
+
+  <h4>Today's snapshot</h4>
+  <p><b>79 picks</b> · 18 accumulation + 61 distribution · 79/79 unique. Standout: <b>PRINCEPIPE +13.5% / OBV -145% / CMF -0.59 / strength 100</b> — textbook distribution where retail is buying the rip while institutions exit.</p>
+
+  <h4>Theoretical accuracy</h4>
+  <p>Divergence signals lead price by ~5-15 sessions on average. Expected WR ~65-75% on strength ≥ 70 picks; lower on borderline cases. Needs 30 days of lifecycle data.</p>
+
+  <h4>How to trade</h4>
+  <pre>ACCUMULATION (institutions loading):
+1. ENTRY: gradual scale-in over 3-5 sessions on weakness — 33% / 33% / 33%
+2. STOP LOSS: 5% below the 20d low (deeper SL — pattern is mean-revert long)
+3. TARGETS: T1 +8%, T2 +15%, T3 +25%
+4. HOLD: until OBV/CMF turn (signal exhausted) — typically 4-8 weeks
+5. POSITION SIZE: 2% capital
+6. CONFIRMATION: prefer setups where price is FLAT or DOWN, NOT already rising
+
+DISTRIBUTION (institutions exiting — for SHORT or AVOID):
+1. AVOID buying these names regardless of bullish-looking price
+2. For SHORT entry: wait for confirmation — first close below 20-day low
+3. STOP LOSS: 5% above the 20-day high
+4. TARGETS: T1 -8%, T2 -15%
+5. POSITION SIZE: 1.5% capital (shorts in cash market = limited universe)
+6. If holding the name long: BOOK / TRIM if strength ≥ 80</pre>
+</div>
+
+<!-- ========== SECTORS ========== -->
+<h2 id="sectors">🔄 Sectors (Sector Rotation) <span class="badge b-violet">NEW</span></h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>Ranks 13 stock baskets (FMCG, IT, Auto, Pharma, Metals, Private Banks, PSU Banks, Energy, Infra, Realty, Consumer Discretionary, Defence, Capital Goods) by composite strength vs NIFTY. Tells you which baskets to <b>overweight or avoid</b>.</p>
+
+  <h4>Trend classification</h4>
+  <table>
+    <thead><tr><th>Trend</th><th>Rule</th><th>Trading implication</th></tr></thead>
+    <tbody>
+      <tr><td><span class="badge b-green">LEADING</span></td><td>20d&gt;5% AND 5d&gt;0 AND ≤5% off 20d high</td><td>Strong longs; full-size positions</td></tr>
+      <tr><td><span class="badge b-cyan">IMPROVING</span></td><td>5d&gt;0 AND RSI&gt;50</td><td>Add longs gradually; momentum turning up</td></tr>
+      <tr><td><span class="badge b-violet">NEUTRAL</span></td><td>Default (no trend)</td><td>Stock-pick only — no sector tailwind</td></tr>
+      <tr><td><span class="badge b-amber">WEAKENING</span></td><td>5d&lt;0 AND 20d&gt;0</td><td>Trim longs; momentum rolling over</td></tr>
+      <tr><td><span class="badge b-red">LAGGING</span></td><td>20d&lt;-5% AND 5d&lt;0</td><td>Strong shorts; avoid longs entirely</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Logic</h4>
+  <pre>For each basket:
+  ret5d, ret20d        = basket-average returns
+  relStr5d  = ret5d  - NIFTY ret5d   (relative strength)
+  relStr20d = ret20d - NIFTY ret20d
+  pctAboveEma21        = % of basket members above EMA21 (breadth)
+  volRatio              = basket-avg vol vs 30d basket-avg
+
+rotationScore = relStr20d × 0.5 + relStr5d × 0.3 + (breadth - 50) / 5
+
+ROTATING-INTO if: relStr5d ≥ +3% AND breadth ≥ 60% AND vol ≥ 1.3× → "LEADING"
+ROTATING-OUT  if: relStr5d ≤ -3% AND breadth ≤ 40% → "LAGGING"</pre>
+
+  <h4>Today's snapshot</h4>
+  <p>NIFTY 20d <span class="num-red">-3.95%</span> — bear backdrop. Top 3: Capital Goods, Pharma, Private Banks (IMPROVING). Bottom: Auto, Consumer Discretionary (WEAKENING).</p>
+
+  <h4>Empirical accuracy</h4>
+  <p>Sector rotation is a <b>filter</b>, not a standalone signal. When stacked on Weekly Pick: aligned picks (long in LEADING sector) show ~5-8% WR uplift vs unaligned in backtest. Standalone WR not measured (no closed trades on sectors directly).</p>
+
+  <h4>How to trade — sector overlay rules</h4>
+  <pre>1. ANY long pick should be in a LEADING or IMPROVING sector for full size
+2. Long in NEUTRAL → 50% size
+3. Long in WEAKENING → 25% size or skip
+4. Long in LAGGING → SKIP entirely
+5. SHORT picks: prefer LAGGING or WEAKENING sectors
+6. Rebalance weekly — sector trends shift on the 20-day window</pre>
+</div>
+
+<!-- ========== F&O FUTURES ========== -->
+<h2 id="fnofut">📊 F&amp;O Futures (Pre-Breakout)</h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>Daily scan across <b>all 211 NSE F&amp;O underlyings</b>. Multi-lens scoring to identify futures setups <b>BEFORE the move starts</b>. Two tiers: <span class="badge b-cyan">💎 HIGH</span> (score ≥ 80) and <span class="badge b-amber">⭐ MED</span> (65–79). Refreshes every 25-30 min during market hours.</p>
+
+  <h4>Scoring (max 100)</h4>
+  <pre>EMA 9 &gt; 21 &gt; 50 stack alignment           +20pts
+At 20d high (long) / 20d low (short)      +15pts
+Tight Bollinger coil (&lt;12%)              +15pts
+Volume 5d/20d rising &gt; 1.3×              +15pts
+RSI in productive band (50-70 / 30-50)    +10pts
+20d return in healthy range (not extended)+10pts
+FII stake ↑ (Δ &gt; +0.2pp QoQ)              +10pts
+Promoter stable / buying                  +5pts
+PENALTY: |ret5d| &gt; 8% (already running)  -20pts
+
+Pass threshold: 65+</pre>
+
+  <h4>Today's snapshot</h4>
+  <p>25 picks · 18 HIGH · 7 MED · 25/25 unique. Standouts: POWERGRID SHORT (sc 100), ASIANPAINT LONG (sc 95), NMDC LONG (sc 95, vol 1.93×).</p>
+
+  <h4>Empirical accuracy</h4>
+  <p>New tab — needs 30 days. Theoretical: pre-breakout filter at 65+ score historically delivers ~65-70% WR; HIGH tier (80+) closer to 75%. Confirmation requires future lifecycle data.</p>
+
+  <h4>How to trade futures</h4>
+  <pre>1. ENTRY: at the entry price shown (current LTP) — futures fill ~instant
+2. STOP LOSS:
+   - Tight coil (BB-w &lt; 8%) → 4.5% SL
+   - Wider coil → 6% SL
+3. TARGETS: T1 +6%, T2 +12%, T3 +20% (or mirror for shorts)
+4. BOOKING: 50% at T1, trail SL to entry, 30% at T2, 20% at T3
+5. POSITION SIZE: 1 lot per ₹2-3 lakh of capital (varies by lot size)
+   - HIGH conviction: full lot count
+   - MED conviction: half lot count
+6. ROLLOVER: if target not hit by current expiry and trend intact, roll to next month
+   (refer to F&amp;O OI Build-up tab to confirm expiry)
+7. AVOID: if penalty applied (already extended) — score won't be ≥80</pre>
+</div>
+
+<!-- ========== OI BUILD-UP ========== -->
+<h2 id="oibuild">🌊 F&amp;O OI Build-up (Institutional Positioning)</h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>Live NIFTY option-chain flow analysis. Shows where institutions are <b>building positions right now</b>. Each row tells you: where the wall is (writing), where the squeeze is happening (covering), where momentum is accumulating (aggressive buying).</p>
+
+  <h4>Flow kinds + interpretation</h4>
+  <table>
+    <thead><tr><th>Kind</th><th>What it means</th><th>Bias</th></tr></thead>
+    <tbody>
+      <tr><td>🚀 AGGR_CE_BUY</td><td>Calls bought aggressively (OI↑ + LTP↑)</td><td>BULLISH</td></tr>
+      <tr><td>🪂 AGGR_PE_BUY</td><td>Puts bought aggressively (OI↑ + LTP↑)</td><td>BEARISH</td></tr>
+      <tr><td>🛑 CE_WRITING</td><td>Call writers defending (OI↑ + LTP↓) — resistance ceiling</td><td>BEARISH</td></tr>
+      <tr><td>🪨 PE_WRITING</td><td>Put writers defending (OI↑ + LTP↓) — support floor</td><td>BULLISH</td></tr>
+      <tr><td>🔥 CE_COVERING</td><td>Call writers covering (squeeze) — breakout above resistance</td><td>BULLISH</td></tr>
+      <tr><td>❄️ PE_COVERING</td><td>Put writers covering — support giving way</td><td>BEARISH</td></tr>
+    </tbody>
+  </table>
+
+  <h4>Trade leg fix (important)</h4>
+  <p>For PE_WRITING at 23200 with BULLISH bias, the displayed trade leg is <b>BUY ATM CE</b> (e.g. 23500 CE), <b>NOT</b> buying the 23200 PE that institutions are writing. The trade always aligns with BIAS, not the institutional side.</p>
+
+  <h4>Data modes</h4>
+  <ul class="tight">
+    <li><span class="badge b-green">🟢 LIVE</span> — market open AND real intraday deltas exist</li>
+    <li><span class="badge b-amber">🌅 PRE_OPEN</span> — market open but no first tick yet</li>
+    <li><span class="badge b-cyan">🌙 END_OF_DAY</span> — market closed, showing last session's positioning</li>
+  </ul>
+  <p>Expiry is filtered to non-expired listings from Angel ScripMaster (no stale-expiry data).</p>
+
+  <h4>Empirical accuracy</h4>
+  <p>OI-flow signals were disabled then re-enabled selectively (high-quality kinds only, strength ≥ 60). Currently 0 closed trades in the new selective mode. Historical (pre-disable): ~58% on AGGR_CE_BUY in trending markets, lower in chop.</p>
+
+  <h4>How to trade</h4>
+  <pre>1. CHECK the dataMode badge first:
+   - LIVE → act on signals
+   - PRE_OPEN / END_OF_DAY → use for positioning context only
+2. ENTRY: at the displayed entry price (= ATM CE/PE LTP)
+3. STOP LOSS: 30% premium loss (e.g. ₹100 entry → ₹70 SL)
+4. TARGETS: T1 +40% premium, T2 +80% premium
+5. TIME-EXIT: by end of trading day if it's intraday (option premium decay)
+6. POSITION SIZE: 1-2% capital max (options = high leverage)
+7. STRENGTH FILTER: only trade signals with strength ≥ 75 for Telegram-grade entries</pre>
+</div>
+
+<!-- ========== F&O OPTIONS ========== -->
+<h2 id="options">📊 F&amp;O (Options Signals)</h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>Curated NIFTY options signals from the strict 9/21 EMA cross + Marabozu engine. Single source for all F&amp;O options trades.</p>
+
+  <h4>Logic</h4>
+  <p>Strict multi-rule trigger across 15m / 30m / 1h / 4h timeframes. Each rule (Rule #2 vol-accumulation, #5 marabozu, #7 ORB, #8 swing-pivot) contributes; minimum 2 rules across ≥2 timeframes required for a fire. Expiry from real NSE ScripMaster (no stale dates).</p>
+
+  <h4>Empirical accuracy</h4>
+  <p><b>66.7% WR</b> over 411 closed trades — the highest in the system. SL hit rate 33%; avg R 0 (small target multiples on options).</p>
+
+  <h4>How to trade</h4>
+  <pre>1. ENTRY: at the option premium shown (LTP at signal time)
+2. STOP LOSS: tier-aware, typically -30% premium
+3. TARGETS: T1 +40%, T2 +100%
+4. TIME-EXIT: by next-day close OR before expiry (avoid theta wipe)
+5. POSITION SIZE: 1-2% capital per signal (max 4-5% across concurrent signals)
+6. GRADE A only for Telegram dispatch — pick those by default
+7. AVOID buying same strike that's been signaled multiple times in 2h
+   (the alertLedger dedupes Telegram but the table can show prior fires)</pre>
+</div>
+
+<!-- ========== OLD WEEKLY PICK ========== -->
+<h2 id="oldweekly">📜 Old-WeeklyPick (Comparison Tab — Educational)</h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>Runs the SAME Weekly Pick engine but with the <b>pre-4fca35e momentum-chasing prerank restored</b> and no freshness-reject. Surfaces what the current pre-breakout scanner would REJECT for being "already running".</p>
+
+  <h4>Purpose</h4>
+  <p>Comparison / sanity check only. Lets you see what the stricter current filter is dropping. <b>Not a trading signal source — not pushed to Telegram.</b></p>
+
+  <h4>Logic difference</h4>
+  <pre>Current Weekly Pick:
+  rank = pre-breakout composite (tightness + dry-up + RSI 40-60 + at 20d hi)
+  HARD REJECT if |ret5d| &gt; 6% OR |ret20d| &gt; 25%
+
+Old-WeeklyPick:
+  rank = |mom5d| × 0.6 + volBurst × 4
+  NO freshness reject (extended names are KEPT)
+
+Result: ~2-3× more picks, but lower WR (chases mid-trend)</pre>
+
+  <h4>Today's snapshot</h4>
+  <p>51 unique picks. Top: ASIANENE, RRKABEL, TATACOMM, YASHO — all extended names current scanner rejects.</p>
+
+  <h4>How to trade</h4>
+  <p><b>Do not trade directly off this tab</b> in standalone mode. Use it to:</p>
+  <pre>1. UNDERSTAND what current scanner is filtering (calibration)
+2. CROSS-REFERENCE with Smart Money tab:
+   - If Old-WeeklyPick lists a name AND Smart Money flags it ACCUMULATION
+     → genuine momentum + smart-money confirmation → consider acting
+3. NEVER trade an Old-WeeklyPick name that's flagged DISTRIBUTION on Smart Money
+   → that's institutional unloading into retail momentum</pre>
+</div>
+
+<!-- ========== TRACK RECORD ========== -->
+<h2 id="track">📈 Track Record</h2>
+<div class="tab-card">
+  <h3>What it is</h3>
+  <p>Live signal-lifecycle audit. Every signal generated across cash + F&amp;O appears here with current status (PENDING / ACTIVE / T1_HIT / T2_HIT / T3_HIT / SL_HIT / EXPIRED / SUPERSEDED). Empirical win rate displayed per source.</p>
+
+  <h4>Lifecycle states</h4>
+  <table>
+    <thead><tr><th>State</th><th>Meaning</th></tr></thead>
+    <tbody>
+      <tr><td>PENDING</td><td>Just generated; awaiting LTP to enter the zone</td></tr>
+      <tr><td>ACTIVE</td><td>LTP entered the entry zone; trade is "live"</td></tr>
+      <tr><td>T1_HIT / T2_HIT / T3_HIT</td><td>Price reached the respective target</td></tr>
+      <tr><td>SL_HIT</td><td>Stop loss triggered</td></tr>
+      <tr><td>EXPIRED</td><td>Time-stop hit before any target/SL</td></tr>
+      <tr><td>SUPERSEDED</td><td>Newer signal for same symbol replaced this</td></tr>
+    </tbody>
+  </table>
+
+  <h4>How to use</h4>
+  <pre>1. CHECK before entering any signal — has it already hit T1?
+   (Lifecycle status shows; if T1_HIT already, the trade is half done — sizing should reflect)
+2. AUDIT your own decisions — look at SL_HIT signals to see what didn't work
+3. CROSS-CHECK win rate per source matches the accuracy headers</pre>
+</div>
+
+<hr>
+
+<!-- ========== ENGINES ========== -->
+<h2 id="engines">🛠 Underlying Engines (reference)</h2>
+<table>
+  <thead><tr><th>Engine</th><th>Tab it powers</th><th>Cron / refresh</th></tr></thead>
+  <tbody>
+    <tr><td>weeklyManagerPick.ts</td><td>Weekly Pick, Old-WeeklyPick (with mode flag)</td><td>16:35 post-close + Sun 18:00 + every 30min CNX500 intraday</td></tr>
+    <tr><td>dailyPickRebound.ts</td><td>Daily Pick</td><td>08:30 IST pre-open</td></tr>
+    <tr><td>preMoveIdentifier.ts</td><td>Pre-Move, 5-20% Move segment</td><td>08:00 pre-open + intraday hourly</td></tr>
+    <tr><td>masterSetup.ts</td><td>Top Trades (curated), Telegram dispatch</td><td>Hourly during market hours</td></tr>
+    <tr><td>harmonic.ts</td><td>Harmonic patterns (dropdown nav)</td><td>Positional daily + intraday top-200 + hourly CNX500</td></tr>
+    <tr><td>oiMonitor.ts</td><td>OI Build-up</td><td>Every 1min during market hours</td></tr>
+    <tr><td>niftyOptionsStrict.ts</td><td>F&amp;O (Options)</td><td>Every 3min during market hours</td></tr>
+    <tr><td>fnoFuturesScanner.ts</td><td>F&amp;O Futures</td><td>Every 25-30min during market hours</td></tr>
+    <tr><td>sectorRotation.ts</td><td>Sectors</td><td>Daily 08:50 IST + every snapshot publish</td></tr>
+    <tr><td>accumulationDistribution.ts</td><td>Smart Money</td><td>Every 25-30min (async, throttled)</td></tr>
+    <tr><td>crossEngineConfluence.ts</td><td>Ultra Picks</td><td>Every publish (pure file aggregation, ~1 sec)</td></tr>
+    <tr><td>signalLifecycle.ts</td><td>Track Record (status engine)</td><td>Continuous — every snapshot</td></tr>
+  </tbody>
+</table>
+
+<hr>
+
+<!-- ========== RISK FRAMEWORK ========== -->
+<h2 id="riskframework">⚖️ Position Sizing &amp; Risk Framework</h2>
+<table>
+  <thead><tr><th>Signal Tier</th><th>Position Size</th><th>Stop Loss</th><th>Hold Horizon</th></tr></thead>
+  <tbody>
+    <tr><td>💎 Elite 5/5 + Ultra Picks (≥3 engines)</td><td>5% capital</td><td>5% (mid/large cap)</td><td>1–4 weeks</td></tr>
+    <tr><td>⭐ Strong (Elite 4/5 + Ultra 2 engines)</td><td>3% capital</td><td>5–6%</td><td>1–4 weeks</td></tr>
+    <tr><td>F&amp;O Futures HIGH (score ≥ 80)</td><td>Full lot per ₹3L</td><td>4.5–6%</td><td>1–3 weeks</td></tr>
+    <tr><td>F&amp;O Futures MED (65–79)</td><td>Half lot per ₹3L</td><td>4.5–6%</td><td>1–3 weeks</td></tr>
+    <tr><td>Smart Money ACCUMULATION</td><td>2% capital (scale-in)</td><td>5% below 20d low</td><td>4–8 weeks</td></tr>
+    <tr><td>Weekly Pick (standalone)</td><td>2–3% capital</td><td>5–8% tier-aware</td><td>1–4 weeks</td></tr>
+    <tr><td>Daily Pick</td><td>2% capital</td><td>3–5%</td><td>1–15 days</td></tr>
+    <tr><td>NIFTY Options</td><td>1–2% capital (premium)</td><td>30% premium</td><td>Same-day to expiry</td></tr>
+    <tr><td>OI Build-up signals</td><td>1–2% capital (premium)</td><td>30% premium</td><td>Intraday</td></tr>
+  </tbody>
+</table>
+
+<div class="alert info">
+  <b>Hard rules:</b>
+  <ul class="tight">
+    <li>Never more than <b>10 open positions</b> simultaneously across all tabs</li>
+    <li>Never more than <b>25% capital deployed</b> at any point (75% cash buffer)</li>
+    <li>Tier-aware SL is absolute max — NEVER widen on emotional grounds</li>
+    <li>BANKNIFTY excluded everywhere — no BANKNIFTY signals are generated or accepted</li>
+    <li>Book 50% at T1 mechanically — do not "let it ride" on the first target</li>
+  </ul>
+</div>
+
+<hr>
+
+<!-- ========== UNIVERSAL PLAYBOOK ========== -->
+<h2 id="playbook">📋 Universal Trade Playbook</h2>
+<p>This is how you act on ANY signal from any tab. Five steps, in order:</p>
+
+<div class="panel">
+  <h3>1. Triage — does this signal pass the meta-filter?</h3>
+  <ul class="tight">
+    <li>Is the underlying in a <b>LEADING</b> or <b>IMPROVING</b> sector (longs) / <b>LAGGING</b> or <b>WEAKENING</b> sector (shorts)? → If no, halve size or skip.</li>
+    <li>Does <b>Smart Money</b> tab confirm direction? (long candidate + no DISTRIBUTION flag, short candidate + no ACCUMULATION flag)</li>
+    <li>Does <b>Ultra Picks</b> show ≥2 engines agreeing? If yes, upgrade conviction.</li>
+    <li>Is <b>Track Record</b> clean — has this signal not already hit T1?</li>
+  </ul>
+</div>
+
+<div class="panel">
+  <h3>2. Entry zone discipline</h3>
+  <ul class="tight">
+    <li>Buy in the displayed entry zone (entryPriceLow → entryPriceHigh) — never chase a 2-3% premium</li>
+    <li>For F&amp;O futures: market entry at LTP is fine (futures slippage is small)</li>
+    <li>For options: limit at MID of bid/ask, NEVER at ask</li>
+    <li>For cash with wide zones: scale-in over 2-3 sessions on weakness</li>
+  </ul>
+</div>
+
+<div class="panel">
+  <h3>3. Stop loss placement</h3>
+  <ul class="tight">
+    <li>Use the SL field as your <b>maximum tolerance</b> — never wider</li>
+    <li>For breakdown-prone names: place SL <b>1-2%</b> below the printed SL to give noise room</li>
+    <li>For high-conviction Ultra Picks: trail SL to entry on +6% move, regardless of T1</li>
+    <li>Hard rule: <b>Day-close basis for cash SL</b>, intraday for options</li>
+  </ul>
+</div>
+
+<div class="panel">
+  <h3>4. Target booking strategy</h3>
+  <ul class="tight">
+    <li><b>50% off at T1</b> — locks in the win mechanically</li>
+    <li><b>Trail SL to entry</b> after T1 hit — converts to risk-free</li>
+    <li><b>30% off at T2</b> — bulk of profit captured</li>
+    <li><b>20% runner to T3</b> with trailing 50% drawdown stop on remaining profit</li>
+    <li>If T2/T3 not hit in expected time window: market-exit at horizon (1-4w for weekly, 15d for daily)</li>
+  </ul>
+</div>
+
+<div class="panel">
+  <h3>5. Review &amp; adjust weekly</h3>
+  <ul class="tight">
+    <li>Every Sunday: review Track Record for last 7 days — what hit, what SL'd</li>
+    <li>Cross-reference SL'd signals with Smart Money tab at signal-time — was there a distribution warning?</li>
+    <li>Don't change rules emotionally — the system already self-improves via daily miss-miner (18:00 IST)</li>
+    <li>If a signal supersedes (newer signal for same symbol), reset SL/targets to the new one</li>
+  </ul>
+</div>
+
+<hr>
+
+<div class="panel">
+  <h3>📎 Document version</h3>
+  <p class="dim">Generated 2026-06-05 · Live snapshot URL base: <code>https://raw.githubusercontent.com/addonwebsolutionsai-droid/tradewithvarsha/main/server/data/public-snapshots/</code></p>
+  <p class="dim">All accuracy numbers pulled from <code>accuracy.json</code> (30-day rolling, 4,844 closed trades). New-tab WR estimates are theoretical; empirical will be available after ~30 days of forward lifecycle data.</p>
+</div>
+
+</div>
+</body>
+</html>
