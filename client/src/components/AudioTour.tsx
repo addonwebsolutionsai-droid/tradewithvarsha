@@ -36,10 +36,10 @@ const STEPS: Step[] = [
     hi: 'प्रो एज सबसे सख्त सिग्नल फीड है। एक स्टॉक यहाँ तभी आता है जब चारों फिल्टर पास हों: कम से कम दो इंजन से कन्फ्लुएंस, स्मार्ट मनी एक तरफ, सेक्टर टेलविंड साथ, और कन्विक्शन 85 से ऊपर। लक्ष्य प्रभावी जीत दर 80 से 85 प्रतिशत है। पोजीशन साइज 5 प्रतिशत कैपिटल।',
   },
   {
-    id: 'options-pro',
-    title: '🎯 Options PRO',
-    en: 'Options PRO shows only grade A NIFTY options with score 9 or higher. The live win rate is shown on the banner — it pulls from accuracy dot json on every page refresh. Current measured win rate is 80 percent over 30 days. Use limit order at mid of bid-ask, never at ask. SL is 30 percent of premium.',
-    hi: 'ऑप्शन्स प्रो में सिर्फ ग्रेड ए और 9 से ऊपर स्कोर वाले निफ्टी ऑप्शन्स दिखते हैं। लाइव जीत दर बैनर पर है — यह हर रिफ्रेश पर एक्यूरेसी जेसन से आती है। 30 दिन में मापी गई जीत दर 80 प्रतिशत है। लिमिट ऑर्डर बिड-आस्क के बीच में लगाएँ, कभी आस्क पर नहीं। एसएल प्रीमियम का 30 प्रतिशत।',
+    id: 'fno-options',
+    title: '🎯 F&O Options',
+    en: 'The F&O tab now includes a PRO Mode toggle. When ON, it shows only grade A NIFTY options with score 9 or higher, and the banner displays the live measured 30-day win rate pulled from accuracy dot json. Use limit order at mid of bid-ask, never at ask. SL is 30 percent of premium. Position size 1 to 2 percent capital per signal.',
+    hi: 'एफ-एंड-ओ टैब में अब प्रो मोड टॉगल है। ऑन होने पर सिर्फ ग्रेड ए और 9 से ऊपर स्कोर वाले निफ्टी ऑप्शन्स दिखेंगे, और बैनर पर लाइव 30-दिन की मापी गई जीत दर एक्यूरेसी जेसन से आती है। लिमिट ऑर्डर बिड-आस्क के बीच में लगाएँ, कभी आस्क पर नहीं। एसएल प्रीमियम का 30 प्रतिशत। पोजीशन साइज 1 से 2 प्रतिशत कैपिटल।',
   },
   {
     id: 'smart-money',

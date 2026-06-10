@@ -85,11 +85,9 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/pro-edge',     label: '💎 PRO Edge',  icon: <Star size={14} />,
       acc: null,
       title: 'PRO Edge — strictest signal feed. Cross-engine confluence + smart-money same-side + sector tailwind aligned + conviction ≥ 85. 0-10 names/day. Premium tier.' },
-    // 2026-06-05: NIFTY Options Pro — extracts the proven 66.7%-WR engine
-    // as a standalone tab with live empirical badge.
-    { to: '/options-pro',  label: '🎯 Options PRO', icon: <Layers size={14} />,
-      acc: wr('OPTIONS'),
-      title: 'NIFTY Options Pro — strict subset of options (grade A + score ≥ 9). Live 30-day measured win rate on banner.' },
+    // 2026-06-10: Options PRO tab REMOVED — merged into the main F&O tab
+    // via PRO Mode toggle (redundant, same engine + same data). The
+    // /options-pro route now redirects to /options. Bookmarks preserved.
     // 2026-06-10: SL-Trap detector — catches liquidity grabs (MOSCHIP /
     // MARKSANS / FINPIPE pattern). Shows effective WR with trap-recoveries
     // counted as wins. Path to credible 85%+ accuracy claim.

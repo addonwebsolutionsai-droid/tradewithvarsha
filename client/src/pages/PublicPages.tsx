@@ -898,17 +898,51 @@ export function PublicOptionsPage(): JSX.Element {
     queryKey: ['public-options'], queryFn: () => snapshots.options(),
     refetchInterval: 3 * 60_000, retry: false,
   })
-  const rows: any[] = data?.rows ?? []
+  // PRO subset uses the existing options-pro.json (grade A + score ≥ 9 +
+  // live measured 30d WR). Toggle filters the displayed table; live WR
+  // badge only appears when PRO mode is ON. Same pattern as the other
+  // 4 PRO Mode tabs.
+  const proSnap = useQuery({
+    queryKey: ['public-options-pro'], queryFn: () => snapshots.optionsPro(),
+    refetchInterval: 3 * 60_000, retry: false,
+  })
+  const [proOn, setProOn] = useProMode('fno', true)
+  const fetched: any[] = data?.rows ?? []
+  // Strict dedup by instrument
+  const dedupedAll: any[] = (() => {
+    const seen = new Set<string>(); const out: any[] = []
+    for (const r of fetched) {
+      const k = r.instrument || r.symbol; if (!k || seen.has(k)) continue
+      seen.add(k); out.push(r)
+    }
+    return out
+  })()
+  // PRO Mode: grade A AND score ≥ 9 (matches options-pro.json filter)
+  const rows: any[] = proOn ? dedupedAll.filter(r => r.grade === 'A' && (r.score ?? 0) >= 9) : dedupedAll
+  const liveWr = proSnap.data?.liveWinRate
   return (
     <div className="space-y-4">
-      <Banner emoji="🎯" title="Options Signals" subtitle={`${rows.length} elite signals (score ≥ 9, conviction ≥ 90)`} ts={data?.generatedAt} />
+      <Banner emoji="🎯" title="F&O · Options Signals"
+        subtitle={proOn
+          ? `${rows.length} PRO signals · grade A + score ≥ 9${liveWr != null ? ` · live 30d WR ${(liveWr * 100).toFixed(1)}%` : ''}`
+          : `${rows.length} raw options signals`}
+        ts={data?.generatedAt} />
       <Legend kind="signal" />
       <AccuracyStrip />
+      <ProModeToggle on={proOn} setOn={setProOn} targetWR={liveWr != null ? `${(liveWr*100).toFixed(0)}% measured` : '80%'} currentCount={dedupedAll.length} filteredCount={rows.length} />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
-      {!isLoading && !error && rows.length === 0 && <Empty msg="No elite options signals right now. Active 9:15–15:30 IST." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg={proOn ? 'No grade-A score-9 signals right now. Toggle PRO Mode off to see all options.' : 'No options signals right now. Active 9:15–15:30 IST.'} />}
       {!isLoading && !error && rows.length > 0 && <SignalTable rows={rows} />}
+      <HowToTradeBox tab="F&O Options" rules={[
+        { title: 'Entry', body: 'At the option premium shown. LIMIT order at MID of bid/ask, NEVER at ask. If premium has moved >5% from signal, skip (already chased).' },
+        { title: 'Stop Loss', body: '30% of premium (e.g. ₹100 entry → ₹70 SL). Hard SL — exit at premium-stop regardless of underlying.' },
+        { title: 'Targets & Booking', body: '1. Book 50% at +40% premium gain (T1)\n2. Trail SL to entry premium\n3. Hold remaining 50% for +100% (T2)\n4. EXIT all by end of next trading day OR before expiry' },
+        { title: 'Position Size', body: '1-2% capital per signal. Max 5% capital across concurrent options.' },
+        { title: 'Time Decay', body: 'If signal fires after 14:30 IST, halve position size. If <2 days to expiry, AVOID.' },
+        { title: 'PRO Mode badge', body: 'When PRO Mode is ON, the banner shows the actual measured 30-day win rate from accuracy.json on grade-A signals. Verifiable via 📈 Track Record.' },
+      ]} />
     </div>
   )
 }

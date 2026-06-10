@@ -79,9 +79,33 @@ export async function runMissAnalysis(): Promise<{
   diagnoses: Record<string, number>     // count of each diagnosis reason
 }> {
   const ts = new Date().toISOString()
-  log.info('MISS-ANALYZER', 'fetching today\'s 5%+ gainers...')
-  const gainers = await fetchTodayGainers()
-  log.info('MISS-ANALYZER', `${gainers.length} 5%+ gainers in NIFTY-500 today`)
+  log.info('MISS-ANALYZER', 'fetching today\'s 5%+ gainers (NIFTY-500 + external sites)...')
+  // Combine NIFTY-500 internal scan with external scraped gainers (finology +
+  // trendlyne + groww). Externals catch micro/small caps NIFTY-500 misses.
+  const internal = await fetchTodayGainers()
+  let externalGainers: { symbol: string; gainPct: number; sources: string[] }[] = []
+  try {
+    const { fetchExternalGainers } = await import('../data/externalGainers')
+    const ext = await fetchExternalGainers()
+    externalGainers = ext.merged
+  } catch (e) {
+    log.warn('MISS-ANALYZER', `external gainers scrape failed: ${(e as Error).message}`)
+  }
+  // Merge: dedup by symbol, max gain wins
+  const merged = new Map<string, { symbol: string; gainPct: number; src: string[] }>()
+  for (const g of internal) merged.set(g.symbol.toUpperCase(), { symbol: g.symbol, gainPct: g.gainPct, src: ['NSE500'] })
+  for (const g of externalGainers) {
+    const k = g.symbol.toUpperCase()
+    const prev = merged.get(k)
+    if (prev) {
+      prev.src.push(...g.sources)
+      prev.gainPct = Math.max(prev.gainPct, g.gainPct)
+    } else {
+      merged.set(k, { symbol: g.symbol, gainPct: g.gainPct, src: g.sources })
+    }
+  }
+  const gainers = Array.from(merged.values()).sort((a, b) => b.gainPct - a.gainPct)
+  log.info('MISS-ANALYZER', `${internal.length} NSE500 + ${externalGainers.length} external = ${gainers.length} unique 5%+ gainers today`)
 
   // Load all our scanner snapshots so we can cross-reference
   const snaps = {
