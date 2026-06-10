@@ -325,6 +325,33 @@ let fnoScanInflight: Promise<void> | null = null
 let fnoLastScanAt = 0
 const FNO_SCAN_MIN_INTERVAL_MS = 25 * 60_000
 
+// Gainer Postmortem — for every gainer (NSE500 + 5 Kotak Neo pages + 3
+// other sites), backward-simulates our pre-breakout rule and reports
+// when our scanner WOULD have fired, plus diagnoses why we missed.
+// Auto-tune feedback loop for daily self-improvement towards 85% goal.
+// Throttled to 1× per 120 min (heavy: scrapes 8 sites + 60 candle fetches).
+let postmortemInflight: Promise<void> | null = null
+let postmortemLastAt = 0
+const POSTMORTEM_MIN_MS = 120 * 60_000
+
+async function triggerGainerPostmortem(): Promise<void> {
+  if (postmortemInflight) return postmortemInflight
+  if (Date.now() - postmortemLastAt < POSTMORTEM_MIN_MS) return
+  postmortemInflight = (async () => {
+    try {
+      const { runGainerPostmortem } = await import('./gainerPostmortem')
+      const r = await runGainerPostmortem()
+      await fs.writeFile(path.join(SNAP_DIR, 'gainer-postmortem.json'), JSON.stringify(r, null, 2))
+      postmortemLastAt = Date.now()
+      log.ok('PUBLIC-SNAP', `gainer-postmortem: ${r.totalGainers} analysed · caught ${r.caughtCount} · would-have-caught ${r.wouldHaveCaughtCount} more`)
+    } catch (e) {
+      log.warn('PUBLIC-SNAP', `gainer-postmortem async: ${(e as Error).message}`)
+    } finally {
+      postmortemInflight = null
+    }
+  })()
+}
+
 // Miss-analyzer — cross-references today's 5%+ gainers vs every scanner
 // to surface what we missed and WHY. Auto-tune feedback loop for the
 // daily self-improve cron. Throttled to 1× per 60 min (heavy: ~500
@@ -851,6 +878,7 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   triggerOldWeeklyScan().catch(() => { /* logged inside */ })
   triggerAdDivergenceScan().catch(() => { /* logged inside */ })
   triggerMissAnalysis().catch(() => { /* logged inside */ })
+  triggerGainerPostmortem().catch(() => { /* logged inside */ })
 
   // 6.8 Sector Rotation — 12 NIFTY sectoral indices ranked by relative
   // strength. Synchronous (only 12 candle fetches, fast).

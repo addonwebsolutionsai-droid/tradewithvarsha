@@ -91,6 +91,27 @@ async function parseTrendlyne(html: string): Promise<{ symbol: string; gainPct: 
   return out
 }
 
+// — KOTAK NEO — index-specific top gainer pages.
+// URL pattern: kotakneo.com/share-market-today/top-gainers/{index-slug}/
+// Each page renders a table; rows have symbol + price + %change cells.
+async function parseKotakNeo(html: string): Promise<{ symbol: string; gainPct: number }[]> {
+  const out: { symbol: string; gainPct: number }[] = []
+  // Strategy 1: find any <a> ticker symbol followed by a % within 500 chars
+  const re1 = /<a[^>]*>([A-Z][A-Z0-9&]{1,15})<\/a>[\s\S]{0,800}?([+-]?\d+(?:\.\d+)?)\s*%/g
+  let m: RegExpExecArray | null
+  const seen = new Set<string>()
+  while ((m = re1.exec(html))) {
+    const sym = m[1].toUpperCase()
+    const pct = parseFloat(m[2])
+    if (!sym || pct < 5 || seen.has(sym)) continue
+    if (sym.length < 2 || /^(NSE|BSE|NIFTY)$/.test(sym)) continue
+    seen.add(sym)
+    out.push({ symbol: sym, gainPct: pct })
+    if (out.length >= 30) break
+  }
+  return out
+}
+
 // — GROWW — Groww often serves data via JS-injected JSON. Fallback: extract
 // "TICKERSYM"-like patterns. Groww may block bot UAs, so this often returns 0.
 async function parseGroww(html: string): Promise<{ symbol: string; gainPct: number }[]> {
@@ -114,16 +135,32 @@ export async function fetchExternalGainers(): Promise<{
   bySite: Record<string, { symbol: string; gainPct: number }[]>
   merged: ExternalGainer[]
 }> {
-  log.info('EXT-GAINERS', 'fetching gainers from 3 external sites...')
-  const [finHtml, trendHtml, growwHtml] = await Promise.all([
+  // 2026-06-10: User added 5 Kotak Neo URLs (index-specific gainer pages).
+  // Each Kotak page is independently fetched; failures don't affect others.
+  const KOTAK_URLS = [
+    { url: 'https://www.kotakneo.com/share-market-today/top-gainers/nifty-500/',         src: 'kotak-nifty500' },
+    { url: 'https://www.kotakneo.com/share-market-today/top-gainers/nifty-midcap-50/',   src: 'kotak-midcap50' },
+    { url: 'https://www.kotakneo.com/share-market-today/top-gainers/nifty-midcap-100/',  src: 'kotak-midcap100' },
+    { url: 'https://www.kotakneo.com/share-market-today/top-gainers/nifty-midcap-150/',  src: 'kotak-midcap150' },
+    { url: 'https://www.kotakneo.com/share-market-today/top-gainers/nifty-smallcap-100/',src: 'kotak-smallcap100' },
+  ]
+  log.info('EXT-GAINERS', `fetching gainers from 3 base sites + ${KOTAK_URLS.length} Kotak Neo pages...`)
+  const [finHtml, trendHtml, growwHtml, ...kotakHtmls] = await Promise.all([
     fetchHtml('https://ticker.finology.in/market/top-gainers'),
     fetchHtml('https://trendlyne.com/stock-screeners/price-based/top-gainers/today/'),
     fetchHtml('https://groww.in/markets/top-gainers'),
+    ...KOTAK_URLS.map(k => fetchHtml(k.url)),
   ])
   const fin = finHtml ? await parseFinology(finHtml).catch(() => []) : []
   const trend = trendHtml ? await parseTrendlyne(trendHtml).catch(() => []) : []
   const groww = growwHtml ? await parseGroww(growwHtml).catch(() => []) : []
-  log.info('EXT-GAINERS', `finology=${fin.length} · trendlyne=${trend.length} · groww=${groww.length}`)
+  const kotakResults: { src: string; rows: { symbol: string; gainPct: number }[] }[] = []
+  for (let i = 0; i < KOTAK_URLS.length; i++) {
+    const html = kotakHtmls[i]
+    const rows = html ? await parseKotakNeo(html).catch(() => []) : []
+    kotakResults.push({ src: KOTAK_URLS[i].src, rows })
+  }
+  log.info('EXT-GAINERS', `finology=${fin.length} · trendlyne=${trend.length} · groww=${groww.length} · kotak=[${kotakResults.map(k => `${k.src.replace('kotak-', '')}:${k.rows.length}`).join(' ')}]`)
 
   // Merge with source tracking
   const map = new Map<string, ExternalGainer>()
@@ -141,10 +178,12 @@ export async function fetchExternalGainers(): Promise<{
   add(fin, 'finology')
   add(trend, 'trendlyne')
   add(groww, 'groww')
+  for (const k of kotakResults) add(k.rows, k.src)
 
   const merged = Array.from(map.values()).sort((a, b) => b.gainPct - a.gainPct)
-  return {
-    bySite: { finology: fin, trendlyne: trend, groww: groww },
-    merged,
+  const bySite: Record<string, { symbol: string; gainPct: number }[]> = {
+    finology: fin, trendlyne: trend, groww: groww,
   }
+  for (const k of kotakResults) bySite[k.src] = k.rows
+  return { bySite, merged }
 }

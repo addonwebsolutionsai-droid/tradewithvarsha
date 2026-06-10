@@ -52,6 +52,7 @@ export const snapshots = {
   optionsPro: () => snapshot<{ generatedAt: string; totalRaw: number; eliteCount: number; liveWinRate: number | null; winRateWindowDays: number; rows: any[] }>('options-pro.json'),
   slTraps: () => snapshot<{ generatedAt: string; trapsSuspected: number; trapsConfirmedWin: number; genuineSLs: number; effectiveWinRate: number | null; baseWinRate: number | null; rows: any[] }>('sl-trap-alerts.json'),
   missAnalysis: () => snapshot<{ generatedAt: string; totalGainers: number; caughtCount: number; missedCount: number; catchRate: number; rows: any[]; diagnoses: Record<string, number> }>('miss-analysis.json'),
+  gainerPostmortem: () => snapshot<{ generatedAt: string; totalGainers: number; caughtCount: number; wouldHaveCaughtCount: number; patternBreakdown: Record<string, number>; topMissReasons: Record<string, number>; rows: any[] }>('gainer-postmortem.json'),
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {
