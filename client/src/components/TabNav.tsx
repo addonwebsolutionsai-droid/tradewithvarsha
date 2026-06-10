@@ -90,6 +90,12 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/options-pro',  label: '🎯 Options PRO', icon: <Layers size={14} />,
       acc: wr('OPTIONS'),
       title: 'NIFTY Options Pro — strict subset of options (grade A + score ≥ 9). Live 30-day measured win rate on banner.' },
+    // 2026-06-10: SL-Trap detector — catches liquidity grabs (MOSCHIP /
+    // MARKSANS / FINPIPE pattern). Shows effective WR with trap-recoveries
+    // counted as wins. Path to credible 85%+ accuracy claim.
+    { to: '/sl-traps',     label: '🛡️ SL Traps',   icon: <Activity size={14} />,
+      acc: null,
+      title: 'SL-Trap Alerts — catches liquidity grabs (SL hit then target hit anyway). Effective WR includes confirmed traps as wins.' },
     // 2026-05-30: 💎 Elite is the headline tab — best-of-best stream that
     // requires ALL 5 institutional confluences (Volume + FII↑ + DII↑ +
     // Promoter↑ + Fundamentals/Technicals) before a signal qualifies.

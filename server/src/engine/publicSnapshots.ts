@@ -902,6 +902,18 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
     log.warn('PUBLIC-SNAP', `pro-edge: ${(e as Error).message}`)
   }
 
+  // 6.10b SL-Trap Detector — reads lifecycle SL_HITs + Smart Money snapshot
+  // and tags suspected liquidity grabs (MOSCHIP / MARKSANS / FINPIPE-style).
+  // Effective WR (with confirmed traps as wins) shown on PRO Edge banner.
+  try {
+    const { detectSlTraps } = await import('./slTrapDetector')
+    const trap = await detectSlTraps()
+    await fs.writeFile(path.join(SNAP_DIR, 'sl-trap-alerts.json'), JSON.stringify(trap, null, 2))
+    files.push('sl-trap-alerts.json')
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `sl-trap-alerts: ${(e as Error).message}`)
+  }
+
   // 6.11 NIFTY Options Pro — strict subset of the existing options snapshot.
   // Grade A only + score ≥ 9 + dedup by instrument. Live 30d WR from accuracy.
   try {

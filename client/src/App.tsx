@@ -39,7 +39,7 @@ import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
 import { PreMoveIdentifierPage } from './pages/PreMoveIdentifierPage'
 import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
-import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub, PublicEliteHub, PublicOIBuildupPage, PublicFnoFuturesPage, PublicOldWeeklyPickPage, PublicSectorRotationPage, PublicCrossConfluencePage, PublicAdDivergencePage, PublicProEdgePage, PublicOptionsProPage } from './pages/PublicPages'
+import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub, PublicEliteHub, PublicOIBuildupPage, PublicFnoFuturesPage, PublicOldWeeklyPickPage, PublicSectorRotationPage, PublicCrossConfluencePage, PublicAdDivergencePage, PublicProEdgePage, PublicOptionsProPage, PublicSlTrapPage } from './pages/PublicPages'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -110,6 +110,7 @@ function Shell() {
             <Route path="/smart-money"  element={<PublicAdDivergencePage />} />
             <Route path="/pro-edge"     element={<PublicProEdgePage />} />
             <Route path="/options-pro"  element={<PublicOptionsProPage />} />
+            <Route path="/sl-traps"     element={<PublicSlTrapPage />} />
             <Route path="/oi-buildup"   element={<PublicOIBuildupPage />} />
             {/* 2026-05-29: 4-tab nav. /picks = unified hub for Top Trades /
                 5-20% Move / Weekly / Daily (internal segment toggle). Old

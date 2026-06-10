@@ -50,6 +50,7 @@ export const snapshots = {
   adDivergence: () => snapshot<{ generatedAt: string; universe: string; universeSize: number; total: number; accumulationCount: number; distributionCount: number; rows: any[] }>('ad-divergence.json'),
   proEdge: () => snapshot<{ generatedAt: string; totalEvaluated: number; passCount: number; rows: any[]; filters: { ultraPicks: number; smartMoneyOk: number; sectorAligned: number; convOk: number } }>('pro-edge.json'),
   optionsPro: () => snapshot<{ generatedAt: string; totalRaw: number; eliteCount: number; liveWinRate: number | null; winRateWindowDays: number; rows: any[] }>('options-pro.json'),
+  slTraps: () => snapshot<{ generatedAt: string; trapsSuspected: number; trapsConfirmedWin: number; genuineSLs: number; effectiveWinRate: number | null; baseWinRate: number | null; rows: any[] }>('sl-trap-alerts.json'),
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {
