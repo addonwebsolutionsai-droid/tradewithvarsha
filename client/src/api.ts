@@ -48,6 +48,8 @@ export const snapshots = {
   sectorRotation: () => snapshot<{ generatedAt: string; total: number; leading: string[]; lagging: string[]; rows: any[] }>('sector-rotation.json'),
   crossConfluence: () => snapshot<{ generatedAt: string; totalEvaluated: number; ultraCount: number; strongCount: number; rows: any[] }>('cross-confluence.json'),
   adDivergence: () => snapshot<{ generatedAt: string; universe: string; universeSize: number; total: number; accumulationCount: number; distributionCount: number; rows: any[] }>('ad-divergence.json'),
+  proEdge: () => snapshot<{ generatedAt: string; totalEvaluated: number; passCount: number; rows: any[]; filters: { ultraPicks: number; smartMoneyOk: number; sectorAligned: number; convOk: number } }>('pro-edge.json'),
+  optionsPro: () => snapshot<{ generatedAt: string; totalRaw: number; eliteCount: number; liveWinRate: number | null; winRateWindowDays: number; rows: any[] }>('options-pro.json'),
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {

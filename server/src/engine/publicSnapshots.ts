@@ -890,6 +890,59 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
     log.warn('PUBLIC-SNAP', `cross-confluence: ${(e as Error).message}`)
   }
 
+  // 6.10 PRO Edge — strictest signal feed. Stacks: confluence ≥ 2 engines AND
+  // smart-money same-side AND sector tailwind aligned AND conviction ≥ 85.
+  // Targets 0-10 names/day. Reads existing snapshots above; zero new API calls.
+  try {
+    const { aggregateProEdge } = await import('./proEdge')
+    const pro = await aggregateProEdge({ minConviction: 85 })
+    await fs.writeFile(path.join(SNAP_DIR, 'pro-edge.json'), JSON.stringify(pro, null, 2))
+    files.push('pro-edge.json')
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `pro-edge: ${(e as Error).message}`)
+  }
+
+  // 6.11 NIFTY Options Pro — strict subset of the existing options snapshot.
+  // Grade A only + score ≥ 9 + dedup by instrument. Live 30d WR from accuracy.
+  try {
+    const rawOpts = await fs.readFile(path.join(SNAP_DIR, 'options.json'), 'utf8').catch(() => null)
+    let optionsLiveWr: number | null = null
+    try {
+      const accRaw = await fs.readFile(path.join(SNAP_DIR, 'accuracy.json'), 'utf8').catch(() => null)
+      if (accRaw) {
+        const acc = JSON.parse(accRaw)
+        const opt = acc?.bySource?.OPTIONS
+        if (opt?.winRate != null) {
+          optionsLiveWr = opt.winRate > 1 ? opt.winRate / 100 : opt.winRate
+        }
+      }
+    } catch { /* ignore */ }
+    if (rawOpts) {
+      const opts = JSON.parse(rawOpts)
+      const all: any[] = opts.rows ?? []
+      const elite = all.filter(r => (r.score ?? 0) >= 9 && r.grade === 'A')
+      // Strict dedup by instrument symbol
+      const seen = new Set<string>()
+      const deduped = elite.filter(r => {
+        const k = r.instrument || r.symbol
+        if (seen.has(k)) return false
+        seen.add(k); return true
+      })
+      const out = {
+        generatedAt: ts,
+        totalRaw: all.length,
+        eliteCount: deduped.length,
+        liveWinRate: optionsLiveWr,
+        winRateWindowDays: 30,
+        rows: deduped,
+      }
+      await fs.writeFile(path.join(SNAP_DIR, 'options-pro.json'), JSON.stringify(out, null, 2))
+      files.push('options-pro.json')
+    }
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `options-pro: ${(e as Error).message}`)
+  }
+
   // 7. Accuracy report (system-wide hit-rate, R-multiple, by source/tier)
   // 2026-05-18: published as a separate snapshot for the dashboard strip.
   // 2026-05-25: also includes catch-rate (% of NSE top-gainers our pre-move

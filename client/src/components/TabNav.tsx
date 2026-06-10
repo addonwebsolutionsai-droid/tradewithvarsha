@@ -80,6 +80,16 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   })()
   const trackAcc = (accSnap as any)?.winRate ?? null
   const tops = PUBLIC_MODE ? [
+    // 2026-06-05: PRO Edge — sellable premium feed. ALL filters stacked.
+    // 0-10 names/day. The product we can credibly price at premium tier.
+    { to: '/pro-edge',     label: '💎 PRO Edge',  icon: <Star size={14} />,
+      acc: null,
+      title: 'PRO Edge — strictest signal feed. Cross-engine confluence + smart-money same-side + sector tailwind aligned + conviction ≥ 85. 0-10 names/day. Premium tier.' },
+    // 2026-06-05: NIFTY Options Pro — extracts the proven 66.7%-WR engine
+    // as a standalone tab with live empirical badge.
+    { to: '/options-pro',  label: '🎯 Options PRO', icon: <Layers size={14} />,
+      acc: wr('OPTIONS'),
+      title: 'NIFTY Options Pro — strict subset of options (grade A + score ≥ 9). Live 30-day measured win rate on banner.' },
     // 2026-05-30: 💎 Elite is the headline tab — best-of-best stream that
     // requires ALL 5 institutional confluences (Volume + FII↑ + DII↑ +
     // Promoter↑ + Fundamentals/Technicals) before a signal qualifies.

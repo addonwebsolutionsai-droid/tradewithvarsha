@@ -1846,6 +1846,151 @@ export function PublicCrossConfluencePage(): JSX.Element {
   )
 }
 
+// ── 💎 PRO EDGE — strictest signal feed ──
+// Stack of ALL filters: cross-confluence (≥2 engines) + smart-money
+// same-side + sector tailwind aligned + conviction ≥ 85. Targets 0-10
+// names/day. THIS is the sellable premium feed.
+export function PublicProEdgePage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-pro-edge'], queryFn: () => snapshots.proEdge(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const raw: any[] = data?.rows ?? []
+  const rows: any[] = (() => {
+    const seen = new Set<string>(); const out: any[] = []
+    for (const r of raw) { if (seen.has(r.symbol)) continue; seen.add(r.symbol); out.push(r) }
+    return out
+  })()
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/20 to-accent-green/10 border border-accent-amber/60 rounded-lg">
+        <div className="text-3xl">💎</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-amber">PRO Edge — Premium Confluence Feed</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            The strictest filter on the platform. A name reaches PRO Edge only when <b>ALL</b> of these pass simultaneously:
+            <ol className="list-decimal ml-5 mt-1 text-[11px] space-y-0.5">
+              <li>Cross-engine confluence — flagged by ≥2 independent engines</li>
+              <li>Smart-money same-side — institutions NOT positioned opposite the direction</li>
+              <li>Sector tailwind — direction aligns with sector strength (LEADING/IMPROVING for long, LAGGING/WEAKENING for short)</li>
+              <li>Conviction ≥ 85</li>
+            </ol>
+            Targets 0–10 names/day. Theoretical WR target 75–85%. Empirical proof requires 30 days of forward closed-trade data.
+          </div>
+          {data && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              Funnel — evaluated {data.totalEvaluated ?? 0} · ultra OK {data.filters?.ultraPicks ?? 0} · smart OK {data.filters?.smartMoneyOk ?? 0} · sector OK {data.filters?.sectorAligned ?? 0} · conv OK {data.filters?.convOk ?? 0} → <b className="text-accent-amber">{data.passCount ?? 0} PASS</b>
+            </div>
+          )}
+        </div>
+      </div>
+      <AccuracyStrip />
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load PRO Edge. Refreshes every 30 min." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No setups currently pass all 4 PRO filters. This is by design — empty days are common at this strictness." />}
+      {rows.length > 0 && (
+        <div className="space-y-3">
+          {rows.map(r => <ProEdgeCard key={r.symbol} row={r} />)}
+        </div>
+      )}
+    </div>
+  )
+}
+
+function ProEdgeCard({ row: r }: { row: any }): JSX.Element {
+  const long = r.direction === 'BUY'
+  const dirColor = long ? '#00c853' : '#ff1744'
+  return (
+    <div className="bg-ink-800 border border-accent-amber/40 rounded-lg p-4 hover:border-accent-amber/70 transition-colors">
+      <div className="flex items-center justify-between gap-2 flex-wrap">
+        <div className="flex items-center gap-2 flex-wrap">
+          <span className="text-[14px]">💎</span>
+          <b className="text-neutral-100 text-[14px]">{r.symbol}</b>
+          <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+          <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent-amber/15 text-accent-amber border border-accent-amber/50">PRO · conv {r.conviction}</span>
+        </div>
+        <div className="text-[11px] font-mono text-neutral-400">
+          LTP {r.ltp != null ? `₹${fmtPx(r.ltp)}` : '—'} · Entry {r.entry != null ? `₹${fmtPx(r.entry)}` : '—'}
+        </div>
+      </div>
+      <div className="mt-3 grid grid-cols-2 md:grid-cols-4 gap-2 text-[11px] font-mono">
+        <div className="bg-accent-cyan/5 border border-accent-cyan/30 rounded p-2">
+          <div className="text-[9px] text-accent-cyan/70 uppercase">Entry</div>
+          <div className="text-accent-cyan font-bold">{r.entry != null ? `₹${fmtPx(r.entry)}` : '—'}</div>
+        </div>
+        <div className="bg-accent-red/5 border border-accent-red/30 rounded p-2">
+          <div className="text-[9px] text-accent-red/70 uppercase">Stop Loss</div>
+          <div className="text-accent-red font-bold">{r.stopLoss != null ? `₹${fmtPx(r.stopLoss)}` : '—'}</div>
+        </div>
+        <div className="bg-accent-green/5 border border-accent-green/30 rounded p-2">
+          <div className="text-[9px] text-accent-green/70 uppercase">Target 2</div>
+          <div className="text-accent-green font-bold">{r.target2 != null ? `₹${fmtPx(r.target2)}` : '—'}</div>
+        </div>
+        <div className="bg-accent-green/10 border border-accent-green/40 rounded p-2">
+          <div className="text-[9px] text-accent-green/80 uppercase font-bold">Target 3</div>
+          <div className="text-accent-green font-bold">{r.target3 != null ? `₹${fmtPx(r.target3)}` : '—'}</div>
+        </div>
+      </div>
+      <div className="mt-3 pt-2 border-t border-ink-500 text-[10px] text-neutral-400">
+        <div className="font-semibold text-neutral-500 uppercase tracking-wider mb-1 text-[9px]">Why this is PRO</div>
+        <ul className="space-y-0.5 list-none ml-0">
+          {(r.reasoning || []).map((c: string, j: number) => (
+            <li key={j} className="flex items-start gap-1.5"><span className="text-accent-green">✓</span><span>{c}</span></li>
+          ))}
+        </ul>
+      </div>
+    </div>
+  )
+}
+
+// ── 🎯 NIFTY OPTIONS PRO — strict subset with live 30d WR ──
+// Existing options engine, filtered to grade A + score ≥ 9 only.
+// Surfaces the LIVE 30-day win rate from accuracy.json as a badge so
+// users see the actual measured performance, not theoretical claims.
+export function PublicOptionsProPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-options-pro'], queryFn: () => snapshots.optionsPro(),
+    refetchInterval: 3 * 60_000, retry: false,
+  })
+  const raw: any[] = data?.rows ?? []
+  const rows: any[] = (() => {
+    const seen = new Set<string>(); const out: any[] = []
+    for (const r of raw) { const k = r.instrument || r.symbol; if (seen.has(k)) continue; seen.add(k); out.push(r) }
+    return out
+  })()
+  const wr = data?.liveWinRate
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-green/15 to-accent-cyan/5 border border-accent-green/50 rounded-lg">
+        <div className="text-3xl">🎯</div>
+        <div className="flex-1">
+          <div className="flex items-center gap-2 flex-wrap">
+            <div className="text-sm font-bold text-accent-green">NIFTY Options Pro</div>
+            {wr != null && (
+              <span className="text-[10px] font-bold px-2 py-0.5 rounded bg-accent-green/20 text-accent-green border border-accent-green/50">
+                Live {data?.winRateWindowDays ?? 30}d WR: {(wr * 100).toFixed(1)}%
+              </span>
+            )}
+          </div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Strict subset of the NIFTY options engine — <b>grade A only + score ≥ 9</b>. This is the platform's strongest empirical track record (currently {wr != null ? `${(wr * 100).toFixed(1)}%` : '—'} measured on real closed trades over the last {data?.winRateWindowDays ?? 30} days).
+            <br/>Strict 9/21 EMA cross + Marabozu confirmation across 15m/30m/1h/4h timeframes. Real NSE-listed expiry from Angel ScripMaster.
+          </div>
+          <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+            {data?.eliteCount ?? rows.length} elite signals (filtered from {data?.totalRaw ?? '—'} raw options) · all unique
+          </div>
+        </div>
+      </div>
+      <AccuracyStrip />
+      <HitLog />
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load Options Pro. Refreshes every 30 min." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No grade-A score-9 setups right now. Strict bar — most days produce 1-3 signals." />}
+      {rows.length > 0 && <SignalTable rows={rows} />}
+    </div>
+  )
+}
+
 // ── 🧲 SMART MONEY / Accumulation-Distribution divergence ──
 // Detects names where OBV / A/D Line / CMF DIVERGE from price action.
 // Bullish accumulation: price flat/down + smart-money buying (institutions
