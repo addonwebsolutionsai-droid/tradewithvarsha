@@ -40,6 +40,7 @@ import { TopTradesPage } from './pages/TopTradesPage'
 import { PreMoveIdentifierPage } from './pages/PreMoveIdentifierPage'
 import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
 import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub, PublicEliteHub, PublicOIBuildupPage, PublicFnoFuturesPage, PublicOldWeeklyPickPage, PublicSectorRotationPage, PublicCrossConfluencePage, PublicAdDivergencePage, PublicProEdgePage, PublicOptionsProPage, PublicSlTrapPage } from './pages/PublicPages'
+import { AudioTour, ChangelogPopup } from './components/AudioTour'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -196,6 +197,10 @@ function Shell() {
         )}
       </main>
       {!PUBLIC_MODE && <LiveFeedSidebar />}
+      {/* 2026-06-10: AudioTour (Hindi+English narration via Web Speech API)
+          + one-time changelog popup. Both run only in PUBLIC_MODE. */}
+      {PUBLIC_MODE && <AudioTour />}
+      {PUBLIC_MODE && <ChangelogPopup />}
       <Toaster
         position="top-right"
         toastOptions={{

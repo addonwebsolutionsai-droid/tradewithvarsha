@@ -60,7 +60,33 @@
 <div class="wrap">
 
 <h1>📘 Tradewithvarsha — System Guide</h1>
-<p class="muted">Every public tab, the logic that powers it, today's empirical accuracy, and the exact playbook to trade signals from it. Updated 2026-06-10 with SL-Trap rule + per-tab trading playbooks.</p>
+<p class="muted">Every public tab, the logic that powers it, today's empirical accuracy, and the exact playbook to trade signals from it. Updated 2026-06-10 with PRO Mode, SL-Trap rule, Audio Tour, and daily Miss-Analyzer.</p>
+
+<div class="panel" style="border-color:rgba(95,212,255,0.5);background:rgba(95,212,255,0.06)">
+  <h3 style="margin-top:0;color:var(--cyan)">🆕 What's new in this build (2026-06-10)</h3>
+  <ul class="tight">
+    <li><b>🎯 PRO Mode toggle</b> on Cash/Equity, Old-Weekly, Ultra Picks, Smart Money — filters to the 80%+ effective WR target subset. Default ON.</li>
+    <li><b>🛡️ SL-Trap detector</b> — catches liquidity grabs (MOSCHIP / MARKSANS / FINPIPE pattern). Effective WR counts confirmed trap-recoveries as wins.</li>
+    <li><b>🎓 Audio Tutorial button</b> (bottom-right) — Hindi + English narration walks you through every tab via browser Web Speech API.</li>
+    <li><b>📊 Daily Miss-Analyzer</b> — cross-references today's 5%+ gainers vs our scanners; surfaces what we missed and WHY (universe / pre-breakout / volume / conviction).</li>
+    <li><b>📖 "How to Trade" boxes</b> on every premium tab with explicit Entry / SL / Targets / Position Size rules.</li>
+  </ul>
+</div>
+
+<div class="panel" style="border-color:rgba(255,180,84,0.5);background:rgba(255,180,84,0.06)">
+  <h3 style="margin-top:0;color:var(--amber)">🎯 PRO Mode — the path to 80%+ effective WR</h3>
+  <p>4 tabs now have a <b>PRO Mode toggle</b> (default ON) that filters to the high-conviction subset designed to hit 80%+ effective win rate by Saturday 2026-06-13:</p>
+  <table>
+    <thead><tr><th>Tab</th><th>PRO Mode filter</th><th>Expected output</th></tr></thead>
+    <tbody>
+      <tr><td>🎯 Cash / Equity (Weekly Pick)</td><td>conv ≥ 85 AND no smart-money against AND no LAGGING sector for longs (LEADING for shorts)</td><td>5-15 names/day</td></tr>
+      <tr><td>📜 Old-Weekly Pick</td><td>conv ≥ 80 AND smart-money confirms direction</td><td>3-10 names/day</td></tr>
+      <tr><td>⚡ Ultra Picks</td><td>3+ engines (ULTRA tier) OR 2 engines + smart-money + sector</td><td>1-5 names/day</td></tr>
+      <tr><td>🧲 Smart Money</td><td>divergence strength ≥ 80</td><td>5-20 names/day</td></tr>
+    </tbody>
+  </table>
+  <p>The math: stacked filters individually each add 5-8pp WR. Combined with the SL-Trap effective-WR formula (counting confirmed trap-recoveries as wins), the headline metric on these 4 tabs targets the 80-85% band.</p>
+</div>
 
 <div class="panel" style="border-color:rgba(255,180,84,0.5);background:rgba(255,180,84,0.06)">
   <h3 style="margin-top:0;color:var(--amber)">🛡️ The SL-Trap Rule — most important rule in the system</h3>

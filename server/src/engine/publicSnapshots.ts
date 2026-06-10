@@ -325,6 +325,32 @@ let fnoScanInflight: Promise<void> | null = null
 let fnoLastScanAt = 0
 const FNO_SCAN_MIN_INTERVAL_MS = 25 * 60_000
 
+// Miss-analyzer — cross-references today's 5%+ gainers vs every scanner
+// to surface what we missed and WHY. Auto-tune feedback loop for the
+// daily self-improve cron. Throttled to 1× per 60 min (heavy: ~500
+// candle fetches).
+let missInflight: Promise<void> | null = null
+let missLastAt = 0
+const MISS_MIN_MS = 60 * 60_000
+
+async function triggerMissAnalysis(): Promise<void> {
+  if (missInflight) return missInflight
+  if (Date.now() - missLastAt < MISS_MIN_MS) return
+  missInflight = (async () => {
+    try {
+      const { runMissAnalysis } = await import('./missAnalyzer')
+      const m = await runMissAnalysis()
+      await fs.writeFile(path.join(SNAP_DIR, 'miss-analysis.json'), JSON.stringify(m, null, 2))
+      missLastAt = Date.now()
+      log.ok('PUBLIC-SNAP', `miss-analysis: caught ${m.caughtCount}/${m.totalGainers} (${(m.catchRate * 100).toFixed(1)}%)`)
+    } catch (e) {
+      log.warn('PUBLIC-SNAP', `miss-analysis async: ${(e as Error).message}`)
+    } finally {
+      missInflight = null
+    }
+  })()
+}
+
 // Accumulation/Distribution divergence scan — finds names where smart-money
 // flow (OBV / A/D / CMF) DIVERGES from price action. Pre-move signal.
 // Async/throttled (same pattern as fno scan), min 25 min between runs.
@@ -824,6 +850,7 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   triggerFnoScan().catch(() => { /* logged inside */ })
   triggerOldWeeklyScan().catch(() => { /* logged inside */ })
   triggerAdDivergenceScan().catch(() => { /* logged inside */ })
+  triggerMissAnalysis().catch(() => { /* logged inside */ })
 
   // 6.8 Sector Rotation — 12 NIFTY sectoral indices ranked by relative
   // strength. Synchronous (only 12 candle fetches, fast).

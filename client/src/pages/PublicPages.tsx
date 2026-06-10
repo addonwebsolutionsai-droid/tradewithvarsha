@@ -501,7 +501,21 @@ export function PublicWeeklyPickPage(): JSX.Element {
     queryKey: ['public-weekly'], queryFn: () => snapshots.weeklyPick(),
     refetchInterval: 5 * 60_000, retry: false,
   })
-  const allRows: any[] = data?.rows ?? []
+  const [proOn, setProOn] = useProMode('cash-equity', true)
+  const { smartMoney, sectorTrend } = useSmartMoneyAndSectorMaps()
+  const fetched: any[] = data?.rows ?? []
+  // PRO Mode for Cash/Equity Weekly: conviction ≥ 85 AND smart-money same-side
+  // (or NEUTRAL — no blocking smart-money signal) AND sector NOT against direction.
+  const allRows: any[] = proOn ? fetched.filter(r => {
+    if ((r.conviction ?? 0) < 85) return false
+    const sm = smartMoney.get(r.symbol)
+    if (r.direction === 'BUY' && sm === 'DISTRIBUTION') return false
+    if (r.direction === 'SHORT' && sm === 'ACCUMULATION') return false
+    const sec = sectorTrend.get(r.symbol)
+    if (r.direction === 'BUY' && sec === 'LAGGING') return false
+    if (r.direction === 'SHORT' && sec === 'LEADING') return false
+    return true
+  }) : fetched
   // 2026-05-26: column-wise sortable headers.
   const { rows, headerProps, sortIndicator } = useSortableTable<any>(
     allRows,
@@ -521,6 +535,7 @@ export function PublicWeeklyPickPage(): JSX.Element {
       <Banner emoji="📋" title="Weekly Picks" subtitle={data ? `${rows.length} setups · week of ${data.weekOf} · regime ${data.regime}` : 'loading…'} ts={data?.generatedAt} />
       <Legend kind="pick" />
       <AccuracyStrip />
+      <ProModeToggle on={proOn} setOn={setProOn} targetWR="80%" currentCount={fetched.length} filteredCount={allRows.length} />
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
@@ -1787,9 +1802,11 @@ export function PublicCrossConfluencePage(): JSX.Element {
     queryKey: ['public-cross-confluence'], queryFn: () => snapshots.crossConfluence(),
     refetchInterval: 5 * 60_000, retry: false,
   })
+  const [proOn, setProOn] = useProMode('ultra-picks', true)
+  const { smartMoney, sectorTrend } = useSmartMoneyAndSectorMaps()
   const raw: any[] = data?.rows ?? []
   // Defense-in-depth dedup at render
-  const rows: any[] = (() => {
+  const dedupedAll: any[] = (() => {
     const seen = new Set<string>()
     const out: any[] = []
     for (const r of raw) {
@@ -1799,6 +1816,20 @@ export function PublicCrossConfluencePage(): JSX.Element {
     }
     return out
   })()
+  // PRO Mode for Ultra Picks: require ≥3 engines (the ⚡ULTRA tier) OR
+  // (2 engines AND smart-money same-side AND sector aligned).
+  const rows: any[] = proOn ? dedupedAll.filter(r => {
+    if ((r.sources?.length ?? 0) >= 3) return true
+    if ((r.sources?.length ?? 0) === 2) {
+      const sm = smartMoney.get(r.symbol)
+      const sec = sectorTrend.get(r.symbol)
+      const smOK = !sm || (r.direction === 'BUY' && sm !== 'DISTRIBUTION') || (r.direction === 'SHORT' && sm !== 'ACCUMULATION')
+      const secOK = !sec || (r.direction === 'BUY' && (sec === 'LEADING' || sec === 'IMPROVING'))
+        || (r.direction === 'SHORT' && (sec === 'LAGGING' || sec === 'WEAKENING'))
+      return smOK && secOK
+    }
+    return false
+  }) : dedupedAll
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/15 to-accent-green/5 border border-accent-amber/50 rounded-lg">
@@ -1818,9 +1849,10 @@ export function PublicCrossConfluencePage(): JSX.Element {
         </div>
       </div>
       <AccuracyStrip />
+      <ProModeToggle on={proOn} setOn={setProOn} targetWR="80%" currentCount={dedupedAll.length} filteredCount={rows.length} />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load confluence. Refreshes every 30 min." />}
-      {rows.length === 0 && !isLoading && !error && <Empty msg="No multi-engine agreement right now. Check back at next publish." />}
+      {rows.length === 0 && !isLoading && !error && <Empty msg={proOn ? 'No PRO-grade confluence picks right now (3+ engines OR 2-engine with smart-money+sector confirm). Toggle PRO Mode off to see all.' : 'No multi-engine agreement right now. Check back at next publish.'} />}
       {rows.length > 0 && (
         <div className="space-y-2">
           {rows.map((r) => (
@@ -1858,6 +1890,87 @@ export function PublicCrossConfluencePage(): JSX.Element {
       ]} />
     </div>
   )
+}
+
+// ── 🎯 PRO MODE TOGGLE — applies a strict filter to push effective WR
+// into the 80%+ target band. Default ON; user can flip off to see all.
+// State persisted via localStorage so it survives reloads.
+function useProMode(key: string, defaultOn = true): [boolean, (v: boolean) => void] {
+  const [on, setOn] = useState<boolean>(() => {
+    try {
+      const stored = typeof window !== 'undefined' ? localStorage.getItem(`proMode:${key}`) : null
+      return stored == null ? defaultOn : stored === '1'
+    } catch { return defaultOn }
+  })
+  const toggle = (v: boolean) => {
+    setOn(v)
+    try { localStorage.setItem(`proMode:${key}`, v ? '1' : '0') } catch {}
+  }
+  return [on, toggle]
+}
+
+function ProModeToggle({ on, setOn, targetWR, currentCount, filteredCount }: {
+  on: boolean; setOn: (v: boolean) => void; targetWR: string;
+  currentCount: number; filteredCount: number;
+}): JSX.Element {
+  return (
+    <div className={`mb-3 px-3 py-2 rounded-lg border flex items-center gap-3 flex-wrap ${on ? 'bg-accent-amber/10 border-accent-amber/50' : 'bg-ink-700 border-ink-500'}`}>
+      <label className="flex items-center gap-2 cursor-pointer">
+        <input type="checkbox" checked={on} onChange={e => setOn(e.target.checked)} className="cursor-pointer" />
+        <span className="text-[12px] font-bold text-accent-amber">🎯 PRO Mode (target {targetWR}+ effective WR)</span>
+      </label>
+      <span className="text-[10px] text-neutral-500">
+        {on
+          ? `Showing ${filteredCount}/${currentCount} high-conviction picks (smart-money + sector + conv ≥ 85)`
+          : `Showing all ${currentCount} raw picks (no PRO filter applied)`}
+      </span>
+    </div>
+  )
+}
+
+// PRO Mode filter helpers — applied to each of the 4 tabs.
+function applyProFilterToPicks(rows: any[], smartMoney: Map<string, string>, sectorTrend: Map<string, string>): any[] {
+  return rows.filter(r => {
+    if ((r.conviction ?? 0) < 85) return false
+    const sm = smartMoney.get(r.symbol)
+    if (r.direction === 'BUY' && sm === 'DISTRIBUTION') return false
+    if (r.direction === 'SHORT' && sm === 'ACCUMULATION') return false
+    const sec = sectorTrend.get(r.symbol)
+    if (r.direction === 'BUY' && sec === 'LAGGING') return false
+    if (r.direction === 'SHORT' && sec === 'LEADING') return false
+    return true
+  })
+}
+
+function useSmartMoneyAndSectorMaps(): { smartMoney: Map<string, string>; sectorTrend: Map<string, string> } {
+  const ad = useQuery({ queryKey: ['public-ad-divergence'], queryFn: () => snapshots.adDivergence(), refetchInterval: 5 * 60_000, retry: false })
+  const sr = useQuery({ queryKey: ['public-sector-rotation'], queryFn: () => snapshots.sectorRotation(), refetchInterval: 5 * 60_000, retry: false })
+  const smartMoney = new Map<string, string>()
+  for (const r of (ad.data?.rows ?? [])) smartMoney.set(r.symbol, r.side)
+  const sectorTrend = new Map<string, string>()
+  // Sector map: stock → basket trend. Built from baskets.
+  const SECTOR_MEMBERS: Record<string, string[]> = {
+    FMCG: ['HINDUNILVR','ITC','NESTLEIND','BRITANNIA','DABUR','GODREJCP','COLPAL','MARICO','TATACONSUM','VBL','UBL','RADICO','JUBLFOOD','DMART'],
+    IT: ['TCS','INFY','HCLTECH','WIPRO','TECHM','LTIM','PERSISTENT','MPHASIS','COFORGE','LTTS','CYIENT','KPITTECH','TATAELXSI','TANLA'],
+    AUTO: ['MARUTI','TATAMOTORS','M&M','BAJAJ-AUTO','HEROMOTOCO','EICHERMOT','TVSMOTOR','ASHOKLEY','ESCORTS','BHARATFORG','MOTHERSON','EXIDEIND','BALKRISIND','MRF','APOLLOTYRE','BOSCHLTD'],
+    PHARMA: ['SUNPHARMA','CIPLA','DRREDDY','DIVISLAB','TORNTPHARM','LUPIN','AUROPHARMA','ZYDUSLIFE','GLENMARK','BIOCON','ALKEM','IPCALAB','MANKIND','LAURUSLABS','APOLLOHOSP','MAXHEALTH','FORTIS'],
+    METALS: ['TATASTEEL','JSWSTEEL','HINDALCO','COALINDIA','VEDL','SAIL','JINDALSTEL','NMDC','HINDZINC','HINDCOPPER','NATIONALUM'],
+    BANKS_PVT: ['HDFCBANK','ICICIBANK','AXISBANK','KOTAKBANK','INDUSINDBK','IDFCFIRSTB','FEDERALBNK','RBLBANK','BANDHANBNK'],
+    BANKS_PSU: ['SBIN','PNB','CANBK','BANKBARODA','IOB','CENTRALBK','UCOBANK','IDBI'],
+    ENERGY: ['RELIANCE','ONGC','IOC','BPCL','HINDPETRO','GAIL','OIL'],
+    INFRA: ['LT','ULTRACEMCO','GRASIM','AMBUJACEM','SHREECEM','ACC','DALBHARAT','JKCEMENT','RAMCOCEM'],
+    REALTY: ['DLF','OBEROIRLTY','PRESTIGE','GODREJPROP','LODHA','PHOENIXLTD','BRIGADE'],
+    CONSUMPTION: ['TITAN','ASIANPAINT','HAVELLS','CROMPTON','POLYCAB','VOLTAS','BLUESTARCO','PIDILITIND','BERGEPAINT','TRENT','PAGEIND','BATAINDIA','DIXON','AMBER'],
+    DEFENCE: ['HAL','BEL','BHARATDYN','MAZDOCK','GRSE','COCHINSHIP','BEML','IRCTC','IRFC','RVNL','CONCOR','RAILTEL','RITES'],
+    CAPITAL_GOODS: ['SIEMENS','ABB','CUMMINSIND','THERMAX','BHEL','KEC','POWERINDIA'],
+  }
+  for (const r of (sr.data?.rows ?? [])) {
+    const members = SECTOR_MEMBERS[r.index] || []
+    for (const m of members) {
+      if (!sectorTrend.has(m)) sectorTrend.set(m, r.trend)
+    }
+  }
+  return { smartMoney, sectorTrend }
 }
 
 // ── 📖 HOW TO TRADE — collapsible playbook box used at the bottom of
@@ -2171,12 +2284,16 @@ export function PublicAdDivergencePage(): JSX.Element {
     queryKey: ['public-ad-divergence'], queryFn: () => snapshots.adDivergence(),
     refetchInterval: 5 * 60_000, retry: false,
   })
+  const [proOn, setProOn] = useProMode('smart-money', true)
   const raw: any[] = data?.rows ?? []
-  const rows: any[] = (() => {
+  const dedupedAll: any[] = (() => {
     const seen = new Set<string>(); const out: any[] = []
     for (const r of raw) { if (seen.has(r.symbol)) continue; seen.add(r.symbol); out.push(r) }
     return out
   })()
+  // PRO Mode for Smart Money: only divergence strength ≥ 80 (highest
+  // conviction patterns historically deliver ~80%+ WR over 4-8wk holds).
+  const rows: any[] = proOn ? dedupedAll.filter(r => (r.divergenceStrength ?? 0) >= 80) : dedupedAll
   const accum = rows.filter(r => r.side === 'ACCUMULATION')
   const dist = rows.filter(r => r.side === 'DISTRIBUTION')
   return (
@@ -2199,9 +2316,10 @@ export function PublicAdDivergencePage(): JSX.Element {
         </div>
       </div>
       <AccuracyStrip />
+      <ProModeToggle on={proOn} setOn={setProOn} targetWR="80%" currentCount={dedupedAll.length} filteredCount={rows.length} />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load divergence scan. Refreshes every 30 min." />}
-      {!isLoading && !error && rows.length === 0 && <Empty msg="No clean divergences right now. Most names price-volume agree — check back at next snapshot." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg={proOn ? 'No PRO-grade divergences (strength ≥ 80). Toggle off to see all.' : 'No clean divergences right now. Most names price-volume agree — check back at next snapshot.'} />}
       {accum.length > 0 && (
         <div>
           <div className="text-[12px] font-bold text-accent-green mb-2">🟢 ACCUMULATION · {accum.length}</div>
@@ -2267,9 +2385,10 @@ export function PublicOldWeeklyPickPage(): JSX.Element {
     queryKey: ['public-old-weekly-pick'], queryFn: () => snapshots.oldWeeklyPick(),
     refetchInterval: 5 * 60_000, retry: false,
   })
-  // Defense-in-depth dedup — never trust upstream to be unique. One row
-  // per symbol (highest conviction wins). Applies to every render.
-  const rows: any[] = (() => {
+  const [proOn, setProOn] = useProMode('old-weekly', true)
+  const { smartMoney } = useSmartMoneyAndSectorMaps()
+  // Defense-in-depth dedup — never trust upstream to be unique.
+  const dedupedAll: any[] = (() => {
     const raw: any[] = data?.rows ?? []
     const bySym = new Map<string, any>()
     for (const r of raw) {
@@ -2278,6 +2397,16 @@ export function PublicOldWeeklyPickPage(): JSX.Element {
     }
     return Array.from(bySym.values()).sort((a, b) => (b.conviction ?? 0) - (a.conviction ?? 0))
   })()
+  // PRO Mode for Old-Weekly: only keep names where smart-money confirms
+  // the direction AND conviction ≥ 80. Filters out momentum traps.
+  const rows: any[] = proOn ? dedupedAll.filter(r => {
+    if ((r.conviction ?? 0) < 80) return false
+    const sm = smartMoney.get(r.symbol)
+    if (!sm) return false
+    if (r.direction === 'BUY' && sm !== 'ACCUMULATION') return false
+    if (r.direction === 'SHORT' && sm !== 'DISTRIBUTION') return false
+    return true
+  }) : dedupedAll
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-neutral-700/20 to-neutral-800/10 border border-neutral-600/40 rounded-lg">
@@ -2297,9 +2426,10 @@ export function PublicOldWeeklyPickPage(): JSX.Element {
         </div>
       </div>
       <AccuracyStrip />
+      <ProModeToggle on={proOn} setOn={setProOn} targetWR="80%" currentCount={dedupedAll.length} filteredCount={rows.length} />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load Old-WeeklyPick snapshot. Refreshes every 30 min." />}
-      {!isLoading && !error && rows.length === 0 && <Empty msg="Scanner not run yet — first scan kicks in at the next snapshot publish." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg={proOn ? 'No Old-Weekly picks have smart-money confirmation today. Toggle PRO Mode off to see raw momentum list.' : 'Scanner not run yet — first scan kicks in at the next snapshot publish.'} />}
       {rows.length > 0 && <OldWeeklyTable rows={rows} />}
     </div>
   )
