@@ -41,6 +41,7 @@ import { PreMoveIdentifierPage } from './pages/PreMoveIdentifierPage'
 import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
 import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub, PublicEliteHub, PublicOIBuildupPage, PublicFnoFuturesPage, PublicOldWeeklyPickPage, PublicSectorRotationPage, PublicCrossConfluencePage, PublicAdDivergencePage, PublicProEdgePage, PublicSlTrapPage, PublicChatPage, PublicArchivePage } from './pages/PublicPages'
 import { AudioTour, ChangelogPopup } from './components/AudioTour'
+import { ChatFloatingButton } from './components/ChatFloatingButton'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -204,6 +205,10 @@ function Shell() {
           + one-time changelog popup. Both run only in PUBLIC_MODE. */}
       {PUBLIC_MODE && <AudioTour />}
       {PUBLIC_MODE && <ChangelogPopup />}
+      {/* 2026-06-13: Floating 🤖 Ask AI button on every page (bottom-right,
+          above the Tutorial button). Opens an inline chat panel — no
+          navigation needed. Same backend as the /ask-ai tab. */}
+      {PUBLIC_MODE && <ChatFloatingButton />}
       <Toaster
         position="top-right"
         toastOptions={{
