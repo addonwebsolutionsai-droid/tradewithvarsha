@@ -66,29 +66,45 @@ async function readSnap(name: string): Promise<any | null> {
   } catch { return null }
 }
 
+// Cached ticker set — populated on first call from Angel ScripMaster.
+// This is the SOURCE OF TRUTH for what is a real Indian listed ticker
+// vs what is just an English word that happens to be uppercase.
+let TICKER_SET: Set<string> | null = null
+async function loadTickerSet(): Promise<Set<string>> {
+  if (TICKER_SET) return TICKER_SET
+  try {
+    const angel = await import('../data/angel')
+    const sm = await angel.loadScripMaster()
+    const set = new Set<string>()
+    for (const s of (sm || [])) {
+      if (s.exch_seg !== 'NSE' && s.exch_seg !== 'BSE') continue
+      const sym = (s.symbol ?? '').toUpperCase().replace(/-EQ$|-BE$|-BZ$|-SM$|-ST$/, '')
+      if (sym.length >= 3 && sym.length <= 16 && /^[A-Z0-9&]+$/.test(sym)) set.add(sym)
+    }
+    set.add('NIFTY'); set.add('BANKNIFTY'); set.add('FINNIFTY')
+    TICKER_SET = set
+    log.info('CHAT', `ticker set loaded: ${set.size} valid Indian tickers`)
+    return set
+  } catch (e) {
+    log.warn('CHAT', `ticker set load failed: ${(e as Error).message}`)
+    return new Set()
+  }
+}
+
 /**
- * Intent classifier — extracts symbol mentions + topic keywords from the query
- * so we load only the relevant snapshots (saves tokens, reduces noise).
+ * Intent classifier — extracts symbol mentions + topic keywords. Uses the
+ * Angel ScripMaster ticker set as ground truth so English words like
+ * "BUYING", "THINKING", "SYSTEM" don't get classified as stocks.
  */
-function classifyIntent(query: string): { symbols: string[]; topics: string[] } {
-  const q = query.toUpperCase()
-  // Crude symbol extraction — Indian tickers are typically 2-15 uppercase chars
-  const tickerRe = /\b([A-Z][A-Z0-9&]{1,15})\b/g
+async function classifyIntent(query: string): Promise<{ symbols: string[]; topics: string[] }> {
+  const tickerSet = await loadTickerSet()
+  // Normalize: split on word boundaries, uppercase, keep only tokens that
+  // exist in ScripMaster. Tokens < 3 chars rejected.
+  const tokens = query.toUpperCase().split(/[^A-Z0-9&]+/).filter(t => t.length >= 3)
   const tickers = new Set<string>()
-  let m: RegExpExecArray | null
-  while ((m = tickerRe.exec(q))) {
-    const t = m[1]
-    // Filter obvious non-tickers
-    if (['BUY', 'SELL', 'HOLD', 'SL', 'CE', 'PE', 'NIFTY', 'BANKNIFTY', 'GIVE', 'WHAT', 'WHY',
-         'HUGE', 'LOSS', 'LOSSES', 'TRADE', 'STOP', 'TARGET', 'NEXT', 'STOCK', 'AT', 'OF',
-         'WITH', 'FROM', 'INTO', 'THE', 'AND', 'BUT', 'YOU', 'AI', 'IS', 'AM', 'ARE', 'WAS',
-         'ASK', 'TELL', 'PLEASE', 'SHOULD', 'WE', 'OUR', 'MY', 'ME', 'IT', 'NOW', 'HAS',
-         'WILL', 'CAN', 'DID', 'DO', 'NOT', 'YES', 'NO', 'SO', 'OR', 'IF', 'ON', 'BY',
-         'FOR', 'AS', 'BE', 'TO', 'IN', 'A', 'AN', 'TGT', 'PLEASE', 'ANALYSIS', 'CHECK',
-         'OPTION', 'OPTIONS', 'CALL', 'PUT', 'GENERATED', 'REGENERATED', 'SAME', 'SIGNAL',
-         'GAVE', 'GIVEN', 'HIT', 'HITTED', 'HUGE', 'SITTING'].includes(t)) continue
-    if (t.length < 3) continue
-    tickers.add(t)
+  for (const t of tokens) {
+    // Exact match against ScripMaster — only real tickers pass
+    if (tickerSet.has(t)) tickers.add(t)
   }
   const topics: string[] = []
   if (/SMART|MONEY|INSTITUTION|FII|DII|PROMOTER/i.test(query)) topics.push('smart-money')
@@ -151,25 +167,53 @@ async function loadContext(symbols: string[], topics: string[]): Promise<{
   return { snippets, sources }
 }
 
-/** Call Google Gemini (free tier). 1500 req/day, 60/min. */
-async function callGemini(systemPrompt: string, userPrompt: string): Promise<string | null> {
+// Try multiple Gemini models in order — different models have different
+// free-tier quotas. If a project has zero quota on flash, lite may have
+// some, etc. Returns { text, lastError } so the caller can surface quota
+// issues to the user clearly.
+const GEMINI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-2.5-pro',
+]
+
+async function callGemini(systemPrompt: string, userPrompt: string): Promise<{ text: string | null; error: string | null }> {
   const key = process.env.GEMINI_API_KEY
-  if (!key) return null
-  try {
-    const url = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent?key=${key}`
-    const body = {
-      contents: [
-        { role: 'user', parts: [{ text: systemPrompt + '\n\n---\n\nUSER:\n' + userPrompt }] },
-      ],
-      generationConfig: { temperature: 0.1, maxOutputTokens: 600 },
+  if (!key) return { text: null, error: 'GEMINI_API_KEY not set' }
+  let lastErr: string | null = null
+  for (const model of GEMINI_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
+      const body = {
+        contents: [
+          { role: 'user', parts: [{ text: systemPrompt + '\n\n---\n\nUSER:\n' + userPrompt }] },
+        ],
+        generationConfig: {
+          temperature: 0.1,
+          maxOutputTokens: 2048,        // Was 600 — 2.5 models reserve thinking tokens
+          thinkingConfig: { thinkingBudget: 0 },   // Disable thinking on 2.5 models
+        },
+      }
+      const res = await axios.post(url, body, { timeout: 20_000, validateStatus: () => true })
+      if (res.status === 200) {
+        const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text
+        if (typeof text === 'string') return { text: text.trim(), error: null }
+      } else if (res.status === 429) {
+        // Quota — try next model
+        const msg = res.data?.error?.message ?? 'quota exhausted'
+        lastErr = `${model}: 429 ${msg.split('\n')[0]}`
+        continue
+      } else {
+        lastErr = `${model}: ${res.status} ${JSON.stringify(res.data?.error ?? res.data ?? '').slice(0, 200)}`
+        continue
+      }
+    } catch (e) {
+      lastErr = `${model}: ${(e as Error).message}`
     }
-    const res = await axios.post(url, body, { timeout: 20_000 })
-    const text = res.data?.candidates?.[0]?.content?.parts?.[0]?.text
-    return typeof text === 'string' ? text.trim() : null
-  } catch (e) {
-    log.warn('CHAT', `Gemini error: ${(e as Error).message}`)
-    return null
   }
+  log.warn('CHAT', `Gemini all models failed: ${lastErr}`)
+  return { text: null, error: lastErr }
 }
 
 /** Call Groq (free Llama-3 inference). Very fast. */
@@ -233,7 +277,7 @@ function fallbackAnswer(symbols: string[], context: Record<string, any>): string
 
 export async function askAi(query: string): Promise<ChatResponse> {
   const warnings: string[] = []
-  const { symbols, topics } = classifyIntent(query)
+  const { symbols, topics } = await classifyIntent(query)
   log.info('CHAT', `intent: symbols=${symbols.join(',') || 'none'} · topics=${topics.join(',') || 'none'}`)
   const { snippets, sources } = await loadContext(symbols, topics)
 
@@ -245,17 +289,25 @@ export async function askAi(query: string): Promise<ChatResponse> {
 
   let answer: string | null = null
   let provider: ChatResponse['llmProvider'] = 'fallback'
+  let geminiErr: string | null = null
   if (process.env.GEMINI_API_KEY) {
-    answer = await callGemini(SYSTEM_PROMPT, userPrompt)
-    if (answer) provider = 'gemini'
+    const r = await callGemini(SYSTEM_PROMPT, userPrompt)
+    if (r.text) { answer = r.text; provider = 'gemini' }
+    else geminiErr = r.error
   }
   if (!answer && process.env.GROQ_API_KEY) {
-    answer = await callGroq(SYSTEM_PROMPT, userPrompt)
-    if (answer) provider = 'groq'
+    const t = await callGroq(SYSTEM_PROMPT, userPrompt)
+    if (t) { answer = t; provider = 'groq' }
   }
   if (!answer) {
     answer = fallbackAnswer(symbols, snippets)
-    warnings.push('No LLM key configured (set GEMINI_API_KEY or GROQ_API_KEY in server .env)')
+    if (!process.env.GEMINI_API_KEY && !process.env.GROQ_API_KEY) {
+      warnings.push('No LLM key configured (set GEMINI_API_KEY or GROQ_API_KEY in server .env)')
+    } else if (geminiErr && /quota|429|RESOURCE_EXHAUSTED/i.test(geminiErr)) {
+      warnings.push(`Gemini key has zero free-tier quota on this project. Create a fresh key at https://aistudio.google.com/app/apikey (sign in → "Create API key" → choose default project, NOT a custom Cloud project).`)
+    } else if (geminiErr) {
+      warnings.push(`Gemini error: ${geminiErr.slice(0, 200)}`)
+    }
   }
 
   return { answer, sourcesUsed: sources, llmProvider: provider, warnings }
