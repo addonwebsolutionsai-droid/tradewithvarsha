@@ -869,6 +869,66 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
     log.warn('PUBLIC-SNAP', `oi-buildup: ${(e as Error).message}`)
   }
 
+  // 6.6b Multi-strike OI surge — catches simultaneous CE 23300/23400/23500
+  // accumulation that single-strike AGGR_CE_BUY misses. User's 12-Jun
+  // missed-move query is exactly this pattern.
+  try {
+    const { detectMultiStrikeSurges } = await import('./multiStrikeOiSurge')
+    const surges = await detectMultiStrikeSurges()
+    const out = {
+      generatedAt: ts,
+      total: surges.length,
+      bullishCount: surges.filter(s => s.bias === 'BULLISH').length,
+      bearishCount: surges.filter(s => s.bias === 'BEARISH').length,
+      rows: surges,
+    }
+    await fs.writeFile(path.join(SNAP_DIR, 'multi-strike-oi.json'), JSON.stringify(out, null, 2))
+    files.push('multi-strike-oi.json')
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `multi-strike-oi: ${(e as Error).message}`)
+  }
+
+  // 6.6c Archive snapshot — SUPERSEDED / EXPIRED / SL_HIT lifecycle
+  // entries from last 30 days. Saturday cleanup per user.
+  try {
+    const histRaw = await fs.readFile(path.join(SNAP_DIR, 'signals-history.json'), 'utf8').catch(() => null)
+    if (histRaw) {
+      const hist = JSON.parse(histRaw)
+      const cutoff = Date.now() - 30 * 86400_000
+      const ARCHIVE_STATUS = new Set(['SUPERSEDED', 'EXPIRED', 'SL_HIT', 'INVALIDATED'])
+      const archive = (hist.signals ?? []).filter((s: any) => {
+        if (!ARCHIVE_STATUS.has(s.status)) return false
+        const changedAt = s.statusChangedAt ?? s.generatedAt
+        const ts = changedAt ? new Date(changedAt).getTime() : 0
+        return ts >= cutoff
+      })
+      // Strict dedup by (symbol, direction, statusChangedAt)
+      const seen = new Set<string>()
+      const deduped = archive.filter((s: any) => {
+        const k = `${s.symbol}|${s.direction}|${s.statusChangedAt ?? s.generatedAt ?? ''}`
+        if (seen.has(k)) return false
+        seen.add(k); return true
+      }).sort((a: any, b: any) => {
+        const ta = new Date(a.statusChangedAt ?? a.generatedAt ?? 0).getTime()
+        const tb = new Date(b.statusChangedAt ?? b.generatedAt ?? 0).getTime()
+        return tb - ta
+      })
+      const byStatus: Record<string, number> = {}
+      for (const s of deduped) byStatus[s.status] = (byStatus[s.status] ?? 0) + 1
+      const out = {
+        generatedAt: ts,
+        windowDays: 30,
+        total: deduped.length,
+        byStatus,
+        rows: deduped.slice(0, 200),
+      }
+      await fs.writeFile(path.join(SNAP_DIR, 'archive.json'), JSON.stringify(out, null, 2))
+      files.push('archive.json')
+    }
+  } catch (e) {
+    log.warn('PUBLIC-SNAP', `archive: ${(e as Error).message}`)
+  }
+
   // 6.7 F&O Stock-Futures pre-breakout scan (2026-06-03)
   // Heavy scan over ~211 underlyings — DECOUPLED from the synchronous
   // publish so the rest of the snapshot doesn't block. Fires async, writes

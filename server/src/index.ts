@@ -462,6 +462,23 @@ async function dispatchTextAlert(msg: string): Promise<void> {
 // REST API
 // ────────────────────────────────────────────────────────────────
 
+// 2026-06-13: Trade Chat Assistant — natural-language Q&A over all
+// platform snapshots. Free LLM (Gemini or Groq). Anti-hallucination
+// protocol: LLM only summarises snapshot JSON we feed it, never invents
+// numbers. See server/src/engine/chatAssistant.ts for the protocol.
+app.post('/api/chat', async (req, res) => {
+  try {
+    const query = String(req.body?.query ?? '').trim()
+    if (!query) return res.status(400).json({ error: 'query required' })
+    if (query.length > 1000) return res.status(400).json({ error: 'query too long (max 1000 chars)' })
+    const { askAi } = await import('./engine/chatAssistant')
+    const reply = await askAi(query)
+    res.json(reply)
+  } catch (e) {
+    res.status(500).json({ error: (e as Error).message })
+  }
+})
+
 app.get('/api/health', (_req, res) => {
   res.json({
     status: 'online',

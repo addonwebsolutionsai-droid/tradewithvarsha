@@ -2041,6 +2041,173 @@ function HowToTradeBox({ tab, rules }: { tab: string; rules: { title: string; bo
   )
 }
 
+// ── 🤖 ASK AI — natural-language Q&A over all platform snapshots ──
+// Anti-hallucination: backend only feeds the LLM the JSON snapshots and
+// instructs it never to invent numbers. If a value isn't in the data,
+// the answer says "I don't have that data". 100% factual by design.
+export function PublicChatPage(): JSX.Element {
+  const [query, setQuery] = useState('')
+  const [loading, setLoading] = useState(false)
+  const [messages, setMessages] = useState<Array<{ role: 'user' | 'ai'; text: string; sources?: string[]; provider?: string }>>([
+    { role: 'ai', text: 'Hi 👋 — I\'m Vedicedge AI. Ask me about any stock, signal, or trade. I only use data from the platform snapshots — no made-up numbers. Try: "I\'m buying MOSCHIP, give analysis" or "JNKINDIA SL hit, what should I do?"' },
+  ])
+
+  const send = async () => {
+    if (!query.trim() || loading) return
+    const q = query.trim()
+    setQuery('')
+    setMessages(m => [...m, { role: 'user', text: q }])
+    setLoading(true)
+    try {
+      const r = await (await import('../api')).chat.ask(q)
+      setMessages(m => [...m, { role: 'ai', text: r.answer, sources: r.sourcesUsed, provider: r.llmProvider }])
+    } catch (e) {
+      setMessages(m => [...m, { role: 'ai', text: `Error: ${(e as Error).message}. Make sure the API URL is configured and you have a free LLM key set in server .env (GEMINI_API_KEY or GROQ_API_KEY).` }])
+    } finally {
+      setLoading(false)
+    }
+  }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-violet/15 to-accent-cyan/5 border border-accent-violet/50 rounded-lg">
+        <div className="text-3xl">🤖</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-violet">Vedicedge AI — Trade Q&A Assistant</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Ask any question about stocks, signals, or your trades. The AI <b>only uses data from the platform snapshots</b> — Weekly Pick, Smart Money, OI Build-up, SL Traps, Track Record, etc. It will refuse to invent numbers. Every answer cites the source.
+            <br/>Powered by free LLM (Gemini or Groq). Hindi + English understood. Maximum 1000 chars per query.
+          </div>
+        </div>
+      </div>
+
+      <div className="bg-ink-800 border border-ink-500 rounded-lg p-4" style={{ minHeight: 400 }}>
+        <div className="space-y-3 mb-4" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          {messages.map((m, i) => (
+            <div key={i} className={`p-3 rounded-lg ${m.role === 'user' ? 'bg-accent-cyan/10 border border-accent-cyan/30 ml-12' : 'bg-ink-900/50 border border-ink-500 mr-12'}`}>
+              <div className="text-[10px] uppercase tracking-wider mb-1 font-bold" style={{ color: m.role === 'user' ? '#5fd4ff' : '#b285ff' }}>
+                {m.role === 'user' ? '👤 You' : '🤖 Vedicedge AI'}
+                {m.provider && <span className="ml-2 text-neutral-500 text-[9px]">via {m.provider}</span>}
+              </div>
+              <div className="text-[13px] text-neutral-200 whitespace-pre-wrap leading-relaxed">{m.text}</div>
+              {m.sources && m.sources.length > 0 && (
+                <div className="mt-2 text-[10px] text-neutral-500">
+                  Sources: {m.sources.map(s => <span key={s} className="inline-block mr-2 px-1.5 py-0.5 rounded bg-ink-700 text-neutral-400">{s}</span>)}
+                </div>
+              )}
+            </div>
+          ))}
+          {loading && <div className="text-[11px] text-accent-violet animate-pulse">🤖 thinking...</div>}
+        </div>
+        <div className="flex gap-2">
+          <textarea
+            value={query}
+            onChange={e => setQuery(e.target.value)}
+            onKeyDown={e => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); send() } }}
+            placeholder="Type your question (Hindi or English)... e.g. 'I'm buying RELIANCE, analyse smart money + technicals'"
+            className="flex-1 bg-ink-900 border border-ink-500 rounded p-2 text-[12px] text-neutral-200 resize-none"
+            rows={2}
+            disabled={loading}
+            maxLength={1000}
+          />
+          <button onClick={send} disabled={loading || !query.trim()}
+            className="px-4 py-2 rounded bg-accent-violet/20 text-accent-violet border border-accent-violet/50 font-bold text-[12px] hover:bg-accent-violet/30 disabled:opacity-40">
+            {loading ? '...' : 'Send →'}
+          </button>
+        </div>
+        <div className="mt-2 text-[10px] text-neutral-600">
+          ⚠️ AI answers are informational, not financial advice. Final decisions are yours. The system flags risk; you manage capital.
+        </div>
+      </div>
+
+      <HowToTradeBox tab="Vedicedge AI" rules={[
+        { title: 'How to ask', body: 'Use plain English or Hindi. Mention the stock ticker (e.g. RELIANCE, MOSCHIP). The AI will check Weekly Pick, Smart Money, SL Traps, Sectors, and OI data for that name.' },
+        { title: 'For loss-related queries', body: 'Tell the AI what happened — entry price, SL price, current status. It will check if it was a TRAP SUSPECTED (smart money was on your side), confirm with SL Traps tab data, and give you the playbook for what to do now.' },
+        { title: 'What it WILL NOT do', body: 'It will not invent prices, percentages, or dates. If the data isn\'t in our snapshots, it will say "I don\'t have that data" instead of guessing. This is the anti-hallucination guarantee.' },
+        { title: 'Example queries', body: '• "Should I buy MOSCHIP at 150?"\n• "Why did JNKINDIA SL hit?"\n• "What\'s the smart money saying on RELIANCE?"\n• "Which sector should I be long?"' },
+      ]} />
+    </div>
+  )
+}
+
+// ── 🗄️ ARCHIVE — superseded / expired / SL-hit signals (last 30d) ──
+export function PublicArchivePage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-archive'], queryFn: () => snapshots.archive(),
+    refetchInterval: 10 * 60_000, retry: false,
+  })
+  const raw: any[] = data?.rows ?? []
+  const dedupedAll: any[] = (() => {
+    const seen = new Set<string>(); const out: any[] = []
+    for (const r of raw) {
+      const k = `${r.symbol}|${r.direction}|${r.statusChangedAt ?? ''}`
+      if (seen.has(k)) continue; seen.add(k); out.push(r)
+    }
+    return out
+  })()
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-neutral-700/20 to-neutral-800/10 border border-neutral-600/40 rounded-lg">
+        <div className="text-3xl">🗄️</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-neutral-200">Archive · Closed & Superseded Signals</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Last 30 days of signals that closed (SL_HIT) or were superseded by newer signals. Audit your trade history here — see what worked, what didn't, and why.
+          </div>
+          {data?.byStatus && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              {Object.entries(data.byStatus).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+            </div>
+          )}
+        </div>
+      </div>
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load archive. Refreshes every 10 min." />}
+      {!isLoading && !error && dedupedAll.length === 0 && <Empty msg="Archive is empty. Closed/superseded signals will appear here over time." />}
+      {dedupedAll.length > 0 && (
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
+          <table className="w-full text-[12px]">
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th className="text-left px-3 py-3">Symbol</th>
+                <th className="text-center px-2 py-3">Dir</th>
+                <th className="text-center px-2 py-3">Status</th>
+                <th className="text-right px-2 py-3">Entry</th>
+                <th className="text-right px-2 py-3">SL</th>
+                <th className="text-right px-2 py-3">Hit</th>
+                <th className="text-right px-2 py-3">Realised</th>
+                <th className="text-left px-3 py-3">When</th>
+                <th className="text-left px-3 py-3">Source</th>
+              </tr>
+            </thead>
+            <tbody>
+              {dedupedAll.map((r, i) => {
+                const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
+                const statusColor = r.status === 'SL_HIT' ? '#ff5e7c' : r.status === 'SUPERSEDED' ? '#9e9e9e' : '#ffb454'
+                return (
+                  <tr key={i} className="border-t border-ink-500 hover:bg-ink-700/30">
+                    <td className="px-3 py-2 font-bold text-neutral-100">{r.symbol}</td>
+                    <td className="px-2 py-2 text-center"><span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span></td>
+                    <td className="px-2 py-2 text-center"><span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${statusColor}22`, color: statusColor }}>{r.status}</span></td>
+                    <td className="px-2 py-2 text-right font-mono">₹{fmtPx(r.entry)}</td>
+                    <td className="px-2 py-2 text-right font-mono text-accent-red">₹{fmtPx(r.stopLoss)}</td>
+                    <td className="px-2 py-2 text-right font-mono">{r.hitPrice ? `₹${fmtPx(r.hitPrice)}` : '—'}</td>
+                    <td className="px-2 py-2 text-right font-mono" style={{ color: r.realisedPct > 0 ? '#00c853' : r.realisedPct < 0 ? '#ff5e7c' : '#9e9e9e' }}>
+                      {r.realisedPct != null ? `${r.realisedPct > 0 ? '+' : ''}${r.realisedPct.toFixed(1)}%` : '—'}
+                    </td>
+                    <td className="px-3 py-2 text-[10px] text-neutral-500">{r.statusChangedAt ? new Date(r.statusChangedAt).toLocaleDateString('en-IN') : '—'}</td>
+                    <td className="px-3 py-2 text-[10px] text-neutral-400">{r.source ?? '—'}</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+    </div>
+  )
+}
+
 // ── 🛡️ SL-TRAP ALERTS — liquidity grabs + effective WR ──
 // When a signal hits SL but smart money was on the trade's side at that
 // moment, it's most often a stop hunt. We track these and surface:

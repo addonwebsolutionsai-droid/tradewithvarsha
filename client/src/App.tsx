@@ -39,7 +39,7 @@ import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
 import { PreMoveIdentifierPage } from './pages/PreMoveIdentifierPage'
 import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
-import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub, PublicEliteHub, PublicOIBuildupPage, PublicFnoFuturesPage, PublicOldWeeklyPickPage, PublicSectorRotationPage, PublicCrossConfluencePage, PublicAdDivergencePage, PublicProEdgePage, PublicSlTrapPage } from './pages/PublicPages'
+import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub, PublicEliteHub, PublicOIBuildupPage, PublicFnoFuturesPage, PublicOldWeeklyPickPage, PublicSectorRotationPage, PublicCrossConfluencePage, PublicAdDivergencePage, PublicProEdgePage, PublicSlTrapPage, PublicChatPage, PublicArchivePage } from './pages/PublicPages'
 import { AudioTour, ChangelogPopup } from './components/AudioTour'
 
 const queryClient = new QueryClient({
@@ -113,6 +113,8 @@ function Shell() {
             {/* 2026-06-10: Options PRO merged into main F&O tab. Redirect for bookmarks. */}
             <Route path="/options-pro"  element={<Navigate to="/options" replace />} />
             <Route path="/sl-traps"     element={<PublicSlTrapPage />} />
+            <Route path="/ask-ai"       element={<PublicChatPage />} />
+            <Route path="/archive"      element={<PublicArchivePage />} />
             <Route path="/oi-buildup"   element={<PublicOIBuildupPage />} />
             {/* 2026-05-29: 4-tab nav. /picks = unified hub for Top Trades /
                 5-20% Move / Weekly / Daily (internal segment toggle). Old

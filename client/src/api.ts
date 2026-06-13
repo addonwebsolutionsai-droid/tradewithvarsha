@@ -53,6 +53,22 @@ export const snapshots = {
   slTraps: () => snapshot<{ generatedAt: string; trapsSuspected: number; trapsConfirmedWin: number; genuineSLs: number; effectiveWinRate: number | null; baseWinRate: number | null; rows: any[] }>('sl-trap-alerts.json'),
   missAnalysis: () => snapshot<{ generatedAt: string; totalGainers: number; caughtCount: number; missedCount: number; catchRate: number; rows: any[]; diagnoses: Record<string, number> }>('miss-analysis.json'),
   gainerPostmortem: () => snapshot<{ generatedAt: string; totalGainers: number; caughtCount: number; wouldHaveCaughtCount: number; patternBreakdown: Record<string, number>; topMissReasons: Record<string, number>; rows: any[] }>('gainer-postmortem.json'),
+  multiStrikeOi: () => snapshot<{ generatedAt: string; total: number; bullishCount: number; bearishCount: number; rows: any[] }>('multi-strike-oi.json'),
+  archive: () => snapshot<{ generatedAt: string; windowDays: number; total: number; byStatus: Record<string, number>; rows: any[] }>('archive.json'),
+}
+
+// Chat assistant — calls the server LLM endpoint. Uses VITE_API_URL.
+export const chat = {
+  ask: async (query: string): Promise<{ answer: string; sourcesUsed: string[]; llmProvider: string; warnings: string[] }> => {
+    const url = `${API}/api/chat`
+    const res = await fetch(url, {
+      method: 'POST',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify({ query }),
+    })
+    if (!res.ok) throw new Error(`chat ${res.status}`)
+    return res.json()
+  },
 }
 
 async function j<T>(path: string, init?: RequestInit): Promise<T> {
