@@ -2049,7 +2049,7 @@ export function PublicChatPage(): JSX.Element {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [messages, setMessages] = useState<Array<{ role: 'user' | 'ai'; text: string; sources?: string[]; provider?: string }>>([
-    { role: 'ai', text: 'Hi 👋 — I\'m Vedicedge AI. Ask me about any stock, signal, or trade. I only use data from the platform snapshots — no made-up numbers. Try: "I\'m buying MOSCHIP, give analysis" or "JNKINDIA SL hit, what should I do?"' },
+    { role: 'ai', text: 'Hi 👋 — I\'m TradewithVarsha AI. Ask me about any stock, signal, or trade. I only use data from the platform snapshots — no made-up numbers. Try: "I\'m buying MOSCHIP, give analysis" or "JNKINDIA SL hit, what should I do?"' },
   ])
 
   const send = async () => {
@@ -2073,7 +2073,7 @@ export function PublicChatPage(): JSX.Element {
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-violet/15 to-accent-cyan/5 border border-accent-violet/50 rounded-lg">
         <div className="text-3xl">🤖</div>
         <div className="flex-1">
-          <div className="text-sm font-bold text-accent-violet">Vedicedge AI — Trade Q&A Assistant</div>
+          <div className="text-sm font-bold text-accent-violet">TradewithVarsha AI — Trade Q&A Assistant</div>
           <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
             Ask any question about stocks, signals, or your trades. The AI <b>only uses data from the platform snapshots</b> — Weekly Pick, Smart Money, OI Build-up, SL Traps, Track Record, etc. It will refuse to invent numbers. Every answer cites the source.
             <br/>Powered by free LLM (Gemini or Groq). Hindi + English understood. Maximum 1000 chars per query.
@@ -2086,7 +2086,7 @@ export function PublicChatPage(): JSX.Element {
           {messages.map((m, i) => (
             <div key={i} className={`p-3 rounded-lg ${m.role === 'user' ? 'bg-accent-cyan/10 border border-accent-cyan/30 ml-12' : 'bg-ink-900/50 border border-ink-500 mr-12'}`}>
               <div className="text-[10px] uppercase tracking-wider mb-1 font-bold" style={{ color: m.role === 'user' ? '#5fd4ff' : '#b285ff' }}>
-                {m.role === 'user' ? '👤 You' : '🤖 Vedicedge AI'}
+                {m.role === 'user' ? '👤 You' : '🤖 TradewithVarsha AI'}
                 {m.provider && <span className="ml-2 text-neutral-500 text-[9px]">via {m.provider}</span>}
               </div>
               <div className="text-[13px] text-neutral-200 whitespace-pre-wrap leading-relaxed">{m.text}</div>
@@ -2120,7 +2120,7 @@ export function PublicChatPage(): JSX.Element {
         </div>
       </div>
 
-      <HowToTradeBox tab="Vedicedge AI" rules={[
+      <HowToTradeBox tab="TradewithVarsha AI" rules={[
         { title: 'How to ask', body: 'Use plain English or Hindi. Mention the stock ticker (e.g. RELIANCE, MOSCHIP). The AI will check Weekly Pick, Smart Money, SL Traps, Sectors, and OI data for that name.' },
         { title: 'For loss-related queries', body: 'Tell the AI what happened — entry price, SL price, current status. It will check if it was a TRAP SUSPECTED (smart money was on your side), confirm with SL Traps tab data, and give you the playbook for what to do now.' },
         { title: 'What it WILL NOT do', body: 'It will not invent prices, percentages, or dates. If the data isn\'t in our snapshots, it will say "I don\'t have that data" instead of guessing. This is the anti-hallucination guarantee.' },

@@ -18,7 +18,7 @@ export function ChatFloatingButton(): JSX.Element {
   const [query, setQuery] = useState('')
   const [loading, setLoading] = useState(false)
   const [messages, setMessages] = useState<Message[]>([
-    { role: 'ai', text: 'Hi 👋 Vedicedge AI here. Ask anything about a stock, signal, or your trade. Try: "Should I buy RELIANCE?" or "JNKINDIA SL hit, what to do?"' },
+    { role: 'ai', text: 'Hi 👋 TradewithVarsha AI here. Ask anything about a stock, signal, or your trade. Try: "Should I buy RELIANCE?" or "JNKINDIA SL hit, what to do?"' },
   ])
   const scrollRef = useRef<HTMLDivElement>(null)
 
@@ -77,7 +77,7 @@ export function ChatFloatingButton(): JSX.Element {
           {/* Header */}
           <div className="flex items-center justify-between px-4 py-3 border-b border-ink-500 bg-gradient-to-r from-accent-violet/20 to-accent-cyan/10 rounded-t-lg">
             <div>
-              <div className="text-[13px] font-bold text-accent-violet">🤖 Vedicedge AI</div>
+              <div className="text-[13px] font-bold text-accent-violet">🤖 TradewithVarsha AI</div>
               <div className="text-[9px] text-neutral-500">Answers come only from platform data — never made up</div>
             </div>
             <button onClick={() => setOpen(false)} className="text-neutral-400 hover:text-neutral-100 text-[20px] leading-none">×</button>
