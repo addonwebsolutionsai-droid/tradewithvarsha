@@ -1,8 +1,11 @@
 {
   "buildCommand": "cd client && npm install && npx vite build",
   "outputDirectory": "client/dist",
-  "installCommand": "echo 'install runs inside buildCommand'",
+  "installCommand": "cd api && npm install --omit=dev && cd ..",
   "framework": null,
+  "functions": {
+    "api/chat.js": { "memory": 1024, "maxDuration": 30 }
+  },
   "rewrites": [
     { "source": "/api/(.*)", "destination": "/api/$1" },
     { "source": "/(.*)", "destination": "/index.html" }
