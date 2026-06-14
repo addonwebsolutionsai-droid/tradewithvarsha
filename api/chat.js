@@ -1,19 +1,17 @@
 /**
  * Vercel serverless function for the AI chat assistant.
  *
- * Mirrors the local /api/chat endpoint that runs against the dev server,
- * but here we run on Vercel's edge — no on-disk snapshots, so we fetch
- * the snapshot JSONs from raw.githubusercontent.com (same source the
- * frontend uses) and feed them to Gemini.
+ * Written as PLAIN JAVASCRIPT (not TypeScript) so Vercel can deploy it
+ * without any build step. The TypeScript version was returning 404
+ * because Vercel's installCommand is set to a no-op in vercel.json,
+ * so api/ deps + TS compiler never installed.
  *
- * Anti-hallucination protocol (identical to local engine):
- *   - LLM sees only the snapshot JSON for the symbols/topics in the query
- *   - System prompt forbids inventing numbers
- *   - Answer must cite the source snapshot
+ * Anti-hallucination protocol: LLM is fed snapshot JSON and instructed
+ * to never invent numbers. Snapshots are fetched live from
+ * raw.githubusercontent.com (same source the frontend uses).
  *
- * Required env var on Vercel: GEMINI_API_KEY  (free from aistudio.google.com)
+ * Required env var on Vercel: GEMINI_API_KEY (free from aistudio.google.com)
  */
-import { applyCors } from './_lib/db'
 
 const SNAP_BASE = 'https://raw.githubusercontent.com/addonwebsolutionsai-droid/tradewithvarsha/main/server/data/public-snapshots'
 
@@ -32,62 +30,60 @@ CRITICAL RULES (violating these loses user trust):
 You will receive the user's question + relevant snapshot JSON wrapped in <data> tags.
 Answer using ONLY that data. Never invent.`
 
-const ALL_SNAPSHOTS = [
-  'weekly-pick', 'daily-pick', 'pre-move', 'fno-futures',
-  'options', 'options-pro', 'oi-buildup',
-  'cross-confluence', 'pro-edge', 'ad-divergence',
-  'sl-trap-alerts', 'sector-rotation', 'old-weekly-pick',
-  'signals-history', 'accuracy', 'multi-strike-oi',
+const STOP_WORDS = new Set([
+  'BUY','SELL','HOLD','CE','PE','PUT','CALL','OPTION','OPTIONS','STRIKE',
+  'EXPIRY','JUNE','JULY','AUGUST','JANUARY','FEBRUARY','MARCH','APRIL','MAY',
+  'SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER',
+  'SL','TARGET','TGT','STOP','LOSS','LOSSES','PROFIT','TRADE','AT','OF',
+  'WITH','FROM','INTO','THE','AND','BUT','YOU','AI','AM','ARE','WAS',
+  'ASK','TELL','PLEASE','SHOULD','WE','OUR','MY','ME','IS','IT','NOW',
+  'WILL','CAN','DID','NOT','YES','NO','SO','OR','IF','ON','BY',
+  'FOR','AS','BE','TO','IN','A','AN','ALL','BIG','BIGGER','GOOD','BAD',
+  'BUYING','THINKING','BOUGHT','SOLD','SAME','ERROR','ANY','WHAT','WHY',
+  'HOW','WHEN','WHERE','WHICH','WHO','CURRENT','TRAP','TRAPPING','MAKING',
+  'POSITIONS','POSITION','RETAILER','RETAILERS','SMART','MONEY',
+  'FALLING','FALL','COMPANY','MULTI','YEAR','LOW','HIGH','BECAUSE',
+  'SYSTEM','GENERATED','REGENERATED','SIGNAL','HIT','HITTED','SITTING',
+  'HUGE','GIVE','GIVEN','GAVE','HAS','HAVE','HAD','DO','DOES','DONE',
+])
+
+const POPULAR_TICKERS = new Set([
+  'NIFTY','BANKNIFTY','FINNIFTY',
+  'RELIANCE','TCS','HDFCBANK','INFY','ICICIBANK','SBIN','AXISBANK','ITC',
+  'LT','BHARTIARTL','BAJFINANCE','KOTAKBANK','MARUTI','ASIANPAINT',
+  'TATAMOTORS','TATASTEEL','ONGC','HCLTECH','WIPRO','ULTRACEMCO','NTPC',
+  'POWERGRID','ADANIENT','ADANIPORTS','BAJAJFINSV','JSWSTEEL','HINDUNILVR',
+  'NESTLEIND','COALINDIA','INDUSINDBK','SUNPHARMA','EICHERMOT','HEROMOTOCO',
+  'BRITANNIA','DRREDDY','GRASIM','TITAN','DIVISLAB','BPCL','CIPLA',
+  'TECHM','HDFCLIFE','SBILIFE','ADANIGREEN','ADANIPOWER','TATAPOWER',
+  'HAL','BEL','CANBK','BANKBARODA','IRCTC','IRFC','PFC','RECLTD',
+  'JNKINDIA','MOSCHIP','MARKSANS','FINPIPE','JIOFIN',
+])
+
+const GEMINI_MODELS = [
+  'gemini-2.5-flash',
+  'gemini-2.0-flash',
+  'gemini-2.0-flash-lite',
+  'gemini-2.5-pro',
 ]
 
-// Common stop words that look like tickers — must be filtered.
-const STOP_WORDS = new Set([
-  'BUY', 'SELL', 'HOLD', 'CE', 'PE', 'PUT', 'CALL', 'OPTION', 'OPTIONS', 'STRIKE',
-  'EXPIRY', 'JUNE', 'JULY', 'AUGUST', 'JANUARY', 'FEBRUARY', 'MARCH', 'APRIL', 'MAY',
-  'SEPTEMBER', 'OCTOBER', 'NOVEMBER', 'DECEMBER',
-  'SL', 'TARGET', 'TGT', 'STOP', 'LOSS', 'LOSSES', 'PROFIT', 'TRADE', 'AT', 'OF',
-  'WITH', 'FROM', 'INTO', 'THE', 'AND', 'BUT', 'YOU', 'AI', 'AM', 'ARE', 'WAS',
-  'ASK', 'TELL', 'PLEASE', 'SHOULD', 'WE', 'OUR', 'MY', 'ME', 'IS', 'IT', 'NOW',
-  'WILL', 'CAN', 'DID', 'NOT', 'YES', 'NO', 'SO', 'OR', 'IF', 'ON', 'BY',
-  'FOR', 'AS', 'BE', 'TO', 'IN', 'A', 'AN', 'ALL', 'BIG', 'BIGGER', 'GOOD', 'BAD',
-  'BUYING', 'THINKING', 'BOUGHT', 'SOLD', 'SAME', 'ERROR', 'ANY', 'WHAT', 'WHY',
-  'HOW', 'WHEN', 'WHERE', 'WHICH', 'WHO', 'CURRENT', 'TRAP', 'TRAPPING', 'MAKING',
-  'POSITIONS', 'POSITION', 'RETAILER', 'RETAILERS', 'SMART', 'MONEY', 'BIG',
-  'FALLING', 'FALL', 'COMPANY', 'MULTI', 'YEAR', 'LOW', 'HIGH', 'BECAUSE',
-  'SYSTEM', 'GENERATED', 'REGENERATED', 'SIGNAL', 'HIT', 'HITTED', 'SITTING',
-  'HUGE', 'GIVE', 'GIVEN', 'GAVE', 'HAS', 'HAVE', 'HAD', 'DO', 'DOES', 'DONE',
-])
+function applyCors(req, res) {
+  res.setHeader('Access-Control-Allow-Origin', req.headers.origin || '*')
+  res.setHeader('Access-Control-Allow-Credentials', 'true')
+  res.setHeader('Access-Control-Allow-Methods', 'GET, POST, OPTIONS')
+  res.setHeader('Access-Control-Allow-Headers', 'content-type, authorization, x-auth-token')
+  if (req.method === 'OPTIONS') { res.status(200).end(); return true }
+  return false
+}
 
-// Curated ticker list — common Indian large/mid caps. Vercel function can't
-// load Angel ScripMaster (no Angel auth), so we use a static popular list.
-// For unknown tickers, we still pass the original token if it looks valid
-// (3-12 alpha chars not in STOP_WORDS).
-const POPULAR_TICKERS = new Set([
-  'NIFTY', 'BANKNIFTY', 'FINNIFTY',
-  'RELIANCE', 'TCS', 'HDFCBANK', 'INFY', 'ICICIBANK', 'SBIN', 'AXISBANK', 'ITC',
-  'LT', 'BHARTIARTL', 'BAJFINANCE', 'KOTAKBANK', 'MARUTI', 'ASIANPAINT',
-  'TATAMOTORS', 'TATASTEEL', 'ONGC', 'HCLTECH', 'WIPRO', 'ULTRACEMCO', 'NTPC',
-  'POWERGRID', 'ADANIENT', 'ADANIPORTS', 'BAJAJFINSV', 'JSWSTEEL', 'HINDUNILVR',
-  'NESTLEIND', 'COALINDIA', 'INDUSINDBK', 'SUNPHARMA', 'EICHERMOT', 'HEROMOTOCO',
-  'BRITANNIA', 'DRREDDY', 'GRASIM', 'TITAN', 'DIVISLAB', 'BPCL', 'CIPLA',
-  'TECHM', 'HDFCLIFE', 'SBILIFE', 'ADANIGREEN', 'ADANIPOWER', 'TATAPOWER',
-  'HAL', 'BEL', 'CANBK', 'BANKBARODA', 'IRCTC', 'IRFC', 'PFC', 'RECLTD',
-  'JNKINDIA', 'MOSCHIP', 'MARKSANS', 'FINPIPE', 'JIOFIN',
-])
-
-function classifyIntent(query: string): { symbols: string[]; topics: string[] } {
+function classifyIntent(query) {
   const tokens = query.toUpperCase().split(/[^A-Z0-9&]+/).filter(t => t.length >= 3 && t.length <= 14)
-  const tickers = new Set<string>()
+  const tickers = new Set()
   for (const t of tokens) {
     if (STOP_WORDS.has(t)) continue
-    // Either explicit popular ticker OR a token that looks ticker-shaped
-    // (all alpha, 3-12 chars, not a stop word — falls back to "send it
-    // to the LLM and let snapshot search figure out").
-    if (POPULAR_TICKERS.has(t) || /^[A-Z][A-Z&]{2,11}$/.test(t)) {
-      tickers.add(t)
-    }
+    if (POPULAR_TICKERS.has(t) || /^[A-Z][A-Z&]{2,11}$/.test(t)) tickers.add(t)
   }
-  const topics: string[] = []
+  const topics = []
   if (/SMART|MONEY|INSTITUTION|FII|DII|PROMOTER/i.test(query)) topics.push('smart-money')
   if (/OI|OPTION CHAIN|CE|PE|CALL|PUT|STRIKE/i.test(query)) topics.push('oi')
   if (/SL|STOP LOSS|HIT|TRAP|LIQUIDITY/i.test(query)) topics.push('sl-trap')
@@ -96,7 +92,7 @@ function classifyIntent(query: string): { symbols: string[]; topics: string[] } 
   return { symbols: Array.from(tickers), topics }
 }
 
-async function fetchSnap(name: string): Promise<any | null> {
+async function fetchSnap(name) {
   try {
     const res = await fetch(`${SNAP_BASE}/${name}.json?t=${Date.now()}`)
     if (!res.ok) return null
@@ -104,12 +100,8 @@ async function fetchSnap(name: string): Promise<any | null> {
   } catch { return null }
 }
 
-async function loadContext(symbols: string[], topics: string[]): Promise<{
-  snippets: Record<string, any>
-  sources: string[]
-}> {
-  // Decide which snapshots to load
-  const wanted = new Set<string>(['accuracy', 'sl-trap-alerts'])
+async function loadContext(symbols, topics) {
+  const wanted = new Set(['accuracy', 'sl-trap-alerts'])
   if (topics.includes('smart-money') || symbols.length > 0) wanted.add('ad-divergence')
   if (topics.includes('oi')) { wanted.add('oi-buildup'); wanted.add('options'); wanted.add('multi-strike-oi') }
   if (topics.includes('sector') || symbols.length > 0) wanted.add('sector-rotation')
@@ -118,20 +110,17 @@ async function loadContext(symbols: string[], topics: string[]): Promise<{
     wanted.add('cross-confluence'); wanted.add('pro-edge'); wanted.add('signals-history')
     wanted.add('options')
   }
-
-  const snippets: Record<string, any> = {}
-  const sources: string[] = []
-  // Parallel fetch
+  const snippets = {}
+  const sources = []
   const results = await Promise.all(
     Array.from(wanted).map(async name => ({ name, data: await fetchSnap(name) })),
   )
   for (const { name, data } of results) {
     if (!data) continue
-    let payload: any = data
-    // Filter rows to mentioned symbols (if any)
+    let payload = data
     if (symbols.length > 0 && data.rows && Array.isArray(data.rows)) {
-      const matches = data.rows.filter((r: any) => {
-        const s = String(r.symbol ?? r.instrument ?? '').toUpperCase()
+      const matches = data.rows.filter(r => {
+        const s = String(r.symbol || r.instrument || '').toUpperCase()
         return symbols.some(t => s.includes(t) || (t.length >= 5 && t.includes(s.slice(0, 5))))
       })
       payload = { ...data, rows: matches.slice(0, 20) }
@@ -139,7 +128,7 @@ async function loadContext(symbols: string[], topics: string[]): Promise<{
       payload = { ...data, rows: data.rows.slice(0, 8) }
     } else if (data.signals && Array.isArray(data.signals)) {
       const matches = symbols.length > 0
-        ? data.signals.filter((s: any) => symbols.some(t => String(s.symbol ?? '').toUpperCase().includes(t)))
+        ? data.signals.filter(s => symbols.some(t => String(s.symbol || '').toUpperCase().includes(t)))
         : data.signals.slice(0, 5)
       payload = { ...data, signals: matches.slice(0, 30) }
     }
@@ -149,17 +138,10 @@ async function loadContext(symbols: string[], topics: string[]): Promise<{
   return { snippets, sources }
 }
 
-const GEMINI_MODELS = [
-  'gemini-2.5-flash',
-  'gemini-2.0-flash',
-  'gemini-2.0-flash-lite',
-  'gemini-2.5-pro',
-]
-
-async function callGemini(systemPrompt: string, userPrompt: string): Promise<{ text: string | null; error: string | null }> {
+async function callGemini(systemPrompt, userPrompt) {
   const key = process.env.GEMINI_API_KEY
   if (!key) return { text: null, error: 'GEMINI_API_KEY not set on Vercel' }
-  let lastErr: string | null = null
+  let lastErr = null
   for (const model of GEMINI_MODELS) {
     try {
       const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${key}`
@@ -177,37 +159,37 @@ async function callGemini(systemPrompt: string, userPrompt: string): Promise<{ t
         body: JSON.stringify(body),
       })
       if (res.ok) {
-        const j: any = await res.json()
+        const j = await res.json()
         const text = j?.candidates?.[0]?.content?.parts?.[0]?.text
         if (typeof text === 'string') return { text: text.trim(), error: null }
       } else if (res.status === 429) {
-        const j: any = await res.json().catch(() => ({}))
-        lastErr = `${model}: 429 ${(j?.error?.message ?? '').split('\n')[0]}`
+        const j = await res.json().catch(() => ({}))
+        lastErr = `${model}: 429 ${(j?.error?.message || '').split('\n')[0]}`
         continue
       } else {
         const t = await res.text().catch(() => '')
         lastErr = `${model}: ${res.status} ${t.slice(0, 200)}`
         continue
       }
-    } catch (e: any) {
+    } catch (e) {
       lastErr = `${model}: ${e.message}`
     }
   }
   return { text: null, error: lastErr }
 }
 
-function fallbackAnswer(symbols: string[], context: Record<string, any>): string {
-  const lines: string[] = ['🔧 AI not configured on Vercel (set GEMINI_API_KEY env var). Showing raw snapshot data:\n']
+function fallbackAnswer(symbols, context) {
+  const lines = ['🔧 AI not configured (set GEMINI_API_KEY on Vercel). Raw data:\n']
   if (symbols.length === 0) {
-    lines.push('No stock ticker detected in your query. Please mention a stock name.')
+    lines.push('No stock ticker detected. Please mention a stock name.')
     return lines.join('\n')
   }
   for (const sym of symbols) {
     lines.push(`\n📊 ${sym}:`)
     for (const [snapName, data] of Object.entries(context)) {
-      const rows = (data as any).rows ?? (data as any).signals ?? []
-      const matches = rows.filter((r: any) => {
-        const s = String(r.symbol ?? r.instrument ?? '').toUpperCase()
+      const rows = data.rows || data.signals || []
+      const matches = rows.filter(r => {
+        const s = String(r.symbol || r.instrument || '').toUpperCase()
         return s.includes(sym)
       })
       if (matches.length > 0) {
@@ -227,23 +209,17 @@ function fallbackAnswer(symbols: string[], context: Record<string, any>): string
   return lines.join('\n')
 }
 
-export default async function handler(req: any, res: any): Promise<void> {
+module.exports = async function handler(req, res) {
   if (applyCors(req, res)) return
   if (req.method !== 'POST') {
     res.status(405).json({ error: 'Method not allowed. Use POST.' })
     return
   }
   try {
-    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body ?? {})
-    const query = String(body?.query ?? '').trim()
-    if (!query) {
-      res.status(400).json({ error: 'query required' })
-      return
-    }
-    if (query.length > 1000) {
-      res.status(400).json({ error: 'query too long (max 1000 chars)' })
-      return
-    }
+    const body = typeof req.body === 'string' ? JSON.parse(req.body) : (req.body || {})
+    const query = String(body.query || '').trim()
+    if (!query) { res.status(400).json({ error: 'query required' }); return }
+    if (query.length > 1000) { res.status(400).json({ error: 'query too long (max 1000 chars)' }); return }
 
     const { symbols, topics } = classifyIntent(query)
     const { snippets, sources } = await loadContext(symbols, topics)
@@ -253,15 +229,15 @@ export default async function handler(req: any, res: any): Promise<void> {
       .join('\n\n')
     const userPrompt = `USER QUESTION: ${query}\n\nAVAILABLE DATA (do not invent any number not present below):\n${dataBlocks}\n\nAnswer the user using ONLY the data above. Cite source snapshots.`
 
-    const warnings: string[] = []
-    let answer: string | null = null
-    let provider: string = 'fallback'
+    const warnings = []
+    let answer = null
+    let provider = 'fallback'
 
     if (process.env.GEMINI_API_KEY) {
       const r = await callGemini(SYSTEM_PROMPT, userPrompt)
       if (r.text) { answer = r.text; provider = 'gemini' }
       else if (r.error && /429|quota|RESOURCE_EXHAUSTED/i.test(r.error)) {
-        warnings.push('Gemini key has zero free-tier quota on this project. Create a fresh key at aistudio.google.com/app/apikey.')
+        warnings.push('Gemini key has zero free-tier quota. Create a fresh key at aistudio.google.com/app/apikey.')
       } else if (r.error) {
         warnings.push(`Gemini: ${r.error.slice(0, 180)}`)
       }
@@ -278,7 +254,7 @@ export default async function handler(req: any, res: any): Promise<void> {
       warnings,
       intent: { symbols, topics },
     })
-  } catch (e: any) {
+  } catch (e) {
     res.status(500).json({ error: e.message })
   }
 }
