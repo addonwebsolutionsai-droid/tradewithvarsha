@@ -4,7 +4,8 @@
   "installCommand": "echo 'install runs inside buildCommand'",
   "framework": null,
   "rewrites": [
-    { "source": "/((?!api/).*)", "destination": "/index.html" }
+    { "source": "/api/(.*)", "destination": "/api/$1" },
+    { "source": "/(.*)", "destination": "/index.html" }
   ],
   "ignoreCommand": "git diff HEAD^ HEAD --quiet -- ':!server/data/public-snapshots'"
 }
