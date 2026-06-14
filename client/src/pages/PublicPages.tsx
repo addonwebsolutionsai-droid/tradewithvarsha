@@ -2598,14 +2598,17 @@ export function PublicOldWeeklyPickPage(): JSX.Element {
     }
     return Array.from(bySym.values()).sort((a, b) => (b.conviction ?? 0) - (a.conviction ?? 0))
   })()
-  // PRO Mode for Old-Weekly: only keep names where smart-money confirms
-  // the direction AND conviction ≥ 80. Filters out momentum traps.
+  // PRO Mode for Old-Weekly: conviction ≥ 80 AND smart-money not AGAINST.
+  // 2026-06-14: loosened from "must confirm" to "must not be against".
+  // The AD-divergence scanner only flags ~80 names across the whole
+  // market, so requiring explicit confirmation dropped the list to zero.
+  // Silent smart-money = neutral = OK. Only block when SM is actively
+  // on the opposite side of the trade.
   const rows: any[] = proOn ? dedupedAll.filter(r => {
     if ((r.conviction ?? 0) < 80) return false
     const sm = smartMoney.get(r.symbol)
-    if (!sm) return false
-    if (r.direction === 'BUY' && sm !== 'ACCUMULATION') return false
-    if (r.direction === 'SHORT' && sm !== 'DISTRIBUTION') return false
+    if (r.direction === 'BUY' && sm === 'DISTRIBUTION') return false
+    if (r.direction === 'SHORT' && sm === 'ACCUMULATION') return false
     return true
   }) : dedupedAll
   return (

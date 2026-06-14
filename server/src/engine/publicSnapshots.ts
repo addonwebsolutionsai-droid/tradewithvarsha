@@ -535,7 +535,15 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
         if (better) bestPerSym.set(key, e)
       }
       // Drop superseded/expired/invalidated from the active Weekly Pick feed.
-      const HIDE = new Set(['SUPERSEDED', 'EXPIRED', 'INVALIDATED'])
+      // 2026-06-14: User flagged "I see SL hit trades as it is" — closed
+      // trades (T1/T2/T3 booked or SL hit) should not pollute the live
+      // Weekly Pick feed. They live in 🗄️ Archive tab. Live feed shows
+      // ONLY actionable status (PENDING waiting entry, ACTIVE in-trade).
+      const HIDE = new Set([
+        'SUPERSEDED', 'EXPIRED', 'INVALIDATED',
+        'T1_HIT', 'T2_HIT', 'T3_HIT',     // already booked
+        'SL_HIT',                          // closed loss
+      ])
       const deduped = Array.from(bestPerSym.values()).filter(e => !HIDE.has(e.status))
       wRows = deduped.map(e => ({
         symbol: e.symbol,
