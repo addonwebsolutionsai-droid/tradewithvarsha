@@ -58,15 +58,32 @@ export const snapshots = {
 }
 
 // Chat assistant — calls the server LLM endpoint. Uses VITE_API_URL.
+// 2026-06-15: include credentials so Vercel's attack-challenge cookie
+// (set on the first page load) is sent with /api/chat requests.
+// Without this, Vercel sees the POST as a "new visitor" and returns
+// 403 challenge instead of routing to the function.
 export const chat = {
   ask: async (query: string): Promise<{ answer: string; sourcesUsed: string[]; llmProvider: string; warnings: string[] }> => {
     const url = `${API}/api/chat`
     const res = await fetch(url, {
       method: 'POST',
-      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',          // send Vercel session/challenge cookies
+      headers: {
+        'content-type': 'application/json',
+        'accept': 'application/json',
+      },
       body: JSON.stringify({ query }),
     })
-    if (!res.ok) throw new Error(`chat ${res.status}`)
+    if (!res.ok) {
+      // Pull body if it's text (helps diagnose 403 challenge vs 500 etc.)
+      const ct = res.headers.get('content-type') || ''
+      if (ct.startsWith('text/html')) {
+        throw new Error(`chat ${res.status} — Vercel security challenge intercepted the request. Disable Attack Challenge Mode in Vercel Dashboard → Project → Settings → Security → Attack Challenge Mode → OFF (or scope to non-API paths only).`)
+      }
+      let detail = ''
+      try { detail = await res.text() } catch {}
+      throw new Error(`chat ${res.status}${detail ? ': ' + detail.slice(0, 200) : ''}`)
+    }
     return res.json()
   },
 }
