@@ -57,34 +57,158 @@ export const snapshots = {
   archive: () => snapshot<{ generatedAt: string; windowDays: number; total: number; byStatus: Record<string, number>; rows: any[] }>('archive.json'),
 }
 
-// Chat assistant — calls the server LLM endpoint. Uses VITE_API_URL.
-// 2026-06-15: include credentials so Vercel's attack-challenge cookie
-// (set on the first page load) is sent with /api/chat requests.
-// Without this, Vercel sees the POST as a "new visitor" and returns
-// 403 challenge instead of routing to the function.
+// Chat assistant — talks directly to Gemini from the browser.
+// 2026-06-15: Vercel function /api/chat kept hitting 405/403/404 due to
+// SPA rewrite + bot-challenge interference. Removed the middleman:
+// browser fetches snapshots from GitHub raw (already does), builds the
+// same prompt, and POSTs to Gemini directly. No Vercel function in the
+// path = no 405/403.
+//
+// Security note: VITE_GEMINI_API_KEY is baked into the JS bundle at
+// build time and visible to anyone who views source. Mitigations:
+//   1. Restrict the key in Google Cloud Console to HTTP referrers
+//      = tradewithvarsha.vercel.app (Application restrictions)
+//   2. Use a separate key for client-side; rotate via Vercel rebuild
+//   3. Free tier rate-limits per project (1500 req/day) cap abuse
+const GEMINI_API_KEY = (import.meta as any).env?.VITE_GEMINI_API_KEY || ''
+const SYSTEM_PROMPT = `You are TradewithVarsha AI, a hedge-fund trading assistant for the tradewithvarsha platform.
+
+CRITICAL RULES:
+1. NEVER make up numbers, prices, dates, or percentages. ONLY use values from the JSON data provided.
+2. If a value the user asks about is NOT in the provided JSON, say: "I don't have current data on that — please check the relevant tab directly." Do not guess.
+3. Always cite the source snapshot for every number (e.g. "per weekly-pick.json", "per smart-money").
+4. For LOSS-related queries, be empathetic but factual. Don't gaslight. Acknowledge the loss, explain what current data shows.
+5. End loss-related advice with: "Final decision is yours. The system flags risk; you manage capital."
+6. For "should I buy X" queries: check Weekly Pick / PRO Edge / Smart Money / SL Traps / Sector for that symbol. Synthesize. If symbol isn't in any snapshot, say so.
+7. Use simple language. Indian English / Hinglish welcome.
+8. Maximum 350 words per response.
+
+You will receive the user's question + relevant snapshot JSON wrapped in <data> tags.
+Answer using ONLY that data. Never invent.`
+
+const STOP_WORDS = new Set(['BUY','SELL','HOLD','CE','PE','PUT','CALL','OPTION','OPTIONS','STRIKE','EXPIRY','JUNE','JULY','AUGUST','JANUARY','FEBRUARY','MARCH','APRIL','MAY','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER','SL','TARGET','TGT','STOP','LOSS','LOSSES','PROFIT','TRADE','AT','OF','WITH','FROM','INTO','THE','AND','BUT','YOU','AI','AM','ARE','WAS','ASK','TELL','PLEASE','SHOULD','WE','OUR','MY','ME','IS','IT','NOW','WILL','CAN','DID','NOT','YES','NO','SO','OR','IF','ON','BY','FOR','AS','BE','TO','IN','A','AN','ALL','BIG','BIGGER','GOOD','BAD','BUYING','THINKING','BOUGHT','SOLD','SAME','ERROR','ANY','WHAT','WHY','HOW','WHEN','WHERE','WHICH','WHO','CURRENT','TRAP','TRAPPING','MAKING','POSITIONS','POSITION','RETAILER','RETAILERS','SMART','MONEY','FALLING','FALL','COMPANY','MULTI','YEAR','LOW','HIGH','BECAUSE','SYSTEM','GENERATED','REGENERATED','SIGNAL','HIT','HITTED','SITTING','HUGE','GIVE','GIVEN','GAVE','HAS','HAVE','HAD','DO','DOES','DONE'])
+const POPULAR_TICKERS = new Set(['NIFTY','BANKNIFTY','FINNIFTY','RELIANCE','TCS','HDFCBANK','INFY','ICICIBANK','SBIN','AXISBANK','ITC','LT','BHARTIARTL','BAJFINANCE','KOTAKBANK','MARUTI','ASIANPAINT','TATAMOTORS','TATASTEEL','ONGC','HCLTECH','WIPRO','ULTRACEMCO','NTPC','POWERGRID','ADANIENT','ADANIPORTS','BAJAJFINSV','JSWSTEEL','HINDUNILVR','NESTLEIND','COALINDIA','INDUSINDBK','SUNPHARMA','EICHERMOT','HEROMOTOCO','BRITANNIA','DRREDDY','GRASIM','TITAN','DIVISLAB','BPCL','CIPLA','TECHM','HDFCLIFE','SBILIFE','ADANIGREEN','ADANIPOWER','TATAPOWER','HAL','BEL','CANBK','BANKBARODA','IRCTC','IRFC','PFC','RECLTD','JNKINDIA','MOSCHIP','MARKSANS','FINPIPE','JIOFIN'])
+const GEMINI_MODELS = ['gemini-2.5-flash', 'gemini-2.0-flash', 'gemini-2.0-flash-lite', 'gemini-2.5-pro']
+
+function classifyIntent(query: string): { symbols: string[]; topics: string[] } {
+  const tokens = query.toUpperCase().split(/[^A-Z0-9&]+/).filter(t => t.length >= 3 && t.length <= 14)
+  const tickers = new Set<string>()
+  for (const t of tokens) {
+    if (STOP_WORDS.has(t)) continue
+    if (POPULAR_TICKERS.has(t) || /^[A-Z][A-Z&]{2,11}$/.test(t)) tickers.add(t)
+  }
+  const topics: string[] = []
+  if (/SMART|MONEY|INSTITUTION|FII|DII|PROMOTER/i.test(query)) topics.push('smart-money')
+  if (/OI|OPTION CHAIN|CE|PE|CALL|PUT|STRIKE/i.test(query)) topics.push('oi')
+  if (/SL|STOP LOSS|HIT|TRAP|LIQUIDITY/i.test(query)) topics.push('sl-trap')
+  if (/SECTOR|ROTATION|LEADING|LAGGING/i.test(query)) topics.push('sector')
+  if (/LOSS|LOSING|DOWN|RED|FALL/i.test(query)) topics.push('loss')
+  return { symbols: Array.from(tickers), topics }
+}
+
+async function loadChatContext(symbols: string[], topics: string[]): Promise<{ snippets: Record<string, any>; sources: string[] }> {
+  const wanted = new Set<string>(['accuracy', 'sl-trap-alerts'])
+  if (topics.includes('smart-money') || symbols.length > 0) wanted.add('ad-divergence')
+  if (topics.includes('oi')) { wanted.add('oi-buildup'); wanted.add('options'); wanted.add('multi-strike-oi') }
+  if (topics.includes('sector') || symbols.length > 0) wanted.add('sector-rotation')
+  if (symbols.length > 0) {
+    wanted.add('weekly-pick'); wanted.add('daily-pick'); wanted.add('fno-futures')
+    wanted.add('cross-confluence'); wanted.add('pro-edge'); wanted.add('signals-history')
+    wanted.add('options')
+  }
+  const snippets: Record<string, any> = {}
+  const sources: string[] = []
+  const results = await Promise.all(Array.from(wanted).map(async name => {
+    try {
+      const res = await fetch(`${SNAPSHOT_BASE}/${name}.json?t=${Date.now()}`, { cache: 'no-store' })
+      if (!res.ok) return { name, data: null }
+      return { name, data: await res.json() }
+    } catch { return { name, data: null } }
+  }))
+  for (const { name, data } of results) {
+    if (!data) continue
+    let payload: any = data
+    if (symbols.length > 0 && data.rows && Array.isArray(data.rows)) {
+      const matches = data.rows.filter((r: any) => {
+        const s = String(r.symbol || r.instrument || '').toUpperCase()
+        return symbols.some(t => s.includes(t) || (t.length >= 5 && t.includes(s.slice(0, 5))))
+      })
+      payload = { ...data, rows: matches.slice(0, 20) }
+    } else if (data.rows && Array.isArray(data.rows)) {
+      payload = { ...data, rows: data.rows.slice(0, 8) }
+    } else if (data.signals && Array.isArray(data.signals)) {
+      const matches = symbols.length > 0
+        ? data.signals.filter((s: any) => symbols.some(t => String(s.symbol || '').toUpperCase().includes(t)))
+        : data.signals.slice(0, 5)
+      payload = { ...data, signals: matches.slice(0, 30) }
+    }
+    snippets[name] = payload
+    sources.push(name)
+  }
+  return { snippets, sources }
+}
+
+async function callGeminiDirect(systemPrompt: string, userPrompt: string): Promise<{ text: string | null; error: string | null }> {
+  if (!GEMINI_API_KEY) return { text: null, error: 'VITE_GEMINI_API_KEY not configured at build time' }
+  let lastErr: string | null = null
+  for (const model of GEMINI_MODELS) {
+    try {
+      const url = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${GEMINI_API_KEY}`
+      const body = {
+        contents: [{ role: 'user', parts: [{ text: systemPrompt + '\n\n---\n\nUSER:\n' + userPrompt }] }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 2048, thinkingConfig: { thinkingBudget: 0 } },
+      }
+      const res = await fetch(url, { method: 'POST', headers: { 'content-type': 'application/json' }, body: JSON.stringify(body) })
+      if (res.ok) {
+        const j: any = await res.json()
+        const text = j?.candidates?.[0]?.content?.parts?.[0]?.text
+        if (typeof text === 'string') return { text: text.trim(), error: null }
+      } else {
+        const t = await res.text().catch(() => '')
+        if (res.status === 429) { lastErr = `${model}: quota exceeded`; continue }
+        lastErr = `${model}: ${res.status} ${t.slice(0, 150)}`; continue
+      }
+    } catch (e: any) {
+      lastErr = `${model}: ${e.message}`
+    }
+  }
+  return { text: null, error: lastErr }
+}
+
 export const chat = {
   ask: async (query: string): Promise<{ answer: string; sourcesUsed: string[]; llmProvider: string; warnings: string[] }> => {
-    const url = `${API}/api/chat`
-    const res = await fetch(url, {
-      method: 'POST',
-      credentials: 'same-origin',          // send Vercel session/challenge cookies
-      headers: {
-        'content-type': 'application/json',
-        'accept': 'application/json',
-      },
-      body: JSON.stringify({ query }),
-    })
-    if (!res.ok) {
-      // Pull body if it's text (helps diagnose 403 challenge vs 500 etc.)
-      const ct = res.headers.get('content-type') || ''
-      if (ct.startsWith('text/html')) {
-        throw new Error(`chat ${res.status} — Vercel security challenge intercepted the request. Disable Attack Challenge Mode in Vercel Dashboard → Project → Settings → Security → Attack Challenge Mode → OFF (or scope to non-API paths only).`)
+    const { symbols, topics } = classifyIntent(query)
+    const { snippets, sources } = await loadChatContext(symbols, topics)
+    const dataBlocks = Object.entries(snippets)
+      .map(([name, data]) => `<data source="${name}">\n${JSON.stringify(data).slice(0, 4000)}\n</data>`)
+      .join('\n\n')
+    const userPrompt = `USER QUESTION: ${query}\n\nAVAILABLE DATA (do not invent any number not present below):\n${dataBlocks}\n\nAnswer the user using ONLY the data above. Cite source snapshots.`
+
+    if (!GEMINI_API_KEY) {
+      return {
+        answer: `🔧 AI not configured. The site owner needs to set VITE_GEMINI_API_KEY as a Build env var in Vercel:\n\n1. Vercel Dashboard → tradewithvarsha → Settings → Environment Variables\n2. Add: VITE_GEMINI_API_KEY = (your free Gemini key from aistudio.google.com)\n3. Check "Production" + "Preview" + "Development"\n4. Save → trigger a fresh deploy\n\nUntil then, showing raw data:\n\n${symbols.length === 0 ? 'No stock ticker detected in your question.' : `For ${symbols.join(', ')}, see: ${sources.join(', ')}`}`,
+        sourcesUsed: sources,
+        llmProvider: 'fallback',
+        warnings: ['VITE_GEMINI_API_KEY not set at build time'],
       }
-      let detail = ''
-      try { detail = await res.text() } catch {}
-      throw new Error(`chat ${res.status}${detail ? ': ' + detail.slice(0, 200) : ''}`)
     }
-    return res.json()
+
+    const r = await callGeminiDirect(SYSTEM_PROMPT, userPrompt)
+    if (r.text) {
+      return { answer: r.text, sourcesUsed: sources, llmProvider: 'gemini', warnings: [] }
+    }
+    const warnings: string[] = []
+    if (r.error && /quota|429|RESOURCE_EXHAUSTED/i.test(r.error)) {
+      warnings.push('Gemini key has zero free-tier quota. Create a fresh key at aistudio.google.com/app/apikey.')
+    } else if (r.error) {
+      warnings.push(`Gemini: ${r.error.slice(0, 200)}`)
+    }
+    return {
+      answer: `⚠️ Couldn't reach the AI right now.${warnings.length ? ' ' + warnings[0] : ''}\n\nFor ${symbols.length ? symbols.join(', ') : 'your query'}, snapshots loaded: ${sources.join(', ')}. Check the relevant tabs directly for now.`,
+      sourcesUsed: sources,
+      llmProvider: 'fallback',
+      warnings,
+    }
   },
 }
 
