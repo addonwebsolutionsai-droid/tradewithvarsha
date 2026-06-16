@@ -193,6 +193,17 @@ export async function scanSuperstarPicks(): Promise<SuperstarPick[]> {
     seen.add(r.symbol); return true
   }).sort((a, b) => b.conviction - a.conviction)
 
+  // 2026-06-16: enrich with FII/DII/Promoter stake info so the Reason
+  // column shows both "🌟 Damani loading" AND "📊 FII 5.2% (1.1pp↑)
+  // · DII 8.0% · P 39%→ · Pledge 0% · MC ₹12.7KCr". Two-line wrap in
+  // UniformPickTable so users see both aspects without scrolling.
+  try {
+    const { enrichShareholdingNotes } = await import('./publicSnapshots')
+    await enrichShareholdingNotes(deduped)
+  } catch (e) {
+    log.warn('SUPERSTAR', `shareholding enrich skipped: ${(e as Error).message}`)
+  }
+
   log.ok('SUPERSTAR', `${deduped.length} superstar picks scored (${deduped.filter(p => p.newOrIncreasedCount > 0).length} actively loading) from ${symbols.length} holdings`)
   return deduped
 }

@@ -37,7 +37,7 @@ async function ensureDir(): Promise<void> {
  * cache. Runs in parallel with rate limit. After this returns, every row
  * has SOMETHING in shareholdingNote (real data if cached, fallback otherwise).
  */
-async function enrichShareholdingNotes(rows: any[]): Promise<void> {
+export async function enrichShareholdingNotes(rows: any[]): Promise<void> {
   const { getShareholding } = await import('../data/shareholding')
   const dataMod = await import('../data')
   // 2026-05-26: also enrich with vol5dRatio + smartMoneyUp + raw deltas
