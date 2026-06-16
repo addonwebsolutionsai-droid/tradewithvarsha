@@ -946,24 +946,38 @@ export async function runWeeklyPick(
   await fs.mkdir(PICKS_DIR, { recursive: true })
   await fs.writeFile(path.join(PICKS_DIR, `${pick.weekOf}.json`), JSON.stringify(pick, null, 2), 'utf8')
 
+  // 2026-06-16: HARD CONVICTION FLOOR for BOTH lifecycle merge AND
+  // signal-log emission. User audit: WEEKLY source had 13,698 closed
+  // trades over 30 days with 24.5% WR. Root cause: every pick row went
+  // to lifecycle regardless of conviction — including WATCHLIST entries
+  // (force-includes, not actionable) and conv < 70 picks (below the
+  // proven sweet-spot per memory feedback_85pct_perpetual_goal).
+  // Filtering at the caller closes both pollution paths.
+  const MIN_CONV_TO_EMIT = 70
+  const actionableRows = rows.filter(r =>
+    r.source !== 'WATCHLIST' && (r.conviction ?? 0) >= MIN_CONV_TO_EMIT,
+  )
+  const suppressed = rows.length - actionableRows.length
+
   // 2026-05-08: Merge into the persistent signal lifecycle so rows that
-  // disappear on a re-run get marked SUPERSEDED (not silently dropped).
-  // The mergedView comes back with ACTIVE rows + recent terminal states
-  // for the dashboard / public snapshot to show as strike-through.
+  // disappear on a re-run get marked SUPERSEDED. Only actionable rows go
+  // to lifecycle so the win-rate denominator stays clean.
   try {
     const { mergeWeeklyPickRun } = await import('./signalLifecycle')
-    const { mergedView, report } = await mergeWeeklyPickRun(rows, 'WEEKLY')
+    const { mergedView, report } = await mergeWeeklyPickRun(actionableRows, 'WEEKLY')
     pick.lifecycle = mergedView          // attached for downstream consumers
     pick.lifecycleReport = report
   } catch (e) {
     log.warn('PICK', `lifecycle merge skipped: ${(e as Error).message}`)
   }
 
-  for (const r of rows) {
+  let emitted = 0
+  for (const r of actionableRows) {
     void logSignal(weeklyRowToSignal(r), 'weekly-pick').catch(() => undefined)
+    emitted++
   }
 
-  log.ok('PICK', `Weekly pick done — ${rows.length} rows (${rows.filter(r => r.source === 'WATCHLIST').length} watchlist + ${rows.filter(r => r.source === 'CURATED').length} curated)`)
+  log.ok('PICK', `Weekly pick done — ${rows.length} rows scored (${rows.filter(r => r.source === 'WATCHLIST').length} watchlist + ${rows.filter(r => r.source === 'CURATED').length} curated) · ${emitted} emitted to lifecycle (conv ≥ ${MIN_CONV_TO_EMIT}), ${suppressed} suppressed`)
   return pick
 }
 
