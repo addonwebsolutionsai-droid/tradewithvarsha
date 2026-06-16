@@ -2346,7 +2346,7 @@ export function PublicOldWeeklyPickPage(): JSX.Element {
 // differences (Weekly Pick uses entryPrice, F&O Futures uses entry, etc).
 interface UniformPickFields {
   symbol: string
-  direction: 'BUY' | 'SHORT' | 'LONG' | string    // LONG normalised to BUY
+  direction: 'BUY' | 'SHORT' | 'LONG' | string
   conviction: number
   ltp: number | null | undefined
   entry: number | null | undefined
@@ -2354,6 +2354,11 @@ interface UniformPickFields {
   target1: number | null | undefined
   target2: number | null | undefined
   target3: number | null | undefined
+  // 2026-06-16: target dates surfaced under each price. NEVER invented —
+  // only populated when the source snapshot has the field.
+  target1Date?: string | null
+  target2Date?: string | null
+  target3Date?: string | null
   shareholdingNote?: string
   flowNote?: string
   noBrainerBet?: boolean
@@ -2373,6 +2378,9 @@ function rowToFields(r: any): UniformPickFields {
     target1: r.target1 ?? r.suggestedTarget ?? null,
     target2: r.target2 ?? null,
     target3: r.target3 ?? null,
+    target1Date: r.target1Date ?? null,
+    target2Date: r.target2Date ?? null,
+    target3Date: r.target3Date ?? null,
     shareholdingNote: r.shareholdingNote,
     flowNote: r.flowNote || r.reason || (Array.isArray(r.tags) ? r.tags.slice(0, 3).join(' · ') : undefined),
     noBrainerBet: r.noBrainerBet,
@@ -2414,9 +2422,18 @@ export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCou
                 <td className={`${tdb} text-right text-neutral-200`}>{r.ltp != null ? `₹${fmtPx(r.ltp)}` : '—'}</td>
                 <td className={`${tdb} text-right text-accent-cyan`}>{r.entry != null ? `₹${fmtPx(r.entry)}` : '—'}</td>
                 <td className={`${tdb} text-right text-accent-red`}>{r.stopLoss != null ? `₹${fmtPx(r.stopLoss)}` : '—'}</td>
-                <td className={`${tdb} text-right text-accent-green`}>{r.target1 != null ? `₹${fmtPx(r.target1)}` : '—'}</td>
-                <td className={`${tdb} text-right text-accent-green`}>{r.target2 != null ? `₹${fmtPx(r.target2)}` : '—'}</td>
-                <td className={`${tdb} text-right text-accent-green font-bold`}>{r.target3 != null ? `₹${fmtPx(r.target3)}` : '—'}</td>
+                <td className={`${tdb} text-right text-accent-green`}>
+                  <div>{r.target1 != null ? `₹${fmtPx(r.target1)}` : '—'}</div>
+                  {r.target1Date && <div className="text-[9px] text-accent-green/60 font-normal">📅 {fmtDate(r.target1Date)}</div>}
+                </td>
+                <td className={`${tdb} text-right text-accent-green`}>
+                  <div>{r.target2 != null ? `₹${fmtPx(r.target2)}` : '—'}</div>
+                  {r.target2Date && <div className="text-[9px] text-accent-green/60 font-normal">📅 {fmtDate(r.target2Date)}</div>}
+                </td>
+                <td className={`${tdb} text-right text-accent-green font-bold`}>
+                  <div>{r.target3 != null ? `₹${fmtPx(r.target3)}` : '—'}</div>
+                  {r.target3Date && <div className="text-[9px] text-accent-green/60 font-normal">📅 {fmtDate(r.target3Date)}</div>}
+                </td>
                 <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 200, whiteSpace: 'normal' }}>
                   {r.shareholdingNote && (
                     <div className="text-[10px] text-neutral-300 mb-0.5"
@@ -2477,9 +2494,18 @@ function OldWeeklyTable({ rows }: { rows: any[] }): JSX.Element {
                 <td className={`${tdb} text-right text-neutral-200`}>₹{fmtPx(r.ltp)}</td>
                 <td className={`${tdb} text-right text-accent-cyan`}>₹{fmtPx(r.entryPrice ?? r.entryPriceLow)}</td>
                 <td className={`${tdb} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
-                <td className={`${tdb} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
-                <td className={`${tdb} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
-                <td className={`${tdb} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
+                <td className={`${tdb} text-right text-accent-green`}>
+                  <div>₹{fmtPx(r.target1)}</div>
+                  {r.target1Date && <div className="text-[9px] text-accent-green/60 font-normal">📅 {fmtDate(r.target1Date)}</div>}
+                </td>
+                <td className={`${tdb} text-right text-accent-green`}>
+                  <div>₹{fmtPx(r.target2)}</div>
+                  {r.target2Date && <div className="text-[9px] text-accent-green/60 font-normal">📅 {fmtDate(r.target2Date)}</div>}
+                </td>
+                <td className={`${tdb} text-right text-accent-green font-bold`}>
+                  <div>₹{fmtPx(r.target3)}</div>
+                  {r.target3Date && <div className="text-[9px] text-accent-green/60 font-normal">📅 {fmtDate(r.target3Date)}</div>}
+                </td>
                 <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 200, whiteSpace: 'normal' }}>
                   {/* Two stacked lines — line 1 = institutional stake (FII/DII/Promoter
                       with QoQ delta), line 2 = trade rationale. Both clamped to 1
