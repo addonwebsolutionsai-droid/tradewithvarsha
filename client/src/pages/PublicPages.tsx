@@ -1652,7 +1652,7 @@ function ProModeToggle({ on, setOn, targetWR, currentCount, filteredCount }: {
       </label>
       <span className="text-[10px] text-neutral-500">
         {on
-          ? `Showing ${filteredCount}/${currentCount} high-conviction picks (smart-money + sector + conv ≥ 85)`
+          ? `Showing ${filteredCount}/${currentCount} high-conviction picks`
           : `Showing all ${currentCount} raw picks (no PRO filter applied)`}
       </span>
     </div>
@@ -1803,7 +1803,7 @@ export function PublicSuperstarPicksPage(): JSX.Element {
         <Empty msg="All superstar holdings are currently LATE-stage (already extended). Best to wait — we don't want to be exit liquidity. Check back at next scan." />
       )}
       <HowToTradeBox tab="Superstar Picks" rules={[
-        { title: 'Highest priority: 🎯 EARLY', body: 'Stock is held by a superstar BUT still pre-breakout (|ret5d|<4%, <20% above 60d low, tight coil <12%). This means we\'re entering WITH them, not after. Strongest edge.' },
+        { title: 'Highest priority: 🎯 EARLY', body: 'Stock is held by a superstar BUT still pre-breakout — price has not yet moved meaningfully off its multi-month base. We\'re entering WITH them, not after. Strongest edge.' },
         { title: 'Second priority: ✓ CONFIRMED', body: 'Stock is in CONFIRMED leg of the move (5-30% above 60d low). Still has runway but we\'ve missed the absolute bottom. Half position size of EARLY.' },
         { title: 'LATE tier — auto-suppressed', body: 'Names already >40% above 60d low or ret60d > 30% are HIDDEN. By the time SEBI files the disclosure, these have already run — we\'d be exit liquidity for the big investors. Per user directive: do not buy here.' },
         { title: 'Position size', body: '🎯 EARLY + conv ≥ 80: 5% capital. 🎯 EARLY + conv 60-80: 3%. ✓ CONFIRMED + conv ≥ 80: 3%. ✓ CONFIRMED + conv 60-80: 1.5%.' },
@@ -2485,16 +2485,23 @@ export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCou
         <tbody>
           {fields.map((r, i) => {
             const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
-            const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+            // 2026-06-16 per user: high-probability rows (conv ≥ 85) get a
+            // subtle green tint so they jump out visually within each tab.
+            // Medium (75-84) gets a faint cyan tint. Standard rows unchanged.
+            const conv = Math.round(r.conviction ?? 0)
+            const rowBg = conv >= 85 ? 'bg-accent-green/10 group-hover:bg-accent-green/15'
+              : conv >= 75 ? 'bg-accent-cyan/5 group-hover:bg-accent-cyan/10'
+              : 'bg-ink-800 group-hover:bg-ink-700'
+            const tdb = `px-2 py-2 align-top ${rowBg} font-mono text-[11px]`
             return (
               <tr key={r.symbol + i} className="group border-t border-ink-500">
                 <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500`} style={{ minWidth: 140 }}>
-                  <b className="text-neutral-100">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+                  <b className="text-neutral-100">{conv >= 85 && '🔥 '}{r.noBrainerBet && '⭐ '}{r.symbol}</b>
                 </td>
                 <td className={`${tdb} text-center`}>
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
                 </td>
-                <td className={`${tdb} text-center font-bold text-accent-green`}>{Math.round(r.conviction ?? 0)}</td>
+                <td className={`${tdb} text-center font-bold ${conv >= 85 ? 'text-accent-green' : conv >= 75 ? 'text-accent-cyan' : 'text-neutral-300'}`}>{conv}</td>
                 <td className={`${tdb} text-right text-neutral-200`}>{r.ltp != null ? `₹${fmtPx(r.ltp)}` : '—'}</td>
                 <td className={`${tdb} text-right text-accent-cyan`}>{r.entry != null ? `₹${fmtPx(r.entry)}` : '—'}</td>
                 <td className={`${tdb} text-right text-accent-red`}>{r.stopLoss != null ? `₹${fmtPx(r.stopLoss)}` : '—'}</td>

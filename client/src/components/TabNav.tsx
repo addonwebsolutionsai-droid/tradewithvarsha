@@ -83,13 +83,13 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // 2026-06-16: Superstar Picks — top-10 Indian investors' holdings ×
     // our signal scoring. Highest-conviction tab when "actively loading".
     { to: '/superstar',    label: '🌟 Superstar',  icon: <Star size={14} />,
-      acc: null,
+      acc: null, highProb: true,
       title: "India's top 10 investors (Jhunjhunwala / Damani / Kacholia / Kedia / Dolly Khanna / Goel / Singhania / Kela / Porinju / Mukul Agrawal) — their holdings × our signal scoring. NEW/INCREASED stake + technical confirm = highest edge." },
     // 2026-06-05: PRO Edge — sellable premium feed. ALL filters stacked.
     // 0-10 names/day. The product we can credibly price at premium tier.
     { to: '/pro-edge',     label: '💎 PRO Edge',  icon: <Star size={14} />,
-      acc: null,
-      title: 'PRO Edge — strictest signal feed. Cross-engine confluence + smart-money same-side + sector tailwind aligned + conviction ≥ 85. 0-10 names/day. Premium tier.' },
+      acc: null, highProb: true,
+      title: 'PRO Edge — strictest signal feed. Highest-probability picks in the platform.' },
     // 2026-06-10: Options PRO tab REMOVED — merged into the main F&O tab
     // via PRO Mode toggle (redundant, same engine + same data). The
     // /options-pro route now redirects to /options. Bookmarks preserved.
@@ -107,8 +107,8 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // requires ALL 5 institutional confluences (Volume + FII↑ + DII↑ +
     // Promoter↑ + Fundamentals/Technicals) before a signal qualifies.
     { to: '/elite',        label: 'Elite',         icon: <Star size={14} />,
-      acc: null,
-      title: 'Elite — best-of-best signals. Requires ALL 5 confluences: Volume rising · FII stake up · DII stake up · Promoter stable+ · Fundamentals+Technicals aligned. Strictest filter in the system.' },
+      acc: null, highProb: true,
+      title: 'Elite — best-of-best signals. Strictest filter in the system.' },
     // 2026-05-29: labels explicit about segment. Cash / Equity tab is the
     // hub for all equity picks (swing 1-4w via Weekly · short-term 1-15d
     // via Daily · early-stage via 5-20% Move + Top Trades). F&O tab is
@@ -135,8 +135,8 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
       title: 'Old-WeeklyPick — runs the same engine with the pre-4fca35e momentum-chasing prerank restored and no freshness-reject. Compare against current Weekly Pick to see what the stricter filter is dropping. Not pushed to Telegram.' },
     // 2026-06-05: weekend autonomous additions
     { to: '/confluence',   label: 'Ultra Picks',  icon: <Star size={14} />,
-      acc: null,
-      title: 'Cross-Engine Confluence — names flagged by ≥2 independent engines (Weekly + Pre-Move + F&O Futures + Daily + Old-Weekly). When multiple scanners with different criteria agree, conviction is structurally higher.' },
+      acc: null, highProb: true,
+      title: 'Ultra Picks — names confirmed by multiple independent scanners. Structurally higher conviction.' },
     { to: '/sectors',      label: 'Sectors',      icon: <BarChart3 size={14} />,
       acc: null,
       title: 'Sector Rotation — 12 NIFTY sectoral indices ranked LEADING → LAGGING by composite (20d ret · 5d ret · RSI). Align stock picks with sector tailwind.' },
@@ -209,6 +209,11 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
                   active
                     ? 'text-accent-cyan border-accent-cyan'
                     : 'text-neutral-500 border-transparent hover:text-neutral-300',
+                  // 2026-06-16 per user: high-probability tabs get a tinted
+                  // background so users immediately know where the best
+                  // signals live. Marked via `highProb: true` on each entry.
+                  (t as any).highProb && !active && 'bg-accent-amber/10',
+                  (t as any).highProb && active && 'bg-accent-amber/15',
                 )}
               >
                 {t.icon}

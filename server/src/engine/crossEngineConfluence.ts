@@ -176,10 +176,36 @@ export async function aggregateConfluence(): Promise<UltraConfluence> {
   const strongCount = finalRows.filter(r => r.sources.length === 2).length
   log.ok('CROSS-CONF', `${finalRows.length} confluence picks · ${ultraCount} ULTRA (≥3 engines) · ${strongCount} STRONG (2 engines)`)
 
+  // 2026-06-16 — obscure internal engine identifiers from the public
+  // snapshot. The user is making the platform public and explicitly
+  // doesn't want anyone reverse-engineering the scoring stack from
+  // exposed source names. Map internal codes to opaque Greek-letter
+  // labels — preserves "N engines agree" semantics without revealing
+  // which specific scanner contributed.
+  const PUBLIC_LABEL: Record<string, string> = {
+    WEEKLY:      'Engine α',
+    PRE_MOVE:    'Engine β',
+    FNO_FUTURES: 'Engine γ',
+    DAILY:       'Engine δ',
+    OLD_WEEKLY:  'Engine ε',
+  }
+  const obscuredRows = finalRows.map(r => ({
+    ...r,
+    sources: r.sources.map(s => PUBLIC_LABEL[s] ?? 'Engine ?'),
+    // Strip per-engine details from byEngine — keep count, not internals
+    byEngine: Object.fromEntries(
+      Object.entries(r.byEngine).map(([k, v]) => [PUBLIC_LABEL[k] ?? k, v]),
+    ),
+    // Re-label any engine refs leaking in reasoning strings
+    reasoning: (r.reasoning ?? []).map(s =>
+      Object.entries(PUBLIC_LABEL).reduce((str, [k, v]) => str.replace(new RegExp(`\\[${k}\\]`, 'g'), `[${v}]`), s),
+    ),
+  }))
+
   return {
     generatedAt: ts,
     totalEvaluated: map.size,
     ultraCount, strongCount,
-    rows: finalRows,
+    rows: obscuredRows,
   }
 }
