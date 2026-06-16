@@ -1101,10 +1101,14 @@ export function PublicEliteHub(): JSX.Element {
       {!weekly.isLoading && !preMove.isLoading && elite.length === 0 && (
         <Empty msg="No setups currently pass even 3/5 confluences. Engine still requires conviction ≥ 70 floor — empty is normal on slow days. Check back at next snapshot (every 30 min)." />
       )}
+      {/* 2026-06-16: Elite hub now uses the same uniform table as every
+          other signal tab. Per-row Reason combines tier label + which
+          confluences fired (Volume / FII / DII / Promoter / Fund-Tech). */}
       {elite.length > 0 && (
-        <div className="space-y-3">
-          {elite.map((ev, i) => <EliteCard key={i} verdict={ev.verdict} row={ev.row} tier={ev.tier as any} />)}
-        </div>
+        <UniformPickTable rows={elite.map(ev => ({
+          ...ev.row,
+          flowNote: `${ev.tier === 'ELITE' ? '💎 ELITE 5/5' : ev.tier === 'STRONG' ? '⭐ STRONG 4/5' : '✓ QUALITY 3/5'} · ${ev.verdict.reasons.filter(r => r.pass).map(r => r.label).join(' + ')}`,
+        }))} />
       )}
     </div>
   )
@@ -2379,7 +2383,7 @@ export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCou
   const fields = rows.map(rowToFields)
   return (
     <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '80vh' }}>
-      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1160 }}>
+      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 920 }}>
         <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
           <tr>
             <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
@@ -2413,7 +2417,7 @@ export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCou
                 <td className={`${tdb} text-right text-accent-green`}>{r.target1 != null ? `₹${fmtPx(r.target1)}` : '—'}</td>
                 <td className={`${tdb} text-right text-accent-green`}>{r.target2 != null ? `₹${fmtPx(r.target2)}` : '—'}</td>
                 <td className={`${tdb} text-right text-accent-green font-bold`}>{r.target3 != null ? `₹${fmtPx(r.target3)}` : '—'}</td>
-                <td className={`${tdb} text-left text-neutral-400`} style={{ width: 380, maxWidth: 380, whiteSpace: 'normal' }}>
+                <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 200, whiteSpace: 'normal' }}>
                   {r.shareholdingNote && (
                     <div className="text-[10px] text-neutral-300 mb-0.5"
                       style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal', wordBreak: 'break-word' }}
@@ -2442,7 +2446,7 @@ export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCou
 function OldWeeklyTable({ rows }: { rows: any[] }): JSX.Element {
   return (
     <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '80vh' }}>
-      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1160 }}>
+      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 920 }}>
         <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
           <tr>
             <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
@@ -2476,7 +2480,7 @@ function OldWeeklyTable({ rows }: { rows: any[] }): JSX.Element {
                 <td className={`${tdb} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
                 <td className={`${tdb} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
                 <td className={`${tdb} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
-                <td className={`${tdb} text-left text-neutral-400`} style={{ width: 380, maxWidth: 380, whiteSpace: 'normal' }}>
+                <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 200, whiteSpace: 'normal' }}>
                   {/* Two stacked lines — line 1 = institutional stake (FII/DII/Promoter
                       with QoQ delta), line 2 = trade rationale. Both clamped to 1
                       line each via -webkit-line-clamp so the column never expands. */}
