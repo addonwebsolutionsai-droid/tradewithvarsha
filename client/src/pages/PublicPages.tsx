@@ -418,66 +418,8 @@ export function PublicTopTradesPage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No setups currently meet the conviction threshold (≥85). The bar will lower naturally during active sessions." />}
-      {!isLoading && !error && rows.length > 0 && (
-        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
-          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1080 }}>
-            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
-              <tr>
-                <th {...headerProps('symbol')} className={`text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)] ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
-                <th {...headerProps('ltp')} className={`text-right px-2 py-3 ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
-                <th {...headerProps('conviction')} className={`text-center px-2 py-3 ${headerProps('conviction').className}`}>Conviction {sortIndicator('conviction')}</th>
-                <th {...headerProps('entry')} className={`text-right px-2 py-3 text-accent-cyan ${headerProps('entry').className}`}>Entry {sortIndicator('entry')}</th>
-                <th {...headerProps('sl')} className={`text-right px-2 py-3 text-accent-red ${headerProps('sl').className}`}>SL {sortIndicator('sl')}</th>
-                <th {...headerProps('t1')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t1').className}`}>T1 · date {sortIndicator('t1')}</th>
-                <th {...headerProps('t2')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t2').className}`}>T2 · date {sortIndicator('t2')}</th>
-                <th {...headerProps('t3')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t3').className}`}>T3 {sortIndicator('t3')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => {
-                const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
-                const convCls = r.conviction >= 90 ? 'text-accent-green' : r.conviction >= 85 ? 'text-accent-cyan' : 'text-accent-amber'
-                const sourceColor = r.source === 'WEEKLY' ? '#5dade2' : r.source === 'DAILY' ? '#f5c518' : '#aaa'
-                const isWave2 = r.lifecycleStatus !== 'SUPERSEDED' && (r.bucket === 'WAVE_2' || (r.reasoning || '').includes('WAVE-2'))
-                const rowBg = r.noBrainer ? 'bg-accent-amber/5' : 'bg-ink-800'
-                const td = `px-2 py-2 align-top ${rowBg} group-hover:bg-ink-700 font-mono`
-                return (
-                  <tr key={i} className="group border-t border-ink-500">
-                    {/* Stock column — wide; name+badges, 📊 Stake stacked. */}
-                    <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 300, maxWidth: 360 }}>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <b className="text-neutral-100">{r.noBrainer && '⭐ '}{r.symbol}</b>
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
-                        <span className="px-1 py-0.5 rounded text-[9px] font-bold" style={{ background: `${sourceColor}22`, color: sourceColor }}>{r.source}</span>
-                        {isWave2 && <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40">🔄</span>}
-                      </div>
-                      <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
-                        <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote || <span className="text-neutral-600">unavailable</span>}
-                      </div>
-                    </td>
-                    <td className={`${td} text-right`}>₹{fmtPx(r.ltp)}</td>
-                    <td className={`${td} text-center font-bold ${convCls}`}>{r.conviction}</td>
-                    <td className={`${td} text-right text-accent-cyan`}>
-                      <div>₹{fmtPx(r.entryPriceLow)}–{fmtPx(r.entryPriceHigh)}</div>
-                      <div className="text-[9px] text-accent-cyan/70">by {fmtDate(r.entryDate)}</div>
-                    </td>
-                    <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
-                    <td className={`${td} text-right text-accent-green`}>
-                      <div>₹{fmtPx(r.target1)}</div>
-                      <div className="text-[9px] text-accent-green/70">{fmtDate(r.target1Date)}</div>
-                    </td>
-                    <td className={`${td} text-right text-accent-green`}>
-                      <div>₹{fmtPx(r.target2)}</div>
-                      <div className="text-[9px] text-accent-green/70">{fmtDate(r.target2Date)}</div>
-                    </td>
-                    <td className={`${td} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* 2026-06-16: uniform table */}
+      {!isLoading && !error && rows.length > 0 && <UniformPickTable rows={rows} />}
     </div>
   )
 }
@@ -539,40 +481,10 @@ export function PublicWeeklyPickPage(): JSX.Element {
       <HitLog />
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
-      {!isLoading && !error && (
-        <>
-          {/* Mobile card list — < 768px */}
-          <div className="md:hidden space-y-3">
-            {rows.map((r, i) => <WeeklyCard key={`m${i}`} r={r} />)}
-          </div>
-
-          {/* Desktop table — ≥ 768px */}
-          <div
-            className="hidden md:block overflow-auto rounded-lg border border-ink-500 bg-ink-800"
-            style={{ maxHeight: '75vh' }}
-          >
-            <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1180 }}>
-              <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
-                <tr>
-                  <th {...headerProps('symbol')} className={`text-left px-4 py-3 whitespace-nowrap bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)] ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
-                  <th {...headerProps('ltp')} className={`text-right px-4 py-3 whitespace-nowrap ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
-                  <th {...headerProps('dir')} className={`text-center px-4 py-3 whitespace-nowrap ${headerProps('dir').className}`}>Direction {sortIndicator('dir')}</th>
-                  <th {...headerProps('conv')} className={`text-center px-4 py-3 whitespace-nowrap ${headerProps('conv').className}`}>Conviction {sortIndicator('conv')}</th>
-                  <th {...headerProps('smart')} className={`text-center px-3 py-3 whitespace-nowrap ${headerProps('smart').className}`} title="5dVol · 🔥 Smart $ (FII↑+Promoter stable) · FIIΔ stacked.">Money Flow {sortIndicator('smart')}</th>
-                  <th {...headerProps('entry')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-cyan ${headerProps('entry').className}`}>Entry {sortIndicator('entry')}</th>
-                  <th {...headerProps('sl')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-red ${headerProps('sl').className}`}>SL {sortIndicator('sl')}</th>
-                  <th {...headerProps('t1')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t1').className}`}>T1 · date {sortIndicator('t1')}</th>
-                  <th {...headerProps('t2')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t2').className}`}>T2 · date {sortIndicator('t2')}</th>
-                  <th {...headerProps('t3')} className={`text-right px-2 py-3 whitespace-nowrap text-accent-green ${headerProps('t3').className}`}>T3 · date {sortIndicator('t3')}</th>
-                </tr>
-              </thead>
-              <tbody>
-                {rows.map((r, i) => <WeeklyRow key={i} r={r} />)}
-              </tbody>
-            </table>
-          </div>
-        </>
-      )}
+      {/* 2026-06-16: switched to UniformPickTable for consistency across
+          every signal tab. Old WeeklyCard / WeeklyRow components kept
+          unused for now in case we revert (no impact — they're not called). */}
+      {!isLoading && !error && rows.length > 0 && <UniformPickTable rows={rows} />}
     </div>
   )
 }
@@ -753,71 +665,8 @@ export function PublicDailyPickPage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No daily picks right now. Refreshes 11:00 / 13:30 / 16:15 IST." />}
-      {!isLoading && !error && rows.length > 0 && (
-        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
-          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1120 }}>
-            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
-              <tr>
-                <th {...headerProps('symbol')} className={`text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)] ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
-                <th {...headerProps('ltp')} className={`text-right px-2 py-3 ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
-                <th {...headerProps('conv')} className={`text-center px-2 py-3 ${headerProps('conv').className}`}>Conviction {sortIndicator('conv')}</th>
-                <th {...headerProps('smart')} className={`text-center px-2 py-3 ${headerProps('smart').className}`} title="5dVol · 🔥 Smart $ (FII↑+Promoter stable) · FIIΔ stacked.">Money Flow {sortIndicator('smart')}</th>
-                <th {...headerProps('entry')} className={`text-right px-2 py-3 text-accent-cyan ${headerProps('entry').className}`}>Entry {sortIndicator('entry')}</th>
-                <th {...headerProps('sl')} className={`text-right px-2 py-3 text-accent-red ${headerProps('sl').className}`}>SL {sortIndicator('sl')}</th>
-                <th {...headerProps('t1')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t1').className}`}>T1 {sortIndicator('t1')}</th>
-                <th {...headerProps('t2')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t2').className}`}>T2 {sortIndicator('t2')}</th>
-                <th {...headerProps('t3')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t3').className}`}>T3 {sortIndicator('t3')}</th>
-                <th {...headerProps('rr')} className={`text-center px-2 py-3 ${headerProps('rr').className}`}>R:R {sortIndicator('rr')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => {
-                const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
-                const convCls = r.conviction >= 80 ? 'text-accent-green' : r.conviction >= 60 ? 'text-accent-cyan' : 'text-accent-amber'
-                const v5cls = r.vol5dRatio != null && r.vol5dRatio >= 1.3 ? 'text-accent-green font-bold' : r.vol5dRatio != null && r.vol5dRatio >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'
-                const td = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono`
-                return (
-                  <tr key={i} className="group border-t border-ink-500">
-                    {/* Stock column — wide; name+badge, 📊 Stake, ⚡ Pattern stacked. */}
-                    <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 300, maxWidth: 360 }}>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <b className="text-neutral-100">{r.symbol}</b>
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
-                      </div>
-                      <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
-                        <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote || <span className="text-neutral-600">unavailable</span>}
-                      </div>
-                      {r.pattern && (
-                        <div className="text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
-                          <span className="text-neutral-600 font-semibold">⚡ Pattern:</span> {r.pattern}
-                        </div>
-                      )}
-                    </td>
-                    <td className={`${td} text-right`}>₹{fmtPx(r.ltp)}</td>
-                    <td className={`${td} text-center font-bold ${convCls}`}>{r.conviction}</td>
-                    <td className={`${td} text-center`}>
-                      <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight whitespace-nowrap">
-                        <span className={v5cls}>5d {r.vol5dRatio ? `${r.vol5dRatio}×` : '—'}</span>
-                        <span className="text-neutral-700">·</span>
-                        {r.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-700">·</span>}
-                        {r.fiiDelta != null && r.fiiDelta !== 0 && (
-                          <span className={r.fiiDelta > 0 ? 'text-accent-green' : 'text-accent-red'}>FII {r.fiiDelta > 0 ? '+' : ''}{r.fiiDelta}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(r.entryPrice)}</td>
-                    <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.stopLoss)}</td>
-                    <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
-                    <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
-                    <td className={`${td} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
-                    <td className={`${td} text-center`}>{r.riskReward ?? '—'}:1</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* 2026-06-16: uniform table — same look as Old-WeeklyPick across every tab */}
+      {!isLoading && !error && rows.length > 0 && <UniformPickTable rows={rows} />}
     </div>
   )
 }
@@ -838,56 +687,8 @@ export function PublicPreMovePage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No pre-move setups right now. Pre-close scan: 15:20 IST." />}
-      {!isLoading && !error && rows.length > 0 && (
-        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
-          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 900 }}>
-            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
-              <tr>
-                <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Stock</th>
-                <th className="text-right px-2 py-3">Price</th>
-                <th className="text-center px-2 py-3">Tier</th>
-                <th className="text-center px-2 py-3">Score</th>
-                <th className="text-right px-2 py-3 text-accent-cyan">Entry</th>
-                <th className="text-right px-2 py-3 text-accent-red">SL</th>
-                <th className="text-right px-2 py-3 text-accent-green">Target</th>
-                <th className="text-center px-2 py-3 text-accent-green">Exp %</th>
-              </tr>
-            </thead>
-            <tbody>
-              {rows.map((r, i) => {
-                const dirColor = r.direction === 'BULL' ? '#00c853' : r.direction === 'BEAR' ? '#ff1744' : '#9aa0a6'
-                const td = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono`
-                return (
-                  <tr key={i} className="group border-t border-ink-500">
-                    {/* Stock column — wide; name+badge, 📊 Stake, ⚡ Setup stacked. */}
-                    <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 300, maxWidth: 360 }}>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <b className="text-neutral-100">{r.symbol}</b>
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
-                      </div>
-                      {r.shareholdingNote && (
-                        <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
-                          <span className="text-neutral-600 font-semibold">📊 Stake:</span> {r.shareholdingNote}
-                        </div>
-                      )}
-                      <div className="text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
-                        <span className="text-neutral-600 font-semibold">⚡ Setup:</span> {(r.tags ?? []).slice(0, 4).join(' · ') || '—'}
-                      </div>
-                    </td>
-                    <td className={`${td} text-right`}>₹{fmtPx(r.price)}</td>
-                    <td className={`${td} text-center text-[11px]`}>{r.tier}</td>
-                    <td className={`${td} text-center font-bold`}>{r.score?.toFixed?.(1)}</td>
-                    <td className={`${td} text-right text-accent-cyan`}>₹{fmtPx(r.suggestedEntry)}</td>
-                    <td className={`${td} text-right text-accent-red`}>₹{fmtPx(r.suggestedSL)}</td>
-                    <td className={`${td} text-right text-accent-green`}>₹{fmtPx(r.suggestedTarget)}</td>
-                    <td className={`${td} text-center text-accent-green text-[11px]`}>{r.expectedMovePct?.toFixed?.(1)}%</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
-      )}
+      {/* 2026-06-16: uniform table */}
+      {!isLoading && !error && rows.length > 0 && <UniformPickTable rows={rows} />}
     </div>
   )
 }
@@ -2635,6 +2436,110 @@ export function PublicOldWeeklyPickPage(): JSX.Element {
       {error && <Empty msg="Couldn't load Old-WeeklyPick snapshot. Refreshes every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg={proOn ? 'No Old-Weekly picks have smart-money confirmation today. Toggle PRO Mode off to see raw momentum list.' : 'Scanner not run yet — first scan kicks in at the next snapshot publish.'} />}
       {rows.length > 0 && <OldWeeklyTable rows={rows} />}
+    </div>
+  )
+}
+
+// ── 📋 UNIFORM PICK TABLE — shared design across every signal tab.
+// 2026-06-16 per user: Old-WeeklyPick's compact 10-col layout is the
+// canonical look. Every pick tab uses this so users always see the
+// same columns in the same order. Field mapper handles per-tab schema
+// differences (Weekly Pick uses entryPrice, F&O Futures uses entry, etc).
+interface UniformPickFields {
+  symbol: string
+  direction: 'BUY' | 'SHORT' | 'LONG' | string    // LONG normalised to BUY
+  conviction: number
+  ltp: number | null | undefined
+  entry: number | null | undefined
+  stopLoss: number | null | undefined
+  target1: number | null | undefined
+  target2: number | null | undefined
+  target3: number | null | undefined
+  shareholdingNote?: string
+  flowNote?: string
+  noBrainerBet?: boolean
+}
+
+function rowToFields(r: any): UniformPickFields {
+  const dir = (r.direction === 'LONG' || r.direction === 'BULL') ? 'BUY'
+    : (r.direction === 'SHORT' || r.direction === 'BEAR' || r.side === 'SHORT') ? 'SHORT'
+    : (r.direction ?? r.side ?? 'BUY')
+  return {
+    symbol: r.symbol ?? r.instrument ?? '—',
+    direction: dir,
+    conviction: r.conviction ?? r.score ?? 0,
+    ltp: r.ltp ?? r.price ?? null,
+    entry: r.entry ?? r.entryPrice ?? r.entryPriceLow ?? r.suggestedEntry ?? null,
+    stopLoss: r.stopLoss ?? r.suggestedSL ?? null,
+    target1: r.target1 ?? r.suggestedTarget ?? null,
+    target2: r.target2 ?? null,
+    target3: r.target3 ?? null,
+    shareholdingNote: r.shareholdingNote,
+    flowNote: r.flowNote || r.reason || (Array.isArray(r.tags) ? r.tags.slice(0, 3).join(' · ') : undefined),
+    noBrainerBet: r.noBrainerBet,
+  }
+}
+
+export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCount?: number }): JSX.Element {
+  const fields = rows.map(rowToFields)
+  return (
+    <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '80vh' }}>
+      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1100 }}>
+        <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+          <tr>
+            <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
+            <th className="text-center px-2 py-3">Dir</th>
+            <th className="text-center px-2 py-3">Conv</th>
+            <th className="text-right px-2 py-3 text-neutral-300">LTP</th>
+            <th className="text-right px-2 py-3 text-accent-cyan">Entry</th>
+            <th className="text-right px-2 py-3 text-accent-red">SL</th>
+            <th className="text-right px-2 py-3 text-accent-green">T1</th>
+            <th className="text-right px-2 py-3 text-accent-green">T2</th>
+            <th className="text-right px-2 py-3 text-accent-green">T3</th>
+            <th className="text-left px-3 py-3">Reason</th>
+          </tr>
+        </thead>
+        <tbody>
+          {fields.map((r, i) => {
+            const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
+            const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+            return (
+              <tr key={r.symbol + i} className="group border-t border-ink-500">
+                <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500`} style={{ minWidth: 140 }}>
+                  <b className="text-neutral-100">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+                </td>
+                <td className={`${tdb} text-center`}>
+                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                </td>
+                <td className={`${tdb} text-center font-bold text-accent-green`}>{Math.round(r.conviction ?? 0)}</td>
+                <td className={`${tdb} text-right text-neutral-200`}>{r.ltp != null ? `₹${fmtPx(r.ltp)}` : '—'}</td>
+                <td className={`${tdb} text-right text-accent-cyan`}>{r.entry != null ? `₹${fmtPx(r.entry)}` : '—'}</td>
+                <td className={`${tdb} text-right text-accent-red`}>{r.stopLoss != null ? `₹${fmtPx(r.stopLoss)}` : '—'}</td>
+                <td className={`${tdb} text-right text-accent-green`}>{r.target1 != null ? `₹${fmtPx(r.target1)}` : '—'}</td>
+                <td className={`${tdb} text-right text-accent-green`}>{r.target2 != null ? `₹${fmtPx(r.target2)}` : '—'}</td>
+                <td className={`${tdb} text-right text-accent-green font-bold`}>{r.target3 != null ? `₹${fmtPx(r.target3)}` : '—'}</td>
+                <td className={`${tdb} text-left text-neutral-400`} style={{ width: 320, maxWidth: 320, whiteSpace: 'normal' }}>
+                  {r.shareholdingNote && (
+                    <div className="text-[10px] text-neutral-300 mb-0.5"
+                      style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      title={r.shareholdingNote}>
+                      📊 {r.shareholdingNote}
+                    </div>
+                  )}
+                  {r.flowNote && (
+                    <div className="text-[10px] text-neutral-500"
+                      style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      title={r.flowNote}>
+                      ⚡ {r.flowNote}
+                    </div>
+                  )}
+                  {!r.shareholdingNote && !r.flowNote && <span className="text-neutral-600">—</span>}
+                </td>
+              </tr>
+            )
+          })}
+        </tbody>
+      </table>
     </div>
   )
 }
