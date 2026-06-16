@@ -869,105 +869,15 @@ export function PublicPreMoveIdentifierPage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load. Snapshots refresh every 30 min." />}
       {!isLoading && !error && cs.length === 0 && <Empty msg="No candidates yet. Engine runs 16:00 IST weekdays." />}
-      {/* 2026-05-26: Two-row design per pick — main numeric grid + always-
-          visible Stake + Signal sub-row. T1/T2/T3 prices+dates consolidated
-          into one cell each. Money-Flow (Vol×, 5dVol×, 🔥 Smart $, FIIΔ)
-          collapsed into a single stacked cell. Result: ~11 columns instead
-          of 21, fits without horizontal scroll on 1280px+ screens; Stake
-          and Signal mix are ALWAYS visible. */}
+      {/* 2026-06-16: uniform table. totalScore → conviction (out of 24
+          rescaled), entry/SL/T1/T2/T3 native fields, reason col shows
+          tier + primary signal. */}
       {!isLoading && !error && cs.length > 0 && (
-        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
-          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1240 }}>
-            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
-              <tr>
-                <th {...headerProps('symbol')} className={`text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)] ${headerProps('symbol').className}`}>Stock {sortIndicator('symbol')}</th>
-                <th {...headerProps('ltp')} className={`text-right px-2 py-3 ${headerProps('ltp').className}`}>LTP {sortIndicator('ltp')}</th>
-                <th {...headerProps('smart')} className={`text-center px-2 py-3 ${headerProps('smart').className}`} title="Vol× · 5dVol× · 🔥 Smart $ · FIIΔ stacked. Click to sort by Smart $.">Money Flow {sortIndicator('smart')}</th>
-                <th {...headerProps('score')} className={`text-center px-2 py-3 ${headerProps('score').className}`}>Score {sortIndicator('score')}</th>
-                <th {...headerProps('entry')} className={`text-right px-2 py-3 text-accent-cyan ${headerProps('entry').className}`}>Entry {sortIndicator('entry')}</th>
-                <th {...headerProps('sl')} className={`text-right px-2 py-3 text-accent-red ${headerProps('sl').className}`}>SL {sortIndicator('sl')}</th>
-                <th {...headerProps('t1')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t1').className}`}>T1 · date {sortIndicator('t1')}</th>
-                <th {...headerProps('t2')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t2').className}`}>T2 · date {sortIndicator('t2')}</th>
-                <th {...headerProps('t3')} className={`text-right px-2 py-3 text-accent-green ${headerProps('t3').className}`}>T3 · date {sortIndicator('t3')}</th>
-                <th {...headerProps('rr')} className={`text-center px-2 py-3 ${headerProps('rr').className}`}>R:R {sortIndicator('rr')}</th>
-                <th {...headerProps('exp')} className={`text-center px-2 py-3 ${headerProps('exp').className}`}>Exp% {sortIndicator('exp')}</th>
-              </tr>
-            </thead>
-            <tbody>
-              {cs.map((c, i) => {
-                const tcls = c.tier === 1 ? 'text-accent-green' : c.tier === 2 ? 'text-accent-cyan' : 'text-accent-amber'
-                const rowBg = c.tier === 1 ? 'bg-accent-green/5' : 'bg-ink-800'
-                const td = `px-2 py-2 align-top ${rowBg} group-hover:bg-ink-700 font-mono`
-                const vr = c.volumeRatio
-                const vcls = vr == null ? 'text-neutral-500' : vr >= 3 ? 'text-accent-green font-bold' : vr >= 1.5 ? 'text-accent-cyan' : vr < 0.8 ? 'text-accent-amber' : 'text-neutral-400'
-                const v5cls = c.volumeRatio5d == null ? 'text-neutral-500' : c.volumeRatio5d >= 1.3 ? 'text-accent-green font-bold' : c.volumeRatio5d >= 1.0 ? 'text-accent-cyan' : 'text-neutral-500'
-                return (
-                  <tr key={i} className="group border-t border-ink-500">
-                    {/* Stock column — wide; name+badges, 📊 Stake, ⚡ Setup stacked. */}
-                    <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 320, maxWidth: 360 }}>
-                      <div className="flex items-center gap-1.5 flex-wrap">
-                        <b className="text-neutral-200">{c.symbol}</b>
-                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold"
-                          style={{
-                            background: c.direction === 'BUY' ? '#00c85322' : '#ff174422',
-                            color: c.direction === 'BUY' ? '#00c853' : '#ff1744',
-                          }}>
-                          {c.direction || 'BUY'}
-                        </span>
-                        {c.futuristicBucket && (
-                          <span className="px-1 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40"
-                            title={`${c.futuristicBucket.label}`}>{c.futuristicBucket.emoji} {c.futuristicBucket.key}</span>
-                        )}
-                      </div>
-                      <div className="mt-1 text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
-                        <span className="text-neutral-600 font-semibold">📊 Stake:</span> {c.shareholdingNote || <span className="text-neutral-600">unavailable</span>}
-                      </div>
-                      <div className="text-[10px] text-neutral-400 leading-relaxed" style={{ whiteSpace: 'normal' }}>
-                        <span className="text-neutral-600 font-semibold">⚡ Setup:</span> {c.primarySignal}
-                      </div>
-                    </td>
-                    <td className={`${td} text-right`}>₹{fmtPx(c.ltp)}</td>
-                    <td className={`${td} text-center`} title="Vol = today×, 5dVol = 5d/20d avg, 🔥 = FII↑+Promoter stable">
-                      <div className="flex items-center justify-center gap-1.5 text-[10px] leading-tight whitespace-nowrap">
-                        <span className={vcls}>{vr ? `${vr}×` : '—'}</span>
-                        <span className="text-neutral-700">·</span>
-                        <span className={v5cls}>5d {c.volumeRatio5d ? `${c.volumeRatio5d}×` : '—'}</span>
-                        <span className="text-neutral-700">·</span>
-                        {c.smartMoneyUp ? <span className="text-accent-green font-bold">🔥</span> : <span className="text-neutral-700">·</span>}
-                        {c.fiiDelta != null && c.fiiDelta !== 0 && (
-                          <span className={c.fiiDelta > 0 ? 'text-accent-green' : 'text-accent-red'}>FII {c.fiiDelta > 0 ? '+' : ''}{c.fiiDelta}</span>
-                        )}
-                      </div>
-                    </td>
-                    <td className={`${td} text-center`}>
-                      <div className={`font-bold ${tcls}`}>{c.totalScore}/24</div>
-                      <div className={`text-[9px] font-bold ${tcls}`}>{c.tierLabel}</div>
-                    </td>
-                    <td className={`${td} text-right text-accent-cyan`}>
-                      <div>₹{fmtPx(c.entry)}</div>
-                      <div className="text-[9px] text-accent-cyan/70">by {fmtDate(c.entryDate)}</div>
-                    </td>
-                    <td className={`${td} text-right text-accent-red`}>₹{fmtPx(c.stopLoss)}</td>
-                    <td className={`${td} text-right text-accent-green`}>
-                      <div>₹{fmtPx(c.target1)}</div>
-                      <div className="text-[9px] text-accent-green/70">{fmtDate(c.target1Date)}</div>
-                    </td>
-                    <td className={`${td} text-right text-accent-green`}>
-                      <div>₹{fmtPx(c.target2)}</div>
-                      <div className="text-[9px] text-accent-green/70">{fmtDate(c.target2Date)}</div>
-                    </td>
-                    <td className={`${td} text-right text-accent-green font-bold`}>
-                      <div>₹{fmtPx(c.target3)}</div>
-                      <div className="text-[9px] text-accent-green/70 font-normal">{fmtDate(c.target3Date)}</div>
-                    </td>
-                    <td className={`${td} text-center`}>1:{c.riskReward}</td>
-                    <td className={`${td} text-center text-accent-green`}>+{c.expectedMovePct}%</td>
-                  </tr>
-                )
-              })}
-            </tbody>
-          </table>
-        </div>
+        <UniformPickTable rows={cs.map((c: any) => ({
+          ...c,
+          conviction: c.totalScore != null ? Math.round((c.totalScore / 24) * 100) : c.conviction,
+          flowNote: `${c.tierLabel ?? ''} (${c.totalScore}/24) · ${c.primarySignal ?? ''} · exp +${c.expectedMovePct ?? '?'}% · R:R 1:${c.riskReward ?? '?'}`,
+        }))} />
       )}
     </div>
   )
@@ -1688,32 +1598,14 @@ export function PublicCrossConfluencePage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load confluence. Refreshes every 30 min." />}
       {rows.length === 0 && !isLoading && !error && <Empty msg={proOn ? 'No PRO-grade confluence picks right now (3+ engines OR 2-engine with smart-money+sector confirm). Toggle PRO Mode off to see all.' : 'No multi-engine agreement right now. Check back at next publish.'} />}
+      {/* 2026-06-16: uniform table. Reason col shows tier (ULTRA/STRONG) +
+          contributing engines + condensed reasoning. */}
       {rows.length > 0 && (
-        <div className="space-y-2">
-          {rows.map((r) => (
-            <div key={r.symbol} className="bg-ink-800 border border-accent-amber/30 rounded-lg p-3 hover:border-accent-amber/60 transition-colors">
-              <div className="flex items-center justify-between gap-2 flex-wrap">
-                <div className="flex items-center gap-2 flex-wrap">
-                  <b className="text-neutral-100 text-[13px]">{r.symbol}</b>
-                  <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: r.direction === 'BUY' ? '#00c85322' : '#ff174422', color: r.direction === 'BUY' ? '#00c853' : '#ff1744' }}>{r.direction}</span>
-                  <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${r.sources.length >= 3 ? 'bg-accent-amber/15 text-accent-amber border-accent-amber/50' : 'bg-accent-cyan/15 text-accent-cyan border-accent-cyan/50'}`}>
-                    {r.sources.length >= 3 ? '⚡ ULTRA' : '⭐ STRONG'} · {r.sources.length} engines
-                  </span>
-                  <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent-green/15 text-accent-green border border-accent-green/40">score {r.ultraScore.toFixed(0)}</span>
-                </div>
-                <div className="text-[11px] font-mono text-neutral-400">
-                  LTP {r.ltp != null ? `₹${fmtPx(r.ltp)}` : '—'} · Entry {r.entry != null ? `₹${fmtPx(r.entry)}` : '—'} · T2 {r.target2 != null ? `₹${fmtPx(r.target2)}` : '—'}
-                </div>
-              </div>
-              <div className="mt-2 text-[10px] text-neutral-400 font-mono">
-                Sources: <span className="text-neutral-200">{r.sources.join(' + ')}</span>
-              </div>
-              <div className="mt-1 text-[10px] text-neutral-500" style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
-                {(r.reasoning || []).join(' · ')}
-              </div>
-            </div>
-          ))}
-        </div>
+        <UniformPickTable rows={rows.map((r: any) => ({
+          ...r,
+          conviction: r.ultraScore ?? r.conviction,
+          flowNote: `${(r.sources?.length ?? 0) >= 3 ? '⚡ ULTRA' : '⭐ STRONG'} · ${r.sources?.join(' + ') ?? ''}${r.reasoning?.length ? ' · ' + r.reasoning.slice(0, 2).join(' · ') : ''}`,
+        }))} />
       )}
       <HowToTradeBox tab="Ultra Picks" rules={[
         { title: 'Tier rules', body: '⚡ ULTRA (3+ engines): full size, highest priority.\n⭐ STRONG (2 engines): 60% size.' },
@@ -2157,10 +2049,13 @@ export function PublicProEdgePage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load PRO Edge. Refreshes every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No setups currently pass all 4 PRO filters. This is by design — empty days are common at this strictness." />}
+      {/* 2026-06-16: uniform table. Reason col shows sector + smart-money +
+          source engines so user sees the PRO confluence at a glance. */}
       {rows.length > 0 && (
-        <div className="space-y-3">
-          {rows.map(r => <ProEdgeCard key={r.symbol} row={r} />)}
-        </div>
+        <UniformPickTable rows={rows.map((r: any) => ({
+          ...r,
+          flowNote: `💎 PRO · ${r.sectorLabel ?? 'no sector'} (${r.sectorTrend ?? 'NEUTRAL'}) · smart-money ${r.smartMoneySide ?? 'neutral'} · engines: ${(r.sources ?? []).join(' + ')}`,
+        }))} />
       )}
       <HowToTradeBox tab="PRO Edge" rules={[
         { title: 'Entry', body: 'Buy / short at the Entry price on the card. PRO setups deserve full conviction — enter on next day open or first 30-min candle close in the direction of the signal.' },
@@ -2645,21 +2540,20 @@ export function PublicFnoFuturesPage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load F&O scan. Snapshots refresh every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No setups currently pass the pre-breakout filter. Scan re-runs every 30 min during market hours." />}
-      {longs.length > 0 && (
-        <div>
-          <div className="text-[12px] font-bold text-accent-green mb-2">🟢 LONG · {longs.length} setups</div>
-          <div className="space-y-3">
-            {longs.map((r, i) => <FnoFuturesCard key={'L' + i} row={r} />)}
-          </div>
-        </div>
-      )}
-      {shorts.length > 0 && (
-        <div className="mt-4">
-          <div className="text-[12px] font-bold text-accent-red mb-2">🔴 SHORT · {shorts.length} setups</div>
-          <div className="space-y-3">
-            {shorts.map((r, i) => <FnoFuturesCard key={'S' + i} row={r} />)}
-          </div>
-        </div>
+      {/* 2026-06-16: uniform Old-WeeklyPick table for consistency.
+          Schema normaliser maps side (LONG/SHORT) → direction (BUY/SHORT)
+          and uses score as conviction. Reason column shows confidence +
+          features (RSI, vol×, BB-width). */}
+      {!isLoading && !error && rows.length > 0 && (
+        <UniformPickTable rows={rows.map(r => ({
+          ...r,
+          direction: r.side === 'LONG' ? 'BUY' : 'SHORT',
+          conviction: r.score,
+          flowNote: `${r.confidence ?? ''} · vol ${r.features?.volRatio?.toFixed?.(1) ?? '?'}× · RSI ${r.features?.rsi14?.toFixed?.(0) ?? '?'} · BB-w ${r.features?.bbWidthPct?.toFixed?.(1) ?? '?'}%`,
+          shareholdingNote: r.fiiDelta != null && r.fiiDelta > 0
+            ? `FII +${r.fiiDelta.toFixed(2)}pp${r.marketCapCr ? ` · MC ₹${(r.marketCapCr / 1000).toFixed(1)}KCr` : ''}`
+            : undefined,
+        }))} />
       )}
     </div>
   )
