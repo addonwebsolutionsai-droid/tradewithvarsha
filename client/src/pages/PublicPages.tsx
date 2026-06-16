@@ -1754,8 +1754,12 @@ export function PublicSuperstarPicksPage(): JSX.Element {
     for (const r of raw) { if (seen.has(r.symbol)) continue; seen.add(r.symbol); out.push(r) }
     return out
   })()
-  const actively = rows.filter(r => r.newOrIncreasedCount > 0)
-  const held = rows.filter(r => r.newOrIncreasedCount === 0)
+  // 2026-06-16 — split by TIER (pre-breakout vs confirmed) NOT by
+  // loading-vs-held, because the user's concern is "are we early or
+  // late". EARLY rows lead — that's where we're WITH the superstars,
+  // not behind them.
+  const earlyRows = rows.filter(r => r.tier === 'EARLY')
+  const confirmedRows = rows.filter(r => r.tier !== 'EARLY' && r.tier !== 'LATE')
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/15 to-accent-violet/5 border border-accent-amber/50 rounded-lg">
@@ -1763,19 +1767,19 @@ export function PublicSuperstarPicksPage(): JSX.Element {
         <div className="flex-1">
           <div className="text-sm font-bold text-accent-amber">Superstar Picks · Top-10 Indian Investor Confluence</div>
           <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
-            India's 10 most-tracked retail/HNI investors' holdings × our signal scoring engine.
-            When a superstar is <b>NEW or INCREASING</b> their stake AND our scanner confirms the setup
-            is technically primed, that's institutional-grade conviction you can't get from price alone.
-            <br/><b>Tracked:</b> Rekha Jhunjhunwala (Rare Enterprises) · RK Damani · Mukul Agrawal ·
-            Ashish Kacholia · Vijay Kedia · Dolly Khanna · Anil Kumar Goel · Sunil Singhania (Abakkus) ·
-            Madhusudan Kela · Porinju Veliyath.
+            India's 10 most-tracked retail/HNI investors' holdings × our signal scoring engine,
+            with a <b>BEFORE-THE-MOVE filter</b> so you're never the exit liquidity. LATE-stage
+            names (already &gt;40% above 60d low) are auto-suppressed.
+            <br/><b>Tracked:</b> Rekha Jhunjhunwala · RK Damani · Mukul Agrawal · Kacholia ·
+            Kedia · Dolly Khanna · Anil Goel · Singhania (Abakkus) · Madhusudan Kela · Porinju.
           </div>
           <div className="text-[10px] text-neutral-500 mt-2 font-mono">
-            🌟 {data?.activelyLoadingCount ?? 0} actively loading · 📊 {(data?.total ?? 0) - (data?.activelyLoadingCount ?? 0)} held
-            · sourced from SEBI {data?.investors?.[0]?.asOfQuarter ?? 'Mar-2026'} filings (delayed 30-45d from quarter end)
+            🎯 {earlyRows.length} EARLY · ✓ {confirmedRows.length} CONFIRMED · LATE suppressed
+            · sourced from SEBI {data?.investors?.[0]?.asOfQuarter ?? 'Mar-2026'} filings
           </div>
           <div className="text-[10px] text-accent-amber/80 mt-1">
-            ⚠️ Quarterly data — not real-time bulk-deal tracking (that's a paid feed). Refreshed manually each quarter from public SEBI filings.
+            ⚠️ Quarterly filings have 30-45d delay. By then, the announcement-pop has happened —
+            so we filter on <b>technical pre-breakout state</b>, not just "they bought last quarter".
           </div>
         </div>
       </div>
@@ -1783,25 +1787,28 @@ export function PublicSuperstarPicksPage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load superstar scan. Refreshes every 25 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No superstar-held names currently pass the signal filter. Check back at next snapshot." />}
-      {actively.length > 0 && (
+      {earlyRows.length > 0 && (
         <div>
-          <div className="text-[12px] font-bold text-accent-amber mb-2">🌟 ACTIVELY LOADING · {actively.length} (NEW or INCREASED stakes)</div>
-          <UniformPickTable rows={actively} />
+          <div className="text-[12px] font-bold text-accent-green mb-2">🎯 EARLY · {earlyRows.length} (pre-breakout — entering WITH the superstar, not behind)</div>
+          <UniformPickTable rows={earlyRows} />
         </div>
       )}
-      {held.length > 0 && (
+      {confirmedRows.length > 0 && (
         <div className="mt-4">
-          <div className="text-[12px] font-bold text-neutral-300 mb-2">📊 HELD · {held.length} (stable conviction positions)</div>
-          <UniformPickTable rows={held} />
+          <div className="text-[12px] font-bold text-accent-cyan mb-2">✓ CONFIRMED · {confirmedRows.length} (move started, runway still ahead)</div>
+          <UniformPickTable rows={confirmedRows} />
         </div>
+      )}
+      {!earlyRows.length && !confirmedRows.length && rows.length > 0 && (
+        <Empty msg="All superstar holdings are currently LATE-stage (already extended). Best to wait — we don't want to be exit liquidity. Check back at next scan." />
       )}
       <HowToTradeBox tab="Superstar Picks" rules={[
-        { title: 'Highest priority: 🌟 ACTIVELY LOADING', body: 'If a superstar marked the position as NEW or INCREASED in the latest quarter AND our scanner confirms setup, that\'s the strongest signal. Full position size.' },
-        { title: 'Second priority: 📊 HELD', body: 'Stable conviction position (no quarter-over-quarter change). Useful for swing entries when our scanner separately confirms — but no fresh capital allocation thesis from the superstar side.' },
-        { title: 'Investor pedigree', body: 'Each superstar has a documented 70-80% multibagger hit rate over 10+ year track records. The "loading" tag means they\'re putting fresh money in — that\'s a vote you can\'t buy.' },
-        { title: 'Position size', body: 'ACTIVELY LOADING with conv ≥ 80: 5% capital. ACTIVELY LOADING with conv 60-80: 3%. HELD with conv ≥ 80: 3%. HELD with conv 60-80: 2%.' },
-        { title: 'Data freshness caveat', body: 'Quarterly SEBI shareholding pattern data is delayed 30-45 days post quarter-end. So "they just bought" actually means "they reported buying in the latest filed quarter". Always cross-check by clicking the symbol to see recent price action.' },
-        { title: 'Why this works', body: 'These investors run 10-1000 cr portfolios with deep due diligence + insider network. Their disclosed positions = institutional thesis already verified. Adding our technical entry-timing layer = optimal compound.' },
+        { title: 'Highest priority: 🎯 EARLY', body: 'Stock is held by a superstar BUT still pre-breakout (|ret5d|<4%, <20% above 60d low, tight coil <12%). This means we\'re entering WITH them, not after. Strongest edge.' },
+        { title: 'Second priority: ✓ CONFIRMED', body: 'Stock is in CONFIRMED leg of the move (5-30% above 60d low). Still has runway but we\'ve missed the absolute bottom. Half position size of EARLY.' },
+        { title: 'LATE tier — auto-suppressed', body: 'Names already >40% above 60d low or ret60d > 30% are HIDDEN. By the time SEBI files the disclosure, these have already run — we\'d be exit liquidity for the big investors. Per user directive: do not buy here.' },
+        { title: 'Position size', body: '🎯 EARLY + conv ≥ 80: 5% capital. 🎯 EARLY + conv 60-80: 3%. ✓ CONFIRMED + conv ≥ 80: 3%. ✓ CONFIRMED + conv 60-80: 1.5%.' },
+        { title: 'Investor pedigree', body: 'These investors run ₹10-1,000 Cr portfolios with documented 70-80% multibagger hit rate over 10+ years. Their disclosed positions = institutional thesis already verified.' },
+        { title: 'Data freshness caveat', body: 'SEBI quarterly filings have 30-45d delay. We compensate by requiring technical pre-breakout state — that filters out "they bought 60 days ago and stock already ran 40%" traps.' },
       ]} />
     </div>
   )

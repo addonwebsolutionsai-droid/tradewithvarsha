@@ -49,6 +49,12 @@ export interface SuperstarPick {
     changeQoQ?: 'NEW' | 'INCREASED' | 'HELD' | 'DECREASED'
   }>
   newOrIncreasedCount: number      // how many investors are loading right now
+  // 2026-06-16: tier — which leg of the move we're entering at. EARLY
+  // = pre-breakout (best edge, we're WITH the superstars not behind them).
+  // CONFIRMED = move started, still has runway. LATE = already extended,
+  // we'd be exit liquidity (auto-demoted in ranking).
+  tier: 'EARLY' | 'CONFIRMED' | 'LATE'
+  preMoveScore: number              // -50 to +100
   flowNote: string                  // for the Reason column
   shareholdingNote?: string         // FII/DII/promoter snippet from existing scrapers
   // Technical features (transparency)
@@ -89,7 +95,7 @@ function addBusinessDays(from: Date, days: number): string {
 }
 
 function scoreSymbol(symbol: string, candles: Candle[]): {
-  score: number; features: SuperstarPick['features']; reasons: string[]; price: number; direction: 'BUY' | 'SHORT'
+  score: number; preMoveScore: number; features: SuperstarPick['features']; reasons: string[]; price: number; direction: 'BUY' | 'SHORT'; tier: 'EARLY' | 'CONFIRMED' | 'LATE'
 } | null {
   if (candles.length < 25) return null
   const closes = candles.map(c => c.close)
@@ -110,6 +116,12 @@ function scoreSymbol(symbol: string, candles: Candle[]): {
   const e9 = ema(closes, 9), e21 = ema(closes, 21)
   const e50 = closes.length >= 50 ? ema(closes, 50) : e21
   const emaStackBull = e9 > e21 && e21 > e50 && price > e21
+  // 60-day move context — needed to detect "already running" vs "still consolidating"
+  const has60 = candles.length >= 60
+  const high60 = has60 ? Math.max(...closes.slice(-60)) : high20
+  const low60 = has60 ? Math.min(...closes.slice(-60)) : low20
+  const distFromLow60 = ((price - low60) / low60) * 100      // % above 60d low
+  const ret60d = has60 ? ((price - closes[closes.length - 61]) / closes[closes.length - 61]) * 100 : 0
   const features = { ret5d, ret20d, rsi14: rsi, bbWidthPct, volRatio5_20: volRatio, distFromHigh20, emaStackBull }
 
   let score = 0
@@ -122,7 +134,30 @@ function scoreSymbol(symbol: string, candles: Candle[]): {
   if (ret20d > 0 && ret20d < 25) { score += 10; reasons.push(`20d +${ret20d.toFixed(1)}%`) }
   if (Math.abs(ret5d) > 8) { score -= 15; reasons.push(`⚠️ 5d ${ret5d.toFixed(1)}% — extended`) }
 
-  return { score, features, reasons, price, direction: 'BUY' }
+  // 2026-06-16 — "BEFORE THE MOVE" detector per user directive:
+  // we should NOT be the exit liquidity for the big investors. So
+  // explicitly classify which leg of the move we're in:
+  //
+  //   EARLY     — still pre-breakout: low ret5d AND below 15% from 60d low
+  //   CONFIRMED — moving up cleanly: 5-30% above 60d low, tight coil
+  //   LATE      — already extended: >40% above 60d low OR ret60d > 30%
+  let tier: 'EARLY' | 'CONFIRMED' | 'LATE' = 'CONFIRMED'
+  let preMoveScore = 0
+  if (Math.abs(ret5d) < 4 && Math.abs(ret20d) < 10 && distFromLow60 < 20 && bbWidthPct < 12) {
+    tier = 'EARLY'
+    preMoveScore = 100                       // strongest "we're before the move" signal
+    reasons.unshift(`🎯 EARLY — pre-breakout (${distFromLow60.toFixed(0)}% off 60d low, coil ${bbWidthPct.toFixed(1)}%)`)
+  } else if (distFromLow60 > 40 || ret60d > 30) {
+    tier = 'LATE'
+    preMoveScore = -50                       // demote — we'd be exit liquidity
+    reasons.unshift(`⚠️ LATE — ${distFromLow60.toFixed(0)}% above 60d low / ret60d ${ret60d.toFixed(0)}%`)
+  } else {
+    tier = 'CONFIRMED'
+    preMoveScore = 50
+    reasons.unshift(`✓ CONFIRMED — moving but not exhausted (${distFromLow60.toFixed(0)}% above 60d low)`)
+  }
+
+  return { score, preMoveScore, features, reasons, price, direction: 'BUY', tier }
 }
 
 export async function scanSuperstarPicks(): Promise<SuperstarPick[]> {
@@ -147,9 +182,18 @@ export async function scanSuperstarPicks(): Promise<SuperstarPick[]> {
         const newOrIncreased = investors.filter(inv =>
           inv.changeQoQ === 'NEW' || inv.changeQoQ === 'INCREASED',
         ).length
-        // BOOST conviction if multiple superstars actively loading
-        const conviction = Math.min(100, scoring.score + (newOrIncreased * 5) + (investors.length * 2))
-        if (conviction < 50) return null  // floor — don't surface low-conviction superstar holdings
+        // Conviction = base technical + superstar boost + pre-move tier weight.
+        // EARLY tier (pre-breakout) gets the biggest boost so it ranks ABOVE
+        // already-extended names that bigger investors might be exiting into.
+        const conviction = Math.min(100, Math.max(0,
+          scoring.score
+          + (newOrIncreased * 5)
+          + (investors.length * 2)
+          + (scoring.tier === 'EARLY' ? 20 : scoring.tier === 'CONFIRMED' ? 5 : -15),
+        ))
+        if (conviction < 50) return null  // floor — don't surface low-conviction
+        // LATE tier auto-suppressed: we'd be exit liquidity
+        if (scoring.tier === 'LATE') return null
 
         const dir = scoring.direction
         const entry = +scoring.price.toFixed(2)
@@ -159,13 +203,17 @@ export async function scanSuperstarPicks(): Promise<SuperstarPick[]> {
         const t2 = +(entry * (dir === 'BUY' ? 1.12 : 0.88)).toFixed(2)
         const t3 = +(entry * (dir === 'BUY' ? 1.20 : 0.80)).toFixed(2)
 
-        // Build the Reason column flow note
+        // Build the Reason column flow note — leads with tier so user
+        // immediately sees whether we're early or just confirming.
         const topInvestor = investors[0]
         const activeCount = newOrIncreased
         const totalCount = investors.length
-        const flowNote = activeCount > 0
-          ? `🌟 ${activeCount}/${totalCount} loading — ${topInvestor.alias || topInvestor.investor.split(' ')[0]}${investors.length > 1 ? ` +${investors.length - 1}` : ''} · ${scoring.reasons.slice(0, 2).join(' · ')}`
-          : `📊 Held by ${totalCount} superstar${totalCount > 1 ? 's' : ''} — ${topInvestor.alias || topInvestor.investor.split(' ')[0]} · ${scoring.reasons.slice(0, 2).join(' · ')}`
+        const tierBadge = scoring.tier === 'EARLY' ? '🎯 EARLY' : '✓ CONFIRMED'
+        const investorBit = activeCount > 0
+          ? `${activeCount}/${totalCount} loading — ${topInvestor.alias || topInvestor.investor.split(' ')[0]}${investors.length > 1 ? ` +${investors.length - 1}` : ''}`
+          : `held by ${topInvestor.alias || topInvestor.investor.split(' ')[0]}${investors.length > 1 ? ` +${investors.length - 1}` : ''}`
+        const techBit = scoring.reasons.filter(r => !r.startsWith('🎯') && !r.startsWith('✓') && !r.startsWith('⚠️')).slice(0, 2).join(' · ')
+        const flowNote = `${tierBadge} · 🌟 ${investorBit} · ${techBit}`
 
         return {
           symbol: sym,
@@ -177,6 +225,8 @@ export async function scanSuperstarPicks(): Promise<SuperstarPick[]> {
           target2Date: addBusinessDays(today, 14),
           target3Date: addBusinessDays(today, 21),
           investors, newOrIncreasedCount: newOrIncreased,
+          tier: scoring.tier,
+          preMoveScore: scoring.preMoveScore,
           flowNote,
           features: scoring.features,
           reasons: scoring.reasons,
@@ -204,6 +254,28 @@ export async function scanSuperstarPicks(): Promise<SuperstarPick[]> {
     log.warn('SUPERSTAR', `shareholding enrich skipped: ${(e as Error).message}`)
   }
 
-  log.ok('SUPERSTAR', `${deduped.length} superstar picks scored (${deduped.filter(p => p.newOrIncreasedCount > 0).length} actively loading) from ${symbols.length} holdings`)
+  // 2026-06-16 fallback — if the screener.in scraper had no data for a
+  // symbol (common for smallcap superstar holdings), synthesise the
+  // shareholdingNote from the superstar stake itself + investor name.
+  // This guarantees the user ALWAYS sees a 📊 line in the Reason col.
+  for (const r of deduped) {
+    if (r.shareholdingNote && r.shareholdingNote.length > 5) continue
+    const top = r.investors[0]
+    const totalStake = r.investors.reduce((s, x) => s + (x.stakePct ?? 0), 0)
+    r.shareholdingNote = top
+      ? `${top.alias || top.investor.split(' ')[0]} owns ${(top.stakePct ?? 0).toFixed(1)}%${r.investors.length > 1 ? ` (combined ${totalStake.toFixed(1)}% across ${r.investors.length} superstars)` : ''} · FII/DII data unavailable for this smallcap`
+      : 'FII/DII data unavailable for this smallcap'
+  }
+
+  // Sort: EARLY tier first, then by conviction descending. So pre-breakout
+  // setups always lead — never let LATE / extended names be the headline.
+  deduped.sort((a, b) => {
+    const ta = a.tier === 'EARLY' ? 2 : a.tier === 'CONFIRMED' ? 1 : 0
+    const tb = b.tier === 'EARLY' ? 2 : b.tier === 'CONFIRMED' ? 1 : 0
+    if (tb !== ta) return tb - ta
+    return b.conviction - a.conviction
+  })
+
+  log.ok('SUPERSTAR', `${deduped.length} picks · ${deduped.filter(p => p.tier === 'EARLY').length} 🎯 EARLY · ${deduped.filter(p => p.tier === 'CONFIRMED').length} ✓ CONFIRMED · ${deduped.filter(p => p.newOrIncreasedCount > 0).length} actively loading`)
   return deduped
 }
