@@ -352,6 +352,47 @@ async function triggerGainerPostmortem(): Promise<void> {
   })()
 }
 
+// Superstar scanner — for the ~60 stocks held by India's top 10 investors
+// (Rekha Jhunjhunwala / Damani / Mukul Agrawal / Kacholia / Kedia / Dolly
+// Khanna / Anil Goel / Sunil Singhania / Madhusudan Kela / Porinju), run
+// our Weekly Pick scoring. Surface when both forces agree.
+// Throttled 25min — cheap (60 candle fetches).
+let superstarInflight: Promise<void> | null = null
+let superstarLastAt = 0
+const SUPERSTAR_MIN_MS = 25 * 60_000
+
+async function triggerSuperstarScan(): Promise<void> {
+  if (superstarInflight) return superstarInflight
+  if (Date.now() - superstarLastAt < SUPERSTAR_MIN_MS) return
+  superstarInflight = (async () => {
+    const startedAt = new Date().toISOString()
+    try {
+      const { scanSuperstarPicks } = await import('./superstarPicksScanner')
+      const { SUPERSTAR_INVESTORS } = await import('../data/superstarHoldings')
+      const rows = await scanSuperstarPicks()
+      const out = {
+        generatedAt: startedAt,
+        investorCount: SUPERSTAR_INVESTORS.length,
+        investors: SUPERSTAR_INVESTORS.map(i => ({
+          name: i.name, alias: i.alias, category: i.category, bio: i.bio,
+          trackRecord: i.trackRecord, asOfQuarter: i.asOfQuarter,
+          holdingCount: i.holdings.length,
+        })),
+        total: rows.length,
+        activelyLoadingCount: rows.filter(r => r.newOrIncreasedCount > 0).length,
+        rows,
+      }
+      await fs.writeFile(path.join(SNAP_DIR, 'superstar-picks.json'), JSON.stringify(out, null, 2))
+      superstarLastAt = Date.now()
+      log.ok('PUBLIC-SNAP', `superstar-picks: ${rows.length} scored · ${out.activelyLoadingCount} actively loading`)
+    } catch (e) {
+      log.warn('PUBLIC-SNAP', `superstar-picks async: ${(e as Error).message}`)
+    } finally {
+      superstarInflight = null
+    }
+  })()
+}
+
 // Miss-analyzer — cross-references today's 5%+ gainers vs every scanner
 // to surface what we missed and WHY. Auto-tune feedback loop for the
 // daily self-improve cron. Throttled to 1× per 60 min (heavy: ~500
@@ -947,6 +988,7 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   triggerAdDivergenceScan().catch(() => { /* logged inside */ })
   triggerMissAnalysis().catch(() => { /* logged inside */ })
   triggerGainerPostmortem().catch(() => { /* logged inside */ })
+  triggerSuperstarScan().catch(() => { /* logged inside */ })
 
   // 6.8 Sector Rotation — 12 NIFTY sectoral indices ranked by relative
   // strength. Synchronous (only 12 candle fetches, fast).

@@ -80,6 +80,11 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   })()
   const trackAcc = (accSnap as any)?.winRate ?? null
   const tops = PUBLIC_MODE ? [
+    // 2026-06-16: Superstar Picks — top-10 Indian investors' holdings ×
+    // our signal scoring. Highest-conviction tab when "actively loading".
+    { to: '/superstar',    label: '🌟 Superstar',  icon: <Star size={14} />,
+      acc: null,
+      title: "India's top 10 investors (Jhunjhunwala / Damani / Kacholia / Kedia / Dolly Khanna / Goel / Singhania / Kela / Porinju / Mukul Agrawal) — their holdings × our signal scoring. NEW/INCREASED stake + technical confirm = highest edge." },
     // 2026-06-05: PRO Edge — sellable premium feed. ALL filters stacked.
     // 0-10 names/day. The product we can credibly price at premium tier.
     { to: '/pro-edge',     label: '💎 PRO Edge',  icon: <Star size={14} />,

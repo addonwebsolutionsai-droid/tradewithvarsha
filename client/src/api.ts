@@ -55,6 +55,7 @@ export const snapshots = {
   gainerPostmortem: () => snapshot<{ generatedAt: string; totalGainers: number; caughtCount: number; wouldHaveCaughtCount: number; patternBreakdown: Record<string, number>; topMissReasons: Record<string, number>; rows: any[] }>('gainer-postmortem.json'),
   multiStrikeOi: () => snapshot<{ generatedAt: string; total: number; bullishCount: number; bearishCount: number; rows: any[] }>('multi-strike-oi.json'),
   archive: () => snapshot<{ generatedAt: string; windowDays: number; total: number; byStatus: Record<string, number>; rows: any[] }>('archive.json'),
+  superstarPicks: () => snapshot<{ generatedAt: string; investorCount: number; investors: any[]; total: number; activelyLoadingCount: number; rows: any[] }>('superstar-picks.json'),
 }
 
 // Chat assistant — talks directly to Gemini from the browser.
