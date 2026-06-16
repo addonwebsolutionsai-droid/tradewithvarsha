@@ -108,6 +108,16 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
       <div className="flex items-center gap-4 text-xs text-neutral-500">
         {PUBLIC_MODE ? (
           <>
+            {/* 2026-06-16: Archive moved out of nav into header (next to
+                Snapshot pill). Quieter placement; users browsing live
+                signals don't accidentally click into closed trades. */}
+            <Link
+              to="/archive"
+              className="text-[11px] px-2 py-0.5 rounded border border-neutral-600/50 bg-ink-700/50 text-neutral-300 hover:bg-ink-700 hover:text-neutral-100"
+              title="Closed (SL_HIT) + superseded signals · last 30 days"
+            >
+              🗄️ Archive
+            </Link>
             <span
               className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green"
               title="Free public mode — picks refreshed every 30 minutes from the live trading engine"
@@ -216,12 +226,18 @@ function PublicUserMenu(): JSX.Element {
       <div className="flex items-center gap-2">
         <Link to="/login" className="text-[11px] px-2 py-1 rounded border border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20">Sign in</Link>
         <Link to="/signup" className="text-[11px] px-2 py-1 rounded bg-accent-green text-white font-semibold hover:bg-accent-green/80">Sign up</Link>
+        {/* 2026-06-16: Ask AI moved out of nav into header (after Signup).
+            Quicker discovery for the marquee AI feature. */}
+        <Link to="/ask-ai" className="text-[11px] px-2 py-1 rounded bg-accent-violet/20 text-accent-violet border border-accent-violet/50 font-semibold hover:bg-accent-violet/30">🤖 Ask AI</Link>
       </div>
     )
   }
 
   return (
-    <div className="usermenu-root relative">
+    <div className="flex items-center gap-2">
+      {/* Ask AI also visible for logged-in users — same priority slot */}
+      <Link to="/ask-ai" className="text-[11px] px-2 py-1 rounded bg-accent-violet/20 text-accent-violet border border-accent-violet/50 font-semibold hover:bg-accent-violet/30">🤖 Ask AI</Link>
+      <div className="usermenu-root relative">
       <button onClick={() => setOpen(o => !o)} className="flex items-center gap-1.5 text-[11px] px-2 py-1 rounded bg-ink-700 border border-ink-500 hover:bg-ink-600 text-neutral-200">
         <UserIcon size={12} />
         <span className="font-mono">{data.email}</span>
@@ -236,6 +252,7 @@ function PublicUserMenu(): JSX.Element {
           <button onClick={() => { auth.clear(); setOpen(false); refetch(); nav('/login') }} className="block w-full text-left px-3 py-2 text-[12px] text-accent-red hover:bg-ink-700"><LogOut size={11} className="inline mr-1.5" />Sign out</button>
         </div>
       )}
+      </div>
     </div>
   )
 }

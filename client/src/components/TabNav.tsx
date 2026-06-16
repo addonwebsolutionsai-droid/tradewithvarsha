@@ -94,16 +94,10 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/sl-traps',     label: '🛡️ SL Traps',   icon: <Activity size={14} />,
       acc: null,
       title: 'SL-Trap Alerts — catches liquidity grabs (SL hit then target hit anyway). Effective WR includes confirmed traps as wins.' },
-    // 2026-06-13: AI Chat assistant — answer any trade query using ONLY
-    // platform snapshot data (anti-hallucination by design).
-    { to: '/ask-ai',       label: '🤖 Ask AI',     icon: <Bot size={14} />,
-      acc: null,
-      title: 'Vedicedge AI — ask any question about stocks, signals, or your trades. AI only uses platform snapshots, never invents numbers.' },
-    // 2026-06-13: Archive tab — last 30d of closed (SL_HIT) + superseded
-    // signals. Saturday cleanup so live tabs stay clean.
-    { to: '/archive',      label: '🗄️ Archive',    icon: <ListChecks size={14} />,
-      acc: null,
-      title: 'Archive — last 30 days of closed (SL_HIT) + superseded signals. Audit your trade history.' },
+    // 2026-06-16: Ask AI + Archive moved OUT of nav per user request:
+    // - 🤖 Ask AI → header right (next to Sign Up button)
+    // - 🗄️ Archive → header right (before Snapshot mode pill)
+    // Keeps the primary nav focused on actionable live signal tabs.
     // 2026-05-30: 💎 Elite is the headline tab — best-of-best stream that
     // requires ALL 5 institutional confluences (Volume + FII↑ + DII↑ +
     // Promoter↑ + Fundamentals/Technicals) before a signal qualifies.
