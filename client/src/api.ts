@@ -10,6 +10,9 @@ const API = (import.meta as any).env?.VITE_API_URL || ''
 // public snapshot pages. Previously this was empty in dev → "Couldn't load"
 // error on /track-record. Now the same data Vercel reads is also available
 // locally without any env setup.
+// Snapshot URL — env-var preferred, hardcoded fallback for resilience.
+// Removing the fallback would break the public site if Vercel env var is
+// ever unset, so kept defensive. URL appears in bundle either way.
 const SNAPSHOT_BASE = (import.meta as any).env?.VITE_SNAPSHOT_BASE_URL
   || 'https://raw.githubusercontent.com/addonwebsolutionsai-droid/tradewithvarsha/main/server/data/public-snapshots'
 const PUBLIC_MODE = (import.meta as any).env?.VITE_PUBLIC_MODE === 'true'

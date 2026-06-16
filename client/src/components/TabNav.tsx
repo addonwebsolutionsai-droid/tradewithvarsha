@@ -205,15 +205,15 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
                   else navigate(t.to)
                 }}
                 className={clsx(
-                  'px-3 py-2.5 text-[12px] flex items-center gap-1 whitespace-nowrap border-b-2 transition-colors flex-shrink-0',
+                  'px-3 py-2.5 text-[12px] flex items-center gap-1 whitespace-nowrap border-b-2 transition-colors flex-shrink-0 relative',
                   active
                     ? 'text-accent-cyan border-accent-cyan'
                     : 'text-neutral-500 border-transparent hover:text-neutral-300',
-                  // 2026-06-16 per user: high-probability tabs get a tinted
-                  // background so users immediately know where the best
-                  // signals live. Marked via `highProb: true` on each entry.
-                  (t as any).highProb && !active && 'bg-accent-amber/10',
-                  (t as any).highProb && active && 'bg-accent-amber/15',
+                  // 2026-06-16 — high-probability tabs visually stand out.
+                  // Strong amber tint + glowing background ring so the user
+                  // never misses where the best signals live.
+                  (t as any).highProb && !active && 'bg-gradient-to-b from-accent-amber/25 to-accent-amber/10 text-accent-amber hover:from-accent-amber/35 hover:to-accent-amber/15',
+                  (t as any).highProb && active && 'bg-gradient-to-b from-accent-amber/30 to-accent-amber/15',
                 )}
               >
                 {t.icon}
