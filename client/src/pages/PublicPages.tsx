@@ -2379,7 +2379,7 @@ export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCou
   const fields = rows.map(rowToFields)
   return (
     <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '80vh' }}>
-      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1100 }}>
+      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1160 }}>
         <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
           <tr>
             <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
@@ -2413,17 +2413,17 @@ export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCou
                 <td className={`${tdb} text-right text-accent-green`}>{r.target1 != null ? `₹${fmtPx(r.target1)}` : '—'}</td>
                 <td className={`${tdb} text-right text-accent-green`}>{r.target2 != null ? `₹${fmtPx(r.target2)}` : '—'}</td>
                 <td className={`${tdb} text-right text-accent-green font-bold`}>{r.target3 != null ? `₹${fmtPx(r.target3)}` : '—'}</td>
-                <td className={`${tdb} text-left text-neutral-400`} style={{ width: 320, maxWidth: 320, whiteSpace: 'normal' }}>
+                <td className={`${tdb} text-left text-neutral-400`} style={{ width: 380, maxWidth: 380, whiteSpace: 'normal' }}>
                   {r.shareholdingNote && (
                     <div className="text-[10px] text-neutral-300 mb-0.5"
-                      style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal', wordBreak: 'break-word' }}
                       title={r.shareholdingNote}>
                       📊 {r.shareholdingNote}
                     </div>
                   )}
                   {r.flowNote && (
                     <div className="text-[10px] text-neutral-500"
-                      style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal', wordBreak: 'break-word' }}
                       title={r.flowNote}>
                       ⚡ {r.flowNote}
                     </div>
@@ -2442,7 +2442,7 @@ export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCou
 function OldWeeklyTable({ rows }: { rows: any[] }): JSX.Element {
   return (
     <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '80vh' }}>
-      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1100 }}>
+      <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1160 }}>
         <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
           <tr>
             <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
@@ -2476,20 +2476,20 @@ function OldWeeklyTable({ rows }: { rows: any[] }): JSX.Element {
                 <td className={`${tdb} text-right text-accent-green`}>₹{fmtPx(r.target1)}</td>
                 <td className={`${tdb} text-right text-accent-green`}>₹{fmtPx(r.target2)}</td>
                 <td className={`${tdb} text-right text-accent-green font-bold`}>₹{fmtPx(r.target3)}</td>
-                <td className={`${tdb} text-left text-neutral-400`} style={{ width: 320, maxWidth: 320, whiteSpace: 'normal' }}>
+                <td className={`${tdb} text-left text-neutral-400`} style={{ width: 380, maxWidth: 380, whiteSpace: 'normal' }}>
                   {/* Two stacked lines — line 1 = institutional stake (FII/DII/Promoter
                       with QoQ delta), line 2 = trade rationale. Both clamped to 1
                       line each via -webkit-line-clamp so the column never expands. */}
                   {r.shareholdingNote && (
                     <div className="text-[10px] text-neutral-300 mb-0.5"
-                      style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal', wordBreak: 'break-word' }}
                       title={r.shareholdingNote}>
                       📊 {r.shareholdingNote}
                     </div>
                   )}
                   {r.flowNote && (
                     <div className="text-[10px] text-neutral-500"
-                      style={{ display: '-webkit-box', WebkitLineClamp: 1, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis' }}
+                      style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'normal', wordBreak: 'break-word' }}
                       title={r.flowNote}>
                       ⚡ {r.flowNote}
                     </div>
