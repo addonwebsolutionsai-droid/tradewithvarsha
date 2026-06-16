@@ -611,9 +611,25 @@ export async function runWeeklyPick(
   // mostly BSE-listed micro/small-caps that NSE_ALL never reached.
   const { resolveUniverse } = await import('../screeners/universe')
   const universeKey = extraUniverseKey ?? 'MARKET_ALL'
-  const fullUniverse = (universeKey === 'NIFTY100')
+  const baseUniverse = (universeKey === 'NIFTY100')
     ? await resolveUniverse('NIFTY50').then(async n50 => [...n50, ...await resolveUniverse('NEXT50')])
     : await resolveUniverse(universeKey)
+  // 2026-06-16: Force-include miss-driven watchlist (last 14 days of
+  // gainers our scanner missed). Closes the auto-tune feedback loop —
+  // names we missed yesterday get scanned today. Deduped against base.
+  let forcedInclude: string[] = []
+  try {
+    const { getMissWatchlist } = await import('./missAnalyzer')
+    forcedInclude = await getMissWatchlist()
+  } catch { /* none yet */ }
+  const baseSet = new Set(baseUniverse.map(s => s.toUpperCase()))
+  const newlyForced = forcedInclude.filter(s => !baseSet.has(s.toUpperCase()))
+  const fullUniverse = newlyForced.length > 0
+    ? [...baseUniverse, ...newlyForced]
+    : baseUniverse
+  if (newlyForced.length > 0) {
+    log.info('PICK', `forced-include ${newlyForced.length} symbols from miss-watchlist (yesterday's missed gainers) → universe ${baseUniverse.length} → ${fullUniverse.length}`)
+  }
 
   // ── Pre-rank pass — PRE-BREAKOUT detection, NOT momentum chasing ──
   // 2026-05-10 OVERHAUL: prior prerank `|mom5| × 0.6 + volBurst × 4` was

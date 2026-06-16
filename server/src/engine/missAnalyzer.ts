@@ -199,6 +199,57 @@ export async function runMissAnalysis(): Promise<{
   const catchRate = gainers.length > 0 ? caught / gainers.length : 0
   log.ok('MISS-ANALYZER', `caught ${caught}/${gainers.length} (${(catchRate * 100).toFixed(1)}%) · top miss reasons: ${Object.entries(diagnosisCounts).sort((a, b) => b[1] - a[1]).slice(0, 3).map(([k, v]) => `${k}=${v}`).join(', ')}`)
 
+  // 2026-06-16: Auto-tune loop closure — persist missed gainers as a
+  // forced-include watchlist for tomorrow's scan. Universe will pick this
+  // up on its next run so we don't keep missing the same names.
+  try {
+    // Filter to real-looking tickers (alpha-start, 3-15 chars, A-Z 0-9 & -).
+    // Earlier seed data showed positional artifacts like "1", "2" sneaking
+    // in from NSE_500 numeric indexing. Strict regex prevents that.
+    const isRealSym = (s: string): boolean =>
+      !!s && s.length >= 3 && s.length <= 15 && /^[A-Z][A-Z0-9&-]+$/.test(s)
+    const missedSyms = deduped.filter(r => !r.caught).map(r => r.symbol.toUpperCase()).filter(isRealSym)
+    const today = new Date().toISOString().slice(0, 10)
+    // Read existing watchlist + merge (keeping last 14 days of misses)
+    const watchlistPath = path.join(SNAP_DIR, '..', 'miss-watchlist.json')
+    let prev: { addedAt: string; symbol: string; gainPct: number; reason: string }[] = []
+    try {
+      const raw = await fs.readFile(watchlistPath, 'utf8')
+      const j = JSON.parse(raw)
+      prev = Array.isArray(j.symbols) ? j.symbols : []
+    } catch { /* fresh */ }
+    // Drop entries older than 14 days
+    const cutoff = Date.now() - 14 * 86400_000
+    prev = prev.filter(p => new Date(p.addedAt).getTime() >= cutoff)
+    // Append today's misses (dedup against prev by symbol)
+    const seenSyms = new Set(prev.map(p => p.symbol))
+    for (const r of deduped) {
+      if (r.caught) continue
+      const sym = r.symbol.toUpperCase()
+      if (!isRealSym(sym)) continue
+      if (seenSyms.has(sym)) continue
+      prev.push({
+        addedAt: ts,
+        symbol: sym,
+        gainPct: r.gainPct,
+        reason: r.diagnosis[0] ?? 'missed',
+      })
+    }
+    // Sort by recency × gain
+    prev.sort((a, b) => new Date(b.addedAt).getTime() - new Date(a.addedAt).getTime())
+    const out = {
+      generatedAt: ts,
+      windowDays: 14,
+      total: prev.length,
+      newToday: prev.filter(p => p.addedAt === ts).length,
+      symbols: prev,
+    }
+    await fs.writeFile(watchlistPath, JSON.stringify(out, null, 2))
+    log.ok('MISS-ANALYZER', `watchlist updated: ${out.total} symbols (${out.newToday} new today) → next scan will force-include these`)
+  } catch (e) {
+    log.warn('MISS-ANALYZER', `watchlist persist failed: ${(e as Error).message}`)
+  }
+
   return {
     generatedAt: ts,
     totalGainers: gainers.length,
@@ -208,4 +259,19 @@ export async function runMissAnalysis(): Promise<{
     rows: deduped,
     diagnoses: diagnosisCounts,
   }
+}
+
+// Auxiliary export: read the current miss-driven watchlist so the scanner
+// universe can prepend these symbols. Returns the unique symbol set.
+export async function getMissWatchlist(): Promise<string[]> {
+  try {
+    const watchlistPath = path.join(SNAP_DIR, '..', 'miss-watchlist.json')
+    const raw = await fs.readFile(watchlistPath, 'utf8')
+    const j = JSON.parse(raw)
+    if (Array.isArray(j.symbols)) {
+      const syms: string[] = j.symbols.map((s: any) => String(s.symbol).toUpperCase())
+      return Array.from(new Set(syms))
+    }
+  } catch { /* none yet */ }
+  return []
 }
