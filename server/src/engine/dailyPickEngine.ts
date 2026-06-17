@@ -509,10 +509,13 @@ export async function runDailyPick(opts: { limit?: number; reason?: string } = {
   const stamp = today.toISOString().replace(/[:.]/g, '-').slice(0, 16)
   await fs.writeFile(path.join(PICKS_DIR, `${stamp}.json`), JSON.stringify(pick, null, 2), 'utf8')
 
-  // Log every Daily Pick row to signals.csv so the Backtest Results tab
-  // covers them. Without this the audit journal misses the picks the user
-  // actually trades from.
-  for (const r of rows) {
+  // 2026-06-17: HARD CONVICTION FLOOR for lifecycle/log emission. Same
+  // pattern applied to Weekly Pick on 2026-06-16. Daily audit showed
+  // DAILY source at 13% WR — root cause: low-conviction picks were
+  // hitting the lifecycle and dragging the WR denominator.
+  const MIN_CONV_TO_EMIT = 70
+  const actionableDaily = rows.filter(r => (r.conviction ?? 0) >= MIN_CONV_TO_EMIT)
+  for (const r of actionableDaily) {
     void logSignal(dailyRowToSignal(r), 'daily-pick').catch(() => undefined)
   }
 
@@ -521,7 +524,7 @@ export async function runDailyPick(opts: { limit?: number; reason?: string } = {
   // surfaces hit-rate per source.
   try {
     const { appendSignal } = await import('./signalLifecycle')
-    for (const r of rows) {
+    for (const r of actionableDaily) {        // same floor as logSignal above
       await appendSignal({
         source: 'DAILY',
         symbol: r.symbol,

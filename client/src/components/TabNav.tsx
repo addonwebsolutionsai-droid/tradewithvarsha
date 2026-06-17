@@ -82,6 +82,9 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   const tops = PUBLIC_MODE ? [
     // 2026-06-16: Superstar Picks — top-10 Indian investors' holdings ×
     // our signal scoring. Highest-conviction tab when "actively loading".
+    { to: '/bulk-deals',   label: '📡 Footprint',  icon: <Activity size={14} />,
+      acc: null, highProb: true,
+      title: 'NSE Bulk Deals — real institutional + superstar footprint feed, end-of-day with buyer/seller names. THE actual smart-money tracks.' },
     { to: '/superstar',    label: '🌟 Superstar',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: "India's top 10 investors (Jhunjhunwala / Damani / Kacholia / Kedia / Dolly Khanna / Goel / Singhania / Kela / Porinju / Mukul Agrawal) — their holdings × our signal scoring. NEW/INCREASED stake + technical confirm = highest edge." },

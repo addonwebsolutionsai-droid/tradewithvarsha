@@ -393,6 +393,45 @@ async function triggerSuperstarScan(): Promise<void> {
   })()
 }
 
+// NSE Bulk Deals tracker — the actual smart-money footprint feed per
+// user directive ("there has to be some footprint of smart money...
+// we have to identify this ahead of their taking move"). Free, daily
+// EOD feed from NSE with buyer/seller names visible. Throttled 60-min
+// (NSE updates once per session).
+let bulkInflight: Promise<void> | null = null
+let bulkLastAt = 0
+const BULK_MIN_MS = 60 * 60_000
+
+async function triggerBulkDealsScan(): Promise<void> {
+  if (bulkInflight) return bulkInflight
+  if (Date.now() - bulkLastAt < BULK_MIN_MS) return
+  bulkInflight = (async () => {
+    const startedAt = new Date().toISOString()
+    try {
+      const { fetchTodaysBulkDeals, aggregateBySymbol } = await import('../data/nseBulkDeals')
+      const deals = await fetchTodaysBulkDeals()
+      const bySymbol = aggregateBySymbol(deals)
+      const out = {
+        generatedAt: startedAt,
+        totalDeals: deals.length,
+        superstarDeals: deals.filter(d => d.category === 'SUPERSTAR').length,
+        institutionDeals: deals.filter(d => d.category === 'INSTITUTION').length,
+        strongAccumulationCount: bySymbol.filter(s => s.signal === 'STRONG_ACCUMULATION').length,
+        strongDistributionCount: bySymbol.filter(s => s.signal === 'STRONG_DISTRIBUTION').length,
+        rows: bySymbol.slice(0, 100),
+        rawDeals: deals.slice(0, 200),
+      }
+      await fs.writeFile(path.join(SNAP_DIR, 'bulk-deals.json'), JSON.stringify(out, null, 2))
+      bulkLastAt = Date.now()
+      log.ok('PUBLIC-SNAP', `bulk-deals: ${deals.length} deals · ${out.strongAccumulationCount} strong-accum · ${out.strongDistributionCount} strong-dist`)
+    } catch (e) {
+      log.warn('PUBLIC-SNAP', `bulk-deals async: ${(e as Error).message}`)
+    } finally {
+      bulkInflight = null
+    }
+  })()
+}
+
 // Miss-analyzer — cross-references today's 5%+ gainers vs every scanner
 // to surface what we missed and WHY. Auto-tune feedback loop for the
 // daily self-improve cron. Throttled to 1× per 60 min (heavy: ~500
@@ -989,6 +1028,7 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   triggerMissAnalysis().catch(() => { /* logged inside */ })
   triggerGainerPostmortem().catch(() => { /* logged inside */ })
   triggerSuperstarScan().catch(() => { /* logged inside */ })
+  triggerBulkDealsScan().catch(() => { /* logged inside */ })
 
   // 6.8 Sector Rotation — 12 NIFTY sectoral indices ranked by relative
   // strength. Synchronous (only 12 candle fetches, fast).
