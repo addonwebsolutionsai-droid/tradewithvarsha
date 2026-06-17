@@ -490,13 +490,19 @@ export interface AccuracyReport {
   byConvictionTier: Record<string, { total: number; wins: number; winRate: number }>
 }
 
-export async function buildAccuracyReport(opts: { source?: string; daysBack?: number } = {}): Promise<AccuracyReport> {
+export async function buildAccuracyReport(opts: { source?: string; daysBack?: number; minConviction?: number } = {}): Promise<AccuracyReport> {
   const daysBack = opts.daysBack ?? 30
   const source = opts.source ?? 'ALL'
+  // 2026-06-17 user complaint: "headline says 38% WR but users only see
+  // and trade conv ≥ 70 picks". Filter the entire report to the user-
+  // visible bar so what's shown matches what's actually tradeable.
+  // The lifecycle still records everything; we just stop counting noise.
+  const minConv = opts.minConviction ?? 70
   const cutoff = Date.now() - daysBack * 86_400_000
   const store = await loadStore()
   const inWindow = Object.values(store.entries).filter(e => {
     if (source !== 'ALL' && e.source !== source) return false
+    if ((e.conviction ?? 0) < minConv) return false       // skip un-tradeable noise
     return new Date(e.firstSeenAt).getTime() >= cutoff
   })
   const byStatus: Record<string, number> = {}
@@ -547,11 +553,14 @@ export async function buildAccuracyReport(opts: { source?: string; daysBack?: nu
     bySource[srcKey].total++
     if (win) bySource[srcKey].wins++
     if (loss) bySource[srcKey].sl++
-    // By tier
+    // By tier — TRACK both total AND closed (wins+sl) so we can compute
+    // the right WR. Previously this used total in the denominator which
+    // included PENDING + SUPERSEDED rows, producing fake 1-2% rates.
     const tier = tierBucket(e.conviction)
-    if (!byTier[tier]) byTier[tier] = { total: 0, wins: 0, winRate: 0 }
+    if (!byTier[tier]) byTier[tier] = { total: 0, wins: 0, winRate: 0, slCount: 0 } as any
     byTier[tier].total++
     if (win) byTier[tier].wins++
+    if (loss) (byTier[tier] as any).slCount = ((byTier[tier] as any).slCount ?? 0) + 1
   }
   for (const k of Object.keys(bySource)) {
     const s = bySource[k]
@@ -559,8 +568,11 @@ export async function buildAccuracyReport(opts: { source?: string; daysBack?: nu
     s.winRate = tradedCount ? +(s.wins / tradedCount * 100).toFixed(1) : 0
   }
   for (const k of Object.keys(byTier)) {
-    const t = byTier[k]
-    t.winRate = t.total ? +(t.wins / t.total * 100).toFixed(1) : 0
+    const t = byTier[k] as any
+    // Correct WR = wins / (wins + SL_HIT closures). PENDING/SUPERSEDED
+    // never trade, so they must NOT be in the denominator.
+    const closed = t.wins + (t.slCount ?? 0)
+    t.winRate = closed ? +(t.wins / closed * 100).toFixed(1) : 0
   }
   return {
     source, daysBack,
