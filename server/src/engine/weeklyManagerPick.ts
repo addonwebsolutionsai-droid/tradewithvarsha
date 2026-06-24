@@ -689,7 +689,9 @@ export async function runWeeklyPick(
             const w2 = wave2Continuation.scan(candlesD, sym)
             if (w2) {
               wave2Hits++
-              const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.5 : avgTurnoverCr >= 5 ? 1.2 : 1.0
+              // 2026-06-24: softened from 1.5/1.2/1.0 → 1.2/1.1/1.0. The 1.5×
+              // bias for NIFTY-500 was crowding out legitimate small-cap setups.
+              const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.2 : avgTurnoverCr >= 5 ? 1.1 : 1.0
               const rank = (50 + w2.score * 3) * visibilityMult
               prerank.push({
                 symbol: sym, preBreakoutScore: w2.score * 10, ret5d, ret20d, rank,
@@ -747,7 +749,8 @@ export async function runWeeklyPick(
         if (proximityToHigh > 0.35) preBreakoutScore -= 10
         preBreakoutScore -= Math.min(20, Math.abs(ret5d) * 2)
         preBreakoutScore -= Math.min(15, Math.abs(ret20d) * 0.5)
-        const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.5 : avgTurnoverCr >= 5 ? 1.2 : 1.0
+        // 2026-06-24: same softening as wave-2 lane — was crowding out small-caps.
+        const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.2 : avgTurnoverCr >= 5 ? 1.1 : 1.0
         let rank = Math.max(0, preBreakoutScore) * visibilityMult
         // 2026-06-04: in 'momentum-old' mode use the pre-4fca35e formula
         // (rank = |mom5| × 0.6 + volBurst × 4). This rewards extended names
@@ -897,22 +900,13 @@ export async function runWeeklyPick(
     }
   }))
 
-  // WELL-KNOWN BONUS (SOFT) — boost conviction +3 for NIFTY-500 names and
-  // +5 for ≥₹1,000 Cr market cap. Don't HARD-cull — that breaks discovery
-  // of legitimate high-momentum mid/small-caps that happen to lack screener.in
-  // data. The prerank multiplier (2× for NIFTY-500) already biases the
-  // shortlist heavily toward known names.
-  for (const r of top80) {
-    const mcMatch = (r.shareholdingNote || '').match(/MC\s*₹\s*([\d.]+)\s*(K?Cr)/i)
-    let mcCr = 0
-    if (mcMatch) {
-      mcCr = parseFloat(mcMatch[1])
-      if (mcMatch[2].toUpperCase() === 'KCR') mcCr *= 1000
-    }
-    if (mcCr >= 1000) r.conviction = Math.min(100, r.conviction + 5)
-    else if (mcCr >= 500) r.conviction = Math.min(100, r.conviction + 3)
-    if (nifty500Set.has(r.symbol.toUpperCase())) r.conviction = Math.min(100, r.conviction + 3)
-  }
+  // 2026-06-24: REMOVED size/index conviction boosters per user audit
+  // ("stocks below ₹300 not appearing"). The +5/+3 mcap and +3 NIFTY-500
+  // boosts cumulatively shoved every <₹300 small-cap below the conv≥70
+  // floor even when their technicals were identical to a large-cap pick.
+  // The ONLY user-approved anchor in memory is the NO-BRAINER (FII↑ +
+  // promoter stable + pledge<5%) — handled above with +5 conviction.
+  // Full-market discovery + technical conviction stands on its own.
 
   // Re-sort after no-brainer bonus + well-known soft bias
   top80.sort((a, b) => {
