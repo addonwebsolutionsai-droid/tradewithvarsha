@@ -835,6 +835,9 @@ export async function runWeeklyPick(
         // can show FIRST_BASE vs WAVE_2 badge. WAVE_2 picks get a flow note
         // explaining they're post-pullback continuation candidates.
         ;(row as any).bucket = cand.bucket
+        // 2026-06-24: attach candles for pattern-memory match (stripped before
+        // serialization since it's a heavy field).
+        ;(row as any).__candles = candlesD
         if (cand.bucket === 'WAVE_2') {
           row.flowNote = `🔄 WAVE-2 CONTINUATION · ${cand.reasons.slice(0, 2).join(' · ')}`
         }
@@ -907,6 +910,27 @@ export async function runWeeklyPick(
   // The ONLY user-approved anchor in memory is the NO-BRAINER (FII↑ +
   // promoter stable + pledge<5%) — handled above with +5 conviction.
   // Full-market discovery + technical conviction stands on its own.
+
+  // 2026-06-24: PATTERN MEMORY BOOST — when a candidate's daily-candle
+  // fingerprint matches a previously-winning setup (same EMA stack, similar
+  // ADX/RSI/ATR/range), award +5 conviction. Memory is populated by the
+  // lifecycle on every T-hit (see patternMemory.ts).
+  try {
+    const { matchesKnownWinner } = await import('./patternMemory')
+    await Promise.all(top80.map(async r => {
+      try {
+        const candles = (r as any).__candles
+        if (!candles || candles.length < 30) return
+        const m = await matchesKnownWinner({ candles, direction: r.direction })
+        if (m.match) {
+          r.conviction = Math.min(100, r.conviction + 5)
+          r.flowNote = `${r.flowNote ?? ''} · 🧠 matches ${m.winnerSymbol} ${m.status}`.trim().replace(/^· /, '')
+        }
+      } catch { /* skip on per-symbol error */ }
+    }))
+    // Strip the candle array before serialization (heavy field)
+    for (const r of top80) delete (r as any).__candles
+  } catch { /* pattern store missing — first run */ }
 
   // Re-sort after no-brainer bonus + well-known soft bias
   top80.sort((a, b) => {

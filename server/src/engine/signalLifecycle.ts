@@ -456,6 +456,24 @@ export async function checkTransitions(ltps: Map<string, number>): Promise<Trans
         e.hitPrice = ltp
         e.hitAt = now
         transitions.push({ entry: e, from, to: hitTarget, hitPrice: ltp })
+        // 2026-06-24: pattern memory — capture the daily candle fingerprint
+        // for this winning setup so future scans can match similar shapes
+        // and award conviction bonus. Fire-and-forget; failure is silent.
+        void (async () => {
+          try {
+            const { getCandles } = await import('../data')
+            const candles = await getCandles(e.symbol, '1D' as any, 60)
+            if (candles && candles.length >= 30) {
+              const { recordWinningPattern } = await import('./patternMemory')
+              await recordWinningPattern({
+                symbol: e.symbol,
+                status: hitTarget!,
+                direction: e.direction as 'BUY' | 'SHORT',
+                candlesAtEntry: candles,
+              })
+            }
+          } catch { /* silent */ }
+        })()
         continue
       }
       // Timeout: 28 days in ACTIVE without target

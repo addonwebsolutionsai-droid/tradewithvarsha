@@ -631,8 +631,8 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
       // users see real flow, not just a near-empty live book.
       const lcSymbols = new Set(deduped.map(e => e.symbol))
       const freshExtras = (opts.weeklyPick.rows ?? [])
-        .filter(r => (r.conviction ?? 0) >= 65 && !lcSymbols.has(r.symbol))
-        .sort((a, b) => (b.conviction ?? 0) - (a.conviction ?? 0))
+        .filter((r: any) => (r.conviction ?? 0) >= 65 && !lcSymbols.has(r.symbol))
+        .sort((a: any, b: any) => (b.conviction ?? 0) - (a.conviction ?? 0))
         .slice(0, Math.max(0, 50 - deduped.length))
       wRows = deduped.map(e => ({
         symbol: e.symbol,
@@ -994,24 +994,33 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
     log.warn('PUBLIC-SNAP', `multi-strike-oi: ${(e as Error).message}`)
   }
 
-  // 6.6c Archive snapshot — SUPERSEDED / EXPIRED / SL_HIT lifecycle
-  // entries from last 30 days. Saturday cleanup per user.
+  // 6.6c Archive snapshot — EVERY signal lifecycle event over last 365 days.
+  // 2026-06-24: per user audit ("you are removing all past signals... in
+  // archive tab with date filter we should log EACH AND EVERY signal, target
+  // hit, SL hit, or changed view, this will help in improvise").
+  // Includes: T1/T2/T3 hits, SL hits, SUPERSEDED, EXPIRED, INVALIDATED.
+  // UI filters by date — no server-side deletion.
   try {
     const histRaw = await fs.readFile(path.join(SNAP_DIR, 'signals-history.json'), 'utf8').catch(() => null)
     if (histRaw) {
       const hist = JSON.parse(histRaw)
-      const cutoff = Date.now() - 30 * 86400_000
-      const ARCHIVE_STATUS = new Set(['SUPERSEDED', 'EXPIRED', 'SL_HIT', 'INVALIDATED'])
+      const cutoff = Date.now() - 365 * 86400_000
+      // Every TERMINAL status — anything that's no longer ACTIVE/PENDING.
+      const ARCHIVE_STATUS = new Set([
+        'SUPERSEDED', 'EXPIRED', 'SL_HIT', 'INVALIDATED',
+        'T1_HIT', 'T2_HIT', 'T3_HIT',
+      ])
       const archive = (hist.signals ?? []).filter((s: any) => {
         if (!ARCHIVE_STATUS.has(s.status)) return false
         const changedAt = s.statusChangedAt ?? s.generatedAt
         const ts = changedAt ? new Date(changedAt).getTime() : 0
         return ts >= cutoff
       })
-      // Strict dedup by (symbol, direction, statusChangedAt)
+      // Strict dedup by (symbol, direction, status, statusChangedAt) — keep
+      // a row for EACH lifecycle transition so the user sees the full audit.
       const seen = new Set<string>()
       const deduped = archive.filter((s: any) => {
-        const k = `${s.symbol}|${s.direction}|${s.statusChangedAt ?? s.generatedAt ?? ''}`
+        const k = `${s.symbol}|${s.direction}|${s.status}|${s.statusChangedAt ?? s.generatedAt ?? ''}`
         if (seen.has(k)) return false
         seen.add(k); return true
       }).sort((a: any, b: any) => {
@@ -1023,10 +1032,10 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
       for (const s of deduped) byStatus[s.status] = (byStatus[s.status] ?? 0) + 1
       const out = {
         generatedAt: ts,
-        windowDays: 30,
+        windowDays: 365,
         total: deduped.length,
         byStatus,
-        rows: deduped.slice(0, 200),
+        rows: deduped.slice(0, 2000),
       }
       await fs.writeFile(path.join(SNAP_DIR, 'archive.json'), JSON.stringify(out, null, 2))
       files.push('archive.json')

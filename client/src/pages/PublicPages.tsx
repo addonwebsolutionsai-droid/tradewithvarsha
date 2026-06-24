@@ -2077,14 +2077,33 @@ export function PublicArchivePage(): JSX.Element {
     refetchInterval: 10 * 60_000, retry: false,
   })
   const raw: any[] = data?.rows ?? []
+  // 2026-06-24: full audit log — every lifecycle transition for the user-
+  // selectable window (no server-side deletion).
+  const [dateRange, setDateRange] = useState<'7d' | '30d' | '90d' | '180d' | '365d' | 'all'>('30d')
+  const [statusFilter, setStatusFilter] = useState<string>('ALL')
+  const rangeCutoff = (() => {
+    if (dateRange === 'all') return 0
+    const d = { '7d': 7, '30d': 30, '90d': 90, '180d': 180, '365d': 365 }[dateRange]
+    return Date.now() - d * 86400_000
+  })()
+  const filtered = raw.filter(r => {
+    if (statusFilter !== 'ALL' && r.status !== statusFilter) return false
+    if (rangeCutoff > 0) {
+      const t = new Date(r.statusChangedAt ?? r.generatedAt ?? 0).getTime()
+      if (t < rangeCutoff) return false
+    }
+    return true
+  })
   const dedupedAll: any[] = (() => {
     const seen = new Set<string>(); const out: any[] = []
-    for (const r of raw) {
-      const k = `${r.symbol}|${r.direction}|${r.statusChangedAt ?? ''}`
+    for (const r of filtered) {
+      const k = `${r.symbol}|${r.direction}|${r.status}|${r.statusChangedAt ?? ''}`
       if (seen.has(k)) continue; seen.add(k); out.push(r)
     }
     return out
   })()
+  const statusCounts: Record<string, number> = {}
+  for (const r of filtered) statusCounts[r.status] = (statusCounts[r.status] ?? 0) + 1
   const { rows: archiveRows, headerProps: aHeader, sortIndicator: aSort } = useSortableTable<any>(
     dedupedAll,
     { key: 'statusChangedAt', dir: 'desc' },
@@ -2111,14 +2130,39 @@ export function PublicArchivePage(): JSX.Element {
           </div>
           {data?.byStatus && (
             <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              FULL ARCHIVE · 365d retention · {data.total} total events
+              {' · '}
               {Object.entries(data.byStatus).map(([k, v]) => `${k}: ${v}`).join(' · ')}
             </div>
           )}
         </div>
       </div>
+      {/* 2026-06-24: date range filter + status filter — every lifecycle event
+          is kept; UI lets the user slice the audit history. */}
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Range:</span>
+        {(['7d', '30d', '90d', '180d', '365d', 'all'] as const).map(r => (
+          <button key={r} onClick={() => setDateRange(r)}
+            className={`px-2 py-1 rounded border ${dateRange === r ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+            {r === 'all' ? 'All time' : r}
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Status:</span>
+        {(['ALL', 'T1_HIT', 'T2_HIT', 'T3_HIT', 'SL_HIT', 'SUPERSEDED', 'EXPIRED', 'INVALIDATED'] as const).map(s => {
+          const cnt = s === 'ALL' ? Object.values(statusCounts).reduce((a, b) => a + b, 0) : (statusCounts[s] ?? 0)
+          return (
+            <button key={s} onClick={() => setStatusFilter(s)}
+              className={`px-2 py-1 rounded border ${statusFilter === s ? 'bg-accent-violet/20 border-accent-violet text-accent-violet' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+              {s.replace('_', ' ')} ({cnt})
+            </button>
+          )
+        })}
+      </div>
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load archive. Refreshes every 10 min." />}
-      {!isLoading && !error && dedupedAll.length === 0 && <Empty msg="Archive is empty. Closed/superseded signals will appear here over time." />}
+      {!isLoading && !error && dedupedAll.length === 0 && <Empty msg="No events in this window. Try a wider range or different status filter." />}
       {dedupedAll.length > 0 && (
         <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
           <table className="w-full text-[12px]">
