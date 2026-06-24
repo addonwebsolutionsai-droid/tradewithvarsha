@@ -625,6 +625,15 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
         'SL_HIT',                          // closed loss
       ])
       const deduped = Array.from(bestPerSym.values()).filter(e => !HIDE.has(e.status))
+      // 2026-06-24: Merge fresh scan candidates (conv ≥ 65) that aren't yet
+      // in lifecycle. Lifecycle floor (conv ≥ 70 + source ≠ WATCHLIST) protects
+      // the accuracy denominator; public feed surfaces MORE quality setups so
+      // users see real flow, not just a near-empty live book.
+      const lcSymbols = new Set(deduped.map(e => e.symbol))
+      const freshExtras = (opts.weeklyPick.rows ?? [])
+        .filter(r => (r.conviction ?? 0) >= 65 && !lcSymbols.has(r.symbol))
+        .sort((a, b) => (b.conviction ?? 0) - (a.conviction ?? 0))
+        .slice(0, Math.max(0, 50 - deduped.length))
       wRows = deduped.map(e => ({
         symbol: e.symbol,
         direction: e.direction,
@@ -653,6 +662,15 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
         statusChangedAt: e.statusChangedAt,
         convictionPrev: e.convictionPrev,
       }))
+      // Append the fresh-scan extras using the public projection so the
+      // shape matches lifecycle rows. lifecycleStatus = 'FRESH' marks them
+      // as not-yet-in-lifecycle (no statusChangedAt, no lifecycleId).
+      if (freshExtras.length) {
+        const projected = publicWeeklyRows(freshExtras).map(p => ({
+          ...p, lifecycleStatus: 'FRESH', firstSeenAt: ts, lastSeenAt: ts,
+        }))
+        wRows = [...wRows, ...projected]
+      }
     } else {
       wRows = publicWeeklyRows(opts.weeklyPick.rows ?? [])
     }

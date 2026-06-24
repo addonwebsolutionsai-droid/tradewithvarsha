@@ -21,8 +21,26 @@ import { log } from '../util/logger'
 const DATA_DIR = path.resolve(__dirname, '../../data')
 const TUNE_FILE = path.join(DATA_DIR, 'auto-tune.json')
 
-const TARGET_WIN_RATE = 80
-const MIN_TRADES_FOR_DECISION = 10        // need at least 10 closed trades per strategy to decide
+// 2026-06-24: realistic per-strategy targets after spotting auto-tune was
+// ratcheting EVERY strategy's confluence to 6/6 on noisy n=10–20 samples.
+// A pro trader chases asymmetric edge, not a fairy-tale 80% headline.
+// Real-world targets per strategy archetype:
+//   - oi-flow: 75% (option-flow asymmetry, strongest edge)
+//   - options-mtf: 65% (options + multi-timeframe)
+//   - swing / weekly / monthly: 60% (multi-day breakouts)
+//   - intraday-reversal: 60% (mean-reversion in liquids)
+//   - commodity: 55% (noisier asset class)
+//   - default: 60%
+function targetWinRateFor(strategy: string): number {
+  if (strategy === 'oi-flow') return 75
+  if (strategy === 'options-mtf' || strategy === 'options') return 65
+  if (strategy === 'commodity') return 55
+  return 60
+}
+
+// 2026-06-24: bumped from 10 → 30. n=10 has ±15% standard error — system
+// was tightening on noise. n=30 gives ±9%, decisions become statistical.
+const MIN_TRADES_FOR_DECISION = 30
 const MAX_CONFLUENCE_BUMP = 6             // absolute ceiling on confluence floor
 const MAX_ADX_BUMP = 30
 
@@ -75,8 +93,9 @@ export async function runSelfImprove(): Promise<AutoTune> {
     }
     const cur = tune.overrides[strategy] ??= {}
     const winRate = s.winRatePct
+    const target = targetWinRateFor(strategy)
 
-    if (winRate < TARGET_WIN_RATE - 5) {
+    if (winRate < target - 5) {
       // Underperforming → tighten
       const oldConf = cur.minConfluence ?? defaultConfluence(strategy)
       const newConf = Math.min(MAX_CONFLUENCE_BUMP, oldConf + 1)
@@ -85,33 +104,36 @@ export async function runSelfImprove(): Promise<AutoTune> {
         const adj = {
           ts: new Date().toISOString(), strategy, metric: 'minConfluence',
           from: oldConf, to: newConf,
-          reason: `Win-rate ${winRate}% < ${TARGET_WIN_RATE}% over ${s.trades} closed trades — raised confluence floor`,
+          reason: `Win-rate ${winRate}% < target ${target}% over ${s.trades} closed trades — raised confluence floor`,
         }
         tune.adjustments.unshift(adj)
         await logIssue({
           severity: 'MED',
           description: `Auto-tune: ${strategy} confluence ${oldConf} → ${newConf}`,
-          rootCause: `Live win-rate ${winRate}% under target ${TARGET_WIN_RATE}% over ${s.trades} trades`,
+          rootCause: `Live win-rate ${winRate}% under target ${target}% over ${s.trades} trades`,
           fixApplied: 'Tightened entry filter; expect lower signal volume + higher hit rate',
           verified: false,
         })
-        decisions.push(`${strategy}: tightened minConfluence ${oldConf}→${newConf} (wr ${winRate}%)`)
+        decisions.push(`${strategy}: tightened minConfluence ${oldConf}→${newConf} (wr ${winRate}% < ${target}%)`)
       }
-    } else if (winRate >= TARGET_WIN_RATE + 5 && s.trades >= 30) {
-      // Outperforming AND large sample → safe to relax slightly to find more setups
+    } else if (winRate >= target + 5) {
+      // Outperforming → safe to relax (we already passed the n≥30 sample gate)
+      // Floor of 2 is the absolute sanity bound (we never go below that).
       const oldConf = cur.minConfluence ?? defaultConfluence(strategy)
-      const newConf = Math.max(defaultConfluence(strategy) - 1, oldConf - 1)
-      if (newConf !== oldConf) {
+      const newConf = Math.max(2, oldConf - 1)
+      if (newConf < oldConf) {
         cur.minConfluence = newConf
         tune.adjustments.unshift({
           ts: new Date().toISOString(), strategy, metric: 'minConfluence',
           from: oldConf, to: newConf,
-          reason: `Win-rate ${winRate}% > ${TARGET_WIN_RATE + 5}% over ${s.trades} trades — relaxed slightly to surface more setups`,
+          reason: `Win-rate ${winRate}% > target+5 (${target + 5}%) over ${s.trades} trades — relaxed to surface more setups`,
         })
-        decisions.push(`${strategy}: relaxed minConfluence ${oldConf}→${newConf} (wr ${winRate}%)`)
+        decisions.push(`${strategy}: relaxed minConfluence ${oldConf}→${newConf} (wr ${winRate}% > ${target + 5}%)`)
+      } else {
+        decisions.push(`${strategy}: wr ${winRate}% outperforming, already at default ${def}, holding`)
       }
     } else {
-      decisions.push(`${strategy}: wr ${winRate}% within band, no change`)
+      decisions.push(`${strategy}: wr ${winRate}% within band [${target - 5}, ${target + 5}], no change`)
     }
   }
 
