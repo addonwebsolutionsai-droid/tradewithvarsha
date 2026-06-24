@@ -28,7 +28,7 @@ export function useSortableTable<T>(
   sortKey: string
   sortDir: SortDir
   toggleSort: (key: string) => void
-  headerProps: (key: string) => {
+  headerProps: (key: string, extraClass?: string) => {
     onClick: () => void
     className: string
     'aria-sort': 'ascending' | 'descending' | 'none'
@@ -70,9 +70,9 @@ export function useSortableTable<T>(
     return <span className="text-accent-cyan ml-0.5">{state.dir === 'asc' ? '▲' : '▼'}</span>
   }
 
-  const headerProps = (key: string): { onClick: () => void; className: string; 'aria-sort': 'ascending' | 'descending' | 'none'; style: React.CSSProperties } => ({
+  const headerProps = (key: string, extraClass?: string): { onClick: () => void; className: string; 'aria-sort': 'ascending' | 'descending' | 'none'; style: React.CSSProperties } => ({
     onClick: () => toggleSort(key),
-    className: 'cursor-pointer select-none hover:text-accent-cyan transition-colors',
+    className: ['cursor-pointer select-none hover:text-accent-cyan transition-colors', extraClass].filter(Boolean).join(' '),
     'aria-sort': state.key === key && state.dir === 'asc' ? 'ascending' : state.key === key && state.dir === 'desc' ? 'descending' : 'none',
     style: { userSelect: 'none' },
   })

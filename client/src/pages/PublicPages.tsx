@@ -255,6 +255,22 @@ export function PublicSignalsHistoryPage(): JSX.Element {
   const wins = counts.t1 + counts.t2 + counts.t3
   const overallHit = counts.completed > 0 ? +(wins / counts.completed * 100).toFixed(1) : 0
   const sources = Array.from(new Set(all.map(r => r.source))).sort()
+  // 2026-06-24: per-column sort wraps the dropdown sort. Clicking a column
+  // overrides. No click → dropdown wins.
+  const { rows: sortedRows, headerProps, sortIndicator } = useSortableTable<any>(
+    rows, { key: '', dir: null },
+    {
+      symbol: r => r.symbol ?? '',
+      conviction: r => r.conviction ?? 0,
+      entry: r => r.entryPriceLow ?? r.entryPrice ?? 0,
+      stopLoss: r => r.stopLoss ?? 0,
+      target1: r => r.target1 ?? 0,
+      target2: r => r.target2 ?? 0,
+      target3: r => r.target3 ?? 0,
+      status: r => r.status ?? '',
+      realisedPct: r => r.realisedPct ?? -Infinity,
+    },
+  )
   return (
     <div className="space-y-4">
       <Banner emoji="📈" title="Track Record"
@@ -328,19 +344,19 @@ export function PublicSignalsHistoryPage(): JSX.Element {
           <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1080 }}>
             <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
               <tr>
-                <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Stock</th>
-                <th className="text-center px-3 py-3 whitespace-nowrap">Conviction</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">SL</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T1</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T2</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T3</th>
-                <th className="text-center px-3 py-3 whitespace-nowrap">Status</th>
-                <th className="text-right px-2 py-3 whitespace-nowrap">% Return</th>
+                <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]')}>Stock{sortIndicator('symbol')}</th>
+                <th {...headerProps('conviction', 'text-center px-3 py-3 whitespace-nowrap')}>Conviction{sortIndicator('conviction')}</th>
+                <th {...headerProps('entry', 'text-right px-2 py-3 whitespace-nowrap text-accent-cyan')}>Entry{sortIndicator('entry')}</th>
+                <th {...headerProps('stopLoss', 'text-right px-2 py-3 whitespace-nowrap text-accent-red')}>SL{sortIndicator('stopLoss')}</th>
+                <th {...headerProps('target1', 'text-right px-2 py-3 whitespace-nowrap text-accent-green')}>T1{sortIndicator('target1')}</th>
+                <th {...headerProps('target2', 'text-right px-2 py-3 whitespace-nowrap text-accent-green')}>T2{sortIndicator('target2')}</th>
+                <th {...headerProps('target3', 'text-right px-2 py-3 whitespace-nowrap text-accent-green')}>T3{sortIndicator('target3')}</th>
+                <th {...headerProps('status', 'text-center px-3 py-3 whitespace-nowrap')}>Status{sortIndicator('status')}</th>
+                <th {...headerProps('realisedPct', 'text-right px-2 py-3 whitespace-nowrap')}>% Return{sortIndicator('realisedPct')}</th>
               </tr>
             </thead>
             <tbody>
-              {rows.slice(0, 200).map((r, i) => {
+              {sortedRows.slice(0, 200).map((r, i) => {
                 const isWin = ['T1_HIT', 'T2_HIT', 'T3_HIT'].includes(r.status)
                 const isLoss = r.status === 'SL_HIT'
                 const rowBg = isWin ? 'bg-accent-green/10' : isLoss ? 'bg-accent-red/10' : 'bg-ink-800'
@@ -773,23 +789,38 @@ function SignalTable({ rows }: { rows: any[] }): JSX.Element {
   // 2026-05-27: consistent 2-row design (Options + Intraday). Row 1 numerics,
   // Row 2 = ⚡ Setup reasoning under the instrument name. Sticky header +
   // sticky first column + 78vh scroll, matching every other public tab.
+  // 2026-06-24: per-column sort.
+  const { rows: sorted, headerProps, sortIndicator } = useSortableTable<any>(
+    rows,
+    { key: 'score', dir: 'desc' },
+    {
+      instrument: r => r.instrument ?? '',
+      grade: r => r.grade ?? '',
+      score: r => r.score ?? 0,
+      entry: r => r.entry ?? 0,
+      stopLoss: r => r.stopLoss ?? 0,
+      target1: r => r.target1 ?? 0,
+      target2: r => r.target2 ?? 0,
+      riskReward: r => Number(r.riskReward) || 0,
+    },
+  )
   return (
     <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
       <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 980 }}>
         <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
           <tr>
-            <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]">Instrument</th>
-            <th className="text-center px-2 py-3 whitespace-nowrap">Grade</th>
-            <th className="text-center px-2 py-3 whitespace-nowrap">Score</th>
-            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-cyan">Entry</th>
-            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-red">SL</th>
-            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T1</th>
-            <th className="text-right px-2 py-3 whitespace-nowrap text-accent-green">T2</th>
-            <th className="text-center px-2 py-3 whitespace-nowrap">R:R</th>
+            <th {...headerProps('instrument', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]')}>Instrument{sortIndicator('instrument')}</th>
+            <th {...headerProps('grade', 'text-center px-2 py-3 whitespace-nowrap')}>Grade{sortIndicator('grade')}</th>
+            <th {...headerProps('score', 'text-center px-2 py-3 whitespace-nowrap')}>Score{sortIndicator('score')}</th>
+            <th {...headerProps('entry', 'text-right px-2 py-3 whitespace-nowrap text-accent-cyan')}>Entry{sortIndicator('entry')}</th>
+            <th {...headerProps('stopLoss', 'text-right px-2 py-3 whitespace-nowrap text-accent-red')}>SL{sortIndicator('stopLoss')}</th>
+            <th {...headerProps('target1', 'text-right px-2 py-3 whitespace-nowrap text-accent-green')}>T1{sortIndicator('target1')}</th>
+            <th {...headerProps('target2', 'text-right px-2 py-3 whitespace-nowrap text-accent-green')}>T2{sortIndicator('target2')}</th>
+            <th {...headerProps('riskReward', 'text-center px-2 py-3 whitespace-nowrap')}>R:R{sortIndicator('riskReward')}</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
+          {sorted.map((r, i) => {
             const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
             const ts = new Date(r.timestamp).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Kolkata' })
             const td = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono`
@@ -1452,11 +1483,29 @@ export function PublicSectorRotationPage(): JSX.Element {
     queryKey: ['public-sector-rotation'], queryFn: () => snapshots.sectorRotation(),
     refetchInterval: 5 * 60_000, retry: false,
   })
-  const rows: any[] = data?.rows ?? []
+  const rawRows: any[] = data?.rows ?? []
   const trendColor: Record<string, string> = {
     LEADING: '#00c853', IMPROVING: '#00bcd4', NEUTRAL: '#9e9e9e',
     WEAKENING: '#ff9800', LAGGING: '#ff1744',
   }
+  const TREND_RANK: Record<string, number> = {
+    LEADING: 5, IMPROVING: 4, NEUTRAL: 3, WEAKENING: 2, LAGGING: 1,
+  }
+  const { rows, headerProps, sortIndicator } = useSortableTable<any>(
+    rawRows,
+    { key: 'rotationScore', dir: 'desc' },
+    {
+      label: r => r.label ?? '',
+      trend: r => TREND_RANK[r.trend] ?? 0,
+      rotationScore: r => r.rotationScore ?? 0,
+      ret5d: r => r.ret5d ?? 0,
+      ret20d: r => r.ret20d ?? 0,
+      relStr5d: r => r.relStr5d ?? 0,
+      relStr20d: r => r.relStr20d ?? 0,
+      pctAboveEma21: r => r.pctAboveEma21 ?? 0,
+      volRatio5_20: r => r.volRatio5_20 ?? 0,
+    },
+  )
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-violet/10 to-accent-cyan/5 border border-accent-violet/40 rounded-lg">
@@ -1485,16 +1534,13 @@ export function PublicSectorRotationPage(): JSX.Element {
           <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 900 }}>
             <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
               <tr>
-                <th className="text-left px-3 py-3">Sector</th>
-                <th className="text-center px-2 py-3">Trend</th>
-                <th className="text-right px-2 py-3">Score</th>
-                <th className="text-right px-2 py-3">LTP</th>
-                <th className="text-right px-2 py-3">5d</th>
-                <th className="text-right px-2 py-3">20d</th>
-                <th className="text-right px-2 py-3">5d (vs NIFTY)</th>
-                <th className="text-right px-2 py-3">20d (vs NIFTY)</th>
-                <th className="text-right px-2 py-3">EMA21 breadth</th>
-                <th className="text-right px-2 py-3">Vol×</th>
+                <th {...headerProps('label', 'text-left px-3 py-3')}>Sector{sortIndicator('label')}</th>
+                <th {...headerProps('trend', 'text-center px-2 py-3')}>Trend{sortIndicator('trend')}</th>
+                <th {...headerProps('rotationScore', 'text-right px-2 py-3')}>Score{sortIndicator('rotationScore')}</th>
+                <th {...headerProps('ret5d', 'text-right px-2 py-3')}>5d{sortIndicator('ret5d')}</th>
+                <th {...headerProps('ret20d', 'text-right px-2 py-3')}>20d{sortIndicator('ret20d')}</th>
+                <th {...headerProps('pctAboveEma21', 'text-right px-2 py-3')}>EMA21 breadth{sortIndicator('pctAboveEma21')}</th>
+                <th {...headerProps('volRatio5_20', 'text-right px-2 py-3')}>Vol×{sortIndicator('volRatio5_20')}</th>
               </tr>
             </thead>
             <tbody>
@@ -1796,22 +1842,38 @@ export function PublicBulkDealsPage(): JSX.Element {
 }
 
 function BulkDealsTable({ rows }: { rows: any[] }): JSX.Element {
+  const SIG_RANK: Record<string, number> = {
+    STRONG_ACCUMULATION: 5, ACCUMULATION: 4, NEUTRAL: 3, DISTRIBUTION: 2, STRONG_DISTRIBUTION: 1,
+  }
+  const { rows: sorted, headerProps, sortIndicator } = useSortableTable<any>(
+    rows,
+    { key: 'netBuyValueCr', dir: 'desc' },
+    {
+      symbol: r => r.symbol ?? '',
+      signal: r => SIG_RANK[r.signal] ?? 0,
+      netBuyValueCr: r => r.netBuyValueCr ?? 0,
+      totalDealCount: r => r.totalDealCount ?? 0,
+      superstars: r => (r.superstarBuys ?? 0) - (r.superstarSells ?? 0),
+      institutions: r => (r.institutionBuys ?? 0) - (r.institutionSells ?? 0),
+      topBuyers: r => (r.topBuyers ?? []).join(' '),
+    },
+  )
   return (
     <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '60vh' }}>
       <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 760 }}>
         <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
           <tr>
-            <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
-            <th className="text-center px-2 py-3">Signal</th>
-            <th className="text-right px-2 py-3">Net ₹Cr</th>
-            <th className="text-center px-2 py-3">Deals</th>
-            <th className="text-center px-2 py-3">Superstars</th>
-            <th className="text-center px-2 py-3">Institutions</th>
-            <th className="text-left px-3 py-3">Top buyers/sellers</th>
+            <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500')}>Symbol{sortIndicator('symbol')}</th>
+            <th {...headerProps('signal', 'text-center px-2 py-3')}>Signal{sortIndicator('signal')}</th>
+            <th {...headerProps('netBuyValueCr', 'text-right px-2 py-3')}>Net ₹Cr{sortIndicator('netBuyValueCr')}</th>
+            <th {...headerProps('totalDealCount', 'text-center px-2 py-3')}>Deals{sortIndicator('totalDealCount')}</th>
+            <th {...headerProps('superstars', 'text-center px-2 py-3')}>Superstars{sortIndicator('superstars')}</th>
+            <th {...headerProps('institutions', 'text-center px-2 py-3')}>Institutions{sortIndicator('institutions')}</th>
+            <th {...headerProps('topBuyers', 'text-left px-3 py-3')}>Top buyers/sellers{sortIndicator('topBuyers')}</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
+          {sorted.map((r, i) => {
             const sigColor = r.signal === 'STRONG_ACCUMULATION' ? '#00c853'
               : r.signal === 'ACCUMULATION' ? '#5fd4ff'
               : r.signal === 'STRONG_DISTRIBUTION' ? '#ff1744'
@@ -2023,6 +2085,21 @@ export function PublicArchivePage(): JSX.Element {
     }
     return out
   })()
+  const { rows: archiveRows, headerProps: aHeader, sortIndicator: aSort } = useSortableTable<any>(
+    dedupedAll,
+    { key: 'statusChangedAt', dir: 'desc' },
+    {
+      symbol: r => r.symbol ?? '',
+      direction: r => r.direction ?? '',
+      status: r => r.status ?? '',
+      entry: r => r.entry ?? 0,
+      stopLoss: r => r.stopLoss ?? 0,
+      hitPrice: r => r.hitPrice ?? 0,
+      realisedPct: r => r.realisedPct ?? -Infinity,
+      statusChangedAt: r => r.statusChangedAt ?? '',
+      source: r => r.source ?? '',
+    },
+  )
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-neutral-700/20 to-neutral-800/10 border border-neutral-600/40 rounded-lg">
@@ -2047,19 +2124,19 @@ export function PublicArchivePage(): JSX.Element {
           <table className="w-full text-[12px]">
             <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
               <tr>
-                <th className="text-left px-3 py-3">Symbol</th>
-                <th className="text-center px-2 py-3">Dir</th>
-                <th className="text-center px-2 py-3">Status</th>
-                <th className="text-right px-2 py-3">Entry</th>
-                <th className="text-right px-2 py-3">SL</th>
-                <th className="text-right px-2 py-3">Hit</th>
-                <th className="text-right px-2 py-3">Realised</th>
-                <th className="text-left px-3 py-3">When</th>
-                <th className="text-left px-3 py-3">Source</th>
+                <th {...aHeader('symbol', 'text-left px-3 py-3')}>Symbol{aSort('symbol')}</th>
+                <th {...aHeader('direction', 'text-center px-2 py-3')}>Dir{aSort('direction')}</th>
+                <th {...aHeader('status', 'text-center px-2 py-3')}>Status{aSort('status')}</th>
+                <th {...aHeader('entry', 'text-right px-2 py-3')}>Entry{aSort('entry')}</th>
+                <th {...aHeader('stopLoss', 'text-right px-2 py-3')}>SL{aSort('stopLoss')}</th>
+                <th {...aHeader('hitPrice', 'text-right px-2 py-3')}>Hit{aSort('hitPrice')}</th>
+                <th {...aHeader('realisedPct', 'text-right px-2 py-3')}>Realised{aSort('realisedPct')}</th>
+                <th {...aHeader('statusChangedAt', 'text-left px-3 py-3')}>When{aSort('statusChangedAt')}</th>
+                <th {...aHeader('source', 'text-left px-3 py-3')}>Source{aSort('source')}</th>
               </tr>
             </thead>
             <tbody>
-              {dedupedAll.map((r, i) => {
+              {archiveRows.map((r, i) => {
                 const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
                 const statusColor = r.status === 'SL_HIT' ? '#ff5e7c' : r.status === 'SUPERSEDED' ? '#9e9e9e' : '#ffb454'
                 return (
@@ -2569,26 +2646,44 @@ function rowToFields(r: any): UniformPickFields {
 }
 
 export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCount?: number }): JSX.Element {
+  // 2026-06-24: per-column sort on every public tab. Default sort = conviction
+  // desc (matches what most parents already do).
   const fields = rows.map(rowToFields)
+  const { rows: sorted, headerProps, sortIndicator } = useSortableTable<any>(
+    fields,
+    { key: 'conviction', dir: 'desc' },
+    {
+      symbol: r => r.symbol ?? '',
+      direction: r => r.direction ?? '',
+      conviction: r => r.conviction ?? 0,
+      ltp: r => r.ltp ?? 0,
+      entry: r => r.entry ?? 0,
+      stopLoss: r => r.stopLoss ?? 0,
+      target1: r => r.target1 ?? 0,
+      target2: r => r.target2 ?? 0,
+      target3: r => r.target3 ?? 0,
+      reason: r => (r.shareholdingNote ?? r.flowNote ?? '') as string,
+    },
+  )
   return (
     <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '80vh' }}>
       <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 920 }}>
         <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
           <tr>
-            <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
-            <th className="text-center px-2 py-3">Dir</th>
-            <th className="text-center px-2 py-3">Conv</th>
-            <th className="text-right px-2 py-3 text-neutral-300">LTP</th>
-            <th className="text-right px-2 py-3 text-accent-cyan">Entry</th>
-            <th className="text-right px-2 py-3 text-accent-red">SL</th>
-            <th className="text-right px-2 py-3 text-accent-green">T1</th>
-            <th className="text-right px-2 py-3 text-accent-green">T2</th>
-            <th className="text-right px-2 py-3 text-accent-green">T3</th>
-            <th className="text-left px-3 py-3">Reason</th>
+            <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500')}>Symbol{sortIndicator('symbol')}</th>
+            <th {...headerProps('direction', 'text-center px-2 py-3')}>Dir{sortIndicator('direction')}</th>
+            <th {...headerProps('conviction', 'text-center px-2 py-3')}>Conv{sortIndicator('conviction')}</th>
+            <th {...headerProps('ltp', 'text-right px-2 py-3 text-neutral-300')}>LTP{sortIndicator('ltp')}</th>
+            <th {...headerProps('entry', 'text-right px-2 py-3 text-accent-cyan')}>Entry{sortIndicator('entry')}</th>
+            <th {...headerProps('stopLoss', 'text-right px-2 py-3 text-accent-red')}>SL{sortIndicator('stopLoss')}</th>
+            <th {...headerProps('target1', 'text-right px-2 py-3 text-accent-green')}>T1{sortIndicator('target1')}</th>
+            <th {...headerProps('target2', 'text-right px-2 py-3 text-accent-green')}>T2{sortIndicator('target2')}</th>
+            <th {...headerProps('target3', 'text-right px-2 py-3 text-accent-green')}>T3{sortIndicator('target3')}</th>
+            <th {...headerProps('reason', 'text-left px-3 py-3')}>Reason{sortIndicator('reason')}</th>
           </tr>
         </thead>
         <tbody>
-          {fields.map((r, i) => {
+          {sorted.map((r, i) => {
             const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
             // 2026-06-16 per user: high-probability rows (conv ≥ 85) get a
             // subtle green tint so they jump out visually within each tab.
@@ -2649,25 +2744,41 @@ export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCou
 }
 
 function OldWeeklyTable({ rows }: { rows: any[] }): JSX.Element {
+  const { rows: sorted, headerProps, sortIndicator } = useSortableTable<any>(
+    rows,
+    { key: 'conviction', dir: 'desc' },
+    {
+      symbol: r => r.symbol ?? '',
+      direction: r => r.direction ?? '',
+      conviction: r => r.conviction ?? 0,
+      ltp: r => r.ltp ?? 0,
+      entry: r => r.entryPrice ?? r.entryPriceLow ?? 0,
+      stopLoss: r => r.stopLoss ?? 0,
+      target1: r => r.target1 ?? 0,
+      target2: r => r.target2 ?? 0,
+      target3: r => r.target3 ?? 0,
+      reason: r => (r.shareholdingNote ?? r.flowNote ?? '') as string,
+    },
+  )
   return (
     <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '80vh' }}>
       <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 920 }}>
         <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
           <tr>
-            <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
-            <th className="text-center px-2 py-3">Dir</th>
-            <th className="text-center px-2 py-3">Conv</th>
-            <th className="text-right px-2 py-3 text-neutral-300">LTP</th>
-            <th className="text-right px-2 py-3 text-accent-cyan">Entry</th>
-            <th className="text-right px-2 py-3 text-accent-red">SL</th>
-            <th className="text-right px-2 py-3 text-accent-green">T1</th>
-            <th className="text-right px-2 py-3 text-accent-green">T2</th>
-            <th className="text-right px-2 py-3 text-accent-green">T3</th>
-            <th className="text-left px-3 py-3">Reason</th>
+            <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500')}>Symbol{sortIndicator('symbol')}</th>
+            <th {...headerProps('direction', 'text-center px-2 py-3')}>Dir{sortIndicator('direction')}</th>
+            <th {...headerProps('conviction', 'text-center px-2 py-3')}>Conv{sortIndicator('conviction')}</th>
+            <th {...headerProps('ltp', 'text-right px-2 py-3 text-neutral-300')}>LTP{sortIndicator('ltp')}</th>
+            <th {...headerProps('entry', 'text-right px-2 py-3 text-accent-cyan')}>Entry{sortIndicator('entry')}</th>
+            <th {...headerProps('stopLoss', 'text-right px-2 py-3 text-accent-red')}>SL{sortIndicator('stopLoss')}</th>
+            <th {...headerProps('target1', 'text-right px-2 py-3 text-accent-green')}>T1{sortIndicator('target1')}</th>
+            <th {...headerProps('target2', 'text-right px-2 py-3 text-accent-green')}>T2{sortIndicator('target2')}</th>
+            <th {...headerProps('target3', 'text-right px-2 py-3 text-accent-green')}>T3{sortIndicator('target3')}</th>
+            <th {...headerProps('reason', 'text-left px-3 py-3')}>Reason{sortIndicator('reason')}</th>
           </tr>
         </thead>
         <tbody>
-          {rows.map((r, i) => {
+          {sorted.map((r, i) => {
             const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff1744'
             const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
             return (
