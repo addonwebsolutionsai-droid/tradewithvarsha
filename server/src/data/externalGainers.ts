@@ -22,6 +22,11 @@ export interface ExternalGainer {
   name?: string
   gainPct: number
   sources: string[]
+  /** 2026-06-25: from NSE bhavcopy — high delivery % = institutional accum */
+  deliveryPct?: number
+  /** Close, turnover for downstream sizing/filtering */
+  close?: number
+  turnoverCr?: number
 }
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16 Safari/605.1.15'
@@ -131,6 +136,64 @@ async function parseGroww(html: string): Promise<{ symbol: string; gainPct: numb
   return out
 }
 
+/**
+ * NSE bhavcopy CSV — the canonical post-close mover list. Free, complete,
+ * delivery % included. Tries today, then walks back up to 5 trading days
+ * to find the most recent published file (handles weekends/holidays).
+ *
+ * Why this matters: scraping finology/trendlyne/groww/kotak gives us a
+ * filtered slice of ~30-150 names. NSE bhavcopy gives EVERY symbol's
+ * O/H/L/C + delivery %. With 100% coverage the miss-analyzer learns from
+ * every mover we missed, not just the top of one site's list. The pattern-
+ * memory loop then compounds this into smarter pre-move scans.
+ */
+async function fetchNSEBhavcopyGainers(): Promise<{ symbol: string; gainPct: number; deliveryPct: number; close: number; turnoverCr: number }[]> {
+  const ddmmyyyy = (d: Date): string => {
+    const dd = String(d.getDate()).padStart(2, '0')
+    const mm = String(d.getMonth() + 1).padStart(2, '0')
+    return `${dd}${mm}${d.getFullYear()}`
+  }
+  for (let back = 0; back < 6; back++) {
+    const d = new Date(); d.setDate(d.getDate() - back)
+    const url = `https://nsearchives.nseindia.com/products/content/sec_bhavdata_full_${ddmmyyyy(d)}.csv`
+    try {
+      const res = await axios.get(url, { headers: HEADERS, timeout: 20_000, validateStatus: () => true, responseType: 'text' })
+      if (res.status !== 200 || typeof res.data !== 'string' || !res.data.startsWith('SYMBOL')) continue
+      const lines = res.data.split('\n').slice(1).filter(l => l.trim())
+      const rows: { symbol: string; gainPct: number; deliveryPct: number; close: number; turnoverCr: number }[] = []
+      for (const line of lines) {
+        const c = line.split(',').map(x => x.trim())
+        if (c.length < 15) continue
+        const series = c[1]
+        if (series !== 'EQ' && series !== 'BE' && series !== 'BZ') continue
+        const sym = c[0]
+        const prev = parseFloat(c[3])
+        const close = parseFloat(c[8])
+        const turnoverLacs = parseFloat(c[11])
+        const delivPer = parseFloat(c[14])
+        if (!Number.isFinite(prev) || !Number.isFinite(close) || prev <= 0) continue
+        const gainPct = ((close - prev) / prev) * 100
+        if (gainPct < 5) continue
+        if (close < 10) continue        // skip pennies
+        rows.push({
+          symbol: sym,
+          gainPct: +gainPct.toFixed(2),
+          deliveryPct: Number.isFinite(delivPer) ? delivPer : 0,
+          close,
+          turnoverCr: Number.isFinite(turnoverLacs) ? +(turnoverLacs / 100).toFixed(2) : 0,
+        })
+      }
+      rows.sort((a, b) => b.gainPct - a.gainPct)
+      log.ok('EXT-GAINERS', `NSE bhavcopy ${ddmmyyyy(d)}: ${rows.length} gainers ≥5% (full coverage, with delivery %)`)
+      return rows
+    } catch {
+      continue
+    }
+  }
+  log.warn('EXT-GAINERS', 'NSE bhavcopy fetch failed for last 6 days')
+  return []
+}
+
 export async function fetchExternalGainers(): Promise<{
   bySite: Record<string, { symbol: string; gainPct: number }[]>
   merged: ExternalGainer[]
@@ -144,8 +207,11 @@ export async function fetchExternalGainers(): Promise<{
     { url: 'https://www.kotakneo.com/share-market-today/top-gainers/nifty-midcap-150/',  src: 'kotak-midcap150' },
     { url: 'https://www.kotakneo.com/share-market-today/top-gainers/nifty-smallcap-100/',src: 'kotak-smallcap100' },
   ]
-  log.info('EXT-GAINERS', `fetching gainers from 3 base sites + ${KOTAK_URLS.length} Kotak Neo pages...`)
-  const [finHtml, trendHtml, growwHtml, ...kotakHtmls] = await Promise.all([
+  log.info('EXT-GAINERS', `fetching gainers from NSE bhavcopy (canonical) + 3 web sites + ${KOTAK_URLS.length} Kotak Neo pages...`)
+  // 2026-06-25: NSE bhavcopy = canonical source. Web scrapers retained as
+  // secondary confirmation but they fail silently when sites JS-render.
+  const [bhav, finHtml, trendHtml, growwHtml, ...kotakHtmls] = await Promise.all([
+    fetchNSEBhavcopyGainers(),
     fetchHtml('https://ticker.finology.in/market/top-gainers'),
     fetchHtml('https://trendlyne.com/stock-screeners/price-based/top-gainers/today/'),
     fetchHtml('https://groww.in/markets/top-gainers'),
@@ -160,7 +226,7 @@ export async function fetchExternalGainers(): Promise<{
     const rows = html ? await parseKotakNeo(html).catch(() => []) : []
     kotakResults.push({ src: KOTAK_URLS[i].src, rows })
   }
-  log.info('EXT-GAINERS', `finology=${fin.length} · trendlyne=${trend.length} · groww=${groww.length} · kotak=[${kotakResults.map(k => `${k.src.replace('kotak-', '')}:${k.rows.length}`).join(' ')}]`)
+  log.info('EXT-GAINERS', `nse-bhavcopy=${bhav.length} · finology=${fin.length} · trendlyne=${trend.length} · groww=${groww.length} · kotak=[${kotakResults.map(k => `${k.src.replace('kotak-', '')}:${k.rows.length}`).join(' ')}]`)
 
   // Merge with source tracking
   const map = new Map<string, ExternalGainer>()
@@ -175,6 +241,14 @@ export async function fetchExternalGainers(): Promise<{
       }
     }
   }
+  // bhavcopy first so its richer fields (deliveryPct, close, turnoverCr)
+  // become the authoritative record for each symbol.
+  for (const r of bhav) {
+    map.set(r.symbol, {
+      symbol: r.symbol, gainPct: r.gainPct, sources: ['nse-bhavcopy'],
+      deliveryPct: r.deliveryPct, close: r.close, turnoverCr: r.turnoverCr,
+    })
+  }
   add(fin, 'finology')
   add(trend, 'trendlyne')
   add(groww, 'groww')
@@ -182,6 +256,7 @@ export async function fetchExternalGainers(): Promise<{
 
   const merged = Array.from(map.values()).sort((a, b) => b.gainPct - a.gainPct)
   const bySite: Record<string, { symbol: string; gainPct: number }[]> = {
+    'nse-bhavcopy': bhav.map(r => ({ symbol: r.symbol, gainPct: r.gainPct })),
     finology: fin, trendlyne: trend, groww: groww,
   }
   for (const k of kotakResults) bySite[k.src] = k.rows

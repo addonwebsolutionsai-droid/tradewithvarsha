@@ -83,7 +83,8 @@ export async function runMissAnalysis(): Promise<{
   // Combine NIFTY-500 internal scan with external scraped gainers (finology +
   // trendlyne + groww). Externals catch micro/small caps NIFTY-500 misses.
   const internal = await fetchTodayGainers()
-  let externalGainers: { symbol: string; gainPct: number; sources: string[] }[] = []
+  type ExtG = import('../data/externalGainers').ExternalGainer
+  let externalGainers: ExtG[] = []
   try {
     const { fetchExternalGainers } = await import('../data/externalGainers')
     const ext = await fetchExternalGainers()
@@ -246,6 +247,37 @@ export async function runMissAnalysis(): Promise<{
     }
     await fs.writeFile(watchlistPath, JSON.stringify(out, null, 2))
     log.ok('MISS-ANALYZER', `watchlist updated: ${out.total} symbols (${out.newToday} new today) → next scan will force-include these`)
+
+    // 2026-06-25: HIGH-DELIVERY ACCUMULATION WATCHLIST. From the NSE
+    // bhavcopy we know each gainer's delivery %. Stocks that gained 5%+
+    // TODAY with delivery ≥ 45% are almost always institutional
+    // accumulation (intraday-only pumps have delivery 15-25%). These
+    // become tomorrow's PRIORITY pre-move targets — second-leg setups
+    // before retail piles in. Saved as a separate file so the weekly
+    // engine can give them +5 prerank instead of just +universe entry.
+    try {
+      const hiDeliveryPath = path.join(SNAP_DIR, '..', 'high-delivery-watchlist.json')
+      const hiDelivery = externalGainers
+        .filter(g => g.sources.includes('nse-bhavcopy') && (g.deliveryPct ?? 0) >= 45)
+        .map(g => ({
+          symbol: g.symbol,
+          gainPct: g.gainPct,
+          deliveryPct: g.deliveryPct,
+          close: g.close,
+          turnoverCr: g.turnoverCr,
+          capturedAt: ts,
+        }))
+        .sort((a, b) => (b.deliveryPct ?? 0) - (a.deliveryPct ?? 0))
+      await fs.writeFile(hiDeliveryPath, JSON.stringify({
+        generatedAt: ts,
+        criterion: 'gainPct ≥ 5% AND deliveryPct ≥ 45% (institutional accumulation marker)',
+        total: hiDelivery.length,
+        symbols: hiDelivery,
+      }, null, 2))
+      log.ok('MISS-ANALYZER', `high-delivery watchlist: ${hiDelivery.length} institutional-accumulation candidates for tomorrow's pre-move queue`)
+    } catch (e) {
+      log.warn('MISS-ANALYZER', `high-delivery persist failed: ${(e as Error).message}`)
+    }
   } catch (e) {
     log.warn('MISS-ANALYZER', `watchlist persist failed: ${(e as Error).message}`)
   }
@@ -259,6 +291,21 @@ export async function runMissAnalysis(): Promise<{
     rows: deduped,
     diagnoses: diagnosisCounts,
   }
+}
+
+// 2026-06-25: high-delivery watchlist — yesterday's gainers with delivery
+// ≥ 45%. These are PRIORITY pre-move targets (institutional accumulation,
+// usually followed by a second leg within 2-5 sessions).
+export async function getHighDeliveryWatchlist(): Promise<Set<string>> {
+  try {
+    const watchlistPath = path.join(SNAP_DIR, '..', 'high-delivery-watchlist.json')
+    const raw = await fs.readFile(watchlistPath, 'utf8')
+    const j = JSON.parse(raw)
+    if (Array.isArray(j.symbols)) {
+      return new Set(j.symbols.map((s: any) => String(s.symbol).toUpperCase()))
+    }
+  } catch { /* none yet */ }
+  return new Set()
 }
 
 // Auxiliary export: read the current miss-driven watchlist so the scanner

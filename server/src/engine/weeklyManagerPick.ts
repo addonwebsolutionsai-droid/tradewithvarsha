@@ -618,9 +618,17 @@ export async function runWeeklyPick(
   // gainers our scanner missed). Closes the auto-tune feedback loop —
   // names we missed yesterday get scanned today. Deduped against base.
   let forcedInclude: string[] = []
+  let hiDeliverySet = new Set<string>()
   try {
-    const { getMissWatchlist } = await import('./missAnalyzer')
+    const { getMissWatchlist, getHighDeliveryWatchlist } = await import('./missAnalyzer')
     forcedInclude = await getMissWatchlist()
+    // 2026-06-25: yesterday's gainers with delivery ≥ 45% (institutional
+    // accumulation marker). These get a prerank boost so they make TOP_N.
+    hiDeliverySet = await getHighDeliveryWatchlist()
+    // Also force-include them in the universe in case they're not in NSE_ALL
+    for (const s of hiDeliverySet) {
+      if (!forcedInclude.includes(s)) forcedInclude.push(s)
+    }
   } catch { /* none yet */ }
   const baseSet = new Set(baseUniverse.map(s => s.toUpperCase()))
   const newlyForced = forcedInclude.filter(s => !baseSet.has(s.toUpperCase()))
@@ -692,7 +700,10 @@ export async function runWeeklyPick(
               // 2026-06-24: softened from 1.5/1.2/1.0 → 1.2/1.1/1.0. The 1.5×
               // bias for NIFTY-500 was crowding out legitimate small-cap setups.
               const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.2 : avgTurnoverCr >= 5 ? 1.1 : 1.0
-              const rank = (50 + w2.score * 3) * visibilityMult
+              // 2026-06-25: high-delivery accumulation bonus — institutional
+              // footprint from yesterday's bhavcopy. Catches second-leg moves.
+              const hiDeliveryBonus = hiDeliverySet.has(sym.toUpperCase()) ? 1.4 : 1.0
+              const rank = (50 + w2.score * 3) * visibilityMult * hiDeliveryBonus
               prerank.push({
                 symbol: sym, preBreakoutScore: w2.score * 10, ret5d, ret20d, rank,
                 candles: candlesD, avgTurnoverCr,
@@ -751,7 +762,9 @@ export async function runWeeklyPick(
         preBreakoutScore -= Math.min(15, Math.abs(ret20d) * 0.5)
         // 2026-06-24: same softening as wave-2 lane — was crowding out small-caps.
         const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.2 : avgTurnoverCr >= 5 ? 1.1 : 1.0
-        let rank = Math.max(0, preBreakoutScore) * visibilityMult
+        // 2026-06-25: high-delivery accumulation bonus — same as wave-2 lane.
+        const hiDeliveryBonus = hiDeliverySet.has(sym.toUpperCase()) ? 1.4 : 1.0
+        let rank = Math.max(0, preBreakoutScore) * visibilityMult * hiDeliveryBonus
         // 2026-06-04: in 'momentum-old' mode use the pre-4fca35e formula
         // (rank = |mom5| × 0.6 + volBurst × 4). This rewards extended names
         // and is intentionally INCLUDED ONLY for the Old-WeeklyPick tab so
