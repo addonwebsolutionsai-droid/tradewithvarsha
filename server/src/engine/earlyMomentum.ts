@@ -50,6 +50,9 @@ export interface EarlyMomentumRow {
   score: number                     // 0-100 composite
   tier: 'EARLY' | 'WAVE_2' | 'CONFIRMED'
   reasons: string[]
+  /** 2026-06-25: shareholding context in Signature column per user request */
+  shareholdingNote?: string         // "FII 16.1% (1.5%↑) · DII 8% · P 39.5% · MC ₹12.7KCr"
+  noBrainerBet?: boolean
   capturedAt: string
 }
 
@@ -81,9 +84,11 @@ export async function runEarlyMomentumScan(opts: ScanOpts = {}): Promise<EarlyMo
   let cursor = 0
   let scanned = 0, priceFiltered = 0, dataMissing = 0
 
+  let etfFiltered = 0
   await Promise.all(Array.from({ length: concurrency }, async () => {
     while (cursor < universe.length) {
       const sym = universe[cursor++]
+      if (isLikelyETF(sym)) { etfFiltered++; continue }
       try {
         const candles = await getCandles(sym, '1D' as any, 30)
         if (!candles || candles.length < 21) { dataMissing++; continue }
@@ -96,6 +101,7 @@ export async function runEarlyMomentumScan(opts: ScanOpts = {}): Promise<EarlyMo
       } catch { /* skip symbol on error */ }
     }
   }))
+  log.info('EARLY-MOMENTUM', `Rejected ${etfFiltered} ETFs/index-funds upstream`)
 
   rows.sort((a, b) => b.score - a.score)
   const top = rows.slice(0, topN)
@@ -107,34 +113,59 @@ function scoreCandidate(symbol: string, candles: Candle[], bhav: BhavRow | undef
   const last = candles[candles.length - 1]
   if (!last || candles.length < 21) return null
 
-  // — Volume thrust (today vs 20-day avg) —
-  const vol20 = candles.slice(-21, -1).reduce((s, c) => s + c.volume, 0) / 20
-  const volSurgeX = vol20 > 0 ? last.volume / vol20 : 1
-  const volScore = volSurgeX >= 3 ? 30 : volSurgeX >= 2 ? 22 : volSurgeX >= 1.5 ? 15 : volSurgeX >= 1.2 ? 8 : 0
+  // 2026-06-25 PRE-MOVE REWRITE: previous scoring rewarded TODAY's range +
+  // TODAY's volume, which surfaced stocks AFTER they had already moved.
+  // The whole point of this tab is to catch the setup BEFORE the move. So:
+  //   - REWARD pre-build over 5 days, NOT today's spike
+  //   - REWARD tight base, low realised volatility
+  //   - REWARD delivery accumulation (sticky money already positioning)
+  //   - PENALIZE stocks that already moved >3% today or >10% in 5d
 
-  // — Delivery surge (today vs 20-day avg) — institutional footprint —
+  const prevClose = candles[candles.length - 2]?.close ?? last.close
+  const pctChangeToday = +((last.close - prevClose) / prevClose * 100).toFixed(2)
+  const ref5 = candles[candles.length - 6]?.close ?? last.close
+  const ref20 = candles[candles.length - 21]?.close ?? last.close
+  const ret5dPct = +((last.close - ref5) / ref5 * 100).toFixed(2)
+  const ret20dPct = +((last.close - ref20) / ref20 * 100).toFixed(2)
+  const rsi14 = computeRSI(candles, 14)
+
+  // — Volume PRE-BUILD: avg of last 5 days vs 20d avg (excludes today).
+  //   Detects sustained accumulation, not single-day spike.
+  const vol20 = candles.slice(-21, -1).reduce((s, c) => s + c.volume, 0) / 20
+  const vol5avg = candles.slice(-6, -1).reduce((s, c) => s + c.volume, 0) / 5
+  const volPreBuildX = vol20 > 0 ? vol5avg / vol20 : 1
+  // Single-day spike still tracked for the table, but doesn't drive score.
+  const volSurgeX = vol20 > 0 ? last.volume / vol20 : 1
+  const volScore = volPreBuildX >= 2.0 ? 25 : volPreBuildX >= 1.5 ? 18 : volPreBuildX >= 1.2 ? 12 : volPreBuildX >= 1.05 ? 6 : 0
+
+  // — Delivery accumulation (sticky money already positioning) —
   const deliveryPct = bhav?.deliveryPct ?? null
   let deliverySurgeX: number | null = null
   let deliveryScore = 0
   if (deliveryPct !== null && deliveryPct > 0) {
-    // We don't have a 20-day deliv avg without persistent storage, so use
-    // delivery % as a proxy: ≥ 55% = clear institutional footprint.
-    if (deliveryPct >= 65) { deliveryScore = 20; deliverySurgeX = deliveryPct / 35 }
-    else if (deliveryPct >= 55) { deliveryScore = 15; deliverySurgeX = deliveryPct / 35 }
-    else if (deliveryPct >= 45) { deliveryScore = 10; deliverySurgeX = deliveryPct / 35 }
-    else if (deliveryPct >= 35) { deliveryScore = 5 }
+    if (deliveryPct >= 65) { deliveryScore = 25; deliverySurgeX = deliveryPct / 35 }
+    else if (deliveryPct >= 55) { deliveryScore = 20; deliverySurgeX = deliveryPct / 35 }
+    else if (deliveryPct >= 45) { deliveryScore = 15; deliverySurgeX = deliveryPct / 35 }
+    else if (deliveryPct >= 35) { deliveryScore = 8 }
   }
 
-  // — Range expansion (today range / 20-day ATR) —
+  // — Range expansion (today range / 20-day ATR) — kept for table but
+  //   no longer rewarded; PENALTY if too large (means move started).
   const atr20 = computeATR(candles.slice(-21))
   const todayRange = last.high - last.low
   const rangeExpansionX = atr20 > 0 ? todayRange / atr20 : 1
-  const rangeScore = rangeExpansionX >= 2 ? 15 : rangeExpansionX >= 1.5 ? 10 : rangeExpansionX >= 1.2 ? 5 : 0
+  let rangeScore = 0
+  if (rangeExpansionX > 2) rangeScore = -10        // big bar = move started
+  else if (rangeExpansionX > 1.5) rangeScore = -5
 
-  // — Position vs 20d high —
+  // — Position vs 20d high — within 2-7% = pressing against resistance.
+  //   AT the high (<1%) means breakout already triggered — partial penalty.
   const hi20 = Math.max(...candles.slice(-20).map(c => c.high))
   const distFrom20HighPct = hi20 > 0 ? +((hi20 - last.close) / hi20 * 100).toFixed(2) : 100
-  const proxScore = distFrom20HighPct <= 1 ? 15 : distFrom20HighPct <= 3 ? 12 : distFrom20HighPct <= 5 ? 8 : 0
+  const proxScore = distFrom20HighPct >= 2 && distFrom20HighPct <= 5 ? 15
+    : distFrom20HighPct < 2 ? 8       // already breaking out
+    : distFrom20HighPct <= 8 ? 10
+    : 0
 
   // — EMA stack —
   const ema = (period: number): number => {
@@ -151,41 +182,52 @@ function scoreCandidate(symbol: string, candles: Candle[], bhav: BhavRow | undef
   else if (e9 > e21) { emaStack = 'MIXED'; emaScore = 5 }
   else if (e9 < e21 && e21 < e50) { emaStack = 'BEARISH'; emaScore = 0 }
 
-  // — Tight base (10d range as % of close) —
+  // — Tight base (10d range as % of close) — coiled spring —
   const last10 = candles.slice(-10)
   const hi10 = Math.max(...last10.map(c => c.high))
   const lo10 = Math.min(...last10.map(c => c.low))
   const baseTightnessPct = last.close > 0 ? +((hi10 - lo10) / last.close * 100).toFixed(2) : 100
-  const baseScore = baseTightnessPct <= 4 ? 10 : baseTightnessPct <= 7 ? 6 : baseTightnessPct <= 10 ? 3 : 0
+  const baseScore = baseTightnessPct <= 4 ? 20      // very tight = elite setup
+    : baseTightnessPct <= 6 ? 15
+    : baseTightnessPct <= 8 ? 10
+    : baseTightnessPct <= 12 ? 5
+    : 0
 
-  // — Trailing returns + RSI for context —
-  const ref5 = candles[candles.length - 6]?.close ?? last.close
-  const ref20 = candles[candles.length - 21]?.close ?? last.close
-  const ret5dPct = +((last.close - ref5) / ref5 * 100).toFixed(2)
-  const ret20dPct = +((last.close - ref20) / ref20 * 100).toFixed(2)
-  const prevClose = candles[candles.length - 2]?.close ?? last.close
-  const pctChangeToday = +((last.close - prevClose) / prevClose * 100).toFixed(2)
-  const rsi14 = computeRSI(candles, 14)
+  // — RSI coil — 50-65 is the sweet spot for breakouts; >70 = extended.
+  const rsiScore = rsi14 >= 50 && rsi14 <= 65 ? 10
+    : rsi14 >= 45 && rsi14 < 50 ? 6
+    : rsi14 > 65 && rsi14 <= 70 ? 4
+    : 0
 
-  const score = volScore + deliveryScore + rangeScore + proxScore + emaScore + baseScore
+  // ★ HARD PENALTIES for already-moved names ★
+  let extendedPenalty = 0
+  if (pctChangeToday > 5) extendedPenalty -= 25         // today's move already big
+  else if (pctChangeToday > 3) extendedPenalty -= 15
+  else if (pctChangeToday > 2) extendedPenalty -= 8
+  if (ret5dPct > 15) extendedPenalty -= 25              // 5d move already big
+  else if (ret5dPct > 10) extendedPenalty -= 15
+  else if (ret5dPct > 7) extendedPenalty -= 8
 
-  // — Tier classification —
-  // EARLY = pre-breakout, tight base + vol building (no big move yet)
-  // WAVE_2 = already up 5-15% in 5d, consolidating, primed for leg 2
-  // CONFIRMED = today's move + institutional footprint, in-progress
+  const score = Math.max(0, volScore + deliveryScore + rangeScore + proxScore + emaScore + baseScore + rsiScore + extendedPenalty)
+
+  // — Tier classification (pre-move-first) —
+  // EARLY    = setup is loaded but PRICE HASN'T MOVED YET (highest priority)
+  // WAVE_2   = first leg done (5-10%), consolidating tight, primed for leg 2
+  // CONFIRMED = already moving today — late but technically still actionable
   let tier: 'EARLY' | 'WAVE_2' | 'CONFIRMED'
-  if (pctChangeToday >= 3 && (deliveryPct ?? 0) >= 45) tier = 'CONFIRMED'
-  else if (ret5dPct >= 5 && ret5dPct <= 20 && baseTightnessPct <= 8) tier = 'WAVE_2'
+  if (pctChangeToday >= 3 || ret5dPct > 10) tier = 'CONFIRMED'
+  else if (ret5dPct >= 4 && ret5dPct <= 10 && baseTightnessPct <= 7) tier = 'WAVE_2'
   else tier = 'EARLY'
 
   const reasons: string[] = []
-  if (volSurgeX >= 1.5) reasons.push(`vol ${volSurgeX.toFixed(1)}× 20d`)
-  if (deliveryPct !== null && deliveryPct >= 45) reasons.push(`deliv ${deliveryPct.toFixed(0)}%`)
-  if (rangeExpansionX >= 1.5) reasons.push(`range ${rangeExpansionX.toFixed(1)}× ATR`)
-  if (distFrom20HighPct <= 3) reasons.push(`${distFrom20HighPct.toFixed(1)}% off 20d-hi`)
-  if (emaStack === 'BULLISH') reasons.push('EMA 9>21>50')
+  if (deliveryPct !== null && deliveryPct >= 55) reasons.push(`deliv ${deliveryPct.toFixed(0)}% (institutional)`)
+  else if (deliveryPct !== null && deliveryPct >= 45) reasons.push(`deliv ${deliveryPct.toFixed(0)}%`)
+  if (volPreBuildX >= 1.3) reasons.push(`5d vol ${volPreBuildX.toFixed(1)}× pre-build`)
   if (baseTightnessPct <= 5) reasons.push(`tight base ${baseTightnessPct.toFixed(1)}%`)
-  if (rsi14 >= 55 && rsi14 <= 70) reasons.push(`RSI ${rsi14.toFixed(0)} coiled`)
+  if (distFrom20HighPct >= 2 && distFrom20HighPct <= 5) reasons.push(`${distFrom20HighPct.toFixed(1)}% below 20d-hi`)
+  if (emaStack === 'BULLISH') reasons.push('EMA 9>21>50')
+  if (rsi14 >= 50 && rsi14 <= 65) reasons.push(`RSI ${rsi14.toFixed(0)} coiled`)
+  if (extendedPenalty < 0) reasons.push(`⚠️ ${pctChangeToday > 3 ? `up ${pctChangeToday.toFixed(1)}% today` : `up ${ret5dPct.toFixed(1)}% in 5d`}`)
 
   return {
     symbol,
@@ -206,6 +248,56 @@ function scoreCandidate(symbol: string, candles: Candle[], bhav: BhavRow | undef
     reasons,
     capturedAt: new Date().toISOString(),
   }
+}
+
+// 2026-06-25: ETF / index-fund / FoF detector. NSE bhavcopy lumps these
+// under SERIES='EQ' so we can't filter by series alone. Pattern-matches
+// the most common naming conventions to keep them out of the radar:
+//   - GoldBEES / NiftyBEES / NextBEES / LiquidBEES style → *BEES suffix
+//   - AMC-prefixed index trackers (HDFC*, ICICI*, KOTAK*, NIPPON*,
+//     MIRAE*, MOTILAL*, SBI*, AXIS*, UTI*, EDELWEISS*, BANDHAN*, TATA*)
+//     followed by index/factor names (NIFTY/NEXT/PSU/MID/SMALL/MOMENT/
+//     VALUE/QUAL/GROWTH/SENSEX/GOLD/SILVER/LIQUID/EQUAL/BANK[A-Z])
+//   - Common factor ETF names without AMC prefix (MOQUALITY, MOMGF,
+//     NEXT50BETA, LOWVOL, NV20, M50, EQUAL50, TOP10ADD, GILT*)
+// Whitelist of real listed companies that share AMC-name prefixes — must
+// NOT be filtered as ETFs even though they look like one.
+const STOCK_WHITELIST: Set<string> = new Set([
+  'HDFC', 'HDFCBANK', 'HDFCLIFE', 'HDFCAMC', 'HDFCNXT50',
+  'ICICIBANK', 'ICICIGI', 'ICICIPRULI',
+  'KOTAKBANK', 'KOTAKMAH',
+  'SBIN', 'SBILIFE', 'SBICARD',
+  'AXISBANK',
+  'NIPPONLT',           // Nippon Life India (AMC parent)
+  'UTIAMC',
+  'EDELWEISS',
+  'BANDHANBNK',
+  'TATAMOTORS', 'TATASTEEL', 'TATAPOWER', 'TATACONSUM', 'TATACHEM', 'TATAELXSI', 'TATACOMM', 'TATAINVEST', 'TATATECH', 'TATATEC',
+  'MOTILALOFS',         // Motilal Oswal parent
+  'MIRAEASSET',
+])
+
+const ETF_PATTERNS: RegExp[] = [
+  // Suffix-based
+  /BEES$/i,                                              // *BEES (Nippon's ETF family)
+  /ETF$/i,                                               // anything ending in "ETF"
+  /^[A-Z]+(50|100|200|250|500|1000)$/i,                  // letters then index size: MOALPHA50, M50, EQUAL50, NEXT50, MID150, MID250
+  /^LICN(IFTY|MID|NF|SMALL|GOLD|BANK|PSU|FN|N50|N\d+|VAL|GROWTH|MOM|QUAL)/i,
+  /^PSUBANK(ADD|BEES|BK)?$/i,                            // PSUBANK / PSUBANKADD / PSUBANKBEES
+  /^BANKPSU(ADD|BEES|BK)?$/i,                            // BANKPSU and variants
+  /^GILT/i,
+  /MOM(GF|ENT|FIVE)|MOQ(UAL)?|MOREALTY|MOMID|MOSMALL|MOLOWVOL|MONEXT|MOALPHA|MOQUALITY/i,
+  // AMC-prefixed factor/index trackers
+  /^(HDFC|ICICI|KOTAK|NIPPON|MIRAE|MOTILAL|SBI|AXIS|UTI|EDELWEISS|EDEL|BANDHAN|TATAMF|GROW|GROWW|ZERODHA|BHARAT|MAFANG|ULIFE|ABSL|BSL|BIRLA|DSP|FRANKLIN|INVESCO|QUANT|WHITEOAK)(NIFTY|NEXT|PSU|MIDCAP|SMALLCAP|MOMENT|VALUE|QUAL|GROWTH|SENSEX|GOLD|SILVER|LIQUID|EQUAL|NIF|BANK[A-Z]?|MID|SML|MNCG|FMCG|PHARMA|LOWVOL|ALPHA|IT|GS|MOM|FOF|TECH|N50|N100|N200|N500|B22)/i,
+  // Common factor / smart-beta / sector index ETFs without AMC prefix
+  /^(NIFTY|NEXT50|MIDCAP|SMALLCAP|EQUAL\d{2}|NV20|JUNIOR|LIQUID|SENSEX|MAFANG|TOP\d+ADD|LOWVOL|MOMENT|QUAL|VALUE)/i,
+  /(LIQUID|GS|GILT|GOLD|SILVER|GROWTH)\d?ETF$/i,
+]
+function isLikelyETF(sym: string): boolean {
+  const s = sym.toUpperCase()
+  if (STOCK_WHITELIST.has(s)) return false
+  for (const re of ETF_PATTERNS) if (re.test(s)) return true
+  return false
 }
 
 function computeATR(window: Candle[]): number {
@@ -271,9 +363,43 @@ async function loadBhavcopyDeliveryMap(): Promise<Map<string, BhavRow>> {
   return map
 }
 
+// — Shareholding enrichment for top rows (FII/DII/Promoter/MC in Signature) —
+async function enrichShareholding(rows: EarlyMomentumRow[]): Promise<void> {
+  if (rows.length === 0) return
+  const { scoreShareholding } = await import('../data/shareholding')
+  // Enrich in batches of 4 concurrent — screener.in is the bottleneck.
+  let cursor = 0
+  await Promise.all(Array.from({ length: 4 }, async () => {
+    while (cursor < rows.length) {
+      const r = rows[cursor++]
+      try {
+        const verdict = await scoreShareholding(r.symbol)
+        if (verdict.shp) {
+          const shp = verdict.shp
+          const fmtDelta = (d: number): string => {
+            if (d > 0.1) return ` (${d.toFixed(1)}%↑)`
+            if (d < -0.1) return ` (${Math.abs(d).toFixed(1)}%↓)`
+            return ''
+          }
+          const fii = `FII ${shp.fiiPct.toFixed(1)}%${fmtDelta(shp.fiiDeltaQoQ)}`
+          const dii = `DII ${shp.diiPct.toFixed(1)}%${fmtDelta(shp.diiDeltaQoQ)}`
+          const prom = `P ${shp.promoterPct.toFixed(1)}%${fmtDelta(shp.promoterDeltaQoQ)}`
+          const mc = shp.marketCapCr >= 1000
+            ? `${(shp.marketCapCr / 1000).toFixed(1)}KCr`
+            : shp.marketCapCr > 0 ? `${shp.marketCapCr.toFixed(0)}Cr` : '?'
+          r.shareholdingNote = `${fii} · ${dii} · ${prom} · MC ₹${mc}`
+          r.noBrainerBet = verdict.isNoBrainer
+        }
+      } catch { /* skip, leave blank */ }
+    }
+  }))
+}
+
 // — Persist snapshot —
 export async function runAndPublishEarlyMomentum(): Promise<{ generatedAt: string; total: number; tierCounts: Record<string, number>; rows: EarlyMomentumRow[] }> {
   const rows = await runEarlyMomentumScan()
+  // Enrich top 100 with shareholding context — surfaces in Signature column.
+  await enrichShareholding(rows)
   const tierCounts: Record<string, number> = { EARLY: 0, WAVE_2: 0, CONFIRMED: 0 }
   for (const r of rows) tierCounts[r.tier]++
   const out = {

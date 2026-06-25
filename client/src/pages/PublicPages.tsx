@@ -1891,10 +1891,22 @@ export function PublicEarlyMomentumPage(): JSX.Element {
                     <td className={`${tdb} text-right`} style={{ color: r.ret20dPct >= 0 ? '#5fd4ff' : '#ff9800' }}>{r.ret20dPct >= 0 ? '+' : ''}{r.ret20dPct.toFixed(1)}%</td>
                     <td className={`${tdb} text-right text-neutral-300`}>{r.distFrom20HighPct.toFixed(1)}%</td>
                     <td className={`${tdb} text-right text-neutral-300`}>{r.rsi14.toFixed(0)}</td>
-                    <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 220 }}>
-                      <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
-                        {(r.reasons ?? []).join(' · ') || '—'}
-                      </div>
+                    <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 260 }}>
+                      {r.shareholdingNote && (
+                        <div className="text-[10px] text-neutral-300 mb-0.5"
+                          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}
+                          title={r.shareholdingNote}>
+                          📊 {r.noBrainerBet && '⭐ '}{r.shareholdingNote}
+                        </div>
+                      )}
+                      {r.reasons && r.reasons.length > 0 && (
+                        <div className="text-[10px] text-neutral-500"
+                          style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}
+                          title={r.reasons.join(' · ')}>
+                          ⚡ {r.reasons.join(' · ')}
+                        </div>
+                      )}
+                      {!r.shareholdingNote && (!r.reasons || r.reasons.length === 0) && <span className="text-neutral-600">—</span>}
                     </td>
                   </tr>
                 )

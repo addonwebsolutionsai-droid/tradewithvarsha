@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import clsx from 'clsx'
 import { NavLink, useLocation, useNavigate } from 'react-router-dom'
 import {
@@ -79,87 +80,36 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     return tot > 0 ? wins / tot : null
   })()
   const trackAcc = (accSnap as any)?.winRate ?? null
+  // 2026-06-25: NAV CONSOLIDATION per user audit — 17 tabs → 8 primary +
+  // "More ▾" dropdown. Removed Elite (redundant with PRO Edge). Demoted
+  // SL Traps, Smart Money (OBV), Old-WeeklyPick, OI Build-up, F&O Futures,
+  // Ultra Picks, Pre-Move into the More dropdown. Routes still work for
+  // bookmarks — only the nav presentation changes.
   const tops = PUBLIC_MODE ? [
-    // 2026-06-25: Early Momentum Radar — the user's dedicated tab for
-    // ₹50-500 stocks BEFORE 10-20%-weekly moves. NO conv floor, NO pre-
-    // breakout reject — pure institutional-footprint + momentum signature.
+    // 🚀 Early Move — primary moneymaker tab. ₹50-500 stocks BEFORE the
+    // 10-20% weekly move. Sits first as the user's actual entry point.
     { to: '/early-momentum', label: '🚀 Early Move', icon: <Activity size={14} />,
       acc: null, highProb: true,
       title: 'Early Momentum Radar — ₹50-500 stocks BEFORE the 10-20% weekly move. NO conv floor, NO pre-breakout reject. Pure institutional-footprint signature (volume + delivery + range expansion + tight base).' },
-    // 2026-06-16: Superstar Picks — top-10 Indian investors' holdings ×
-    // our signal scoring. Highest-conviction tab when "actively loading".
     { to: '/bulk-deals',   label: '📡 Footprint',  icon: <Activity size={14} />,
       acc: null, highProb: true,
       title: 'NSE Bulk Deals — real institutional + superstar footprint feed, end-of-day with buyer/seller names. THE actual smart-money tracks.' },
     { to: '/superstar',    label: '🌟 Superstar',  icon: <Star size={14} />,
       acc: null, highProb: true,
-      title: "India's top 10 investors (Jhunjhunwala / Damani / Kacholia / Kedia / Dolly Khanna / Goel / Singhania / Kela / Porinju / Mukul Agrawal) — their holdings × our signal scoring. NEW/INCREASED stake + technical confirm = highest edge." },
-    // 2026-06-05: PRO Edge — sellable premium feed. ALL filters stacked.
-    // 0-10 names/day. The product we can credibly price at premium tier.
+      title: "India's top 10 investors (Jhunjhunwala / Damani / Kacholia / Kedia / Dolly Khanna / Goel / Singhania / Kela / Porinju / Mukul Agrawal) — their holdings × our signal scoring." },
     { to: '/pro-edge',     label: '💎 PRO Edge',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: 'PRO Edge — strictest signal feed. Highest-probability picks in the platform.' },
-    // 2026-06-10: Options PRO tab REMOVED — merged into the main F&O tab
-    // via PRO Mode toggle (redundant, same engine + same data). The
-    // /options-pro route now redirects to /options. Bookmarks preserved.
-    // 2026-06-10: SL-Trap detector — catches liquidity grabs (MOSCHIP /
-    // MARKSANS / FINPIPE pattern). Shows effective WR with trap-recoveries
-    // counted as wins. Path to credible 85%+ accuracy claim.
-    { to: '/sl-traps',     label: '🛡️ SL Traps',   icon: <Activity size={14} />,
-      acc: null,
-      title: 'SL-Trap Alerts — catches liquidity grabs (SL hit then target hit anyway). Effective WR includes confirmed traps as wins.' },
-    // 2026-06-16: Ask AI + Archive moved OUT of nav per user request:
-    // - 🤖 Ask AI → header right (next to Sign Up button)
-    // - 🗄️ Archive → header right (before Snapshot mode pill)
-    // Keeps the primary nav focused on actionable live signal tabs.
-    // 2026-05-30: 💎 Elite is the headline tab — best-of-best stream that
-    // requires ALL 5 institutional confluences (Volume + FII↑ + DII↑ +
-    // Promoter↑ + Fundamentals/Technicals) before a signal qualifies.
-    { to: '/elite',        label: 'Elite',         icon: <Star size={14} />,
-      acc: null, highProb: true,
-      title: 'Elite — best-of-best signals. Strictest filter in the system.' },
-    // 2026-05-29: labels explicit about segment. Cash / Equity tab is the
-    // hub for all equity picks (swing 1-4w via Weekly · short-term 1-15d
-    // via Daily · early-stage via 5-20% Move + Top Trades). F&O tab is
-    // dedicated to derivatives. Maps directly to how traders think: cash
-    // segment vs F&O segment.
     { to: '/picks',        label: 'Cash / Equity', icon: <Target size={14} />,
       acc: picksAcc,
       title: 'Cash / Equity picks — swing (Weekly · 1-4 weeks) + short-term (Daily · 1-15 days) + early-stage (5-20% Move) + Top Trades curated stream.' },
-    { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} />,
-      acc: wr('PREMOVE'),
-      title: 'Cash / Equity early-stage signals — pre-breakout setups (VCP / Wyckoff / volume dry-up).' },
-    { to: '/oi-buildup',   label: 'OI Build-up',  icon: <Activity size={14} />,
-      acc: null,
-      title: 'F&O OI Build-up — live institutional positioning. Long buildup · short covering · put-writing support · call-writing resistance. Refreshes every 2 min during market hours.' },
-    // 2026-06-03: F&O Futures pre-breakout scan — runs every snapshot
-    // publish across all ~211 NSE F&O underlyings. Multi-lens overlay
-    // (EMA stack · tight coil · vol surging · FII↑ · promoter stable) to
-    // identify moves BEFORE they start. Per user directive.
-    // 2026-06-04: Old-WeeklyPick comparison tab — momentum-chasing prerank
-    // (pre-4fca35e) + no freshness-reject. Side-by-side vs current Weekly
-    // Pick to surface what the stricter pre-breakout filter is dropping.
-    { to: '/old-weekly',   label: 'Old-WeeklyPick', icon: <ListChecks size={14} />,
-      acc: null,
-      title: 'Old-WeeklyPick — runs the same engine with the pre-4fca35e momentum-chasing prerank restored and no freshness-reject. Compare against current Weekly Pick to see what the stricter filter is dropping. Not pushed to Telegram.' },
-    // 2026-06-05: weekend autonomous additions
-    { to: '/confluence',   label: 'Ultra Picks',  icon: <Star size={14} />,
-      acc: null, highProb: true,
-      title: 'Ultra Picks — names confirmed by multiple independent scanners. Structurally higher conviction.' },
-    { to: '/sectors',      label: 'Sectors',      icon: <BarChart3 size={14} />,
-      acc: null,
-      title: 'Sector Rotation — 12 NIFTY sectoral indices ranked LEADING → LAGGING by composite (20d ret · 5d ret · RSI). Align stock picks with sector tailwind.' },
-    // 2026-06-05: Smart-Money divergence — OBV/CMF/A-D Line vs price.
-    { to: '/smart-money',  label: 'Smart Money',  icon: <Activity size={14} />,
-      acc: null,
-      title: 'Accumulation / Distribution divergence — detects names where institutional flow (OBV · A/D Line · CMF) diverges from price action. Catches setups BEFORE price moves.' },
-    { to: '/fno-futures',  label: 'F&O Futures',  icon: <BarChart3 size={14} />,
-      acc: null,
-      title: 'F&O Stock-Futures — pre-breakout daily scan across all ~211 NSE F&O underlyings. Multi-lens overlay: EMA stack + tight coil + at 20d high/low + volume rising + FII stake up + promoter stable. Identifies setups BEFORE the move happens.' },
     { to: '/options',      label: 'F&O',          icon: <Layers size={14} />,
       count: (counts.options ?? 0) + (counts.futures ?? 0),
       acc: wr('OPTIONS'),
-      title: 'Options + Futures (NIFTY / BANKNIFTY / Stock derivatives) — single source for all F&O trades.' },
+      title: 'Options + Futures (NIFTY / Stock derivatives) — single source for all F&O trades.' },
+    { to: '/sectors',      label: 'Sectors',      icon: <BarChart3 size={14} />,
+      acc: null,
+      title: 'Sector Rotation — 12 NIFTY sectoral indices ranked LEADING → LAGGING.' },
     { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />,
       acc: trackAcc,
       title: 'History + win-rate of every signal across cash + F&O — fully transparent accuracy log.' },
@@ -181,6 +131,20 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   // stays highlighted when a user lands on a bookmarked sub-route.
   const PICKS_HUB_PATHS = ['/picks', '/top-trades', '/5-20-move', '/weekly-pick', '/daily-pick']
   const onPicksHub = PICKS_HUB_PATHS.some(p => location.pathname === p || location.pathname.startsWith(p + '/'))
+
+  // 2026-06-25: "More ▾" dropdown — secondary / diagnostic tabs the user
+  // doesn't need to see daily, but bookmarks still work.
+  const moreItems: Array<{ to: string; label: string; title: string }> = PUBLIC_MODE ? [
+    { to: '/pre-move',    label: '🌬️ Pre-Move',         title: 'Pre-breakout setups (VCP / Wyckoff / volume dry-up). Subset of Cash/Equity surfacing earliest-stage candidates.' },
+    { to: '/confluence',  label: '⭐ Ultra Picks',      title: 'Names confirmed by MULTIPLE independent scanners. Higher structural conviction.' },
+    { to: '/smart-money', label: '🧮 Smart Money (OBV)', title: 'OBV / A-D Line / CMF divergence — institutional flow vs price action.' },
+    { to: '/sl-traps',    label: '🛡️ SL Traps',          title: 'Liquidity grabs — SL hit then target hit anyway. Effective WR with traps as wins.' },
+    { to: '/oi-buildup',  label: '🔁 OI Build-up',       title: 'Live F&O OI positioning. Long buildup · short covering · put-writing.' },
+    { to: '/fno-futures', label: '📊 F&O Futures',       title: 'Stock-futures pre-breakout scan over ~211 NSE F&O underlyings.' },
+    { to: '/old-weekly',  label: '📜 Old-WeeklyPick',    title: 'Diagnostic — old prerank engine for side-by-side comparison.' },
+  ] : []
+  const onMore = moreItems.some(m => location.pathname === m.to || location.pathname.startsWith(m.to + '/'))
+  const [moreOpen, setMoreOpen] = useState(false)
 
   return (
     <>
@@ -255,6 +219,43 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
               </button>
             )
           })}
+          {/* 2026-06-25: "More ▾" dropdown for secondary / diagnostic tabs.
+              Click to toggle; click outside or pick an item to close. */}
+          {moreItems.length > 0 && (
+            <div className="relative flex-shrink-0">
+              <button
+                onClick={() => setMoreOpen(v => !v)}
+                onBlur={() => setTimeout(() => setMoreOpen(false), 150)}
+                className={clsx(
+                  'px-3 py-2.5 text-[12px] flex items-center gap-1 whitespace-nowrap border-b-2 transition-colors relative',
+                  onMore || moreOpen
+                    ? 'text-accent-cyan border-accent-cyan'
+                    : 'text-neutral-500 border-transparent hover:text-neutral-300',
+                )}>
+                More
+                <ChevronDown size={11} className={clsx('transition-transform', moreOpen && 'rotate-180')} />
+              </button>
+              {moreOpen && (
+                <div className="absolute top-full right-0 mt-1 min-w-[220px] bg-ink-800 border border-ink-500 rounded-lg shadow-xl z-50 py-1">
+                  {moreItems.map(m => {
+                    const active = location.pathname === m.to || location.pathname.startsWith(m.to + '/')
+                    return (
+                      <button
+                        key={m.to}
+                        title={m.title}
+                        onMouseDown={(e) => { e.preventDefault(); navigate(m.to); setMoreOpen(false) }}
+                        className={clsx(
+                          'w-full text-left px-3 py-2 text-[12px] transition-colors',
+                          active ? 'text-accent-cyan bg-accent-cyan/10' : 'text-neutral-400 hover:text-neutral-100 hover:bg-ink-700',
+                        )}>
+                        {m.label}
+                      </button>
+                    )
+                  })}
+                </div>
+              )}
+            </div>
+          )}
         </nav>
 
         {/* 2026-05-21: 3-dot Settings dropdown REMOVED. User reported it
