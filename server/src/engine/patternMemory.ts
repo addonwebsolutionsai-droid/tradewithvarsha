@@ -23,7 +23,7 @@ const MAX_PATTERNS = 500
 
 export interface PatternFingerprint {
   symbol: string
-  status: 'T1_HIT' | 'T2_HIT' | 'T3_HIT'
+  status: 'T1_HIT' | 'T2_HIT' | 'T3_HIT' | 'PROVEN_WINNER'
   direction: 'BUY' | 'SHORT'
   capturedAt: string
   /** Avg true range as % of close, 14-period */

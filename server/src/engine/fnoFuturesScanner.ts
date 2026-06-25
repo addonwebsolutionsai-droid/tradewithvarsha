@@ -65,6 +65,12 @@ export interface FnoFuturesRow {
   }
   // Multi-lens confluence breakdown ("why this is here")
   confluences: { name: string; pass: boolean; detail: string }[]
+  // 2026-06-25: 12-criteria scorecard per user directive
+  twelveCriteria?: {
+    total: number
+    passCount: number
+    results: Array<{ key: string; label: string; pass: boolean; score: number; detail: string }>
+  }
   // Institutional overlay
   fiiDelta: number | null
   diiDelta: number | null
@@ -195,14 +201,14 @@ export async function scanFnoFutures(opts?: { maxConcurrency?: number; limit?: n
   log.info('FNO-SCAN', `scanning ${universe.length} F&O futures`)
 
   const BATCH = opts?.maxConcurrency ?? 6
-  const raw: Array<{ symbol: string; r: NonNullable<ReturnType<typeof scoreOne>> }> = []
+  const raw: Array<{ symbol: string; r: NonNullable<ReturnType<typeof scoreOne>>; candles: Candle[] }> = []
   for (let i = 0; i < universe.length; i += BATCH) {
     const batch = universe.slice(i, i + BATCH)
     const results = await Promise.all(batch.map(async sym => {
       const c = await fetchCandles(sym)
       if (!c) return null
       const r = scoreOne(sym, c)
-      return r ? { symbol: sym, r } : null
+      return r ? { symbol: sym, r, candles: c } : null
     }))
     for (const x of results) if (x) raw.push(x)
   }
@@ -216,7 +222,7 @@ export async function scanFnoFutures(opts?: { maxConcurrency?: number; limit?: n
   const today = new Date()
   for (let i = 0; i < surviving.length; i += 4) {
     const batch = surviving.slice(i, i + 4)
-    const rows = await Promise.all(batch.map(async ({ symbol, r }) => {
+    const rows = await Promise.all(batch.map(async ({ symbol, r, candles }) => {
       const shp = await getShareholding(symbol).catch(() => null)
       const fiiDelta = shp?.fiiDeltaQoQ ?? null
       const diiDelta = shp?.diiDeltaQoQ ?? null
@@ -239,7 +245,25 @@ export async function scanFnoFutures(opts?: { maxConcurrency?: number; limit?: n
       }
 
       score = Math.max(0, Math.min(100, score))
-      if (score < 65) return null
+      // 2026-06-25: lowered base gate from 65 → 55 so more candidates flow
+      // through to the 12-criteria scorer; the composite score (base × 12c)
+      // is what actually decides the final ranking.
+      if (score < 55) return null
+
+      // 2026-06-25: 12-criteria overlay per user directive — seasonality,
+      // cycle, vol increase, FII/DII/P, 5d vol, technicals, harmonic, Elliott,
+      // Darvas, news, accumulation footprint, tight-range pre-blast.
+      let twelveCriteria: FnoFuturesRow['twelveCriteria'] | undefined
+      try {
+        const { compute12CriteriaScore } = await import('./fnoFutures12Criteria')
+        const tc = await compute12CriteriaScore({
+          symbol, candles, side: r.side,
+        })
+        twelveCriteria = tc
+        // Composite bonus: each pass adds 1.5 to base (max +18). Allows base
+        // 55 + 12 passes (rare) → composite 73. Realistic 7-8 passes → +12.
+        score = Math.min(100, score + tc.passCount * 1.5)
+      } catch { /* fall through */ }
 
       const conf: FnoConfidence = score >= 80 ? 'HIGH' : 'MED'
       const grade: 'A' | 'B' = score >= 80 ? 'A' : 'B'
@@ -261,6 +285,7 @@ export async function scanFnoFutures(opts?: { maxConcurrency?: number; limit?: n
         score, confidence: conf, grade,
         features: r.features, confluences: cfl, reasons: r.reasons,
         fiiDelta, diiDelta, promoterDelta, marketCapCr,
+        twelveCriteria,
         asOf: today.toISOString(),
       }
       return out

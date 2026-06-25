@@ -7,7 +7,7 @@
  */
 import { useQuery } from '@tanstack/react-query'
 import { snapshots } from '../api'
-import React, { useState } from 'react'
+import React, { useState, Fragment } from 'react'
 import { useSortableTable } from '../components/useSortableTable'
 
 const fmtDate = (iso?: string) => {
@@ -3033,19 +3033,17 @@ export function PublicFnoFuturesPage(): JSX.Element {
     refetchInterval: 5 * 60_000, retry: false,
   })
   const rows: any[] = data?.rows ?? []
-  const longs = rows.filter(r => r.side === 'LONG')
-  const shorts = rows.filter(r => r.side === 'SHORT')
+  const [expandedSym, setExpandedSym] = useState<string | null>(null)
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/10 to-accent-green/5 border border-accent-amber/40 rounded-lg">
         <div className="text-3xl">📊</div>
         <div className="flex-1">
-          <div className="text-sm font-bold text-accent-amber">F&O Stock-Futures — Pre-Breakout Watch</div>
+          <div className="text-sm font-bold text-accent-amber">F&O Stock-Futures — 12-Criteria Pre-Breakout Scanner</div>
           <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
-            Curated daily scan across the entire NSE F&O futures universe (~211 underlyings).
-            Multi-lens filter: EMA-stacked trend · at 20d high/low · tight Bollinger coil · volume rising 1.3×+ ·
-            productive RSI band · FII stake ↑ · promoter stable.
-            Designed to identify setups <b>BEFORE the move starts</b> — names already running &gt;8% in 5d are penalised.
+            Scans ~211 NSE F&O underlyings against the 12-point checklist:
+            <b> Seasonality · Cycle · Volume↑ · FII/DII/Promoter↑ · 5-Day Vol · Technicals · Harmonic · Elliott · Darvas · News · Accumulation · Tight Range</b>.
+            Click any row to expand the full scorecard. Names already running &gt;8% in 5d are penalised — we want setups <b>BEFORE the move</b>.
           </div>
           <div className="text-[10px] text-neutral-500 mt-2 font-mono">
             Scanned {data?.universeSize ?? 211} · {data?.total ?? 0} passed · 💎 HIGH {data?.highConvCount ?? 0} · ⭐ MED {data?.medConvCount ?? 0} · refreshes every 30 min during market hours
@@ -3056,21 +3054,97 @@ export function PublicFnoFuturesPage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load F&O scan. Snapshots refresh every 30 min." />}
       {!isLoading && !error && rows.length === 0 && <Empty msg="No setups currently pass the pre-breakout filter. Scan re-runs every 30 min during market hours." />}
-      {/* 2026-06-16: uniform Old-WeeklyPick table for consistency.
-          Schema normaliser maps side (LONG/SHORT) → direction (BUY/SHORT)
-          and uses score as conviction. Reason column shows confidence +
-          features (RSI, vol×, BB-width). */}
       {!isLoading && !error && rows.length > 0 && (
-        <UniformPickTable rows={rows.map(r => ({
-          ...r,
-          direction: r.side === 'LONG' ? 'BUY' : 'SHORT',
-          conviction: r.score,
-          flowNote: `${r.confidence ?? ''} · vol ${r.features?.volRatio?.toFixed?.(1) ?? '?'}× · RSI ${r.features?.rsi14?.toFixed?.(0) ?? '?'} · BB-w ${r.features?.bbWidthPct?.toFixed?.(1) ?? '?'}%`,
-          shareholdingNote: r.fiiDelta != null && r.fiiDelta > 0
-            ? `FII +${r.fiiDelta.toFixed(2)}pp${r.marketCapCr ? ` · MC ₹${(r.marketCapCr / 1000).toFixed(1)}KCr` : ''}`
-            : undefined,
-        }))} />
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '80vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1000 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
+                <th className="text-center px-2 py-3">Dir</th>
+                <th className="text-center px-2 py-3">Score</th>
+                <th className="text-center px-2 py-3">12c ✓</th>
+                <th className="text-right px-2 py-3 text-neutral-300">LTP</th>
+                <th className="text-right px-2 py-3 text-accent-cyan">Entry</th>
+                <th className="text-right px-2 py-3 text-accent-red">SL</th>
+                <th className="text-right px-2 py-3 text-accent-green">T1</th>
+                <th className="text-right px-2 py-3 text-accent-green">T2</th>
+                <th className="text-right px-2 py-3 text-accent-green">T3</th>
+                <th className="text-left px-3 py-3">Stakes / Reason</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r: any, i: number) => {
+                const dirColor = r.side === 'LONG' ? '#00c853' : '#ff1744'
+                const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+                const tc = r.twelveCriteria
+                const expanded = expandedSym === r.symbol
+                return (
+                  <Fragment key={r.symbol + i}>
+                    <tr className="group border-t border-ink-500 cursor-pointer" onClick={() => setExpandedSym(expanded ? null : r.symbol)}>
+                      <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>
+                        {expanded ? '▼ ' : '▶ '}{r.symbol}
+                      </td>
+                      <td className={`${tdb} text-center`}>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.side}</span>
+                      </td>
+                      <td className={`${tdb} text-center font-bold ${r.score >= 80 ? 'text-accent-green' : r.score >= 65 ? 'text-accent-amber' : 'text-neutral-300'}`}>{r.score}</td>
+                      <td className={`${tdb} text-center`}>
+                        {tc ? (
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${tc.passCount >= 9 ? 'bg-accent-green/20 text-accent-green' : tc.passCount >= 6 ? 'bg-accent-cyan/15 text-accent-cyan' : 'bg-ink-700 text-neutral-500'}`}>{tc.passCount}/12</span>
+                        ) : <span className="text-neutral-600">—</span>}
+                      </td>
+                      <td className={`${tdb} text-right text-neutral-200`}>₹{r.price?.toFixed?.(1)}</td>
+                      <td className={`${tdb} text-right text-accent-cyan`}>₹{r.entry?.toFixed?.(1)}</td>
+                      <td className={`${tdb} text-right text-accent-red`}>₹{r.stopLoss?.toFixed?.(1)}</td>
+                      <td className={`${tdb} text-right text-accent-green`}>
+                        <div>₹{r.target1?.toFixed?.(1)}</div>
+                        {r.target1Date && <div className="text-[9px] text-accent-green/60">📅 {fmtDate(r.target1Date)}</div>}
+                      </td>
+                      <td className={`${tdb} text-right text-accent-green`}>
+                        <div>₹{r.target2?.toFixed?.(1)}</div>
+                        {r.target2Date && <div className="text-[9px] text-accent-green/60">📅 {fmtDate(r.target2Date)}</div>}
+                      </td>
+                      <td className={`${tdb} text-right text-accent-green font-bold`}>
+                        <div>₹{r.target3?.toFixed?.(1)}</div>
+                        {r.target3Date && <div className="text-[9px] text-accent-green/60">📅 {fmtDate(r.target3Date)}</div>}
+                      </td>
+                      <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 220 }}>
+                        <div className="text-[10px]">
+                          {r.fiiDelta != null && r.fiiDelta > 0.2 && <span className="text-accent-green">FII +{r.fiiDelta.toFixed(2)}pp · </span>}
+                          {r.marketCapCr ? <span>MC ₹{(r.marketCapCr / 1000).toFixed(1)}KCr · </span> : null}
+                          <span className="text-neutral-500">{r.confidence}</span>
+                        </div>
+                      </td>
+                    </tr>
+                    {expanded && tc && (
+                      <tr className="bg-ink-900/40 border-t border-ink-500/30">
+                        <td colSpan={11} className="px-4 py-3">
+                          <div className="text-[10px] uppercase tracking-wider text-accent-amber mb-2 font-bold">12-Criteria Scorecard · Total {tc.total}/120 · {tc.passCount}/12 passed</div>
+                          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-2">
+                            {tc.results.map((c: any, idx: number) => (
+                              <div key={c.key} className={`p-2 rounded border text-[11px] ${c.pass ? 'bg-accent-green/5 border-accent-green/30' : 'bg-ink-800 border-ink-500/40'}`}>
+                                <div className={`font-bold flex items-center gap-1 ${c.pass ? 'text-accent-green' : 'text-neutral-500'}`}>
+                                  {c.pass ? '✓' : '○'} {idx + 1}. {c.label} <span className="ml-auto text-[10px]">{c.score.toFixed(1)}</span>
+                                </div>
+                                <div className="text-[10px] text-neutral-400 mt-1">{c.detail}</div>
+                              </div>
+                            ))}
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </Fragment>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
       )}
+      <HowToTradeBox tab="F&O Futures · 12-Criteria" rules={[
+        { title: 'The 12 criteria', body: '1. Seasonality · 2. Gann/Bradley Cycle · 3. Volume Increase (today vs 20d) · 4. FII/DII/Promoter stake ↑ · 5. Last 5-day Vol Formula (5d/20d) · 6. Technicals (EMA+RSI+ADX+MACD) · 7. Harmonic / Fib PRZ · 8. Elliott Wave 1/3/4 · 9. Darvas Box · 10. News-Driven bar · 11. Big-hands Accumulation (OBV+delivery) · 12. Tight Range b/f Blast.' },
+        { title: 'Reading the scorecard', body: 'Each criterion contributes 0-10 to a max 120 composite. Click any row to expand and see WHICH criteria fired with the actual numbers. 9/12+ passes = highest conviction setup.' },
+        { title: 'Composite ranking', body: 'Final score = base technical score (0-100) + 1.5 × passCount. A 7-criteria match gives +10.5 to the base, an 11-criteria match gives +16.5. Sort the table by Score column to see the strongest setups first.' },
+      ]} />
     </div>
   )
 }

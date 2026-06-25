@@ -103,10 +103,19 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/picks',        label: 'Cash / Equity', icon: <Target size={14} />,
       acc: picksAcc,
       title: 'Cash / Equity picks — swing (Weekly · 1-4 weeks) + short-term (Daily · 1-15 days) + early-stage (5-20% Move) + Top Trades curated stream.' },
+    { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} />,
+      acc: wr('PREMOVE'),
+      title: 'Cash / Equity early-stage signals — pre-breakout setups (VCP / Wyckoff / volume dry-up).' },
     { to: '/options',      label: 'F&O',          icon: <Layers size={14} />,
       count: (counts.options ?? 0) + (counts.futures ?? 0),
       acc: wr('OPTIONS'),
       title: 'Options + Futures (NIFTY / Stock derivatives) — single source for all F&O trades.' },
+    { to: '/fno-futures',  label: 'F&O Futures',  icon: <BarChart3 size={14} />,
+      acc: null,
+      title: 'F&O Stock-Futures — 12-criteria pre-breakout scan across all ~211 NSE F&O underlyings.' },
+    { to: '/confluence',   label: 'Ultra Picks',  icon: <Star size={14} />,
+      acc: null, highProb: true,
+      title: 'Ultra Picks — names confirmed by multiple independent scanners. Structurally higher conviction.' },
     { to: '/sectors',      label: 'Sectors',      icon: <BarChart3 size={14} />,
       acc: null,
       title: 'Sector Rotation — 12 NIFTY sectoral indices ranked LEADING → LAGGING.' },
@@ -134,13 +143,13 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
 
   // 2026-06-25: "More ▾" dropdown — secondary / diagnostic tabs the user
   // doesn't need to see daily, but bookmarks still work.
+  // 2026-06-25: Pre-Move, F&O Futures, Ultra Picks promoted back to main
+  // nav per user request. More dropdown now only carries diagnostic /
+  // secondary tabs.
   const moreItems: Array<{ to: string; label: string; title: string }> = PUBLIC_MODE ? [
-    { to: '/pre-move',    label: '🌬️ Pre-Move',         title: 'Pre-breakout setups (VCP / Wyckoff / volume dry-up). Subset of Cash/Equity surfacing earliest-stage candidates.' },
-    { to: '/confluence',  label: '⭐ Ultra Picks',      title: 'Names confirmed by MULTIPLE independent scanners. Higher structural conviction.' },
     { to: '/smart-money', label: '🧮 Smart Money (OBV)', title: 'OBV / A-D Line / CMF divergence — institutional flow vs price action.' },
     { to: '/sl-traps',    label: '🛡️ SL Traps',          title: 'Liquidity grabs — SL hit then target hit anyway. Effective WR with traps as wins.' },
     { to: '/oi-buildup',  label: '🔁 OI Build-up',       title: 'Live F&O OI positioning. Long buildup · short covering · put-writing.' },
-    { to: '/fno-futures', label: '📊 F&O Futures',       title: 'Stock-futures pre-breakout scan over ~211 NSE F&O underlyings.' },
     { to: '/old-weekly',  label: '📜 Old-WeeklyPick',    title: 'Diagnostic — old prerank engine for side-by-side comparison.' },
   ] : []
   const onMore = moreItems.some(m => location.pathname === m.to || location.pathname.startsWith(m.to + '/'))
