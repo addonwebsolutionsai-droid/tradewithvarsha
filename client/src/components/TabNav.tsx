@@ -80,6 +80,12 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   })()
   const trackAcc = (accSnap as any)?.winRate ?? null
   const tops = PUBLIC_MODE ? [
+    // 2026-06-25: Early Momentum Radar — the user's dedicated tab for
+    // ₹50-500 stocks BEFORE 10-20%-weekly moves. NO conv floor, NO pre-
+    // breakout reject — pure institutional-footprint + momentum signature.
+    { to: '/early-momentum', label: '🚀 Early Move', icon: <Activity size={14} />,
+      acc: null, highProb: true,
+      title: 'Early Momentum Radar — ₹50-500 stocks BEFORE the 10-20% weekly move. NO conv floor, NO pre-breakout reject. Pure institutional-footprint signature (volume + delivery + range expansion + tight base).' },
     // 2026-06-16: Superstar Picks — top-10 Indian investors' holdings ×
     // our signal scoring. Highest-conviction tab when "actively loading".
     { to: '/bulk-deals',   label: '📡 Footprint',  icon: <Activity size={14} />,

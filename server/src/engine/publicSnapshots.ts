@@ -393,6 +393,30 @@ async function triggerSuperstarScan(): Promise<void> {
   })()
 }
 
+// 2026-06-25: EARLY MOMENTUM scanner — user-specific ₹50-500 radar for
+// 10-20%-in-a-week candidates. Heavy (~2-3 min over NSE_ALL); throttled
+// 90-min so each publish cycle picks up at most one fresh run.
+let earlyMomInflight: Promise<void> | null = null
+let earlyMomLastAt = 0
+const EARLY_MOM_MIN_MS = 90 * 60_000
+
+async function triggerEarlyMomentumScan(): Promise<void> {
+  if (earlyMomInflight) return earlyMomInflight
+  if (Date.now() - earlyMomLastAt < EARLY_MOM_MIN_MS) return
+  earlyMomInflight = (async () => {
+    try {
+      const { runAndPublishEarlyMomentum } = await import('./earlyMomentum')
+      const out = await runAndPublishEarlyMomentum()
+      earlyMomLastAt = Date.now()
+      log.ok('PUBLIC-SNAP', `early-momentum: ${out.total} candidates (${out.tierCounts.EARLY} EARLY · ${out.tierCounts.WAVE_2} WAVE_2 · ${out.tierCounts.CONFIRMED} CONFIRMED)`)
+    } catch (e) {
+      log.warn('PUBLIC-SNAP', `early-momentum async: ${(e as Error).message}`)
+    } finally {
+      earlyMomInflight = null
+    }
+  })()
+}
+
 // NSE Bulk Deals tracker — the actual smart-money footprint feed per
 // user directive ("there has to be some footprint of smart money...
 // we have to identify this ahead of their taking move"). Free, daily
@@ -1056,6 +1080,7 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   triggerGainerPostmortem().catch(() => { /* logged inside */ })
   triggerSuperstarScan().catch(() => { /* logged inside */ })
   triggerBulkDealsScan().catch(() => { /* logged inside */ })
+  triggerEarlyMomentumScan().catch(() => { /* logged inside */ })
 
   // 6.8 Sector Rotation — 12 NIFTY sectoral indices ranked by relative
   // strength. Synchronous (only 12 candle fetches, fast).

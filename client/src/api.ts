@@ -60,6 +60,7 @@ export const snapshots = {
   archive: () => snapshot<{ generatedAt: string; windowDays: number; total: number; byStatus: Record<string, number>; rows: any[] }>('archive.json'),
   superstarPicks: () => snapshot<{ generatedAt: string; investorCount: number; investors: any[]; total: number; activelyLoadingCount: number; rows: any[] }>('superstar-picks.json'),
   bulkDeals: () => snapshot<{ generatedAt: string; totalDeals: number; superstarDeals: number; institutionDeals: number; strongAccumulationCount: number; strongDistributionCount: number; rows: any[]; rawDeals: any[] }>('bulk-deals.json'),
+  earlyMomentum: () => snapshot<{ generatedAt: string; criterion: string; total: number; tierCounts: Record<string, number>; rows: any[] }>('early-momentum.json'),
 }
 
 // Chat assistant — talks directly to Gemini from the browser.

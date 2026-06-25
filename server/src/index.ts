@@ -2164,6 +2164,23 @@ app.post('/api/pre-move-identifier/run', async (_req, res) => {
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
 
+// 2026-06-25: EARLY MOMENTUM RADAR — user-specific scanner for ₹50-500
+// stocks moving 10-20% in a week. No conv floor, no pre-breakout reject;
+// pure institutional-footprint + momentum signature.
+app.get('/api/early-momentum', async (_req, res) => {
+  try {
+    const raw = await fsAsync.readFile(path.resolve(__dirname, '../data/public-snapshots/early-momentum.json'), 'utf8').catch(() => null)
+    if (!raw) return res.status(404).json({ error: 'No scan yet — POST /api/early-momentum/run' })
+    res.json(JSON.parse(raw))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+app.post('/api/early-momentum/run', async (_req, res) => {
+  try {
+    const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum')
+    res.json(await runAndPublishEarlyMomentum())
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
 app.get('/api/catch-rate', async (_req, res) => {
   try {
     const { getLatestCatchReport, getCatchRateRolling } = await import('./engine/dailyCatchAnalyzer')

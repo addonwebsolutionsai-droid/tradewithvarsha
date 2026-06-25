@@ -1784,6 +1784,137 @@ function HowToTradeBox({ tab, rules }: { tab: string; rules: { title: string; bo
   )
 }
 
+// ── 🚀 EARLY MOMENTUM RADAR — ₹50-500 stocks BEFORE the 10-20% move ──
+// 2026-06-25: dedicated scanner for the user's actual moneymaker tier.
+// No conv floor, no pre-breakout reject; pure momentum + institutional-
+// footprint signature so small/mid caps surface BEFORE retail catches on.
+export function PublicEarlyMomentumPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-early-momentum'], queryFn: () => snapshots.earlyMomentum(),
+    refetchInterval: 30 * 60_000, retry: false,
+  })
+  const all: any[] = data?.rows ?? []
+  const [tier, setTier] = useState<'ALL' | 'EARLY' | 'WAVE_2' | 'CONFIRMED'>('ALL')
+  const filtered = tier === 'ALL' ? all : all.filter(r => r.tier === tier)
+  const { rows, headerProps, sortIndicator } = useSortableTable<any>(
+    filtered, { key: 'score', dir: 'desc' },
+    {
+      symbol: r => r.symbol ?? '',
+      close: r => r.close ?? 0,
+      pctChangeToday: r => r.pctChangeToday ?? 0,
+      deliveryPct: r => r.deliveryPct ?? 0,
+      volSurgeX: r => r.volSurgeX ?? 0,
+      rangeExpansionX: r => r.rangeExpansionX ?? 0,
+      ret5dPct: r => r.ret5dPct ?? 0,
+      ret20dPct: r => r.ret20dPct ?? 0,
+      distFrom20HighPct: r => r.distFrom20HighPct ?? 0,
+      rsi14: r => r.rsi14 ?? 0,
+      score: r => r.score ?? 0,
+      tier: r => r.tier ?? '',
+    },
+  )
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/15 to-accent-green/5 border border-accent-amber/50 rounded-lg">
+        <div className="text-3xl">🚀</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-amber">Early Momentum Radar · ₹50-500 PRE-MOVE</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Built per your directive: <i>"every day new stocks ₹100-300 move 10-20% in a week — we should have all those before the move."</i>
+            This is the dedicated tab — <b>NO conviction floor</b>, <b>NO pre-breakout reject</b>. Just the exact institutional-footprint
+            signature (volume surge + delivery surge + range expansion + tight base + 52w-high proximity) over the full NSE small/mid-cap universe.
+          </div>
+          {data && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              📊 {data.total} candidates · 🟡 EARLY: {data.tierCounts?.EARLY ?? 0} · 🔄 WAVE_2: {data.tierCounts?.WAVE_2 ?? 0} · 🔥 CONFIRMED: {data.tierCounts?.CONFIRMED ?? 0}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Tier:</span>
+        {(['ALL', 'EARLY', 'WAVE_2', 'CONFIRMED'] as const).map(t => {
+          const cnt = t === 'ALL' ? all.length : all.filter(r => r.tier === t).length
+          const color = t === 'CONFIRMED' ? 'accent-green' : t === 'WAVE_2' ? 'accent-amber' : t === 'EARLY' ? 'accent-cyan' : 'accent-violet'
+          return (
+            <button key={t} onClick={() => setTier(t)}
+              className={`px-2 py-1 rounded border ${tier === t ? `bg-${color}/20 border-${color} text-${color}` : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+              {t.replace('_', ' ')} ({cnt})
+            </button>
+          )
+        })}
+      </div>
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load early-momentum scan. Snapshot refreshes every 90 min." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No candidates match this tier. Try a different tier or wait for next scan." />}
+      {!isLoading && !error && rows.length > 0 && (
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1100 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500')}>Symbol{sortIndicator('symbol')}</th>
+                <th {...headerProps('tier', 'text-center px-2 py-3')}>Tier{sortIndicator('tier')}</th>
+                <th {...headerProps('score', 'text-right px-2 py-3')}>Score{sortIndicator('score')}</th>
+                <th {...headerProps('close', 'text-right px-2 py-3 text-neutral-300')}>LTP{sortIndicator('close')}</th>
+                <th {...headerProps('pctChangeToday', 'text-right px-2 py-3')}>Today %{sortIndicator('pctChangeToday')}</th>
+                <th {...headerProps('deliveryPct', 'text-right px-2 py-3 text-accent-violet')}>Deliv %{sortIndicator('deliveryPct')}</th>
+                <th {...headerProps('volSurgeX', 'text-right px-2 py-3 text-accent-cyan')}>Vol ×{sortIndicator('volSurgeX')}</th>
+                <th {...headerProps('rangeExpansionX', 'text-right px-2 py-3')}>Range ×{sortIndicator('rangeExpansionX')}</th>
+                <th {...headerProps('ret5dPct', 'text-right px-2 py-3')}>5d %{sortIndicator('ret5dPct')}</th>
+                <th {...headerProps('ret20dPct', 'text-right px-2 py-3')}>20d %{sortIndicator('ret20dPct')}</th>
+                <th {...headerProps('distFrom20HighPct', 'text-right px-2 py-3')}>Off-Hi %{sortIndicator('distFrom20HighPct')}</th>
+                <th {...headerProps('rsi14', 'text-right px-2 py-3')}>RSI{sortIndicator('rsi14')}</th>
+                <th className="text-left px-3 py-3">Signature</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r: any, i: number) => {
+                const tierColor = r.tier === 'CONFIRMED' ? '#00c853' : r.tier === 'WAVE_2' ? '#ffb454' : '#5fd4ff'
+                const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+                return (
+                  <tr key={r.symbol + i} className="group border-t border-ink-500">
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{r.symbol}</td>
+                    <td className={`${tdb} text-center`}>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${tierColor}22`, color: tierColor }}>{r.tier}</span>
+                    </td>
+                    <td className={`${tdb} text-right font-bold ${r.score >= 60 ? 'text-accent-green' : r.score >= 45 ? 'text-accent-amber' : 'text-neutral-300'}`}>{r.score}</td>
+                    <td className={`${tdb} text-right text-neutral-200`}>₹{r.close.toFixed(1)}</td>
+                    <td className={`${tdb} text-right font-bold`} style={{ color: r.pctChangeToday >= 0 ? '#00c853' : '#ff5e7c' }}>
+                      {r.pctChangeToday >= 0 ? '+' : ''}{r.pctChangeToday.toFixed(1)}%
+                    </td>
+                    <td className={`${tdb} text-right ${r.deliveryPct >= 55 ? 'text-accent-violet font-bold' : r.deliveryPct >= 45 ? 'text-accent-violet' : 'text-neutral-500'}`}>
+                      {r.deliveryPct != null ? `${r.deliveryPct.toFixed(0)}%` : '—'}
+                    </td>
+                    <td className={`${tdb} text-right ${r.volSurgeX >= 2 ? 'text-accent-cyan font-bold' : 'text-neutral-300'}`}>{r.volSurgeX.toFixed(1)}×</td>
+                    <td className={`${tdb} text-right text-neutral-300`}>{r.rangeExpansionX.toFixed(1)}×</td>
+                    <td className={`${tdb} text-right`} style={{ color: r.ret5dPct >= 0 ? '#5fd4ff' : '#ff9800' }}>{r.ret5dPct >= 0 ? '+' : ''}{r.ret5dPct.toFixed(1)}%</td>
+                    <td className={`${tdb} text-right`} style={{ color: r.ret20dPct >= 0 ? '#5fd4ff' : '#ff9800' }}>{r.ret20dPct >= 0 ? '+' : ''}{r.ret20dPct.toFixed(1)}%</td>
+                    <td className={`${tdb} text-right text-neutral-300`}>{r.distFrom20HighPct.toFixed(1)}%</td>
+                    <td className={`${tdb} text-right text-neutral-300`}>{r.rsi14.toFixed(0)}</td>
+                    <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 220 }}>
+                      <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
+                        {(r.reasons ?? []).join(' · ') || '—'}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <HowToTradeBox tab="Early Momentum" rules={[
+        { title: 'What this tab IS', body: 'A pure momentum + institutional-footprint radar over ₹50-500 NSE stocks. NO conviction floor, NO pre-breakout reject. Surfaces candidates BEFORE the visible big move so you have time to position.' },
+        { title: '🟡 EARLY tier', body: 'Tight base + volume building, no big move yet. Highest-conviction entry zone — capture from base before breakout. Use 4-6% SL.' },
+        { title: '🔄 WAVE_2 tier', body: 'Already up 5-15% in 5d, now consolidating in a tight range — primed for second leg. These are the classic 10-20%-week-2 setups you described. Buy on first vol confirmation.' },
+        { title: '🔥 CONFIRMED tier', body: 'Today saw 3%+ gain with delivery ≥ 45% (institutional footprint LIVE). Late but still actionable; tighten SL to today\'s low.' },
+        { title: 'Score thresholds', body: 'Score ≥ 60 = high conviction (green). 45-59 = strong (amber). 25-44 = watchlist. Score combines volume thrust + delivery + range expansion + 20d-high proximity + EMA stack + base tightness.' },
+        { title: 'Cross-check', body: 'Check Footprint tab (📡) for bulk-deals confirmation. Check Smart Money for OBV/CMF alignment. Sector Rotation tells you if the sector tailwind is there.' },
+      ]} />
+    </div>
+  )
+}
+
 // ── 📡 BULK DEALS — NSE end-of-day footprint feed (the actual smart-money tracks)
 export function PublicBulkDealsPage(): JSX.Element {
   const { data, isLoading, error } = useQuery({
