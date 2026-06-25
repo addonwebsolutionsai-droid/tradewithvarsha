@@ -130,7 +130,7 @@ export async function runSelfImprove(): Promise<AutoTune> {
         })
         decisions.push(`${strategy}: relaxed minConfluence ${oldConf}→${newConf} (wr ${winRate}% > ${target + 5}%)`)
       } else {
-        decisions.push(`${strategy}: wr ${winRate}% outperforming, already at default ${def}, holding`)
+        decisions.push(`${strategy}: wr ${winRate}% outperforming, floor already at min, holding`)
       }
     } else {
       decisions.push(`${strategy}: wr ${winRate}% within band [${target - 5}, ${target + 5}], no change`)

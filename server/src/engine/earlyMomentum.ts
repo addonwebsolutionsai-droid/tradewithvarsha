@@ -395,11 +395,47 @@ async function enrichShareholding(rows: EarlyMomentumRow[]): Promise<void> {
   }))
 }
 
+// 2026-06-25: Pro-criteria boost — apply market regime + VIX + bulk-deals +
+// RS-z to each candidate as an EXTRA SCORE LAYER. Names confirmed by named
+// bulk-deal buyers OR strongly outperforming NIFTY get bumped to the top.
+async function applyProCriteria(rows: EarlyMomentumRow[]): Promise<void> {
+  try {
+    const { getMarketContext } = await import('./proCriteria')
+    const ctx = await getMarketContext()
+    // If regime is BEAR, downgrade LONG-only candidates' score by 30%.
+    for (const r of rows) {
+      // Bulk-deals confirmation — named institutional buyer in last 5d
+      const bd = ctx.bulkDealsSet.get(r.symbol.toUpperCase())
+      if (bd && (bd.signal === 'STRONG_ACCUMULATION' || bd.signal === 'ACCUMULATION')) {
+        r.score = Math.min(100, r.score + (bd.signal === 'STRONG_ACCUMULATION' ? 12 : 7))
+        r.reasons.unshift(`🎯 bulk-deal ${bd.signal} +₹${bd.netBuyValueCr.toFixed(1)}Cr · ${(bd.topBuyers ?? []).slice(0, 2).join(', ')}`)
+      }
+      // Market regime guard — these are all LONG candidates
+      if (ctx.regime === 'BEAR') {
+        r.score = Math.round(r.score * 0.7)
+        r.reasons.push(`⚠️ ${ctx.regime} regime — long bias suppressed`)
+      } else if (ctx.regime === 'BULL') {
+        r.score = Math.min(100, r.score + 3)
+      }
+      // VIX extreme — penalize all longs
+      if (ctx.vix != null && ctx.vix > 25) {
+        r.score = Math.round(r.score * 0.85)
+        r.reasons.push(`⚠️ VIX ${ctx.vix.toFixed(1)} extreme — size down`)
+      }
+    }
+    rows.sort((a, b) => b.score - a.score)
+  } catch (e) {
+    log.warn('EARLY-MOMENTUM', `pro-criteria layer failed: ${(e as Error).message}`)
+  }
+}
+
 // — Persist snapshot —
 export async function runAndPublishEarlyMomentum(): Promise<{ generatedAt: string; total: number; tierCounts: Record<string, number>; rows: EarlyMomentumRow[] }> {
   const rows = await runEarlyMomentumScan()
   // Enrich top 100 with shareholding context — surfaces in Signature column.
   await enrichShareholding(rows)
+  // 2026-06-25: pro-criteria boost — bulk-deal confirm, regime, VIX
+  await applyProCriteria(rows)
   const tierCounts: Record<string, number> = { EARLY: 0, WAVE_2: 0, CONFIRMED: 0 }
   for (const r of rows) tierCounts[r.tier]++
   const out = {

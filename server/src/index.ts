@@ -2064,6 +2064,78 @@ cron.schedule('0 18 * * 1-5', async () => {
   } catch (e) { log.err('CRON', `miss-miner: ${(e as Error).message}`) }
 }, { timezone: 'Asia/Kolkata' })
 
+// 2026-06-25: CONSOLIDATED DAILY ROUTINE — single 18:30 IST cron that
+// runs every learning + scan + self-improve routine in order, logs each
+// step. User directive: "every day what is told to you to check daily
+// and improvise should be done — the links shared + bhavcopy must be
+// checked daily."
+//
+// Order:
+//   1. fetchExternalGainers — NSE bhavcopy + finology + trendlyne + groww
+//      + 5 Kotak Neo URLs (the 8 user-shared sources)
+//   2. runMissAnalysis — cross-references our hits vs the day's movers
+//   3. gainerPostmortem — what we missed, why
+//   4. runSelfImprove (auto-tune) — adjusts strategy floors per
+//      strategy-specific WR targets (no over-tightening on noise)
+//   5. runEarlyMomentumScan + applyProCriteria — refresh ₹50-500 radar
+//      with bulk-deals + regime + VIX context
+//   6. publishPublicSnapshots — refresh Vercel snapshots
+cron.schedule('30 18 * * 1-5', async () => {
+  const t0 = Date.now()
+  log.info('DAILY-ROUTINE', '═══ Daily improvement routine starting (18:30 IST) ═══')
+  try {
+    log.info('DAILY-ROUTINE', '[1/6] fetching gainers from bhavcopy + 7 web sources...')
+    const { fetchExternalGainers } = await import('./data/externalGainers')
+    const ext = await fetchExternalGainers()
+    log.ok('DAILY-ROUTINE', `[1/6] sources contributed: ${Object.entries(ext.bySite).map(([k, v]) => `${k}=${(v as any[]).length}`).join(' · ')}`)
+  } catch (e) { log.warn('DAILY-ROUTINE', `[1/6] ext-gainers: ${(e as Error).message}`) }
+
+  try {
+    log.info('DAILY-ROUTINE', '[2/6] miss-analysis (vs full mover list)...')
+    const { runMissAnalysis } = await import('./engine/missAnalyzer')
+    const m = await runMissAnalysis()
+    log.ok('DAILY-ROUTINE', `[2/6] caught ${m.caughtCount}/${m.totalGainers} (${(m.catchRate * 100).toFixed(1)}%)`)
+  } catch (e) { log.warn('DAILY-ROUTINE', `[2/6] miss-analysis: ${(e as Error).message}`) }
+
+  try {
+    log.info('DAILY-ROUTINE', '[3/6] gainer-postmortem (would-have-caught analysis)...')
+    const { runGainerPostmortem } = await import('./engine/gainerPostmortem')
+    const r = await runGainerPostmortem()
+    log.ok('DAILY-ROUTINE', `[3/6] postmortem: ${r.caughtCount}/${r.totalGainers} caught · would-have ${r.wouldHaveCaughtCount}`)
+  } catch (e) { log.warn('DAILY-ROUTINE', `[3/6] postmortem: ${(e as Error).message}`) }
+
+  try {
+    log.info('DAILY-ROUTINE', '[4/6] auto-tune self-improve...')
+    const { runSelfImprove } = await import('./engine/selfImprove')
+    await runSelfImprove()
+    log.ok('DAILY-ROUTINE', '[4/6] auto-tune cycle done')
+  } catch (e) { log.warn('DAILY-ROUTINE', `[4/6] auto-tune: ${(e as Error).message}`) }
+
+  try {
+    log.info('DAILY-ROUTINE', '[5/6] Early Momentum refresh with pro-criteria...')
+    const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum')
+    const out = await runAndPublishEarlyMomentum()
+    log.ok('DAILY-ROUTINE', `[5/6] early-momentum: ${out.total} candidates (${out.tierCounts.EARLY} EARLY · ${out.tierCounts.WAVE_2} WAVE_2 · ${out.tierCounts.CONFIRMED} CONFIRMED)`)
+  } catch (e) { log.warn('DAILY-ROUTINE', `[5/6] early-momentum: ${(e as Error).message}`) }
+
+  try {
+    log.info('DAILY-ROUTINE', '[6/6] publishing public snapshots...')
+    const { publishPublicSnapshots } = await import('./engine/publicSnapshots')
+    const wp = await (await import('./engine/weeklyManagerPick')).getLatestPick()
+    await publishPublicSnapshots({
+      weeklyPick: wp ?? null,
+      dailyPick: null,
+      preMoveResults: [],
+      hitLogEntries: [],
+      signals: [],
+    })
+    log.ok('DAILY-ROUTINE', '[6/6] snapshots published')
+  } catch (e) { log.warn('DAILY-ROUTINE', `[6/6] publish: ${(e as Error).message}`) }
+
+  const dt = ((Date.now() - t0) / 1000).toFixed(1)
+  log.ok('DAILY-ROUTINE', `═══ Daily routine complete in ${dt}s ═══`)
+}, { timezone: 'Asia/Kolkata' })
+
 app.get('/api/learning/miss-report', async (_req, res) => {
   try {
     const { getLatestMissReport } = await import('./engine/dailyMissMiner')

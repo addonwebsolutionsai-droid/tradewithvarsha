@@ -3039,11 +3039,12 @@ export function PublicFnoFuturesPage(): JSX.Element {
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/10 to-accent-green/5 border border-accent-amber/40 rounded-lg">
         <div className="text-3xl">📊</div>
         <div className="flex-1">
-          <div className="text-sm font-bold text-accent-amber">F&O Stock-Futures — 12-Criteria Pre-Breakout Scanner</div>
+          <div className="text-sm font-bold text-accent-amber">F&O Stock-Futures — 18-Criteria Pre-Breakout Scanner</div>
           <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
-            Scans ~211 NSE F&O underlyings against the 12-point checklist:
-            <b> Seasonality · Cycle · Volume↑ · FII/DII/Promoter↑ · 5-Day Vol · Technicals · Harmonic · Elliott · Darvas · News · Accumulation · Tight Range</b>.
-            Click any row to expand the full scorecard. Names already running &gt;8% in 5d are penalised — we want setups <b>BEFORE the move</b>.
+            Scans ~211 NSE F&O underlyings against the 18-point institutional checklist:
+            <br/><b>Core 12:</b> Seasonality · Cycle · Volume↑ · FII/DII/Promoter↑ · 5-Day Vol · Technicals · Harmonic · Elliott · Darvas · News · Accumulation · Tight Range
+            <br/><b>Pro 6:</b> OI Buildup direction · Market Regime · India VIX · R:R ≥ 2.5 · Bulk-deals confirmation · RS-z vs NIFTY
+            <br/>Click any row to expand the full scorecard. Setups already running &gt;8% in 5d are penalised — we want them <b>BEFORE the move</b>.
           </div>
           <div className="text-[10px] text-neutral-500 mt-2 font-mono">
             Scanned {data?.universeSize ?? 211} · {data?.total ?? 0} passed · 💎 HIGH {data?.highConvCount ?? 0} · ⭐ MED {data?.medConvCount ?? 0} · refreshes every 30 min during market hours
@@ -3090,7 +3091,7 @@ export function PublicFnoFuturesPage(): JSX.Element {
                       <td className={`${tdb} text-center font-bold ${r.score >= 80 ? 'text-accent-green' : r.score >= 65 ? 'text-accent-amber' : 'text-neutral-300'}`}>{r.score}</td>
                       <td className={`${tdb} text-center`}>
                         {tc ? (
-                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${tc.passCount >= 9 ? 'bg-accent-green/20 text-accent-green' : tc.passCount >= 6 ? 'bg-accent-cyan/15 text-accent-cyan' : 'bg-ink-700 text-neutral-500'}`}>{tc.passCount}/12</span>
+                          <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold ${tc.passCount >= 12 ? 'bg-accent-green/20 text-accent-green' : tc.passCount >= 8 ? 'bg-accent-cyan/15 text-accent-cyan' : 'bg-ink-700 text-neutral-500'}`}>{tc.passCount}/{tc.results?.length ?? 18}</span>
                         ) : <span className="text-neutral-600">—</span>}
                       </td>
                       <td className={`${tdb} text-right text-neutral-200`}>₹{r.price?.toFixed?.(1)}</td>
@@ -3140,10 +3141,11 @@ export function PublicFnoFuturesPage(): JSX.Element {
           </table>
         </div>
       )}
-      <HowToTradeBox tab="F&O Futures · 12-Criteria" rules={[
-        { title: 'The 12 criteria', body: '1. Seasonality · 2. Gann/Bradley Cycle · 3. Volume Increase (today vs 20d) · 4. FII/DII/Promoter stake ↑ · 5. Last 5-day Vol Formula (5d/20d) · 6. Technicals (EMA+RSI+ADX+MACD) · 7. Harmonic / Fib PRZ · 8. Elliott Wave 1/3/4 · 9. Darvas Box · 10. News-Driven bar · 11. Big-hands Accumulation (OBV+delivery) · 12. Tight Range b/f Blast.' },
-        { title: 'Reading the scorecard', body: 'Each criterion contributes 0-10 to a max 120 composite. Click any row to expand and see WHICH criteria fired with the actual numbers. 9/12+ passes = highest conviction setup.' },
-        { title: 'Composite ranking', body: 'Final score = base technical score (0-100) + 1.5 × passCount. A 7-criteria match gives +10.5 to the base, an 11-criteria match gives +16.5. Sort the table by Score column to see the strongest setups first.' },
+      <HowToTradeBox tab="F&O Futures · 18-Criteria" rules={[
+        { title: 'The 18 criteria', body: 'CORE 12: 1. Seasonality · 2. Cycle (Gann 90d) · 3. Volume Increase (today vs 20d) · 4. FII/DII/Promoter stake↑ · 5. Last 5-day Vol Formula (5d/20d) · 6. Technicals (EMA+RSI+ADX+MACD) · 7. Harmonic / Fib PRZ · 8. Elliott Wave 1/3/4 · 9. Darvas Box · 10. News-Driven bar · 11. Big-hands Accumulation (OBV+delivery) · 12. Tight Range b/f Blast.\nPRO 6: 13. OI Buildup direction (long buildup vs short covering) · 14. Market Regime (NIFTY 50/200DMA) · 15. India VIX context · 16. R:R ≥ 2.5 floor · 17. Bulk-deals named-buyer confirmation · 18. RS-z vs NIFTY (relative strength outperformance).' },
+        { title: 'Reading the scorecard', body: 'Each criterion contributes 0-10 to a composite. Click any row to expand and see WHICH criteria fired with the actual numbers. 12+/18 passes = highest conviction setup.' },
+        { title: 'Composite ranking', body: 'Final score = base technical score (0-100) + 1.2 × passCount. A 10-criteria match gives +12 to the base, a 15-criteria match gives +18. Sort the table by Score column to see the strongest setups first.' },
+        { title: 'Pro filters that protect capital', body: 'R:R floor auto-rejects setups <2.5:1. Market Regime suppresses LONG bias in a bear market. VIX EXTREME (>25) penalises all longs. These three save you from low-probability trades that look good on paper.' },
       ]} />
     </div>
   )

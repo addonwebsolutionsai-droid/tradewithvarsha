@@ -245,28 +245,9 @@ export async function scanFnoFutures(opts?: { maxConcurrency?: number; limit?: n
       }
 
       score = Math.max(0, Math.min(100, score))
-      // 2026-06-25: lowered base gate from 65 → 55 so more candidates flow
-      // through to the 12-criteria scorer; the composite score (base × 12c)
-      // is what actually decides the final ranking.
       if (score < 55) return null
 
-      // 2026-06-25: 12-criteria overlay per user directive — seasonality,
-      // cycle, vol increase, FII/DII/P, 5d vol, technicals, harmonic, Elliott,
-      // Darvas, news, accumulation footprint, tight-range pre-blast.
-      let twelveCriteria: FnoFuturesRow['twelveCriteria'] | undefined
-      try {
-        const { compute12CriteriaScore } = await import('./fnoFutures12Criteria')
-        const tc = await compute12CriteriaScore({
-          symbol, candles, side: r.side,
-        })
-        twelveCriteria = tc
-        // Composite bonus: each pass adds 1.5 to base (max +18). Allows base
-        // 55 + 12 passes (rare) → composite 73. Realistic 7-8 passes → +12.
-        score = Math.min(100, score + tc.passCount * 1.5)
-      } catch { /* fall through */ }
-
-      const conf: FnoConfidence = score >= 80 ? 'HIGH' : 'MED'
-      const grade: 'A' | 'B' = score >= 80 ? 'A' : 'B'
+      // Compute entry/SL/T1 first so R:R criterion has them
       const dir = r.side === 'LONG' ? 1 : -1
       const slPct = r.features.bbWidthPct < 8 ? 0.045 : 0.06
       const entry = r.price
@@ -274,6 +255,28 @@ export async function scanFnoFutures(opts?: { maxConcurrency?: number; limit?: n
       const t1 = +(entry * (1 + dir * TARGET_PCT.T1)).toFixed(2)
       const t2 = +(entry * (1 + dir * TARGET_PCT.T2)).toFixed(2)
       const t3 = +(entry * (1 + dir * TARGET_PCT.T3)).toFixed(2)
+
+      // 2026-06-25: 18-criteria scorecard. 12 base (seasonality / cycle /
+      // vol / stakes / 5d vol / technical / harmonic / Elliott / Darvas /
+      // news / accumulation / tight range) PLUS 6 pro (OI buildup, market
+      // regime, VIX context, R:R floor, bulk-deals, RS vs NIFTY).
+      let twelveCriteria: FnoFuturesRow['twelveCriteria'] | undefined
+      try {
+        const { compute12CriteriaScore } = await import('./fnoFutures12Criteria')
+        const { computeProCriteria } = await import('./proCriteria')
+        const [base, pro] = await Promise.all([
+          compute12CriteriaScore({ symbol, candles, side: r.side }),
+          computeProCriteria({ symbol, candles, side: r.side, entry, stopLoss: sl, target1: t1 }),
+        ])
+        const allResults = [...base.results, ...pro]
+        const total = +allResults.reduce((s, r2) => s + r2.score, 0).toFixed(1)
+        const passCount = allResults.filter(r2 => r2.pass).length
+        twelveCriteria = { total, passCount, results: allResults }
+        score = Math.min(100, score + passCount * 1.2)        // 18 criteria — slightly smaller multiplier
+      } catch { /* fall through */ }
+
+      const conf: FnoConfidence = score >= 80 ? 'HIGH' : 'MED'
+      const grade: 'A' | 'B' = score >= 80 ? 'A' : 'B'
 
       const out: FnoFuturesRow = {
         symbol, side: r.side, price: r.price,
