@@ -219,44 +219,49 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
               </button>
             )
           })}
-          {/* 2026-06-25: "More ▾" dropdown for secondary / diagnostic tabs.
-              Click to toggle; click outside or pick an item to close. */}
-          {moreItems.length > 0 && (
-            <div className="relative flex-shrink-0">
-              <button
-                onClick={() => setMoreOpen(v => !v)}
-                onBlur={() => setTimeout(() => setMoreOpen(false), 150)}
-                className={clsx(
-                  'px-3 py-2.5 text-[12px] flex items-center gap-1 whitespace-nowrap border-b-2 transition-colors relative',
-                  onMore || moreOpen
-                    ? 'text-accent-cyan border-accent-cyan'
-                    : 'text-neutral-500 border-transparent hover:text-neutral-300',
-                )}>
-                More
-                <ChevronDown size={11} className={clsx('transition-transform', moreOpen && 'rotate-180')} />
-              </button>
-              {moreOpen && (
-                <div className="absolute top-full right-0 mt-1 min-w-[220px] bg-ink-800 border border-ink-500 rounded-lg shadow-xl z-50 py-1">
-                  {moreItems.map(m => {
-                    const active = location.pathname === m.to || location.pathname.startsWith(m.to + '/')
-                    return (
-                      <button
-                        key={m.to}
-                        title={m.title}
-                        onMouseDown={(e) => { e.preventDefault(); navigate(m.to); setMoreOpen(false) }}
-                        className={clsx(
-                          'w-full text-left px-3 py-2 text-[12px] transition-colors',
-                          active ? 'text-accent-cyan bg-accent-cyan/10' : 'text-neutral-400 hover:text-neutral-100 hover:bg-ink-700',
-                        )}>
-                        {m.label}
-                      </button>
-                    )
-                  })}
-                </div>
-              )}
-            </div>
-          )}
         </nav>
+
+        {/* 2026-06-25: "More ▾" dropdown — rendered OUTSIDE the scrollable
+            <nav> so the dropdown isn't clipped by overflow-x-auto. The
+            menu uses position:fixed with viewport coordinates so it
+            renders on top of everything else, dark theme preserved. */}
+        {moreItems.length > 0 && (
+          <div className="relative flex-shrink-0 border-l border-ink-500/30">
+            <button
+              onClick={() => setMoreOpen(v => !v)}
+              onBlur={() => setTimeout(() => setMoreOpen(false), 200)}
+              className={clsx(
+                'h-full px-3 py-2.5 text-[12px] flex items-center gap-1 whitespace-nowrap border-b-2 transition-colors',
+                onMore || moreOpen
+                  ? 'text-accent-cyan border-accent-cyan'
+                  : 'text-neutral-500 border-transparent hover:text-neutral-300',
+              )}>
+              More
+              <ChevronDown size={11} className={clsx('transition-transform', moreOpen && 'rotate-180')} />
+            </button>
+            {moreOpen && (
+              <div
+                className="absolute top-full right-0 mt-1 min-w-[220px] bg-ink-800 border border-ink-500 rounded-lg shadow-2xl py-1"
+                style={{ zIndex: 9999 }}>
+                {moreItems.map(m => {
+                  const active = location.pathname === m.to || location.pathname.startsWith(m.to + '/')
+                  return (
+                    <button
+                      key={m.to}
+                      title={m.title}
+                      onMouseDown={(e) => { e.preventDefault(); navigate(m.to); setMoreOpen(false) }}
+                      className={clsx(
+                        'w-full text-left px-3 py-2 text-[12px] transition-colors bg-ink-800',
+                        active ? 'text-accent-cyan bg-accent-cyan/10' : 'text-neutral-300 hover:text-neutral-100 hover:bg-ink-700',
+                      )}>
+                      {m.label}
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+          </div>
+        )}
 
         {/* 2026-05-21: 3-dot Settings dropdown REMOVED. User reported it
             still rendering "weirdly" on Vercel (likely stale deploy serving
