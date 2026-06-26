@@ -1648,14 +1648,24 @@ export function PublicCrossConfluencePage(): JSX.Element {
       {isLoading && <Loading />}
       {error && <Empty msg="Couldn't load confluence. Refreshes every 30 min." />}
       {rows.length === 0 && !isLoading && !error && <Empty msg={proOn ? 'No PRO-grade confluence picks right now (3+ engines OR 2-engine with smart-money+sector confirm). Toggle PRO Mode off to see all.' : 'No multi-engine agreement right now. Check back at next publish.'} />}
-      {/* 2026-06-16: uniform table. Reason col shows tier (ULTRA/STRONG) +
-          contributing engines + condensed reasoning. */}
+      {/* 2026-06-26: Reason column now shows REAL trading logic from the
+          contributing engines (RSI, Vol, Delivery, FII↑ etc.) plus the
+          FII/DII/Promoter stake summary — no more opaque "Engine α/β/γ"
+          labels. The confluence COUNT is preserved as a leading tier tag. */}
       {rows.length > 0 && (
-        <UniformPickTable rows={rows.map((r: any) => ({
-          ...r,
-          conviction: r.ultraScore ?? r.conviction,
-          flowNote: `${(r.sources?.length ?? 0) >= 3 ? '⚡ ULTRA' : '⭐ STRONG'} · ${r.sources?.join(' + ') ?? ''}${r.reasoning?.length ? ' · ' + r.reasoning.slice(0, 2).join(' · ') : ''}`,
-        }))} />
+        <UniformPickTable rows={rows.map((r: any) => {
+          const count = r.sources?.length ?? 0
+          const tier = count >= 3 ? '⚡ ULTRA' : '⭐ STRONG'
+          const tierTag = `${tier} · ${count}-engine confluence`
+          const reasonsCondensed = (r.reasoning ?? []).slice(0, 3).join(' · ')
+          return {
+            ...r,
+            conviction: r.ultraScore ?? r.conviction,
+            shareholdingNote: r.shareholdingNote,           // surfaces 📊 line in Reason col
+            flowNote: `${tierTag}${reasonsCondensed ? ' · ' + reasonsCondensed : ''}`,
+            noBrainerBet: r.noBrainerBet,
+          }
+        })} />
       )}
       <HowToTradeBox tab="Ultra Picks" rules={[
         { title: 'Tier rules', body: '⚡ ULTRA (3+ engines): full size, highest priority.\n⭐ STRONG (2 engines): 60% size.' },

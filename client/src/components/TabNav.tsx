@@ -91,9 +91,10 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/early-momentum', label: '🚀 Early Move', icon: <Activity size={14} />,
       acc: null, highProb: true,
       title: 'Early Momentum Radar — ₹50-500 stocks BEFORE the 10-20% weekly move. NO conv floor, NO pre-breakout reject. Pure institutional-footprint signature (volume + delivery + range expansion + tight base).' },
-    { to: '/bulk-deals',   label: '📡 Footprint',  icon: <Activity size={14} />,
-      acc: null, highProb: true,
-      title: 'NSE Bulk Deals — real institutional + superstar footprint feed, end-of-day with buyer/seller names. THE actual smart-money tracks.' },
+    // 2026-06-26: Footprint moved to More dropdown — NSE rate-limits the
+    // bulk-deals endpoint so the standalone tab is often empty. The data
+    // still feeds Early Momentum (criterion 17 + pro-criteria layer) so
+    // the value is captured upstream. Route preserved for bookmarks.
     { to: '/superstar',    label: '🌟 Superstar',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: "India's top 10 investors (Jhunjhunwala / Damani / Kacholia / Kedia / Dolly Khanna / Goel / Singhania / Kela / Porinju / Mukul Agrawal) — their holdings × our signal scoring." },
@@ -147,6 +148,7 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
   // nav per user request. More dropdown now only carries diagnostic /
   // secondary tabs.
   const moreItems: Array<{ to: string; label: string; title: string }> = PUBLIC_MODE ? [
+    { to: '/bulk-deals',  label: '📡 Footprint (NSE bulk deals)', title: 'NSE Bulk Deals — institutional + superstar named-buyer feed. Often empty (NSE rate-limits) but the data feeds Early Momentum upstream.' },
     { to: '/smart-money', label: '🧮 Smart Money (OBV)', title: 'OBV / A-D Line / CMF divergence — institutional flow vs price action.' },
     { to: '/sl-traps',    label: '🛡️ SL Traps',          title: 'Liquidity grabs — SL hit then target hit anyway. Effective WR with traps as wins.' },
     { to: '/oi-buildup',  label: '🔁 OI Build-up',       title: 'Live F&O OI positioning. Long buildup · short covering · put-writing.' },
