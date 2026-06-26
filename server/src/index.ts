@@ -2112,14 +2112,22 @@ cron.schedule('30 18 * * 1-5', async () => {
   } catch (e) { log.warn('DAILY-ROUTINE', `[4/6] auto-tune: ${(e as Error).message}`) }
 
   try {
-    log.info('DAILY-ROUTINE', '[5/6] Early Momentum refresh with pro-criteria...')
-    const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum')
-    const out = await runAndPublishEarlyMomentum()
-    log.ok('DAILY-ROUTINE', `[5/6] early-momentum: ${out.total} candidates (${out.tierCounts.EARLY} EARLY · ${out.tierCounts.WAVE_2} WAVE_2 · ${out.tierCounts.CONFIRMED} CONFIRMED)`)
-  } catch (e) { log.warn('DAILY-ROUTINE', `[5/6] early-momentum: ${(e as Error).message}`) }
+    log.info('DAILY-ROUTINE', '[5/7] mining mover patterns from today\'s gainers (T-1 fingerprints)...')
+    const { mineTodaysMoverPatterns, publishMoverArchetypesSnapshot } = await import('./engine/moverPatternMiner')
+    const mine = await mineTodaysMoverPatterns()
+    await publishMoverArchetypesSnapshot()
+    log.ok('DAILY-ROUTINE', `[5/7] mined ${mine.added} new archetypes (store total ${mine.total})`)
+  } catch (e) { log.warn('DAILY-ROUTINE', `[5/7] mover-patterns: ${(e as Error).message}`) }
 
   try {
-    log.info('DAILY-ROUTINE', '[6/6] publishing public snapshots...')
+    log.info('DAILY-ROUTINE', '[6/7] Early Momentum refresh with pro-criteria + archetype matcher...')
+    const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum')
+    const out = await runAndPublishEarlyMomentum()
+    log.ok('DAILY-ROUTINE', `[6/7] early-momentum: ${out.total} candidates (${out.tierCounts.EARLY} EARLY · ${out.tierCounts.WAVE_2} WAVE_2 · ${out.tierCounts.CONFIRMED} CONFIRMED)`)
+  } catch (e) { log.warn('DAILY-ROUTINE', `[6/7] early-momentum: ${(e as Error).message}`) }
+
+  try {
+    log.info('DAILY-ROUTINE', '[7/7] publishing public snapshots...')
     const { publishPublicSnapshots } = await import('./engine/publicSnapshots')
     const wp = await (await import('./engine/weeklyManagerPick')).getLatestPick()
     await publishPublicSnapshots({

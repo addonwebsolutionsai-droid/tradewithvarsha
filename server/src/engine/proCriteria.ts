@@ -239,8 +239,16 @@ function criterion18RelativeStrength(ctx: MarketContext, candles: Candle[]): Cri
 }
 
 /**
- * Compute all 6 pro criteria. Returns an array appended to the 12-criteria
- * result so the final scorecard has 18 entries.
+ * Compute all 8 pro criteria (13-20). Returns an array appended to the
+ * 12-criteria base — final scorecard has 20 entries.
+ *  13. OI Buildup direction
+ *  14. Market Regime
+ *  15. India VIX context
+ *  16. R:R floor
+ *  17. Bulk-deals confirmation
+ *  18. RS-z vs NIFTY
+ *  19. SMC (FVG/OB/BoS/Liquidity sweep)
+ *  20. Stage Analysis (30W lifecycle)
  */
 export async function computeProCriteria(opts: {
   symbol: string
@@ -261,5 +269,14 @@ export async function computeProCriteria(opts: {
   }
   results.push(criterion17BulkDeals(ctx, opts.symbol))
   results.push(criterion18RelativeStrength(ctx, opts.candles))
+  // 19 + 20: SMC patterns + Stage Analysis
+  try {
+    const [{ criterion19SMC }, { criterion20StageAnalysis }] = await Promise.all([
+      import('./smcPatterns'),
+      import('./stageAnalysis'),
+    ])
+    results.push(criterion19SMC(opts.candles, opts.side))
+    results.push(criterion20StageAnalysis(opts.candles, opts.side))
+  } catch { /* skip if modules fail to import */ }
   return results
 }

@@ -395,6 +395,31 @@ async function enrichShareholding(rows: EarlyMomentumRow[]): Promise<void> {
   }))
 }
 
+// 2026-06-25: Mover-archetype matcher — for each candidate, find the
+// nearest WINNING archetype mined from past 5%+ movers. Strong match
+// (≥75% similarity) = candidate is replaying a known pre-move setup.
+async function applyArchetypeMatcher(rows: EarlyMomentumRow[]): Promise<void> {
+  try {
+    const { matchAgainstMoverArchetypes } = await import('./moverPatternMiner')
+    let matchCount = 0
+    await Promise.all(rows.map(async r => {
+      try {
+        const candles = await getCandles(r.symbol, '1D' as any, 60)
+        if (!candles || candles.length < 30) return
+        const m = await matchAgainstMoverArchetypes({ candles, symbol: r.symbol, minSimilarity: 65 })
+        if (m?.match && m.archetype) {
+          r.score = Math.min(100, r.score + Math.round((m.similarity ?? 0) / 10))
+          r.reasons.unshift(`🔬 ${m.reasoning}`)
+          matchCount++
+        }
+      } catch { /* skip */ }
+    }))
+    log.ok('EARLY-MOMENTUM', `Archetype matcher: ${matchCount}/${rows.length} candidates match a winning pre-move setup`)
+  } catch (e) {
+    log.warn('EARLY-MOMENTUM', `archetype matcher failed: ${(e as Error).message}`)
+  }
+}
+
 // 2026-06-25: Pro-criteria boost — apply market regime + VIX + bulk-deals +
 // RS-z to each candidate as an EXTRA SCORE LAYER. Names confirmed by named
 // bulk-deal buyers OR strongly outperforming NIFTY get bumped to the top.
@@ -434,6 +459,8 @@ export async function runAndPublishEarlyMomentum(): Promise<{ generatedAt: strin
   const rows = await runEarlyMomentumScan()
   // Enrich top 100 with shareholding context — surfaces in Signature column.
   await enrichShareholding(rows)
+  // 2026-06-25: archetype matcher — pre-move setup pattern recognition
+  await applyArchetypeMatcher(rows)
   // 2026-06-25: pro-criteria boost — bulk-deal confirm, regime, VIX
   await applyProCriteria(rows)
   const tierCounts: Record<string, number> = { EARLY: 0, WAVE_2: 0, CONFIRMED: 0 }

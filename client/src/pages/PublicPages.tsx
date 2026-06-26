@@ -3039,12 +3039,13 @@ export function PublicFnoFuturesPage(): JSX.Element {
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/10 to-accent-green/5 border border-accent-amber/40 rounded-lg">
         <div className="text-3xl">📊</div>
         <div className="flex-1">
-          <div className="text-sm font-bold text-accent-amber">F&O Stock-Futures — 18-Criteria Pre-Breakout Scanner</div>
+          <div className="text-sm font-bold text-accent-amber">F&O Stock-Futures — 20-Criteria Pre-Breakout Scanner</div>
           <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
-            Scans ~211 NSE F&O underlyings against the 18-point institutional checklist:
+            Scans ~211 NSE F&O underlyings against the 20-point institutional checklist:
             <br/><b>Core 12:</b> Seasonality · Cycle · Volume↑ · FII/DII/Promoter↑ · 5-Day Vol · Technicals · Harmonic · Elliott · Darvas · News · Accumulation · Tight Range
-            <br/><b>Pro 6:</b> OI Buildup direction · Market Regime · India VIX · R:R ≥ 2.5 · Bulk-deals confirmation · RS-z vs NIFTY
-            <br/>Click any row to expand the full scorecard. Setups already running &gt;8% in 5d are penalised — we want them <b>BEFORE the move</b>.
+            <br/><b>Pro 6:</b> OI Buildup · Market Regime · India VIX · R:R ≥ 2.5 · Bulk-deals · RS-z vs NIFTY
+            <br/><b>Master-maker 2:</b> SMC (FVG/OB/BoS/Liquidity sweep) · Stage Analysis (30W lifecycle)
+            <br/>Plus the <b>MoverPatternMiner</b> matches each candidate against past 5%+ winners' T-1 setups — pattern-recognition for pre-move replays.
           </div>
           <div className="text-[10px] text-neutral-500 mt-2 font-mono">
             Scanned {data?.universeSize ?? 211} · {data?.total ?? 0} passed · 💎 HIGH {data?.highConvCount ?? 0} · ⭐ MED {data?.medConvCount ?? 0} · refreshes every 30 min during market hours
