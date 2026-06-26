@@ -702,7 +702,10 @@ export async function runWeeklyPick(
               const visibilityMult = nifty500Set.has(sym.toUpperCase()) ? 1.2 : avgTurnoverCr >= 5 ? 1.1 : 1.0
               // 2026-06-25: high-delivery accumulation bonus — institutional
               // footprint from yesterday's bhavcopy. Catches second-leg moves.
-              const hiDeliveryBonus = hiDeliverySet.has(sym.toUpperCase()) ? 1.4 : 1.0
+              // 2026-06-26: skip in momentum-old mode — that tab restores
+              // the pre-4fca35e earlier-working engine, without the newer
+              // bonus layers.
+              const hiDeliveryBonus = (preRankMode !== 'momentum-old' && hiDeliverySet.has(sym.toUpperCase())) ? 1.4 : 1.0
               const rank = (50 + w2.score * 3) * visibilityMult * hiDeliveryBonus
               prerank.push({
                 symbol: sym, preBreakoutScore: w2.score * 10, ret5d, ret20d, rank,
@@ -928,22 +931,26 @@ export async function runWeeklyPick(
   // fingerprint matches a previously-winning setup (same EMA stack, similar
   // ADX/RSI/ATR/range), award +5 conviction. Memory is populated by the
   // lifecycle on every T-hit (see patternMemory.ts).
-  try {
-    const { matchesKnownWinner } = await import('./patternMemory')
-    await Promise.all(top80.map(async r => {
-      try {
-        const candles = (r as any).__candles
-        if (!candles || candles.length < 30) return
-        const m = await matchesKnownWinner({ candles, direction: r.direction })
-        if (m.match) {
-          r.conviction = Math.min(100, r.conviction + 5)
-          r.flowNote = `${r.flowNote ?? ''} · 🧠 matches ${m.winnerSymbol} ${m.status}`.trim().replace(/^· /, '')
-        }
-      } catch { /* skip on per-symbol error */ }
-    }))
-    // Strip the candle array before serialization (heavy field)
-    for (const r of top80) delete (r as any).__candles
-  } catch { /* pattern store missing — first run */ }
+  // 2026-06-26: skip in momentum-old mode so Old-WeeklyPick stays the pure
+  // pre-4fca35e engine (the one the user remembers working well).
+  if (preRankMode !== 'momentum-old') {
+    try {
+      const { matchesKnownWinner } = await import('./patternMemory')
+      await Promise.all(top80.map(async r => {
+        try {
+          const candles = (r as any).__candles
+          if (!candles || candles.length < 30) return
+          const m = await matchesKnownWinner({ candles, direction: r.direction })
+          if (m.match) {
+            r.conviction = Math.min(100, r.conviction + 5)
+            r.flowNote = `${r.flowNote ?? ''} · 🧠 matches ${m.winnerSymbol} ${m.status}`.trim().replace(/^· /, '')
+          }
+        } catch { /* skip on per-symbol error */ }
+      }))
+    } catch { /* pattern store missing — first run */ }
+  }
+  // Strip the candle array before serialization (heavy field) — always
+  for (const r of top80) delete (r as any).__candles
 
   // Re-sort after no-brainer bonus + well-known soft bias
   top80.sort((a, b) => {

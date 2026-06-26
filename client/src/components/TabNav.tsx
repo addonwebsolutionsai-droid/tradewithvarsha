@@ -120,6 +120,12 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/sectors',      label: 'Sectors',      icon: <BarChart3 size={14} />,
       acc: null,
       title: 'Sector Rotation — 12 NIFTY sectoral indices ranked LEADING → LAGGING.' },
+    // 2026-06-26: Old-Weekly restored to main nav — user feedback: "this
+    // was working well earlier, keep using those logics." Tab runs the
+    // pre-4fca35e momentum-chasing prerank with no freshness reject.
+    { to: '/old-weekly',   label: '📜 Old-Weekly',  icon: <ListChecks size={14} />,
+      acc: null,
+      title: 'Old-WeeklyPick — pre-4fca35e momentum-chasing prerank, no freshness reject. Earlier logic that produced the original 35%-in-3-months winners (MOSCHIP/MARKSANS/FINPIPE/HIKAL etc.).' },
     { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />,
       acc: trackAcc,
       title: 'History + win-rate of every signal across cash + F&O — fully transparent accuracy log.' },
@@ -152,7 +158,6 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/smart-money', label: '🧮 Smart Money (OBV)', title: 'OBV / A-D Line / CMF divergence — institutional flow vs price action.' },
     { to: '/sl-traps',    label: '🛡️ SL Traps',          title: 'Liquidity grabs — SL hit then target hit anyway. Effective WR with traps as wins.' },
     { to: '/oi-buildup',  label: '🔁 OI Build-up',       title: 'Live F&O OI positioning. Long buildup · short covering · put-writing.' },
-    { to: '/old-weekly',  label: '📜 Old-WeeklyPick',    title: 'Diagnostic — old prerank engine for side-by-side comparison.' },
   ] : []
   const onMore = moreItems.some(m => location.pathname === m.to || location.pathname.startsWith(m.to + '/'))
   const [moreOpen, setMoreOpen] = useState(false)
