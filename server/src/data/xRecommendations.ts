@@ -105,28 +105,86 @@ function decodeHtmlEntities(s: string): string {
 
 // 2026-06-26: hard blacklist of common non-stock all-caps tokens that
 // the symbol extractor would otherwise grab. Religious greetings,
-// motivational phrases, festival names, generic shouts.
+// motivational phrases, festival names, sports/celebrity names,
+// generic shouts.
 const NON_STOCK_TOKENS = new Set([
-  'SITARAMHANUMAN', 'JAISHREERAM', 'JAIHANUMAN', 'JAIMATA', 'OMNAMAH',
-  'GOODMORNING', 'GOODEVENING', 'GOODNIGHT',
+  // Religious / devotional
+  'SITARAMHANUMAN', 'JAISHREERAM', 'JAIHANUMAN', 'JAIMATA', 'JAIBOLE',
+  'JAIHIND', 'JAIBHIM', 'OMNAMAH', 'OMSHIVAY', 'OMNAMOH',
+  // Greetings / festival
+  'GOODMORNING', 'GOODEVENING', 'GOODNIGHT', 'NAMASTE',
   'HAPPYDIWALI', 'HAPPYHOLI', 'HAPPYNEWYEAR', 'EIDMUBARAK',
-  'CONGRATS', 'CONGRATULATIONS', 'WELCOME',
-  'BREAKING', 'LIVE', 'NEWS', 'UPDATE', 'ALERT',
-  'NIFTY', 'BANKNIFTY', 'SENSEX',  // index posts go in Options tab not here
-  'INDIA', 'BHARAT', 'NSE', 'BSE',
+  'HAPPY', 'HAPPYBIRTHDAY',
+  // Generic announcements
+  'CONGRATS', 'CONGRATULATIONS', 'WELCOME', 'THANKYOU', 'THANKS',
+  'BREAKING', 'LIVE', 'NEWS', 'UPDATE', 'ALERT', 'IMPORTANT',
+  // Indices — belong in Options tab not X-Recs
+  'NIFTY', 'BANKNIFTY', 'SENSEX', 'FINNIFTY', 'NIFTY50', 'BANKEX',
+  'NIFTYIT', 'NIFTYAUTO', 'NIFTYPHARMA', 'NIFTYFMCG', 'NIFTYMETAL',
+  // Geo / locale
+  'INDIA', 'BHARAT', 'NSE', 'BSE', 'SEBI', 'RBI', 'GOI', 'PSU',
+  // Generic finance words
   'TRADE', 'TRADING', 'INVEST', 'INVESTOR', 'STOCKS', 'STOCK', 'MARKET',
-  'CHART', 'CHARTS', 'PATTERN', 'PATTERNS',
+  'EQUITY', 'EQUITIES', 'PORTFOLIO', 'CAPITAL', 'WEALTH', 'PROFIT',
+  'LOSS', 'GAIN', 'RETURN', 'RETURNS', 'INDIAN', 'INDIANS',
+  // Chart / pattern jargon (not tickers)
+  'CHART', 'CHARTS', 'PATTERN', 'PATTERNS', 'SETUP', 'BREAKOUT',
+  'BREAKDOWN', 'REVERSAL', 'CONTINUATION', 'WEEKLY', 'DAILY', 'MONTHLY',
+  // Cricket / sports (Virat Kohli post leak fix)
+  'VIRAT', 'KOHLI', 'VIRATKOHLI', 'ROHIT', 'SHARMA', 'ROHITSHARMA',
+  'DHONI', 'MSDHONI', 'SACHIN', 'TENDULKAR', 'GILL', 'SHUBMAN',
+  'BUMRAH', 'JADEJA', 'RAHUL', 'RISHABH', 'PANT', 'HARDIK', 'PANDYA',
+  'IPL', 'BCCI', 'RCB', 'CSK', 'MI', 'GT', 'SRH', 'KKR', 'PBKS',
+  'DC', 'RR', 'LSG', 'CRICKET', 'WORLDCUP', 'TEST', 'ODI', 'T20',
+  'CHAMPIONS', 'CAPTAIN', 'COACH',
+  // Politics / current-affairs noise
+  'MODI', 'GOVT', 'GOVERNMENT', 'BUDGET', 'MINISTER', 'POLITICS',
+  // Common English words that pass all-caps test
+  'PLEASE', 'KINDLY', 'JUST', 'THIS', 'THAT', 'THESE', 'THOSE',
+  'WHAT', 'WHEN', 'WHERE', 'WHICH', 'WHILE', 'WHILES', 'WOULD',
+  'COULD', 'SHOULD', 'EVERY', 'SOME', 'FROM', 'INTO', 'WITH',
+  'ABOUT', 'AFTER', 'BEFORE', 'YESTERDAY', 'TODAY', 'TOMORROW',
+  'THANK', 'SORRY', 'HELLO', 'BYE', 'OKAY', 'YESS', 'NOPE',
 ])
+
+// 2026-06-26: validated universe of REAL Indian listed tickers. Loaded
+// once on module init from the static NIFTY_500_CORE + dynamic
+// NSE/BSE scrip master. If a parsed token isn't in this set, it's NOT
+// a real stock and gets dropped — kills the "VIRAT" / random-word leaks.
+let validTickerSet: Set<string> | null = null
+async function getValidTickerSet(): Promise<Set<string>> {
+  if (validTickerSet) return validTickerSet
+  const set = new Set<string>()
+  try {
+    const { NIFTY_500_CORE, getAllNSEEquities, getAllBSEEquities } = await import('../screeners/universe')
+    for (const s of NIFTY_500_CORE) set.add(String(s).toUpperCase())
+    try {
+      const nse = await getAllNSEEquities()
+      for (const s of nse) set.add(String(s).toUpperCase())
+    } catch { /* skip if ScripMaster cold */ }
+    try {
+      const bse = await getAllBSEEquities()
+      for (const s of bse) set.add(String(s).toUpperCase())
+    } catch { /* skip if ScripMaster cold */ }
+  } catch { /* universe module unavailable */ }
+  log.info('X-RECS', `valid-ticker set loaded: ${set.size} symbols`)
+  validTickerSet = set
+  return set
+}
 
 // NSE symbols are typically all-caps tokens 3-12 chars (e.g. RELIANCE, HDFCBANK).
 // We parse $TICKER, #TICKER, or standalone TICKER followed by price/target words.
-function extractSymbol(text: string): string | null {
+function extractSymbol(text: string, validTickers: Set<string>): string | null {
   const cleaned = text.toUpperCase()
   const validate = (s: string): string | null => {
     if (!s || s.length < 3 || s.length > 12) return null
     if (NON_STOCK_TOKENS.has(s)) return null
-    // Reject if all vowels or all consonants (common for non-symbols)
     if (!/[AEIOU]/.test(s)) return null
+    // 2026-06-26: HARD GATE — token must be a real listed NSE / BSE ticker.
+    // This kills random words like "VIRAT", "KOHLI", "TODAY", "WORLD" etc.
+    // that happen to be all-caps and match the previous heuristic. If the
+    // ticker set is empty (cold start), fall through to legacy behavior.
+    if (validTickers.size > 0 && !validTickers.has(s)) return null
     return s
   }
   // Tightened: $TICKER / #TICKER must be followed by space or punctuation
@@ -138,6 +196,14 @@ function extractSymbol(text: string): string | null {
   const verbMatch = cleaned.match(/\b(?:BUY|SELL|SHORT|LONG|ACCUMULATE|ADD|TARGET|ENTRY)\s+([A-Z]{3,12})\b/)
   if (verbMatch) {
     const v = validate(verbMatch[1])
+    if (v) return v
+  }
+  // Last-resort: any standalone all-caps token of length 4-12 — only if it's
+  // a known ticker. This catches "RELIANCE chart looks good" without a $/buy
+  // prefix. Skip 3-char tokens here (too many false positives like THE, AND).
+  const tokens = cleaned.match(/\b[A-Z]{4,12}\b/g) ?? []
+  for (const tok of tokens) {
+    const v = validate(tok)
     if (v) return v
   }
   return null
@@ -176,9 +242,9 @@ function extractPrices(text: string, label: string): number[] {
   return Array.from(new Set(out))
 }
 
-function parseRecommendation(text: string, handle: string, sourceUrl: string, postedAt: string, imageUrl: string | null): XRecommendation {
+function parseRecommendation(text: string, handle: string, sourceUrl: string, postedAt: string, imageUrl: string | null, validTickers: Set<string>): XRecommendation {
   const clean = decodeHtmlEntities(text).replace(/https?:\/\/\S+/g, '').replace(/\s+/g, ' ').trim()
-  const sym = extractSymbol(clean)
+  const sym = extractSymbol(clean, validTickers)
   const dir = extractDirection(clean)
   const entries = extractPrices(clean, '(?:ENTRY|BUY|BUY ABOVE|ADD|ACCUMULATE|CMP|AT|@)')
   const sls = extractPrices(clean, '(?:SL|STOP\\s*LOSS|STOPLOSS)')
@@ -197,7 +263,7 @@ function parseRecommendation(text: string, handle: string, sourceUrl: string, po
   }
 }
 
-function parseRssItems(xml: string, handle: string): XRecommendation[] {
+function parseRssItems(xml: string, handle: string, validTickers: Set<string>): XRecommendation[] {
   const out: XRecommendation[] = []
   const itemRe = /<item>([\s\S]*?)<\/item>/g
   let m
@@ -212,7 +278,7 @@ function parseRssItems(xml: string, handle: string): XRecommendation[] {
     const imgMatch = descMatch ? descMatch[1].match(/<img[^>]+src="([^"]+)"/) : null
     const postedAt = dateMatch ? new Date(dateMatch[1]).toISOString() : new Date().toISOString()
     const sourceUrl = linkMatch ? linkMatch[1].replace(/<!\[CDATA\[|\]\]>/g, '').trim() : `https://x.com/${handle}`
-    out.push(parseRecommendation(text, handle, sourceUrl, postedAt, imgMatch ? imgMatch[1] : null))
+    out.push(parseRecommendation(text, handle, sourceUrl, postedAt, imgMatch ? imgMatch[1] : null, validTickers))
   }
   return out
 }
@@ -223,13 +289,14 @@ export async function fetchXRecommendations(opts?: { perHandle?: number }): Prom
   const all: XRecommendation[] = []
 
   log.info('X-RECS', `fetching from ${X_ANALYSTS.length} handles via nitter mirrors (best-effort)...`)
+  const validTickers = await getValidTickerSet()
   await Promise.all(X_ANALYSTS.map(async a => {
     let recs: XRecommendation[] = []
     let source = 'unavailable'
     // Try nitter RSS first (cleanest)
     const rss = await fetchNitterRss(a.handle)
     if (rss) {
-      recs = parseRssItems(rss, a.handle).slice(0, perHandle)
+      recs = parseRssItems(rss, a.handle, validTickers).slice(0, perHandle)
       source = `nitter (${recs.length} items)`
     } else {
       // Last-resort: try syndication (rare to succeed without auth now)
