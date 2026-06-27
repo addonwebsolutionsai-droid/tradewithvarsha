@@ -103,16 +103,55 @@ function decodeHtmlEntities(s: string): string {
   return s.replace(/&amp;/g, '&').replace(/&lt;/g, '<').replace(/&gt;/g, '>').replace(/&quot;/g, '"').replace(/&#39;/g, "'").replace(/&nbsp;/g, ' ')
 }
 
-// NSE symbols are typically all-caps tokens 2-15 chars (e.g. RELIANCE, HDFCBANK).
+// 2026-06-26: hard blacklist of common non-stock all-caps tokens that
+// the symbol extractor would otherwise grab. Religious greetings,
+// motivational phrases, festival names, generic shouts.
+const NON_STOCK_TOKENS = new Set([
+  'SITARAMHANUMAN', 'JAISHREERAM', 'JAIHANUMAN', 'JAIMATA', 'OMNAMAH',
+  'GOODMORNING', 'GOODEVENING', 'GOODNIGHT',
+  'HAPPYDIWALI', 'HAPPYHOLI', 'HAPPYNEWYEAR', 'EIDMUBARAK',
+  'CONGRATS', 'CONGRATULATIONS', 'WELCOME',
+  'BREAKING', 'LIVE', 'NEWS', 'UPDATE', 'ALERT',
+  'NIFTY', 'BANKNIFTY', 'SENSEX',  // index posts go in Options tab not here
+  'INDIA', 'BHARAT', 'NSE', 'BSE',
+  'TRADE', 'TRADING', 'INVEST', 'INVESTOR', 'STOCKS', 'STOCK', 'MARKET',
+  'CHART', 'CHARTS', 'PATTERN', 'PATTERNS',
+])
+
+// NSE symbols are typically all-caps tokens 3-12 chars (e.g. RELIANCE, HDFCBANK).
 // We parse $TICKER, #TICKER, or standalone TICKER followed by price/target words.
 function extractSymbol(text: string): string | null {
-  // Common Indian retail-pattern: "Buy XYZ @ 245" / "$XYZ" / "#XYZ"
   const cleaned = text.toUpperCase()
-  const tagMatch = cleaned.match(/[$#]([A-Z]{2,15})\b/)
-  if (tagMatch) return tagMatch[1]
-  const verbMatch = cleaned.match(/\b(?:BUY|SELL|SHORT|LONG|ACCUMULATE|ADD|TARGET|ENTRY)\s+([A-Z]{2,15})\b/)
-  if (verbMatch) return verbMatch[1]
+  const validate = (s: string): string | null => {
+    if (!s || s.length < 3 || s.length > 12) return null
+    if (NON_STOCK_TOKENS.has(s)) return null
+    // Reject if all vowels or all consonants (common for non-symbols)
+    if (!/[AEIOU]/.test(s)) return null
+    return s
+  }
+  // Tightened: $TICKER / #TICKER must be followed by space or punctuation
+  const tagMatch = cleaned.match(/[$#]([A-Z]{3,12})(?:\b|$)/)
+  if (tagMatch) {
+    const v = validate(tagMatch[1])
+    if (v) return v
+  }
+  const verbMatch = cleaned.match(/\b(?:BUY|SELL|SHORT|LONG|ACCUMULATE|ADD|TARGET|ENTRY)\s+([A-Z]{3,12})\b/)
+  if (verbMatch) {
+    const v = validate(verbMatch[1])
+    if (v) return v
+  }
   return null
+}
+
+// 2026-06-26: ACTIONABILITY check — the post must show evidence of a
+// stock-related trade idea, not just news observation / sentiment / a
+// random opinion. Required: at least ONE of (parsed entry, SL, target)
+// OR a strong action-keyword in the text.
+const ACTION_KEYWORDS = /\b(BUY|SELL|SHORT|LONG|ACCUMULATE|ADD\b.*\b(NEAR|AROUND|ABOVE|BELOW)|TARGET|TGT|SL\s|STOP\s*LOSS|STOPLOSS|CMP|ENTRY|SETUP|BREAKOUT|BREAKDOWN|RESISTANCE|SUPPORT|PIVOT|SWING\s|POSITIONAL|INTRADAY|BTST|STBT|FUTURES?|OPTIONS?|STRIKE\s|EXPIRY|CONSOLIDATION|TRADE\s|SQUEEZE|RETRACE|BOUNCE|REVERSAL|FLAG\s|WEDGE|TRIANGLE|CUP\s+AND\s+HANDLE|DARVAS|VOLUME\s+(SURGE|BREAKOUT)|RISK\s+REWARD|R:R|VCP)\b/i
+
+function isActionableRec(rec: { parsedEntry: number | null; parsedSL: number | null; parsedTargets: number[]; text: string }): boolean {
+  if (rec.parsedEntry != null || rec.parsedSL != null || (rec.parsedTargets && rec.parsedTargets.length > 0)) return true
+  return ACTION_KEYWORDS.test(rec.text)
 }
 
 function extractDirection(text: string): 'BUY' | 'SHORT' | null {
@@ -201,12 +240,18 @@ export async function fetchXRecommendations(opts?: { perHandle?: number }): Prom
     all.push(...recs)
   }))
 
-  // Keep only rows where we extracted at least a symbol — drops generic
-  // memes / non-stock posts.
-  const filtered = all.filter(r => r.parsedSymbol)
+  // 2026-06-26 — filter out non-stock noise. Keep a row only if:
+  //   (1) we extracted a parsed symbol (passes blacklist + validation)
+  //   (2) AND it's actionable (has parsed entry/SL/target OR trade keyword)
+  const before = all.length
+  const filtered = all
+    .filter(r => r.parsedSymbol)
+    .filter(r => isActionableRec(r))
   filtered.sort((a, b) => b.postedAt.localeCompare(a.postedAt))
+  const droppedNoSymbol = all.filter(r => !r.parsedSymbol).length
+  const droppedNotActionable = all.filter(r => r.parsedSymbol && !isActionableRec(r)).length
 
-  log.ok('X-RECS', `parsed ${filtered.length} stock recommendations · sources: ${Object.entries(bySite).map(([k, v]) => `${k}=${v}`).join(' · ')}`)
+  log.ok('X-RECS', `parsed ${filtered.length} actionable stock recommendations (raw ${before}, dropped ${droppedNoSymbol} no-symbol + ${droppedNotActionable} not-actionable) · sources: ${Object.entries(bySite).map(([k, v]) => `${k}=${v}`).join(' · ')}`)
   return {
     generatedAt: new Date().toISOString(),
     bySite,
