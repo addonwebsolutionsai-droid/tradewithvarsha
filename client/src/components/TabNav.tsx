@@ -98,6 +98,17 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/superstar',    label: '🌟 Superstar',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: "India's top 10 investors (Jhunjhunwala / Damani / Kacholia / Kedia / Dolly Khanna / Goel / Singhania / Kela / Porinju / Mukul Agrawal) — their holdings × our signal scoring." },
+    // 2026-06-26: Pedigree-accumulation tab — good companies 50%+ off
+    // 52w-high where FII/DII/Promoter are increasing stakes. "Big hands
+    // grabbing from retailers" setup.
+    { to: '/pedigree',     label: '💎 Pedigree',  icon: <Star size={14} />,
+      acc: null, highProb: true,
+      title: 'Pedigree Accumulation — good-pedigree companies 40%+ off 52-week high where FII/DII/Promoter are increasing stakes QoQ. Big-hands accumulating from retailers.' },
+    // 2026-06-26: X (Twitter) analyst recommendations — best-effort
+    // scrape via nitter mirrors. May be empty when mirrors are blocked.
+    { to: '/x-recs',       label: '🐦 X-Recs',  icon: <Activity size={14} />,
+      acc: null,
+      title: 'Analyst X-Recs — stock recommendations from 6 named profiles (@cadalukaanubhav, @camangalarvind, @Sahilpahwa09, @darvasboxtrader, @iAmitKumar, @arvindshyam) with parsed entry / SL / targets. Best-effort via nitter mirrors.' },
     { to: '/pro-edge',     label: '💎 PRO Edge',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: 'PRO Edge — strictest signal feed. Highest-probability picks in the platform.' },

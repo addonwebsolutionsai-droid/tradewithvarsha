@@ -1937,6 +1937,233 @@ export function PublicEarlyMomentumPage(): JSX.Element {
   )
 }
 
+// ── 💎 PEDIGREE ACCUMULATION — good companies 50%+ off 52w-hi where
+// FII/DII/Promoter are increasing stakes. The "big hands grabbing from
+// retailers" setup — when retail finishes exiting, the move starts.
+export function PublicPedigreeAccumulationPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-pedigree-accumulation'], queryFn: () => snapshots.pedigreeAccumulation(),
+    refetchInterval: 60 * 60_000, retry: false,
+  })
+  const all: any[] = data?.rows ?? []
+  const [tier, setTier] = useState<'ALL' | 'DEEP' | 'MODERATE'>('ALL')
+  const filtered = tier === 'ALL' ? all : all.filter(r => r.pullbackTier === tier)
+  const { rows, headerProps, sortIndicator } = useSortableTable<any>(
+    filtered, { key: 'score', dir: 'desc' },
+    {
+      symbol: r => r.symbol ?? '',
+      close: r => r.close ?? 0,
+      pctOffHigh: r => r.pctOffHigh ?? 0,
+      accumBuyerCount: r => r.accumBuyerCount ?? 0,
+      fiiDeltaQoQ: r => r.fiiDeltaQoQ ?? 0,
+      diiDeltaQoQ: r => r.diiDeltaQoQ ?? 0,
+      promoterDeltaQoQ: r => r.promoterDeltaQoQ ?? 0,
+      score: r => r.score ?? 0,
+      rsi14: r => r.rsi14 ?? 0,
+    },
+  )
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-violet/15 to-accent-green/5 border border-accent-violet/50 rounded-lg">
+        <div className="text-3xl">💎</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-violet">Pedigree Accumulation · Big-hands grabbing from retailers</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Good-pedigree companies (NIFTY-500 OR MC ≥ ₹1KCr) that are <b>40%+ off 52-week high</b> with <b>FII / DII / Promoter stakes increasing</b> QoQ.
+            Logic: retail capitulates → smart money accumulates from weak hands → price bases → next leg begins.
+            Score 0-100 combines pullback depth (30) · accumulation breadth (25) · stake-delta magnitude (15) · bottoming signature (10) · pedigree (10) · pledge cleanliness (10).
+          </div>
+          {data && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              📊 {data.total} candidates · 🔴 DEEP (≥60% off): {data.deepCount ?? 0} · 🟡 MODERATE (40-60% off): {data.moderateCount ?? 0}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Tier:</span>
+        {(['ALL', 'DEEP', 'MODERATE'] as const).map(t => {
+          const cnt = t === 'ALL' ? all.length : all.filter(r => r.pullbackTier === t).length
+          const color = t === 'DEEP' ? 'accent-red' : t === 'MODERATE' ? 'accent-amber' : 'accent-violet'
+          return (
+            <button key={t} onClick={() => setTier(t)}
+              className={`px-2 py-1 rounded border ${tier === t ? `bg-${color}/20 border-${color} text-${color}` : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+              {t} ({cnt})
+            </button>
+          )
+        })}
+      </div>
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load pedigree scan. Snapshot refreshes hourly." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No pedigree-accumulation candidates yet. Snapshot refreshes on the daily 18:30 IST routine." />}
+      {!isLoading && !error && rows.length > 0 && (
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1100 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500')}>Symbol{sortIndicator('symbol')}</th>
+                <th {...headerProps('score', 'text-center px-2 py-3')}>Score{sortIndicator('score')}</th>
+                <th {...headerProps('close', 'text-right px-2 py-3 text-neutral-300')}>LTP{sortIndicator('close')}</th>
+                <th {...headerProps('pctOffHigh', 'text-right px-2 py-3 text-accent-red')}>% off 52w-Hi{sortIndicator('pctOffHigh')}</th>
+                <th {...headerProps('accumBuyerCount', 'text-center px-2 py-3 text-accent-green')}>Buyers{sortIndicator('accumBuyerCount')}</th>
+                <th {...headerProps('fiiDeltaQoQ', 'text-right px-2 py-3 text-accent-cyan')}>FII Δ{sortIndicator('fiiDeltaQoQ')}</th>
+                <th {...headerProps('diiDeltaQoQ', 'text-right px-2 py-3 text-accent-cyan')}>DII Δ{sortIndicator('diiDeltaQoQ')}</th>
+                <th {...headerProps('promoterDeltaQoQ', 'text-right px-2 py-3 text-accent-cyan')}>P Δ{sortIndicator('promoterDeltaQoQ')}</th>
+                <th {...headerProps('rsi14', 'text-right px-2 py-3')}>RSI{sortIndicator('rsi14')}</th>
+                <th className="text-left px-3 py-3">Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r: any, i: number) => {
+                const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+                const tierColor = r.pullbackTier === 'DEEP' ? '#ff5e7c' : '#ffb454'
+                return (
+                  <tr key={r.symbol + i} className="group border-t border-ink-500">
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>
+                      {r.symbol}
+                      <span className="ml-2 text-[9px] px-1 py-0.5 rounded" style={{ background: `${tierColor}22`, color: tierColor }}>{r.pullbackTier}</span>
+                    </td>
+                    <td className={`${tdb} text-center font-bold ${r.score >= 80 ? 'text-accent-green' : r.score >= 65 ? 'text-accent-amber' : 'text-neutral-300'}`}>{r.score}</td>
+                    <td className={`${tdb} text-right text-neutral-200`}>₹{r.close.toFixed(1)}</td>
+                    <td className={`${tdb} text-right font-bold text-accent-red`}>−{r.pctOffHigh.toFixed(0)}%</td>
+                    <td className={`${tdb} text-center font-bold text-accent-green`}>{r.accumBuyerCount}/3</td>
+                    <td className={`${tdb} text-right ${(r.fiiDeltaQoQ ?? 0) >= 0.3 ? 'text-accent-green' : 'text-neutral-500'}`}>
+                      {r.fiiDeltaQoQ != null ? `${r.fiiDeltaQoQ >= 0 ? '+' : ''}${r.fiiDeltaQoQ.toFixed(2)}pp` : '—'}
+                    </td>
+                    <td className={`${tdb} text-right ${(r.diiDeltaQoQ ?? 0) >= 0.3 ? 'text-accent-green' : 'text-neutral-500'}`}>
+                      {r.diiDeltaQoQ != null ? `${r.diiDeltaQoQ >= 0 ? '+' : ''}${r.diiDeltaQoQ.toFixed(2)}pp` : '—'}
+                    </td>
+                    <td className={`${tdb} text-right ${(r.promoterDeltaQoQ ?? 0) >= 0.3 ? 'text-accent-green' : 'text-neutral-500'}`}>
+                      {r.promoterDeltaQoQ != null ? `${r.promoterDeltaQoQ >= 0 ? '+' : ''}${r.promoterDeltaQoQ.toFixed(2)}pp` : '—'}
+                    </td>
+                    <td className={`${tdb} text-right text-neutral-300`}>{r.rsi14.toFixed(0)}</td>
+                    <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 220 }}>
+                      <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
+                        {(r.reasons ?? []).join(' · ')}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <HowToTradeBox tab="Pedigree Accumulation" rules={[
+        { title: 'The thesis', body: 'Real pedigree companies don\'t fall 50% on fundamentals — they fall on cycle / sector rotation / panic. When FII/DII/Promoter are simultaneously INCREASING stakes during that fall, you\'re seeing the wealth-transfer in real time. Score ≥80 = highest conviction.' },
+        { title: '🔴 DEEP (≥60% off 52w-hi)', body: 'Capitulation phase or deep cycle low. These take longer to base but the upside is multi-bagger when sentiment turns. Use 5-7% SL below recent swing low, sit through volatility.' },
+        { title: '🟡 MODERATE (40-60% off)', body: 'Mid-cycle pullback. Faster to base + first leg up. Tighter SL (4-5%), bigger position.' },
+        { title: 'Entry timing', body: 'Wait for RSI to leave the 30-40 zone + first higher-low on weekly. Don\'t catch falling knives — let the buyers prove themselves with one base.' },
+        { title: 'Target framework', body: 'T1 = 50% retrace of the fall · T2 = previous swing high · T3 = new ATH. Multi-bagger setups (DEEP tier) measured in years, not weeks.' },
+      ]} />
+    </div>
+  )
+}
+
+// ── 🐦 X-RECS — Stock recommendations from named X (Twitter) analysts
+export function PublicXRecsPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-x-recs'], queryFn: () => snapshots.xRecs(),
+    refetchInterval: 30 * 60_000, retry: false,
+  })
+  const recs: any[] = data?.recommendations ?? []
+  const [handle, setHandle] = useState<string>('ALL')
+  const filtered = handle === 'ALL' ? recs : recs.filter(r => r.handle === handle)
+  const uniqueHandles = Array.from(new Set(recs.map(r => r.handle)))
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-cyan/15 to-accent-violet/5 border border-accent-cyan/50 rounded-lg">
+        <div className="text-3xl">🐦</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-cyan">Analyst X-Recs · Live calls from named profiles</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Best-effort scrape of stock recommendations from 6 profiles via nitter mirrors:
+            <b> @cadalukaanubhav · @camangalarvind · @Sahilpahwa09 · @darvasboxtrader · @iAmitKumar · @arvindshyam</b>.
+            Parses symbol / direction / entry / SL / targets from each post.
+            <br/><b>⚠️ Best-effort:</b> X heavily rate-limits free scrapers. Empty rows mean nitter mirrors are blocked — try later or use the source links.
+          </div>
+          {data?.bySite && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              Sources: {Object.entries(data.bySite).map(([k, v]) => `${k}:${v}`).join(' · ')}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Handle:</span>
+        <button onClick={() => setHandle('ALL')} className={`px-2 py-1 rounded border ${handle === 'ALL' ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+          All ({recs.length})
+        </button>
+        {uniqueHandles.map(h => (
+          <button key={h} onClick={() => setHandle(h)} className={`px-2 py-1 rounded border ${handle === h ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+            @{h} ({recs.filter(r => r.handle === h).length})
+          </button>
+        ))}
+      </div>
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load X-recs. Snapshot refreshes every 30 min." />}
+      {!isLoading && !error && filtered.length === 0 && <Empty msg="No parsed recommendations yet — nitter mirrors are unreliable. Try the source profile links directly." />}
+      {!isLoading && !error && filtered.length > 0 && (
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+          {filtered.map((r: any, i: number) => {
+            const dirColor = r.parsedDirection === 'BUY' ? '#00c853' : r.parsedDirection === 'SHORT' ? '#ff5e7c' : '#9aa0a6'
+            return (
+              <div key={i} className="bg-ink-800 border border-ink-500 rounded-lg p-3 hover:border-accent-cyan/40 transition-colors">
+                <div className="flex items-center justify-between gap-2 mb-2">
+                  <div className="flex items-center gap-2">
+                    <span className="font-bold text-accent-cyan text-[11px]">@{r.handle}</span>
+                    {r.parsedSymbol && <span className="font-bold text-neutral-100 text-[13px]">{r.parsedSymbol}</span>}
+                    {r.parsedDirection && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.parsedDirection}</span>}
+                  </div>
+                  <div className="text-[9px] text-neutral-500">{r.postedAt ? new Date(r.postedAt).toLocaleDateString('en-IN') : ''}</div>
+                </div>
+                {(r.parsedEntry || r.parsedSL || r.parsedTargets?.length > 0) && (
+                  <div className="grid grid-cols-3 gap-1.5 text-[10px] font-mono mb-2">
+                    {r.parsedEntry && (
+                      <div className="bg-accent-cyan/5 border border-accent-cyan/30 rounded p-1.5">
+                        <div className="text-[9px] text-accent-cyan/70">Entry</div>
+                        <div className="text-accent-cyan font-bold">₹{r.parsedEntry}</div>
+                      </div>
+                    )}
+                    {r.parsedSL && (
+                      <div className="bg-accent-red/5 border border-accent-red/30 rounded p-1.5">
+                        <div className="text-[9px] text-accent-red/70">SL</div>
+                        <div className="text-accent-red font-bold">₹{r.parsedSL}</div>
+                      </div>
+                    )}
+                    {r.parsedTargets?.length > 0 && (
+                      <div className="bg-accent-green/5 border border-accent-green/30 rounded p-1.5">
+                        <div className="text-[9px] text-accent-green/70">Targets</div>
+                        <div className="text-accent-green font-bold">{r.parsedTargets.map((t: number) => `₹${t}`).join(' · ')}</div>
+                      </div>
+                    )}
+                  </div>
+                )}
+                <div className="text-[11px] text-neutral-300 leading-relaxed mb-2" style={{ display: '-webkit-box', WebkitLineClamp: 4, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>
+                  {r.text}
+                </div>
+                {r.imageUrl && (
+                  <a href={r.imageUrl} target="_blank" rel="noopener noreferrer" className="block mb-2">
+                    <img src={r.imageUrl} alt="chart" className="rounded border border-ink-500" style={{ maxHeight: 200, width: '100%', objectFit: 'contain' }} loading="lazy" />
+                  </a>
+                )}
+                <a href={r.sourceUrl} target="_blank" rel="noopener noreferrer" className="text-[10px] text-accent-cyan hover:underline">
+                  View on X →
+                </a>
+              </div>
+            )
+          })}
+        </div>
+      )}
+      <HowToTradeBox tab="X-Recs" rules={[
+        { title: 'Why this tab exists', body: 'Surface live recommendations from named profiles you trust — entry / SL / targets parsed from each post. Acts as a sanity check against our own signal stack.' },
+        { title: 'Best-effort scraping', body: 'X rate-limits aggressively. We use community nitter mirrors which go up/down constantly. If a handle shows "unavailable", click through to the source URL.' },
+        { title: 'Don\'t blindly copy', body: 'Every recommendation here is third-party. Cross-check against our Cross-Confluence + Footprint + Bulk-deals tabs before sizing in. The platform\'s job is verification, not faith.' },
+      ]} />
+    </div>
+  )
+}
+
 // ── 📡 BULK DEALS — NSE end-of-day footprint feed (the actual smart-money tracks)
 export function PublicBulkDealsPage(): JSX.Element {
   const { data, isLoading, error } = useQuery({

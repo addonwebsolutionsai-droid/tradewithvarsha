@@ -2120,6 +2120,21 @@ cron.schedule('30 18 * * 1-5', async () => {
   } catch (e) { log.warn('DAILY-ROUTINE', `[5/7] mover-patterns: ${(e as Error).message}`) }
 
   try {
+    try {
+      log.info('DAILY-ROUTINE', '[5b/7] X-Recs scrape (nitter best-effort)...')
+      const { fetchXRecommendations } = await import('./data/xRecommendations')
+      const x = await fetchXRecommendations()
+      await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/x-recs.json'), JSON.stringify(x, null, 2))
+      log.ok('DAILY-ROUTINE', `[5b/7] x-recs: ${x.recommendations.length} parsed`)
+    } catch (e) { log.warn('DAILY-ROUTINE', `[5b/7] x-recs: ${(e as Error).message}`) }
+
+    log.info('DAILY-ROUTINE', '[6a/7] Pedigree accumulation (good co. 50%+ off 52w-hi + FII/DII/P↑)...')
+    try {
+      const { runAndPublishPedigree } = await import('./engine/pedigreeAccumulation')
+      const p = await runAndPublishPedigree()
+      log.ok('DAILY-ROUTINE', `[6a/7] pedigree: ${p.total} (${p.deepCount} DEEP · ${p.moderateCount} MODERATE)`)
+    } catch (e) { log.warn('DAILY-ROUTINE', `[6a/7] pedigree: ${(e as Error).message}`) }
+
     log.info('DAILY-ROUTINE', '[6/7] Early Momentum refresh with pro-criteria + archetype matcher...')
     const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum')
     const out = await runAndPublishEarlyMomentum()
@@ -2241,6 +2256,41 @@ app.post('/api/pre-move-identifier/run', async (_req, res) => {
       topN: Math.max(10, Math.min(200, Number(_req.query.topN ?? 50))),
       maxRuntimeMs: Math.max(60_000, Math.min(20 * 60_000, Number(_req.query.maxRuntimeMs ?? 15 * 60_000))),
     }))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
+// 2026-06-26: X RECOMMENDATIONS — best-effort scrape of stock calls
+// from 6 named analysts on X / Twitter via nitter mirrors.
+app.get('/api/x-recs', async (_req, res) => {
+  try {
+    const raw = await fsAsync.readFile(path.resolve(__dirname, '../data/public-snapshots/x-recs.json'), 'utf8').catch(() => null)
+    if (!raw) return res.status(404).json({ error: 'No scrape yet — POST /api/x-recs/run' })
+    res.json(JSON.parse(raw))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+app.post('/api/x-recs/run', async (_req, res) => {
+  try {
+    const { fetchXRecommendations } = await import('./data/xRecommendations')
+    const data = await fetchXRecommendations()
+    await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/x-recs.json'), JSON.stringify(data, null, 2))
+    res.json(data)
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
+// 2026-06-26: PEDIGREE ACCUMULATION — good companies 50%+ off 52w-hi
+// where FII/DII/Promoter stake is rising. "Big hands grabbing from
+// retailers" setup.
+app.get('/api/pedigree-accumulation', async (_req, res) => {
+  try {
+    const raw = await fsAsync.readFile(path.resolve(__dirname, '../data/public-snapshots/pedigree-accumulation.json'), 'utf8').catch(() => null)
+    if (!raw) return res.status(404).json({ error: 'No scan yet — POST /api/pedigree-accumulation/run' })
+    res.json(JSON.parse(raw))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+app.post('/api/pedigree-accumulation/run', async (_req, res) => {
+  try {
+    const { runAndPublishPedigree } = await import('./engine/pedigreeAccumulation')
+    res.json(await runAndPublishPedigree())
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
 

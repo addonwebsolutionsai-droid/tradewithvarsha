@@ -61,6 +61,8 @@ export const snapshots = {
   superstarPicks: () => snapshot<{ generatedAt: string; investorCount: number; investors: any[]; total: number; activelyLoadingCount: number; rows: any[] }>('superstar-picks.json'),
   bulkDeals: () => snapshot<{ generatedAt: string; totalDeals: number; superstarDeals: number; institutionDeals: number; strongAccumulationCount: number; strongDistributionCount: number; rows: any[]; rawDeals: any[] }>('bulk-deals.json'),
   earlyMomentum: () => snapshot<{ generatedAt: string; criterion: string; total: number; tierCounts: Record<string, number>; rows: any[] }>('early-momentum.json'),
+  pedigreeAccumulation: () => snapshot<{ generatedAt: string; criterion: string; total: number; deepCount: number; moderateCount: number; rows: any[] }>('pedigree-accumulation.json'),
+  xRecs: () => snapshot<{ generatedAt: string; bySite: Record<string, string>; recommendations: any[] }>('x-recs.json'),
 }
 
 // Chat assistant — talks directly to Gemini from the browser.
