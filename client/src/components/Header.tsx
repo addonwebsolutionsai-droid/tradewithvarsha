@@ -108,6 +108,16 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
       <div className="flex items-center gap-4 text-xs text-neutral-500">
         {PUBLIC_MODE ? (
           <>
+            {/* 2026-06-26: Track Record moved from main nav to header
+                right next to Archive — meta/audit tab, doesn't need
+                primary-nav real estate. */}
+            <Link
+              to="/track-record"
+              className="text-[11px] px-2 py-0.5 rounded border border-neutral-600/50 bg-ink-700/50 text-neutral-300 hover:bg-ink-700 hover:text-neutral-100"
+              title="Win-rate + history of every signal — fully transparent accuracy log"
+            >
+              📈 Track Record
+            </Link>
             {/* 2026-06-16: Archive moved out of nav into header (next to
                 Snapshot pill). Quieter placement; users browsing live
                 signals don't accidentally click into closed trades. */}

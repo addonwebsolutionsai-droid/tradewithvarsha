@@ -2128,6 +2128,13 @@ cron.schedule('30 18 * * 1-5', async () => {
       log.ok('DAILY-ROUTINE', `[5b/7] x-recs: ${x.recommendations.length} parsed`)
     } catch (e) { log.warn('DAILY-ROUTINE', `[5b/7] x-recs: ${(e as Error).message}`) }
 
+    try {
+      log.info('DAILY-ROUTINE', '[5c/7] Chart pattern scan (PILOT) — H&S, Double Top/Bot, Triangles, Flag, Wedge, Cup&Handle, candles...')
+      const { runAndPublishChartPatterns } = await import('./engine/chartPatterns')
+      const cp = await runAndPublishChartPatterns()
+      log.ok('DAILY-ROUTINE', `[5c/7] chart-patterns: ${cp.total} hits across ${Object.keys(cp.byPattern).length} pattern types`)
+    } catch (e) { log.warn('DAILY-ROUTINE', `[5c/7] chart-patterns: ${(e as Error).message}`) }
+
     log.info('DAILY-ROUTINE', '[6a/7] Pedigree accumulation (good co. 50%+ off 52w-hi + FII/DII/P↑)...')
     try {
       const { runAndPublishPedigree } = await import('./engine/pedigreeAccumulation')
@@ -2256,6 +2263,23 @@ app.post('/api/pre-move-identifier/run', async (_req, res) => {
       topN: Math.max(10, Math.min(200, Number(_req.query.topN ?? 50))),
       maxRuntimeMs: Math.max(60_000, Math.min(20 * 60_000, Number(_req.query.maxRuntimeMs ?? 15 * 60_000))),
     }))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
+// 2026-06-26: CHART PATTERNS — PILOT MODE classical TA pattern scanner
+// (H&S, Double Top/Bottom, Triangles, Flag, Wedge, Cup & Handle, candles).
+// Scans NIFTY-500 × DAILY + WEEKLY timeframes.
+app.get('/api/chart-patterns', async (_req, res) => {
+  try {
+    const raw = await fsAsync.readFile(path.resolve(__dirname, '../data/public-snapshots/chart-patterns.json'), 'utf8').catch(() => null)
+    if (!raw) return res.status(404).json({ error: 'No scan yet — POST /api/chart-patterns/run' })
+    res.json(JSON.parse(raw))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+app.post('/api/chart-patterns/run', async (_req, res) => {
+  try {
+    const { runAndPublishChartPatterns } = await import('./engine/chartPatterns')
+    res.json(await runAndPublishChartPatterns())
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
 

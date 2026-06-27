@@ -1937,6 +1937,142 @@ export function PublicEarlyMomentumPage(): JSX.Element {
   )
 }
 
+// ── 📐 CHART PATTERNS — PILOT MODE classical TA pattern scanner.
+// Scans NIFTY-500 × DAILY + WEEKLY × 9 detectors (H&S, Inverse H&S,
+// Double Top, Double Bottom, Triangles, Flag, Wedge, Cup & Handle,
+// Candlesticks). Algorithmic implementations of widely-documented TA
+// patterns (Edwards & Magee 1948, Murphy, Bulkowski, Nison) — no
+// reproduced text from any source.
+export function PublicChartPatternsPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-chart-patterns'], queryFn: () => snapshots.chartPatterns(),
+    refetchInterval: 60 * 60_000, retry: false,
+  })
+  const all: any[] = data?.rows ?? []
+  const [pattern, setPattern] = useState<string>('ALL')
+  const [tf, setTf] = useState<'ALL' | 'DAILY' | 'WEEKLY'>('ALL')
+  const distinctPatterns = Array.from(new Set(all.map(r => r.pattern))).sort()
+  let filtered = all
+  if (pattern !== 'ALL') filtered = filtered.filter(r => r.pattern === pattern)
+  if (tf !== 'ALL') filtered = filtered.filter(r => r.timeframe === tf)
+  const { rows, headerProps, sortIndicator } = useSortableTable<any>(
+    filtered, { key: 'expectedMovePct', dir: 'desc' },
+    {
+      symbol: r => r.symbol ?? '',
+      pattern: r => r.pattern ?? '',
+      direction: r => r.direction ?? '',
+      timeframe: r => r.timeframe ?? '',
+      entry: r => r.entry ?? 0,
+      stopLoss: r => r.stopLoss ?? 0,
+      target1: r => r.target1 ?? 0,
+      expectedMovePct: r => r.expectedMovePct ?? 0,
+      confidence: r => ({ HIGH: 3, MED: 2, LOW: 1 }[r.confidence as 'HIGH' | 'MED' | 'LOW'] ?? 0),
+      formedAt: r => r.formedAt ?? '',
+    },
+  )
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/15 to-accent-cyan/5 border border-accent-amber/50 rounded-lg">
+        <div className="text-3xl">📐</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-amber">Chart Patterns Scanner · PILOT MODE</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Scans NIFTY-500 × <b>DAILY + WEEKLY</b> timeframes against 9 classical TA detectors:
+            <b> Head & Shoulders · Inverse H&S · Double Top · Double Bottom · Ascending / Descending / Symmetrical Triangle · Flag · Cup & Handle · Wedge · Candlestick patterns</b>.
+            <br/>Each hit shows the pattern + entry + SL + measured-move target with the calculation logic.
+            <br/><b>⚠️ PILOT MODE</b> — please review outputs and confirm before this goes live on the main nav.
+          </div>
+          {data && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              {data.total} pattern hits · {Object.entries(data.byPattern ?? {}).map(([k, v]) => `${k}: ${v}`).join(' · ')}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Pattern:</span>
+        <button onClick={() => setPattern('ALL')} className={`px-2 py-1 rounded border ${pattern === 'ALL' ? 'bg-accent-amber/20 border-accent-amber text-accent-amber' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>All ({all.length})</button>
+        {distinctPatterns.map(p => (
+          <button key={p} onClick={() => setPattern(p)} className={`px-2 py-1 rounded border ${pattern === p ? 'bg-accent-amber/20 border-accent-amber text-accent-amber' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+            {p} ({all.filter(r => r.pattern === p).length})
+          </button>
+        ))}
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Timeframe:</span>
+        {(['ALL', 'DAILY', 'WEEKLY'] as const).map(t => (
+          <button key={t} onClick={() => setTf(t)} className={`px-2 py-1 rounded border ${tf === t ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+            {t} ({t === 'ALL' ? all.length : all.filter(r => r.timeframe === t).length})
+          </button>
+        ))}
+      </div>
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load chart-pattern scan. Snapshot refreshes hourly." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No chart patterns matched these filters." />}
+      {!isLoading && !error && rows.length > 0 && (
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1100 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500')}>Symbol{sortIndicator('symbol')}</th>
+                <th {...headerProps('pattern', 'text-left px-2 py-3')}>Pattern{sortIndicator('pattern')}</th>
+                <th {...headerProps('timeframe', 'text-center px-2 py-3')}>TF{sortIndicator('timeframe')}</th>
+                <th {...headerProps('direction', 'text-center px-2 py-3')}>Dir{sortIndicator('direction')}</th>
+                <th {...headerProps('confidence', 'text-center px-2 py-3')}>Conf{sortIndicator('confidence')}</th>
+                <th {...headerProps('entry', 'text-right px-2 py-3 text-accent-cyan')}>Entry{sortIndicator('entry')}</th>
+                <th {...headerProps('stopLoss', 'text-right px-2 py-3 text-accent-red')}>SL{sortIndicator('stopLoss')}</th>
+                <th {...headerProps('target1', 'text-right px-2 py-3 text-accent-green')}>T1{sortIndicator('target1')}</th>
+                <th {...headerProps('expectedMovePct', 'text-right px-2 py-3 font-bold')}>Move %{sortIndicator('expectedMovePct')}</th>
+                <th {...headerProps('formedAt', 'text-left px-2 py-3')}>Formed{sortIndicator('formedAt')}</th>
+                <th className="text-left px-3 py-3">Logic</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r: any, i: number) => {
+                const dirColor = r.direction === 'BUY' ? '#00c853' : '#ff5e7c'
+                const confColor = r.confidence === 'HIGH' ? '#00c853' : r.confidence === 'MED' ? '#ffb454' : '#9aa0a6'
+                const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+                return (
+                  <tr key={r.symbol + r.pattern + i} className="group border-t border-ink-500">
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{r.symbol}</td>
+                    <td className={`${tdb} text-left font-bold text-accent-amber`}>{r.pattern}</td>
+                    <td className={`${tdb} text-center text-neutral-300`}>{r.timeframe}</td>
+                    <td className={`${tdb} text-center`}>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
+                    </td>
+                    <td className={`${tdb} text-center`}>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${confColor}22`, color: confColor }}>{r.confidence}</span>
+                    </td>
+                    <td className={`${tdb} text-right text-accent-cyan`}>₹{r.entry.toFixed(1)}</td>
+                    <td className={`${tdb} text-right text-accent-red`}>₹{r.stopLoss.toFixed(1)}</td>
+                    <td className={`${tdb} text-right text-accent-green font-bold`}>₹{r.target1.toFixed(1)}</td>
+                    <td className={`${tdb} text-right font-bold`} style={{ color: r.direction === 'BUY' ? '#00c853' : '#ff5e7c' }}>
+                      {r.direction === 'BUY' ? '+' : '−'}{r.expectedMovePct.toFixed(1)}%
+                    </td>
+                    <td className={`${tdb} text-left text-neutral-300`}>{r.formedAt}</td>
+                    <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 280 }}>
+                      <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
+                        {(r.reasoning ?? []).join(' · ')}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <HowToTradeBox tab="Chart Patterns (Pilot)" rules={[
+        { title: 'Pattern catalog', body: 'H&S, Inverse H&S, Double Top, Double Bottom, Triangles (asc/desc/symmetric), Flag, Wedge (rising/falling), Cup & Handle, Bullish/Bearish Engulfing, Hammer, Shooting Star, Three White Soldiers/Three Black Crows. All scanned at DAILY + WEEKLY.' },
+        { title: 'How targets are calculated', body: 'Each pattern uses the standard "measured move" rule.\n• H&S: target = neckline − (head − neckline)\n• Double Top/Bot: target = neckline ± pattern height\n• Triangle: target = breakout ± triangle height\n• Flag: target = breakout ± pole height\n• Cup & Handle: target = rim + cup depth\n• Wedge: target = breakdown/out ± wedge range\n• Engulfing: target = entry ± 2× body' },
+        { title: 'Confidence rating', body: 'HIGH = pattern with tight symmetry (shoulders within 4%, peaks within 2%, or strong body relative to ATR). MED = passes structure but with some asymmetry. LOW reserved for borderline.' },
+        { title: 'PILOT WARNING', body: 'This tab is in PILOT MODE — please cross-check 10-15 hits against actual charts. If patterns are reliably forming where flagged + targets are reasonable, we promote to main nav. If false-positives are high, we tighten the detectors.' },
+        { title: 'Attribution', body: 'Algorithms are my original implementations of classical TA patterns documented since Edwards & Magee (1948), Murphy, Bulkowski, Nison. No reproduced text — all detection logic is original code.' },
+      ]} />
+    </div>
+  )
+}
+
 // ── 💎 PEDIGREE ACCUMULATION — good companies 50%+ off 52w-hi where
 // FII/DII/Promoter are increasing stakes. The "big hands grabbing from
 // retailers" setup — when retail finishes exiting, the move starts.

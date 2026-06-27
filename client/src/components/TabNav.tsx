@@ -137,9 +137,8 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/old-weekly',   label: '📜 Old-Weekly',  icon: <ListChecks size={14} />,
       acc: null,
       title: 'Old-WeeklyPick — pre-4fca35e momentum-chasing prerank, no freshness reject. Earlier logic that produced the original 35%-in-3-months winners (MOSCHIP/MARKSANS/FINPIPE/HIKAL etc.).' },
-    { to: '/track-record', label: 'Track Record', icon: <ListChecks size={14} />,
-      acc: trackAcc,
-      title: 'History + win-rate of every signal across cash + F&O — fully transparent accuracy log.' },
+    // 2026-06-26: Track Record relocated to header (next to Archive).
+    // Meta/audit tab doesn't need primary-nav real estate.
   ] : [
     // 2026-05-25: Niche tabs (Gann / TimeCycle / Harmonic / Turtle Soup) moved
     // INTO the More dropdown — last-14-days lifecycle audit showed zero closed
@@ -169,6 +168,10 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/smart-money', label: '🧮 Smart Money (OBV)', title: 'OBV / A-D Line / CMF divergence — institutional flow vs price action.' },
     { to: '/sl-traps',    label: '🛡️ SL Traps',          title: 'Liquidity grabs — SL hit then target hit anyway. Effective WR with traps as wins.' },
     { to: '/oi-buildup',  label: '🔁 OI Build-up',       title: 'Live F&O OI positioning. Long buildup · short covering · put-writing.' },
+    // 2026-06-26: PILOT — Chart Patterns scanner. H&S, Double Top/Bot,
+    // Triangles, Flag, Wedge, Cup & Handle, candlesticks across DAILY +
+    // WEEKLY timeframes. Promote to main nav once user confirms outputs.
+    { to: '/chart-patterns', label: '📐 Chart Patterns (Pilot)', title: 'PILOT — classical TA pattern scanner across NIFTY-500 × DAILY/WEEKLY. Detects H&S, Double Top/Bot, Triangles, Flag, Wedge, Cup & Handle, candles. Measured-move targets per pattern.' },
   ] : []
   const onMore = moreItems.some(m => location.pathname === m.to || location.pathname.startsWith(m.to + '/'))
   const [moreOpen, setMoreOpen] = useState(false)

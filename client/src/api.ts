@@ -63,6 +63,7 @@ export const snapshots = {
   earlyMomentum: () => snapshot<{ generatedAt: string; criterion: string; total: number; tierCounts: Record<string, number>; rows: any[] }>('early-momentum.json'),
   pedigreeAccumulation: () => snapshot<{ generatedAt: string; criterion: string; total: number; deepCount: number; moderateCount: number; rows: any[] }>('pedigree-accumulation.json'),
   xRecs: () => snapshot<{ generatedAt: string; bySite: Record<string, string>; recommendations: any[] }>('x-recs.json'),
+  chartPatterns: () => snapshot<{ generatedAt: string; criterion: string; note: string; total: number; byPattern: Record<string, number>; rows: any[] }>('chart-patterns.json'),
 }
 
 // Chat assistant — talks directly to Gemini from the browser.
