@@ -104,11 +104,9 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/pedigree',     label: '💎 Pedigree',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: 'Pedigree Accumulation — good-pedigree companies 40%+ off 52-week high where FII/DII/Promoter are increasing stakes QoQ. Big-hands accumulating from retailers.' },
-    // 2026-06-26: X (Twitter) analyst recommendations — best-effort
-    // scrape via nitter mirrors. May be empty when mirrors are blocked.
-    { to: '/x-recs',       label: '🐦 X-Recs',  icon: <Activity size={14} />,
-      acc: null,
-      title: 'Analyst X-Recs — stock recommendations from 6 named profiles (@cadalukaanubhav, @camangalarvind, @Sahilpahwa09, @darvasboxtrader, @iAmitKumar, @arvindshyam) with parsed entry / SL / targets. Best-effort via nitter mirrors.' },
+    // 2026-06-26: X-Recs moved to More dropdown — best-effort scrape via
+    // nitter mirrors, data reliability fluctuates day-to-day. Per user
+    // request: doesn't need primary-nav slot.
     { to: '/pro-edge',     label: '💎 PRO Edge',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: 'PRO Edge — strictest signal feed. Highest-probability picks in the platform.' },
@@ -172,6 +170,9 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // Triangles, Flag, Wedge, Cup & Handle, candlesticks across DAILY +
     // WEEKLY timeframes. Promote to main nav once user confirms outputs.
     { to: '/chart-patterns', label: '📐 Chart Patterns (Pilot)', title: 'PILOT — classical TA pattern scanner across NIFTY-500 × DAILY/WEEKLY. Detects H&S, Double Top/Bot, Triangles, Flag, Wedge, Cup & Handle, candles. Measured-move targets per pattern.' },
+    // 2026-06-26: X-Recs relocated to More per user request (best-effort
+    // data, doesn't need primary-nav slot).
+    { to: '/x-recs',         label: '🐦 X-Recs (analyst posts)', title: 'Analyst X-Recs — best-effort scrape of stock calls from 6 named profiles via nitter mirrors. Reliability fluctuates day-to-day.' },
   ] : []
   const onMore = moreItems.some(m => location.pathname === m.to || location.pathname.startsWith(m.to + '/'))
   const [moreOpen, setMoreOpen] = useState(false)
