@@ -2064,6 +2064,46 @@ cron.schedule('0 18 * * 1-5', async () => {
   } catch (e) { log.err('CRON', `miss-miner: ${(e as Error).message}`) }
 }, { timezone: 'Asia/Kolkata' })
 
+// 2026-06-28: SUNDAY PRE-MONDAY PREP — same routine fires Sunday 19:00 IST
+// so every tab has fresh signals before Monday's market open. User
+// directive: "Today is Sunday and tomorrow before market open each and
+// every tabs we have should have signals. Do this everyday."
+cron.schedule('0 19 * * 0', async () => {
+  log.info('SUN-PREP', '═══ Sunday pre-Monday prep — running all scans ═══')
+  const steps = [
+    ['mover-patterns', async () => { const { mineTodaysMoverPatterns, publishMoverArchetypesSnapshot } = await import('./engine/moverPatternMiner'); const m = await mineTodaysMoverPatterns(); await publishMoverArchetypesSnapshot(); return `${m.added} new fingerprints (store ${m.total})` }],
+    ['pedigree-accumulation', async () => { const { runAndPublishPedigree } = await import('./engine/pedigreeAccumulation'); const p = await runAndPublishPedigree(); return `${p.total} candidates` }],
+    ['chart-patterns', async () => { const { runAndPublishChartPatterns } = await import('./engine/chartPatterns'); const c = await runAndPublishChartPatterns(); return `${c.total} pattern hits` }],
+    ['early-momentum', async () => { const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum'); const e = await runAndPublishEarlyMomentum(); return `${e.total} candidates` }],
+    ['x-recs', async () => { const { fetchXRecommendations } = await import('./data/xRecommendations'); const x = await fetchXRecommendations(); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/x-recs.json'), JSON.stringify(x, null, 2)); return `${x.recommendations.length} actionable` }],
+    ['cross-confluence', async () => { const { aggregateConfluence } = await import('./engine/crossEngineConfluence'); const conf = await aggregateConfluence(); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/cross-confluence.json'), JSON.stringify(conf, null, 2)); return `${conf.rows.length} confluence picks` }],
+    ['pro-edge', async () => { const { aggregateProEdge } = await import('./engine/proEdge'); const pe = await aggregateProEdge({ minConviction: 85 }); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/pro-edge.json'), JSON.stringify(pe, null, 2)); return `${(pe as any).rows?.length ?? 0} signals` }],
+  ] as const
+  for (const [name, fn] of steps) {
+    try { const summary = await (fn as () => Promise<string>)(); log.ok('SUN-PREP', `✓ ${name}: ${summary}`) }
+    catch (e) { log.warn('SUN-PREP', `✗ ${name}: ${(e as Error).message}`) }
+  }
+  log.ok('SUN-PREP', '═══ Sunday prep complete ═══')
+}, { timezone: 'Asia/Kolkata' })
+
+// 2026-06-28: MONDAY-FRIDAY PRE-OPEN PREP — 08:30 IST refresh ensures
+// snapshots are fresh just before market open at 09:15 IST. Quick top-up
+// (chart-patterns + early-momentum already on intraday refresh).
+cron.schedule('30 8 * * 1-5', async () => {
+  log.info('PRE-OPEN', '═══ Mon-Fri 08:30 IST pre-open snapshot top-up ═══')
+  const steps = [
+    ['pedigree-accumulation', async () => { const { runAndPublishPedigree } = await import('./engine/pedigreeAccumulation'); const p = await runAndPublishPedigree(); return `${p.total} candidates` }],
+    ['chart-patterns', async () => { const { runAndPublishChartPatterns } = await import('./engine/chartPatterns'); const c = await runAndPublishChartPatterns(); return `${c.total} pattern hits` }],
+    ['early-momentum', async () => { const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum'); const e = await runAndPublishEarlyMomentum(); return `${e.total} candidates` }],
+    ['x-recs', async () => { const { fetchXRecommendations } = await import('./data/xRecommendations'); const x = await fetchXRecommendations(); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/x-recs.json'), JSON.stringify(x, null, 2)); return `${x.recommendations.length} actionable` }],
+  ] as const
+  for (const [name, fn] of steps) {
+    try { const summary = await (fn as () => Promise<string>)(); log.ok('PRE-OPEN', `✓ ${name}: ${summary}`) }
+    catch (e) { log.warn('PRE-OPEN', `✗ ${name}: ${(e as Error).message}`) }
+  }
+  log.ok('PRE-OPEN', '═══ Pre-open prep complete ═══')
+}, { timezone: 'Asia/Kolkata' })
+
 // 2026-06-25: CONSOLIDATED DAILY ROUTINE — single 18:30 IST cron that
 // runs every learning + scan + self-improve routine in order, logs each
 // step. User directive: "every day what is told to you to check daily
