@@ -1639,6 +1639,11 @@ export function PublicCrossConfluencePage(): JSX.Element {
           {data && (
             <div className="text-[10px] text-neutral-500 mt-2 font-mono">
               ⚡ ULTRA {data.ultraCount ?? 0} · ⭐ STRONG {data.strongCount ?? 0} · evaluated {data.totalEvaluated ?? 0} names
+              <span className="ml-2 text-accent-red">🔴 LIVE</span>
+              <span className="text-neutral-500"> · refreshes every 4 min during 9:15-15:30 IST</span>
+              {data.generatedAt && (
+                <span className="text-neutral-600"> · last {new Date(data.generatedAt).toLocaleTimeString('en-IN', { timeZone: 'Asia/Kolkata', hour: '2-digit', minute: '2-digit' })} IST</span>
+              )}
             </div>
           )}
         </div>

@@ -1643,6 +1643,27 @@ cron.schedule('*/5 9-15 * * 1-5', async () => {
   await runAndBroadcast('cron')
 }, { timezone: 'Asia/Kolkata' })
 
+// 2026-06-30 #5: LIVE INTRADAY CROSS-CONFLUENCE refresh every 4 min during
+// 9:15-15:30 IST. Re-runs aggregateConfluence (reads existing source
+// snapshots, no fresh API calls — pure aggregation, ~100ms) so the Ultra
+// Picks tab reflects newly-added F&O Futures / Daily / Pre-Move agreements
+// in near-real-time instead of waiting for the 18:30 IST EOD routine.
+// PRO Edge is downstream of cross-confluence so it gets refreshed too.
+cron.schedule('*/4 9-15 * * 1-5', async () => {
+  try {
+    const t0 = Date.now()
+    const { aggregateConfluence } = await import('./engine/crossEngineConfluence')
+    const conf = await aggregateConfluence()
+    await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/cross-confluence.json'), JSON.stringify(conf, null, 2))
+    try {
+      const { aggregateProEdge } = await import('./engine/proEdge')
+      const pe = await aggregateProEdge({ minConviction: 85 })
+      await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/pro-edge.json'), JSON.stringify(pe, null, 2))
+    } catch { /* pro-edge optional */ }
+    log.ok('INTRADAY-CONF', `live refresh · ${conf.rows.length} picks (${conf.ultraCount} ULTRA · ${conf.strongCount} STRONG) in ${Date.now() - t0}ms`)
+  } catch (e) { log.warn('INTRADAY-CONF', `refresh failed: ${(e as Error).message}`) }
+}, { timezone: 'Asia/Kolkata' })
+
 // Off-hours keep-alive — every 30 min at 16-23 IST + 0-8 IST + all weekend.
 // Re-runs the engine so the dashboard pages (all tabs) stay populated with
 // fresh WATCH snapshots when the cash market is closed. LIVE alerts are
