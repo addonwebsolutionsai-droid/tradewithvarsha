@@ -2074,6 +2074,7 @@ cron.schedule('0 19 * * 0', async () => {
     ['mover-patterns', async () => { const { mineTodaysMoverPatterns, publishMoverArchetypesSnapshot } = await import('./engine/moverPatternMiner'); const m = await mineTodaysMoverPatterns(); await publishMoverArchetypesSnapshot(); return `${m.added} new fingerprints (store ${m.total})` }],
     ['pedigree-accumulation', async () => { const { runAndPublishPedigree } = await import('./engine/pedigreeAccumulation'); const p = await runAndPublishPedigree(); return `${p.total} candidates` }],
     ['chart-patterns', async () => { const { runAndPublishChartPatterns } = await import('./engine/chartPatterns'); const c = await runAndPublishChartPatterns(); return `${c.total} pattern hits` }],
+    ['insider-buys', async () => { const { runAndPublishInsiderBuys } = await import('./engine/insiderBuysEngine'); const i = await runAndPublishInsiderBuys(); return `${i.total} candidates (${i.strongCount} STRONG)` }],
     ['early-momentum', async () => { const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum'); const e = await runAndPublishEarlyMomentum(); return `${e.total} candidates` }],
     ['x-recs', async () => { const { fetchXRecommendations } = await import('./data/xRecommendations'); const x = await fetchXRecommendations(); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/x-recs.json'), JSON.stringify(x, null, 2)); return `${x.recommendations.length} actionable` }],
     ['cross-confluence', async () => { const { aggregateConfluence } = await import('./engine/crossEngineConfluence'); const conf = await aggregateConfluence(); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/cross-confluence.json'), JSON.stringify(conf, null, 2)); return `${conf.rows.length} confluence picks` }],
@@ -2094,6 +2095,7 @@ cron.schedule('30 8 * * 1-5', async () => {
   const steps = [
     ['pedigree-accumulation', async () => { const { runAndPublishPedigree } = await import('./engine/pedigreeAccumulation'); const p = await runAndPublishPedigree(); return `${p.total} candidates` }],
     ['chart-patterns', async () => { const { runAndPublishChartPatterns } = await import('./engine/chartPatterns'); const c = await runAndPublishChartPatterns(); return `${c.total} pattern hits` }],
+    ['insider-buys', async () => { const { runAndPublishInsiderBuys } = await import('./engine/insiderBuysEngine'); const i = await runAndPublishInsiderBuys(); return `${i.total} candidates (${i.strongCount} STRONG)` }],
     ['early-momentum', async () => { const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum'); const e = await runAndPublishEarlyMomentum(); return `${e.total} candidates` }],
     ['x-recs', async () => { const { fetchXRecommendations } = await import('./data/xRecommendations'); const x = await fetchXRecommendations(); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/x-recs.json'), JSON.stringify(x, null, 2)); return `${x.recommendations.length} actionable` }],
   ] as const
@@ -2174,6 +2176,13 @@ cron.schedule('30 18 * * 1-5', async () => {
       const cp = await runAndPublishChartPatterns()
       log.ok('DAILY-ROUTINE', `[5c/7] chart-patterns: ${cp.total} hits across ${Object.keys(cp.byPattern).length} pattern types`)
     } catch (e) { log.warn('DAILY-ROUTINE', `[5c/7] chart-patterns: ${(e as Error).message}`) }
+
+    try {
+      log.info('DAILY-ROUTINE', '[5d/7] Insider buys scan (SEBI PIT + SAST filings)...')
+      const { runAndPublishInsiderBuys } = await import('./engine/insiderBuysEngine')
+      const ib = await runAndPublishInsiderBuys()
+      log.ok('DAILY-ROUTINE', `[5d/7] insider-buys: ${ib.total} candidates (${ib.strongCount} STRONG)`)
+    } catch (e) { log.warn('DAILY-ROUTINE', `[5d/7] insider-buys: ${(e as Error).message}`) }
 
     log.info('DAILY-ROUTINE', '[6a/7] Pedigree accumulation (good co. 50%+ off 52w-hi + FII/DII/P↑)...')
     try {
@@ -2303,6 +2312,24 @@ app.post('/api/pre-move-identifier/run', async (_req, res) => {
       topN: Math.max(10, Math.min(200, Number(_req.query.topN ?? 50))),
       maxRuntimeMs: Math.max(60_000, Math.min(20 * 60_000, Number(_req.query.maxRuntimeMs ?? 15 * 60_000))),
     }))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
+// 2026-06-30: INSIDER BUYS — SEBI PIT (Reg 7) + SAST (Reg 29) filings
+// surfaced with technical + shareholding context. Smartest single signal
+// in Indian markets — when promoters / KMP / 5%+ external acquirers
+// open their wallets, that's insider knowledge made public.
+app.get('/api/insider-buys', async (_req, res) => {
+  try {
+    const raw = await fsAsync.readFile(path.resolve(__dirname, '../data/public-snapshots/insider-buys.json'), 'utf8').catch(() => null)
+    if (!raw) return res.status(404).json({ error: 'No scan yet — POST /api/insider-buys/run' })
+    res.json(JSON.parse(raw))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+app.post('/api/insider-buys/run', async (_req, res) => {
+  try {
+    const { runAndPublishInsiderBuys } = await import('./engine/insiderBuysEngine')
+    res.json(await runAndPublishInsiderBuys())
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
 

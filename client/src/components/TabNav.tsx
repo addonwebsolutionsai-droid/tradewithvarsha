@@ -170,6 +170,9 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // Triangles, Flag, Wedge, Cup & Handle, candlesticks across DAILY +
     // WEEKLY timeframes. Promote to main nav once user confirms outputs.
     { to: '/chart-patterns', label: '📐 Chart Patterns (Pilot)', title: 'PILOT — classical TA pattern scanner across NIFTY-500 × DAILY/WEEKLY. Detects H&S, Double Top/Bot, Triangles, Flag, Wedge, Cup & Handle, candles. Measured-move targets per pattern.' },
+    // 2026-06-30: PILOT — Insider buys (SEBI PIT + SAST). Promote to main
+    // nav once user confirms outputs match the expected insider trade flow.
+    { to: '/insider-buys',   label: '🕵️ Insider Buys (Pilot)', title: 'PILOT — SEBI PIT (Reg 7) + SAST (Reg 29) filings. Promoter / KMP / external 5%+ acquirer buys per stock with technical + shareholding context. Smartest single insider signal Indian markets give us, free.' },
     // 2026-06-26: X-Recs relocated to More per user request (best-effort
     // data, doesn't need primary-nav slot).
     { to: '/x-recs',         label: '🐦 X-Recs (analyst posts)', title: 'Analyst X-Recs — best-effort scrape of stock calls from 6 named profiles via nitter mirrors. Reliability fluctuates day-to-day.' },

@@ -2073,6 +2073,133 @@ export function PublicChartPatternsPage(): JSX.Element {
   )
 }
 
+// ── 🕵️ INSIDER BUYS — SEBI PIT (Reg 7) + SAST (Reg 29) filings.
+// Smartest single signal in Indian markets: promoters / KMP / directors
+// buying their own stock + 5%+ external acquirers crossing thresholds.
+// Aggregated by symbol with technical + shareholding context.
+export function PublicInsiderBuysPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-insider-buys'], queryFn: () => snapshots.insiderBuys(),
+    refetchInterval: 60 * 60_000, retry: false,
+  })
+  const all: any[] = data?.rows ?? []
+  const [tier, setTier] = useState<'ALL' | 'STRONG_INSIDER_BUY' | 'INSIDER_BUY'>('ALL')
+  const filtered = tier === 'ALL' ? all : all.filter(r => r.signal === tier)
+  const { rows, headerProps, sortIndicator } = useSortableTable<any>(
+    filtered, { key: 'score', dir: 'desc' },
+    {
+      symbol: r => r.symbol ?? '',
+      score: r => r.score ?? 0,
+      close: r => r.close ?? 0,
+      promoterNetBuyCr: r => r.promoterNetBuyCr ?? 0,
+      kmpNetBuyCr: r => r.kmpNetBuyCr ?? 0,
+      externalAcquirerBuyCr: r => r.externalAcquirerBuyCr ?? 0,
+      totalNetBuyCr: r => r.totalNetBuyCr ?? 0,
+      rsi14: r => r.rsi14 ?? 0,
+      pctOffHigh52w: r => r.pctOffHigh52w ?? 0,
+      mostRecentDate: r => r.mostRecentDate ?? '',
+    },
+  )
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/15 to-accent-green/5 border border-accent-amber/50 rounded-lg">
+        <div className="text-3xl">🕵️</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-amber">Insider Buys · SEBI PIT (Reg 7) + SAST (Reg 29) filings</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            When promoters / KMP / directors put their <b>own money</b> into the company's stock, or when an external acquirer crosses the 5/10/15% SAST threshold — that's the cleanest insider signal Indian markets give us, free, daily.
+            Aggregated per symbol with technical context (RSI, 52w-high distance) + shareholding (FII/DII delta, pledge) so each row is actionable, not just informational.
+            Score 0-100: 30 net-buy magnitude · 20 pure-promoter buy · 15 external SAST acquirer · 10 bottoming setup · 10 pedigree · 10 low-pledge · 5 recency.
+          </div>
+          {data && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              📊 {data.total} candidates · 🔥 STRONG: {data.strongCount ?? 0}
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Signal:</span>
+        {(['ALL', 'STRONG_INSIDER_BUY', 'INSIDER_BUY'] as const).map(t => {
+          const cnt = t === 'ALL' ? all.length : all.filter(r => r.signal === t).length
+          const color = t === 'STRONG_INSIDER_BUY' ? 'accent-green' : t === 'INSIDER_BUY' ? 'accent-amber' : 'accent-cyan'
+          return (
+            <button key={t} onClick={() => setTier(t)}
+              className={`px-2 py-1 rounded border ${tier === t ? `bg-${color}/20 border-${color} text-${color}` : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+              {t.replace('_INSIDER_', ' ')} ({cnt})
+            </button>
+          )
+        })}
+      </div>
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load insider buys. Snapshot refreshes hourly." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No insider-buy candidates right now. NSE PIT/SAST is rate-limited; daily 18:30 IST cron refreshes." />}
+      {!isLoading && !error && rows.length > 0 && (
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1200 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500')}>Symbol{sortIndicator('symbol')}</th>
+                <th {...headerProps('score', 'text-center px-2 py-3')}>Score{sortIndicator('score')}</th>
+                <th {...headerProps('close', 'text-right px-2 py-3 text-neutral-300')}>LTP{sortIndicator('close')}</th>
+                <th {...headerProps('promoterNetBuyCr', 'text-right px-2 py-3 text-accent-green')}>Promoter ₹Cr{sortIndicator('promoterNetBuyCr')}</th>
+                <th {...headerProps('kmpNetBuyCr', 'text-right px-2 py-3 text-accent-cyan')}>KMP ₹Cr{sortIndicator('kmpNetBuyCr')}</th>
+                <th {...headerProps('externalAcquirerBuyCr', 'text-right px-2 py-3 text-accent-amber')}>SAST ₹Cr{sortIndicator('externalAcquirerBuyCr')}</th>
+                <th {...headerProps('totalNetBuyCr', 'text-right px-2 py-3 font-bold')}>Total Net ₹Cr{sortIndicator('totalNetBuyCr')}</th>
+                <th {...headerProps('rsi14', 'text-right px-2 py-3')}>RSI{sortIndicator('rsi14')}</th>
+                <th {...headerProps('pctOffHigh52w', 'text-right px-2 py-3 text-accent-red')}>% off 52w-Hi{sortIndicator('pctOffHigh52w')}</th>
+                <th {...headerProps('mostRecentDate', 'text-left px-2 py-3')}>Latest{sortIndicator('mostRecentDate')}</th>
+                <th className="text-left px-3 py-3">Why · Actors</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r: any, i: number) => {
+                const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+                const sigColor = r.signal === 'STRONG_INSIDER_BUY' ? '#00c853' : r.signal === 'INSIDER_BUY' ? '#ffb454' : '#9aa0a6'
+                return (
+                  <tr key={r.symbol + i} className="group border-t border-ink-500">
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>
+                      {r.symbol}
+                      <span className="ml-2 text-[9px] px-1 py-0.5 rounded font-bold" style={{ background: `${sigColor}22`, color: sigColor }}>{r.signal === 'STRONG_INSIDER_BUY' ? 'STRONG' : 'BUY'}</span>
+                    </td>
+                    <td className={`${tdb} text-center font-bold ${r.score >= 70 ? 'text-accent-green' : r.score >= 50 ? 'text-accent-amber' : 'text-neutral-300'}`}>{r.score}</td>
+                    <td className={`${tdb} text-right text-neutral-200`}>₹{r.close?.toFixed?.(1) ?? '—'}</td>
+                    <td className={`${tdb} text-right ${r.promoterNetBuyCr > 0 ? 'text-accent-green font-bold' : 'text-neutral-500'}`}>
+                      {r.promoterNetBuyCr > 0 ? '+' : ''}{r.promoterNetBuyCr?.toFixed?.(1) ?? '0.0'}
+                    </td>
+                    <td className={`${tdb} text-right ${r.kmpNetBuyCr > 0 ? 'text-accent-cyan' : 'text-neutral-500'}`}>
+                      {r.kmpNetBuyCr > 0 ? '+' : ''}{r.kmpNetBuyCr?.toFixed?.(1) ?? '0.0'}
+                    </td>
+                    <td className={`${tdb} text-right ${r.externalAcquirerBuyCr > 0 ? 'text-accent-amber font-bold' : 'text-neutral-500'}`}>
+                      {r.externalAcquirerBuyCr > 0 ? '+' : ''}{r.externalAcquirerBuyCr?.toFixed?.(1) ?? '0.0'}
+                    </td>
+                    <td className={`${tdb} text-right font-bold text-accent-green`}>{r.totalNetBuyCr > 0 ? '+' : ''}{r.totalNetBuyCr?.toFixed?.(1) ?? '0.0'}</td>
+                    <td className={`${tdb} text-right text-neutral-300`}>{r.rsi14?.toFixed?.(0) ?? '—'}</td>
+                    <td className={`${tdb} text-right text-accent-red`}>−{r.pctOffHigh52w?.toFixed?.(0) ?? '0'}%</td>
+                    <td className={`${tdb} text-left text-neutral-300`}>{r.mostRecentDate ?? '—'}</td>
+                    <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 280 }}>
+                      <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
+                        {(r.reasons ?? []).join(' · ')}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <HowToTradeBox tab="Insider Buys" rules={[
+        { title: 'Why this is the smartest signal', body: 'Promoters, KMP, and directors transacting in their own company\'s stock have to disclose to SEBI within 2 days. They KNOW the business better than anyone. When they BUY (with their own money, not options), it\'s the cleanest signal that they expect the stock to be worth more. Aggregated over 30 days so single-trade noise doesn\'t mislead.' },
+        { title: 'STRONG vs regular tier', body: '🔥 STRONG = promoter net buy ≥ ₹5Cr OR external SAST acquirer ≥ ₹10Cr. These have the highest historical follow-through. Regular INSIDER_BUY = promoter net ≥ ₹1Cr or KMP net ≥ ₹0.5Cr.' },
+        { title: 'External SAST acquirer (Reg 29)', body: 'When someone (often a private equity / strategic / activist investor) crosses 5%/10%/15% holding, SEBI requires a SAST disclosure. These crossings often precede tender offers, board representation, or strategic shifts that re-rate the stock significantly.' },
+        { title: 'Read with caution when', body: 'High pledge ≥ 25%: promoter may be buying to release pledged shares, not because they\'re bullish. Heavy net SELLING by promoter alongside KMP buys: distribution disguised as insider activity. Recent NSE delisting/announcement: insider activity may be tied to a corporate event, not organic conviction.' },
+        { title: 'Cross-check', body: 'Compare against Pedigree Accumulation tab (FII/DII flow direction), Footprint tab (bulk-deal named buyers same day), and the stock\'s technical setup (Chart Patterns + Early Momentum) before sizing in.' },
+      ]} />
+    </div>
+  )
+}
+
 // ── 💎 PEDIGREE ACCUMULATION — good companies 50%+ off 52w-hi where
 // FII/DII/Promoter are increasing stakes. The "big hands grabbing from
 // retailers" setup — when retail finishes exiting, the move starts.
