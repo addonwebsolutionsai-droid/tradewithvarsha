@@ -2043,9 +2043,17 @@ export function PublicChartPatternsPage(): JSX.Element {
                     <td className={`${tdb} text-center`}>
                       <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${confColor}22`, color: confColor }}>{r.confidence}</span>
                     </td>
-                    <td className={`${tdb} text-right text-accent-cyan`}>₹{r.entry.toFixed(1)}</td>
+                    <td className={`${tdb} text-right text-accent-cyan`}>
+                      <div>₹{r.entry.toFixed(1)}</div>
+                      {r.entryDate && <div className="text-[9px] text-accent-cyan/60 font-normal">📅 {fmtDate(r.entryDate)}</div>}
+                    </td>
                     <td className={`${tdb} text-right text-accent-red`}>₹{r.stopLoss.toFixed(1)}</td>
-                    <td className={`${tdb} text-right text-accent-green font-bold`}>₹{r.target1.toFixed(1)}</td>
+                    <td className={`${tdb} text-right text-accent-green font-bold`}>
+                      <div>₹{r.target1.toFixed(1)}</div>
+                      {r.target1Date && <div className="text-[9px] text-accent-green/60 font-normal">📅 {fmtDate(r.target1Date)}</div>}
+                      {r.target2 != null && <div className="text-[10px] text-accent-green/80 mt-1">T2 ₹{r.target2.toFixed(1)} {r.target2Date && <span className="text-[9px] text-accent-green/60">📅 {fmtDate(r.target2Date)}</span>}</div>}
+                      {r.target3 != null && <div className="text-[10px] text-accent-green/80">T3 ₹{r.target3.toFixed(1)} {r.target3Date && <span className="text-[9px] text-accent-green/60">📅 {fmtDate(r.target3Date)}</span>}</div>}
+                    </td>
                     <td className={`${tdb} text-right font-bold`} style={{ color: r.direction === 'BUY' ? '#00c853' : '#ff5e7c' }}>
                       {r.direction === 'BUY' ? '+' : '−'}{r.expectedMovePct.toFixed(1)}%
                     </td>
