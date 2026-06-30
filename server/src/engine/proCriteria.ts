@@ -278,5 +278,11 @@ export async function computeProCriteria(opts: {
     results.push(criterion19SMC(opts.candles, opts.side))
     results.push(criterion20StageAnalysis(opts.candles, opts.side))
   } catch { /* skip if modules fail to import */ }
+  // 21 + 22: KP astrology + Bradley siderograph (2026-07-01)
+  try {
+    const { criterion21KP, criterion22Bradley } = await import('./kpAstroBradley')
+    results.push(criterion21KP(opts.side))
+    results.push(criterion22Bradley(opts.side))
+  } catch { /* skip if astronomy-engine cold-load fails */ }
   return results
 }
