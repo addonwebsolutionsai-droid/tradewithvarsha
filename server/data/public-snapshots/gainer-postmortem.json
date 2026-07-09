@@ -1,20 +1,18 @@
 {
-  "generatedAt": "2026-07-09T06:00:16.743Z",
+  "generatedAt": "2026-07-09T08:30:14.254Z",
   "totalGainers": 60,
-  "caughtCount": 7,
+  "caughtCount": 8,
   "wouldHaveCaughtCount": 4,
   "patternBreakdown": {
-    "unknown": 18,
-    "wyckoff-accumulation": 9,
-    "vcp": 4
+    "unknown": 22,
+    "wyckoff-accumulation": 9
   },
   "topMissReasons": {
-    "extended_freshness_reject": 1,
+    "not_coil_pattern": 13,
     "rule_fired_but_not_emitted": 4,
-    "ema_not_stacked": 6,
-    "vol_already_elevated": 3,
+    "vol_already_elevated": 4,
     "not_in_universe": 29,
-    "not_coil_pattern": 9,
+    "ema_not_stacked": 1,
     "scanner_gap": 1
   },
   "rows": [
@@ -28,12 +26,12 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Stock was already extended (5d 3.37%, 20d 25.71%) — hit our freshness reject",
-      "recommendation": "For wave-2 continuation candidates, extend wave2 scanner to micro/small caps"
+      "missReason": "Too wide a range (BB-w 31.55%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
       "symbol": "1",
-      "gainPct": 16.87,
+      "gainPct": 17.75,
       "sources": [
         "finology"
       ],
@@ -53,21 +51,8 @@
       "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
     },
     {
-      "symbol": "BANARBEADS",
-      "gainPct": 15.06,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
-      "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
-    },
-    {
       "symbol": "2",
-      "gainPct": 14.86,
+      "gainPct": 17.56,
       "sources": [
         "finology"
       ],
@@ -80,7 +65,7 @@
     },
     {
       "symbol": "3",
-      "gainPct": 14.58,
+      "gainPct": 17.15,
       "sources": [
         "finology"
       ],
@@ -93,7 +78,7 @@
     },
     {
       "symbol": "4",
-      "gainPct": 14.21,
+      "gainPct": 15.39,
       "sources": [
         "finology"
       ],
@@ -105,8 +90,21 @@
       "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
     },
     {
+      "symbol": "BANARBEADS",
+      "gainPct": 15.06,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": null,
+      "missReason": "Volume was already elevated (3.05× 20d) before the move — fails our dry-up filter",
+      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
+    },
+    {
       "symbol": "5",
-      "gainPct": 13.12,
+      "gainPct": 13.83,
       "sources": [
         "finology"
       ],
@@ -119,7 +117,7 @@
     },
     {
       "symbol": "6",
-      "gainPct": 13.12,
+      "gainPct": 13.32,
       "sources": [
         "finology"
       ],
@@ -132,7 +130,7 @@
     },
     {
       "symbol": "7",
-      "gainPct": 12.79,
+      "gainPct": 13.15,
       "sources": [
         "finology"
       ],
@@ -145,7 +143,20 @@
     },
     {
       "symbol": "8",
-      "gainPct": 12.58,
+      "gainPct": 12.92,
+      "sources": [
+        "finology"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "no-data",
+      "preMoveFeatures": null,
+      "missReason": "Not in scanner universe (no candle history available)",
+      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
+    },
+    {
+      "symbol": "9",
+      "gainPct": 12.7,
       "sources": [
         "finology"
       ],
@@ -164,40 +175,14 @@
       ],
       "caughtTodayByOurTabs": true,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "vcp",
+      "patternDetected": "unknown",
       "preMoveFeatures": null,
       "missReason": "— (caught)",
       "recommendation": "No action needed"
     },
     {
-      "symbol": "9",
-      "gainPct": 12.1,
-      "sources": [
-        "finology"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "no-data",
-      "preMoveFeatures": null,
-      "missReason": "Not in scanner universe (no candle history available)",
-      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
-    },
-    {
       "symbol": "10",
-      "gainPct": 11.75,
-      "sources": [
-        "finology"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "no-data",
-      "preMoveFeatures": null,
-      "missReason": "Not in scanner universe (no candle history available)",
-      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
-    },
-    {
-      "symbol": "11",
-      "gainPct": 11.75,
+      "gainPct": 11.92,
       "sources": [
         "finology"
       ],
@@ -215,8 +200,8 @@
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": 6,
-      "patternDetected": "wyckoff-accumulation",
+      "wouldHaveFiredDaysAgo": 7,
+      "patternDetected": "unknown",
       "preMoveFeatures": {
         "ret5d": -0.79,
         "ret20d": 2.21,
@@ -226,12 +211,25 @@
         "distFromHigh20": 4.59,
         "emaStackBull": true
       },
-      "missReason": "Rule WOULD have fired 6d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "missReason": "Rule WOULD have fired 7d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
       "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
     },
     {
+      "symbol": "11",
+      "gainPct": 11.5,
+      "sources": [
+        "finology"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "no-data",
+      "preMoveFeatures": null,
+      "missReason": "Not in scanner universe (no candle history available)",
+      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
+    },
+    {
       "symbol": "12",
-      "gainPct": 11.36,
+      "gainPct": 11.42,
       "sources": [
         "finology"
       ],
@@ -250,14 +248,14 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "vcp",
+      "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Too wide a range (BB-w 15.92%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
       "symbol": "13",
-      "gainPct": 11.12,
+      "gainPct": 11.18,
       "sources": [
         "finology"
       ],
@@ -270,7 +268,7 @@
     },
     {
       "symbol": "14",
-      "gainPct": 10.91,
+      "gainPct": 10.97,
       "sources": [
         "finology"
       ],
@@ -283,7 +281,7 @@
     },
     {
       "symbol": "15",
-      "gainPct": 10.42,
+      "gainPct": 10.96,
       "sources": [
         "finology"
       ],
@@ -296,7 +294,7 @@
     },
     {
       "symbol": "16",
-      "gainPct": 10.39,
+      "gainPct": 10.89,
       "sources": [
         "finology"
       ],
@@ -309,7 +307,7 @@
     },
     {
       "symbol": "17",
-      "gainPct": 10.31,
+      "gainPct": 10.89,
       "sources": [
         "finology"
       ],
@@ -322,7 +320,7 @@
     },
     {
       "symbol": "18",
-      "gainPct": 10.21,
+      "gainPct": 10.75,
       "sources": [
         "finology"
       ],
@@ -335,7 +333,7 @@
     },
     {
       "symbol": "19",
-      "gainPct": 10.19,
+      "gainPct": 10.53,
       "sources": [
         "finology"
       ],
@@ -348,7 +346,33 @@
     },
     {
       "symbol": "20",
-      "gainPct": 10.04,
+      "gainPct": 10.28,
+      "sources": [
+        "finology"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "no-data",
+      "preMoveFeatures": null,
+      "missReason": "Not in scanner universe (no candle history available)",
+      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
+    },
+    {
+      "symbol": "21",
+      "gainPct": 10.12,
+      "sources": [
+        "finology"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "no-data",
+      "preMoveFeatures": null,
+      "missReason": "Not in scanner universe (no candle history available)",
+      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
+    },
+    {
+      "symbol": "22",
+      "gainPct": 10.05,
       "sources": [
         "finology"
       ],
@@ -373,21 +397,8 @@
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
-      "symbol": "21",
-      "gainPct": 9.99,
-      "sources": [
-        "finology"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "no-data",
-      "preMoveFeatures": null,
-      "missReason": "Not in scanner universe (no candle history available)",
-      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
-    },
-    {
-      "symbol": "22",
-      "gainPct": 9.76,
+      "symbol": "23",
+      "gainPct": 10,
       "sources": [
         "finology"
       ],
@@ -408,25 +419,12 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 19.84%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 20.3%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
-      "symbol": "23",
-      "gainPct": 9.71,
-      "sources": [
-        "finology"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "no-data",
-      "preMoveFeatures": null,
-      "missReason": "Not in scanner universe (no candle history available)",
-      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
-    },
-    {
       "symbol": "24",
-      "gainPct": 9.35,
+      "gainPct": 9.68,
       "sources": [
         "finology"
       ],
@@ -439,7 +437,7 @@
     },
     {
       "symbol": "25",
-      "gainPct": 9.19,
+      "gainPct": 9.48,
       "sources": [
         "finology"
       ],
@@ -452,7 +450,7 @@
     },
     {
       "symbol": "26",
-      "gainPct": 9,
+      "gainPct": 9.34,
       "sources": [
         "finology"
       ],
@@ -465,7 +463,7 @@
     },
     {
       "symbol": "27",
-      "gainPct": 8.95,
+      "gainPct": 9.12,
       "sources": [
         "finology"
       ],
@@ -478,7 +476,7 @@
     },
     {
       "symbol": "28",
-      "gainPct": 8.73,
+      "gainPct": 9.09,
       "sources": [
         "finology"
       ],
@@ -491,7 +489,20 @@
     },
     {
       "symbol": "29",
-      "gainPct": 8.55,
+      "gainPct": 9.09,
+      "sources": [
+        "finology"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "no-data",
+      "preMoveFeatures": null,
+      "missReason": "Not in scanner universe (no candle history available)",
+      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
+    },
+    {
+      "symbol": "30",
+      "gainPct": 9,
       "sources": [
         "finology"
       ],
@@ -512,8 +523,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "All features look fine — possible miss-miner sample bias or scanner universe gap",
-      "recommendation": "Add to next universe expansion; verify scanner ran for this name"
+      "missReason": "Volume was already elevated (2.46× 20d) before the move — fails our dry-up filter",
+      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
       "symbol": "ORCHPHARMA",
@@ -525,21 +536,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 21.87%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 19.78%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
-    },
-    {
-      "symbol": "30",
-      "gainPct": 8.38,
-      "sources": [
-        "finology"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "no-data",
-      "preMoveFeatures": null,
-      "missReason": "Not in scanner universe (no candle history available)",
-      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
     },
     {
       "symbol": "SHAREINDIA",
@@ -551,7 +549,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 28.56%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 25%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -587,7 +585,7 @@
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": 2,
+      "wouldHaveFiredDaysAgo": 3,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": {
         "ret5d": 1.33,
@@ -598,7 +596,7 @@
         "distFromHigh20": 0.97,
         "emaStackBull": true
       },
-      "missReason": "Rule WOULD have fired 2d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "missReason": "Rule WOULD have fired 3d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
       "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
     },
     {
@@ -609,10 +607,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "vcp",
+      "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Too wide a range (BB-w 18.87%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
       "symbol": "SHIVATEX",
@@ -637,7 +635,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 16.01%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 19.78%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -660,7 +658,7 @@
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": 5,
+      "wouldHaveFiredDaysAgo": 6,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": {
         "ret5d": 2.59,
@@ -671,7 +669,7 @@
         "distFromHigh20": 2.26,
         "emaStackBull": true
       },
-      "missReason": "Rule WOULD have fired 5d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "missReason": "Rule WOULD have fired 6d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
       "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
     },
     {
@@ -680,12 +678,12 @@
       "sources": [
         "nse-bhavcopy"
       ],
-      "caughtTodayByOurTabs": false,
+      "caughtTodayByOurTabs": true,
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "— (caught)",
+      "recommendation": "No action needed"
     },
     {
       "symbol": "AETHER",
@@ -723,7 +721,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (1.96× 20d) before the move — fails our dry-up filter",
+      "missReason": "Volume was already elevated (2.69× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
@@ -734,10 +732,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "vcp",
+      "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "All features look fine — possible miss-miner sample bias or scanner universe gap",
+      "recommendation": "Add to next universe expansion; verify scanner ran for this name"
     },
     {
       "symbol": "DBSTOCKBRO",
@@ -762,7 +760,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 31%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 29.16%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -775,8 +773,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (1.75× 20d) before the move — fails our dry-up filter",
-      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
+      "missReason": "Too wide a range (BB-w 18.4%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
       "symbol": "KALYANKJIL",
@@ -824,7 +822,7 @@
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": true,
-      "wouldHaveFiredDaysAgo": 9,
+      "wouldHaveFiredDaysAgo": 10,
       "patternDetected": "unknown",
       "preMoveFeatures": {
         "ret5d": 2.78,
