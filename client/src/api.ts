@@ -65,6 +65,7 @@ export const snapshots = {
   xRecs: () => snapshot<{ generatedAt: string; bySite: Record<string, string>; recommendations: any[] }>('x-recs.json'),
   chartPatterns: () => snapshot<{ generatedAt: string; criterion: string; note: string; total: number; byPattern: Record<string, number>; rows: any[] }>('chart-patterns.json'),
   insiderBuys: () => snapshot<{ generatedAt: string; criterion: string; total: number; strongCount: number; rows: any[] }>('insider-buys.json'),
+  niftyOutlook: () => snapshot<{ generatedAt: string; spot: number; direction: string; confidence: string; bullScore: number; bearScore: number; netScore: number; tradePlan: any; reasoning: any; smartMoneyLevel: number; smartMoneyDirection: string; playbookDetected: string[]; cycle: any; keyLevels: any; historyPoints: number }>('nifty-outlook.json'),
 }
 
 // Chat assistant — talks directly to Gemini from the browser.

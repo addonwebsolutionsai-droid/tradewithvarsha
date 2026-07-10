@@ -123,6 +123,13 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/fno-futures',  label: 'F&O Futures',  icon: <BarChart3 size={14} />,
       acc: null,
       title: 'F&O Stock-Futures — 12-criteria pre-breakout scan across all ~211 NSE F&O underlyings.' },
+    // 2026-07-10: NIFTY Directional Foresight — flagship fix for the July
+    // 1-10 missed moves (700↑/700↓/360↑). Multi-expiry OI + max-pain drift +
+    // time cycles + astro + operator playbook detection. Refreshes every 4
+    // min during 9:15-15:30 IST.
+    { to: '/nifty-outlook', label: '🧭 NIFTY Outlook', icon: <Target size={14} />,
+      acc: null, highProb: true,
+      title: 'NIFTY Directional Foresight — multi-expiry OI (current+monthly+quarterly), max-pain drift, PCR trend, time cycles from 2020 daily, momentum, KP+Bradley astro, operator playbook detection. Unified BULLISH/BEARISH call with entry/SL/T1/T2/T3 dated trade plan. Refreshes every 4 min live.' },
     { to: '/confluence',   label: 'Ultra Picks',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: 'Ultra Picks — names confirmed by multiple independent scanners. Structurally higher conviction.' },

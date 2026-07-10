@@ -1660,6 +1660,13 @@ cron.schedule('*/4 9-15 * * 1-5', async () => {
       const pe = await aggregateProEdge({ minConviction: 85 })
       await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/pro-edge.json'), JSON.stringify(pe, null, 2))
     } catch { /* pro-edge optional */ }
+    // 2026-07-10: NIFTY Directional Foresight — refresh every 4 min so we
+    // never miss another 700pt intraday reversal like 7-8 July.
+    try {
+      const { runAndPublishNiftyForesight } = await import('./engine/niftyForesight')
+      const nf = await runAndPublishNiftyForesight()
+      if (nf.ok) log.ok('INTRADAY-CONF', `nifty-foresight ${nf.direction} ${nf.confidence} (net ${nf.netScore}) @${nf.spot}`)
+    } catch (e) { log.warn('INTRADAY-CONF', `nifty-foresight refresh failed: ${(e as Error).message}`) }
     log.ok('INTRADAY-CONF', `live refresh · ${conf.rows.length} picks (${conf.ultraCount} ULTRA · ${conf.strongCount} STRONG) in ${Date.now() - t0}ms`)
   } catch (e) { log.warn('INTRADAY-CONF', `refresh failed: ${(e as Error).message}`) }
 }, { timezone: 'Asia/Kolkata' })
@@ -2098,6 +2105,7 @@ cron.schedule('0 19 * * 0', async () => {
     ['insider-buys', async () => { const { runAndPublishInsiderBuys } = await import('./engine/insiderBuysEngine'); const i = await runAndPublishInsiderBuys(); return `${i.total} candidates (${i.strongCount} STRONG)` }],
     ['early-momentum', async () => { const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum'); const e = await runAndPublishEarlyMomentum(); return `${e.total} candidates` }],
     ['x-recs', async () => { const { fetchXRecommendations } = await import('./data/xRecommendations'); const x = await fetchXRecommendations(); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/x-recs.json'), JSON.stringify(x, null, 2)); return `${x.recommendations.length} actionable` }],
+    ['nifty-outlook', async () => { const { runAndPublishNiftyForesight } = await import('./engine/niftyForesight'); const n = await runAndPublishNiftyForesight(); return `${n.direction} ${n.confidence} (net ${n.netScore})` }],
     ['cross-confluence', async () => { const { aggregateConfluence } = await import('./engine/crossEngineConfluence'); const conf = await aggregateConfluence(); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/cross-confluence.json'), JSON.stringify(conf, null, 2)); return `${conf.rows.length} confluence picks` }],
     ['pro-edge', async () => { const { aggregateProEdge } = await import('./engine/proEdge'); const pe = await aggregateProEdge({ minConviction: 85 }); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/pro-edge.json'), JSON.stringify(pe, null, 2)); return `${(pe as any).rows?.length ?? 0} signals` }],
   ] as const
@@ -2119,6 +2127,7 @@ cron.schedule('30 8 * * 1-5', async () => {
     ['insider-buys', async () => { const { runAndPublishInsiderBuys } = await import('./engine/insiderBuysEngine'); const i = await runAndPublishInsiderBuys(); return `${i.total} candidates (${i.strongCount} STRONG)` }],
     ['early-momentum', async () => { const { runAndPublishEarlyMomentum } = await import('./engine/earlyMomentum'); const e = await runAndPublishEarlyMomentum(); return `${e.total} candidates` }],
     ['x-recs', async () => { const { fetchXRecommendations } = await import('./data/xRecommendations'); const x = await fetchXRecommendations(); await fsAsync.writeFile(path.resolve(__dirname, '../data/public-snapshots/x-recs.json'), JSON.stringify(x, null, 2)); return `${x.recommendations.length} actionable` }],
+    ['nifty-outlook', async () => { const { runAndPublishNiftyForesight } = await import('./engine/niftyForesight'); const n = await runAndPublishNiftyForesight(); return `${n.direction} ${n.confidence} (net ${n.netScore})` }],
   ] as const
   for (const [name, fn] of steps) {
     try { const summary = await (fn as () => Promise<string>)(); log.ok('PRE-OPEN', `✓ ${name}: ${summary}`) }
@@ -2204,6 +2213,13 @@ cron.schedule('30 18 * * 1-5', async () => {
       const ib = await runAndPublishInsiderBuys()
       log.ok('DAILY-ROUTINE', `[5d/7] insider-buys: ${ib.total} candidates (${ib.strongCount} STRONG)`)
     } catch (e) { log.warn('DAILY-ROUTINE', `[5d/7] insider-buys: ${(e as Error).message}`) }
+
+    try {
+      log.info('DAILY-ROUTINE', '[5e/7] NIFTY Directional Foresight (multi-expiry OI + cycles + astro + playbook)...')
+      const { runAndPublishNiftyForesight } = await import('./engine/niftyForesight')
+      const nf = await runAndPublishNiftyForesight()
+      log.ok('DAILY-ROUTINE', `[5e/7] nifty-outlook: ${nf.direction} ${nf.confidence} (net ${nf.netScore}) @${nf.spot} · playbook: ${nf.playbook.join(',') || 'none'}`)
+    } catch (e) { log.warn('DAILY-ROUTINE', `[5e/7] nifty-outlook: ${(e as Error).message}`) }
 
     log.info('DAILY-ROUTINE', '[6a/7] Pedigree accumulation (good co. 50%+ off 52w-hi + FII/DII/P↑)...')
     try {
@@ -2351,6 +2367,25 @@ app.post('/api/insider-buys/run', async (_req, res) => {
   try {
     const { runAndPublishInsiderBuys } = await import('./engine/insiderBuysEngine')
     res.json(await runAndPublishInsiderBuys())
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
+// 2026-07-10: NIFTY DIRECTIONAL FORESIGHT — built after the 1-10 July misses
+// (700pt up, 700pt down, 360pt up). Fuses multi-expiry OI (current + monthly
+// + quarterly), max-pain drift, PCR trend, time cycles from 2020 daily,
+// momentum, KP+Bradley astro, and operator playbook detection into one
+// unified NIFTY directional call with entry/SL/T1/T2/T3 dated trade plan.
+app.get('/api/nifty-outlook', async (_req, res) => {
+  try {
+    const raw = await fsAsync.readFile(path.resolve(__dirname, '../data/public-snapshots/nifty-outlook.json'), 'utf8').catch(() => null)
+    if (!raw) return res.status(404).json({ error: 'No scan yet — POST /api/nifty-outlook/run' })
+    res.json(JSON.parse(raw))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+app.post('/api/nifty-outlook/run', async (_req, res) => {
+  try {
+    const { runAndPublishNiftyForesight } = await import('./engine/niftyForesight')
+    res.json(await runAndPublishNiftyForesight())
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
 

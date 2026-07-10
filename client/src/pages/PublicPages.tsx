@@ -2213,6 +2213,216 @@ export function PublicInsiderBuysPage(): JSX.Element {
   )
 }
 
+// ── 🧭 NIFTY DIRECTIONAL FORESIGHT — built 2026-07-10 in direct response
+// to the missed 1-10 July NIFTY moves (700pt up / 700pt down / 360pt up).
+// Fuses multi-expiry OI (current + monthly + quarterly), max-pain drift,
+// PCR trend, time cycles from 2020 daily, momentum, KP+Bradley astro, and
+// operator playbook detection into one unified NIFTY directional call
+// with entry/SL/T1/T2/T3 dated trade plan.
+export function PublicNiftyForesightPage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-nifty-outlook'],
+    queryFn: () => snapshots.niftyOutlook(),
+    refetchInterval: 4 * 60_000, retry: false,
+  })
+  const d: any = data
+  const dirColor = d?.direction === 'BULLISH' ? '#00c853' : d?.direction === 'BEARISH' ? '#ff4560' : '#9aa0a6'
+  const confBadge = d?.confidence === 'HIGH' ? 'bg-accent-green/25 text-accent-green border-accent-green'
+    : d?.confidence === 'MEDIUM' ? 'bg-accent-amber/25 text-accent-amber border-accent-amber'
+    : 'bg-neutral-700/30 text-neutral-400 border-neutral-500'
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-cyan/15 to-accent-green/5 border border-accent-cyan/50 rounded-lg">
+        <div className="text-3xl">🧭</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-cyan">
+            NIFTY Directional Foresight
+            <span className="ml-2 text-accent-red">🔴 LIVE</span>
+            <span className="text-neutral-500"> · refreshes every 4 min during 9:15–15:30 IST</span>
+          </div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Built 2026-07-10 after the 1–10 July misses (700↑ · 700↓ · 360↑). Fuses <b>multi-expiry OI</b> (current + monthly + quarterly — the far-dated book is where smart money actually sits), <b>max-pain drift</b>, <b>PCR trend</b>, <b>time cycles from 2020 daily</b>, <b>momentum</b>, <b>KP sub-lord + Bradley siderograph</b>, and <b>operator playbook detection</b> (stop-hunt, OI trap, IV crush, institutional build) — into one unified NIFTY call with entry/SL/T1/T2/T3 dated trade plan.
+          </div>
+          {d && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              📊 Bull {d.bullScore} · Bear {d.bearScore} · Net {d.netScore >= 0 ? '+' : ''}{d.netScore} · History points {d.historyPoints}
+            </div>
+          )}
+        </div>
+      </div>
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load NIFTY foresight. Live refresh every 4 min during market hours." />}
+      {!isLoading && !error && d && (
+        <>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="p-4 rounded-lg border-2" style={{ borderColor: dirColor, background: `${dirColor}11` }}>
+              <div className="text-[10px] uppercase text-neutral-400 tracking-wider">Direction</div>
+              <div className="text-3xl font-bold mt-1" style={{ color: dirColor }}>{d.direction}</div>
+              <div className={`inline-block mt-2 px-2 py-1 rounded border text-[10px] font-bold ${confBadge}`}>
+                {d.confidence} CONFIDENCE
+              </div>
+            </div>
+            <div className="p-4 rounded-lg border border-ink-500 bg-ink-800">
+              <div className="text-[10px] uppercase text-neutral-400 tracking-wider">NIFTY Spot</div>
+              <div className="text-3xl font-bold mt-1 text-neutral-100">{d.spot?.toFixed?.(2) ?? '—'}</div>
+              <div className="text-[10px] mt-2 text-neutral-500">Generated: {new Date(d.generatedAt).toLocaleString('en-IN')}</div>
+            </div>
+            <div className="p-4 rounded-lg border border-accent-amber/50 bg-accent-amber/5">
+              <div className="text-[10px] uppercase text-accent-amber tracking-wider">Smart-Money Level</div>
+              <div className="text-3xl font-bold mt-1 text-accent-amber">{d.smartMoneyLevel}</div>
+              <div className="text-[10px] mt-2 text-neutral-500">
+                Book direction: <b className={d.smartMoneyDirection === 'BULLISH' ? 'text-accent-green' : d.smartMoneyDirection === 'BEARISH' ? 'text-accent-red' : 'text-neutral-300'}>{d.smartMoneyDirection}</b> · far expiry: {d.keyLevels?.farExpiryLabel}
+              </div>
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg border border-accent-green/50 bg-accent-green/5">
+            <div className="text-sm font-bold text-accent-green mb-2">📋 Trade Plan</div>
+            <div className="grid gap-3 md:grid-cols-6 text-[11px]">
+              <div><div className="text-neutral-500 text-[10px] uppercase">Side</div><div className="font-bold text-neutral-100">{d.tradePlan?.side}</div></div>
+              <div><div className="text-neutral-500 text-[10px] uppercase">Instrument</div><div className="text-neutral-200 text-[10px]">{d.tradePlan?.instrument}</div></div>
+              <div><div className="text-neutral-500 text-[10px] uppercase">Entry ({d.tradePlan?.entryDate})</div><div className="font-mono text-accent-cyan">{d.tradePlan?.entry}</div></div>
+              <div><div className="text-neutral-500 text-[10px] uppercase">SL</div><div className="font-mono text-accent-red">{d.tradePlan?.stopLoss}</div></div>
+              <div>
+                <div className="text-neutral-500 text-[10px] uppercase">T1 ({d.tradePlan?.target1Date})</div>
+                <div className="font-mono text-accent-green">{d.tradePlan?.target1}</div>
+                <div className="text-neutral-500 text-[10px] mt-1">T2 ({d.tradePlan?.target2Date}): <span className="font-mono text-accent-green">{d.tradePlan?.target2}</span></div>
+              </div>
+              <div>
+                <div className="text-neutral-500 text-[10px] uppercase">T3 ({d.tradePlan?.target3Date})</div>
+                <div className="font-mono text-accent-green">{d.tradePlan?.target3}</div>
+              </div>
+            </div>
+          </div>
+
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="p-3 rounded-lg border border-ink-500 bg-ink-800">
+              <div className="text-[11px] font-bold text-accent-cyan mb-2">🏦 Multi-Expiry OI Stance</div>
+              <ul className="text-[11px] text-neutral-300 space-y-1 list-disc list-inside">
+                {(d.reasoning?.multiExpiryOI ?? []).map((r: string, i: number) => <li key={i}>{r}</li>)}
+                {(d.reasoning?.multiExpiryOI ?? []).length === 0 && <li className="text-neutral-500">no strong OI signals — book in balance</li>}
+              </ul>
+            </div>
+            <div className="p-3 rounded-lg border border-ink-500 bg-ink-800">
+              <div className="text-[11px] font-bold text-accent-amber mb-2">📈 Max-Pain Drift + PCR Trend</div>
+              <ul className="text-[11px] text-neutral-300 space-y-1 list-disc list-inside">
+                {(d.reasoning?.drift ?? []).map((r: string, i: number) => <li key={i}>{r}</li>)}
+                {(d.reasoning?.drift ?? []).length === 0 && <li className="text-neutral-500">not enough history yet — drift builds over 3+ daily snapshots</li>}
+              </ul>
+            </div>
+            <div className="p-3 rounded-lg border border-ink-500 bg-ink-800">
+              <div className="text-[11px] font-bold text-accent-green mb-2">🚀 Momentum + Trend</div>
+              <ul className="text-[11px] text-neutral-300 space-y-1 list-disc list-inside">
+                {(d.reasoning?.momentum ?? []).map((r: string, i: number) => <li key={i}>{r}</li>)}
+              </ul>
+            </div>
+            <div className="p-3 rounded-lg border border-ink-500 bg-ink-800">
+              <div className="text-[11px] font-bold text-accent-purple mb-2">🕰️ Time Cycle (NIFTY daily since 2020)</div>
+              <div className="text-[11px] text-neutral-300">{d.reasoning?.timeCycle}</div>
+              {d.cycle && (
+                <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+                  last high: {d.cycle.lastMajorHighDaysAgo}d ago · last low: {d.cycle.lastMajorLowDaysAgo}d ago<br />
+                  mean top-to-top: {d.cycle.meanTopToTopDays?.toFixed?.(0)}d · mean bot-to-bot: {d.cycle.meanBotToBotDays?.toFixed?.(0)}d<br />
+                  next expected turn: <b>{d.cycle.nextExpectedTurnKind}</b> in {d.cycle.nextExpectedTurnDaysAhead}d
+                </div>
+              )}
+            </div>
+            <div className="p-3 rounded-lg border border-ink-500 bg-ink-800">
+              <div className="text-[11px] font-bold text-accent-magenta mb-2">🔯 Astro Overlay (KP + Bradley)</div>
+              <div className="text-[11px] text-neutral-300">{d.reasoning?.astro}</div>
+            </div>
+            <div className="p-3 rounded-lg border border-accent-red/50 bg-accent-red/5">
+              <div className="text-[11px] font-bold text-accent-red mb-2">🎯 Operator Playbook Detected</div>
+              {(d.playbookDetected ?? []).length > 0 ? (
+                <>
+                  <div className="flex flex-wrap gap-1 mb-2">
+                    {d.playbookDetected.map((p: string) => (
+                      <span key={p} className="px-1.5 py-0.5 rounded bg-accent-red/20 border border-accent-red/40 text-[9px] font-bold text-accent-red">{p}</span>
+                    ))}
+                  </div>
+                  <div className="text-[11px] text-neutral-300">{d.reasoning?.playbook}</div>
+                </>
+              ) : (
+                <div className="text-[11px] text-neutral-500">no distinct operator pattern detected right now</div>
+              )}
+            </div>
+          </div>
+
+          <div className="p-4 rounded-lg border-2 border-accent-cyan/50 bg-gradient-to-br from-accent-cyan/10 to-accent-purple/5">
+            <div className="text-sm font-bold text-accent-cyan mb-1">📚 History Rhymes — NIFTY Analogue Search</div>
+            <div className="text-[11px] text-neutral-400 mb-3">
+              Current 20-day NIFTY shape matched against every 20-day window since 2020 (~1,500 windows). Top-5 closest historical rhymes + what price actually did next.
+            </div>
+            <div className="text-[11px] text-neutral-300 mb-3 font-semibold">
+              {d.reasoning?.historicalRhyme}
+            </div>
+            {d.historicalAnalogues?.analogues?.length > 0 && (
+              <div className="overflow-auto rounded border border-ink-500 bg-ink-800">
+                <table className="w-full text-[11px]" style={{ borderSpacing: 0, minWidth: 600 }}>
+                  <thead className="bg-ink-700 text-neutral-400">
+                    <tr>
+                      <th className="text-left px-2 py-2">Match Date</th>
+                      <th className="text-right px-2 py-2">Days Ago</th>
+                      <th className="text-right px-2 py-2">Score</th>
+                      <th className="text-right px-2 py-2">Next 1d</th>
+                      <th className="text-right px-2 py-2">Next 5d</th>
+                      <th className="text-right px-2 py-2">Next 10d</th>
+                      <th className="text-right px-2 py-2">Next 20d</th>
+                      <th className="text-center px-2 py-2">Outcome</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {d.historicalAnalogues.analogues.map((a: any, i: number) => {
+                      const oc = a.outcome === 'BULLISH' ? '#00c853' : a.outcome === 'BEARISH' ? '#ff4560' : '#9aa0a6'
+                      const clr = (v: number) => v > 0.5 ? 'text-accent-green' : v < -0.5 ? 'text-accent-red' : 'text-neutral-400'
+                      return (
+                        <tr key={i} className="border-t border-ink-500 hover:bg-ink-700">
+                          <td className="px-2 py-2 font-mono text-neutral-200">{a.matchDate}</td>
+                          <td className="px-2 py-2 text-right text-neutral-400 font-mono">{a.daysAgo}</td>
+                          <td className="px-2 py-2 text-right text-accent-cyan font-mono">{(a.matchScore * 100).toFixed(0)}%</td>
+                          <td className={`px-2 py-2 text-right font-mono ${clr(a.nextRet1d)}`}>{a.nextRet1d > 0 ? '+' : ''}{a.nextRet1d}%</td>
+                          <td className={`px-2 py-2 text-right font-mono ${clr(a.nextRet5d)}`}>{a.nextRet5d > 0 ? '+' : ''}{a.nextRet5d}%</td>
+                          <td className={`px-2 py-2 text-right font-mono ${clr(a.nextRet10d)}`}>{a.nextRet10d > 0 ? '+' : ''}{a.nextRet10d}%</td>
+                          <td className={`px-2 py-2 text-right font-mono font-bold ${clr(a.nextRet20d)}`}>{a.nextRet20d > 0 ? '+' : ''}{a.nextRet20d}%</td>
+                          <td className="px-2 py-2 text-center">
+                            <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${oc}22`, color: oc }}>{a.outcome}</span>
+                          </td>
+                        </tr>
+                      )
+                    })}
+                  </tbody>
+                </table>
+              </div>
+            )}
+            <div className="grid gap-2 md:grid-cols-3 mt-3 text-[10px] font-mono">
+              <div>Mean next 5d: <b className={d.historicalAnalogues?.meanNextRet5d > 0 ? 'text-accent-green' : 'text-accent-red'}>{d.historicalAnalogues?.meanNextRet5d > 0 ? '+' : ''}{d.historicalAnalogues?.meanNextRet5d}%</b></div>
+              <div>Mean next 10d: <b className={d.historicalAnalogues?.meanNextRet10d > 0 ? 'text-accent-green' : 'text-accent-red'}>{d.historicalAnalogues?.meanNextRet10d > 0 ? '+' : ''}{d.historicalAnalogues?.meanNextRet10d}%</b></div>
+              <div>Mean next 20d: <b className={d.historicalAnalogues?.meanNextRet20d > 0 ? 'text-accent-green' : 'text-accent-red'}>{d.historicalAnalogues?.meanNextRet20d > 0 ? '+' : ''}{d.historicalAnalogues?.meanNextRet20d}%</b></div>
+            </div>
+          </div>
+
+          <div className="p-3 rounded-lg border border-ink-500 bg-ink-800">
+            <div className="text-[11px] font-bold text-neutral-200 mb-2">🗝️ Key Levels</div>
+            <div className="grid gap-2 md:grid-cols-4 text-[11px] font-mono">
+              <div><div className="text-neutral-500 text-[10px]">Monthly Max-Pain</div><div className="text-neutral-100">{d.keyLevels?.monthlyMaxPain}</div></div>
+              <div><div className="text-neutral-500 text-[10px]">Quarterly Max-Pain</div><div className="text-accent-amber">{d.keyLevels?.quarterlyMaxPain}</div></div>
+              <div><div className="text-neutral-500 text-[10px]">Top CE Resistance</div><div className="text-accent-red">{d.keyLevels?.topCallResistance}</div></div>
+              <div><div className="text-neutral-500 text-[10px]">Top PE Support</div><div className="text-accent-green">{d.keyLevels?.topPutSupport}</div></div>
+            </div>
+          </div>
+        </>
+      )}
+      <HowToTradeBox tab="NIFTY Foresight" rules={[
+        { title: 'Why this fixes the July 1-10 misses', body: 'Older engine only read current-week OI. Smart money builds positions on monthly + quarterly + LEAPS expiries — that\'s where the July 1-6 up-move book was already visible before price moved. Foresight reads ALL expiries and weights the far-dated book heavier because that\'s the institutional footprint.' },
+        { title: 'How to read Direction + Confidence', body: 'HIGH confidence + BULLISH/BEARISH = trade the signal via NIFTY futures or ATM option in that direction. MEDIUM = trade with smaller size + tighter SL. LOW = wait for consolidation to resolve, do not force a trade.' },
+        { title: 'Smart-Money Level', body: 'The strike on the longest-dated expiry where the largest OI concentration sits. If SM direction = BULLISH, price tends to be defended above this level. If SM direction = BEARISH, price tends to be capped below this level. This is the "wall" retail keeps ramming into.' },
+        { title: 'Operator Playbook tags', body: 'STOP_HUNT = swing-high/low was tagged then rejected (classic liquidity grab). OI_MAGNET_DRIFT = max-pain moving ≥80pt/day (price will follow the writer book). INSTITUTIONAL_LONG/SHORT_BUILD = far-dated OI + PCR concentration on one side. VOLATILITY_CRUSH = tight range compression → expansion move loading.' },
+        { title: 'When to override the signal', body: 'Global event risk (Fed, RBI, geopolitics) can override everything — always check the calendar. If direction disagrees with cross-confluence tab AND cross-confluence has ULTRA-tier picks, prefer the cross-confluence bias.' },
+      ]} />
+    </div>
+  )
+}
+
 // ── 💎 PEDIGREE ACCUMULATION — good companies 50%+ off 52w-hi where
 // FII/DII/Promoter are increasing stakes. The "big hands grabbing from
 // retailers" setup — when retail finishes exiting, the move starts.
