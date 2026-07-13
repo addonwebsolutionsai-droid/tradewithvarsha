@@ -1,0 +1,67 @@
+name: Telegram Test (manual trigger only)
+
+# Fires a single test message to the user's chat to verify:
+#   1. TELEGRAM_BOT_TOKEN secret is set on the repo
+#   2. TELEGRAM_ALLOWED_CHAT_IDS secret is set
+#   3. Bot can reach api.telegram.org from GH runner
+#   4. Message actually delivers to the user's phone
+#
+# Trigger from GitHub Actions tab → Telegram Test → Run workflow.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Verify secrets present
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALLOWED_CHAT_IDS: ${{ secrets.TELEGRAM_ALLOWED_CHAT_IDS }}
+        run: |
+          if [ -z "$TELEGRAM_BOT_TOKEN" ]; then
+            echo "::error::TELEGRAM_BOT_TOKEN secret is NOT set on the repo"
+            exit 1
+          fi
+          if [ -z "$TELEGRAM_ALLOWED_CHAT_IDS" ]; then
+            echo "::error::TELEGRAM_ALLOWED_CHAT_IDS secret is NOT set on the repo"
+            exit 1
+          fi
+          echo "✓ TELEGRAM_BOT_TOKEN present (${#TELEGRAM_BOT_TOKEN} chars)"
+          echo "✓ TELEGRAM_ALLOWED_CHAT_IDS present"
+
+      - name: Send test message via Telegram API
+        env:
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALLOWED_CHAT_IDS: ${{ secrets.TELEGRAM_ALLOWED_CHAT_IDS }}
+        run: |
+          FIRST_CHAT=$(echo "$TELEGRAM_ALLOWED_CHAT_IDS" | cut -d, -f1 | tr -d ' ')
+          STAMP=$(TZ=Asia/Kolkata date '+%d-%b %H:%M IST')
+          MSG="🧪 tradewithvarsha Telegram health-check · ${STAMP} · Bot is alive · GH Actions runners can reach api.telegram.org · Secrets are wired. Real signals will fire on next A-grade / score≥9 setup. #tradewithvarsha"
+
+          echo "Sending to chat_id=${FIRST_CHAT}..."
+          HTTP=$(curl -sS -w "%{http_code}" -o /tmp/tg-resp.json -X POST \
+            "https://api.telegram.org/bot${TELEGRAM_BOT_TOKEN}/sendMessage" \
+            --data-urlencode "chat_id=${FIRST_CHAT}" \
+            --data-urlencode "text=${MSG}")
+
+          echo "HTTP status: ${HTTP}"
+          echo "Response body:"
+          cat /tmp/tg-resp.json
+          echo ""
+
+          if [ "$HTTP" != "200" ]; then
+            echo "::error::Telegram API returned HTTP ${HTTP}"
+            exit 1
+          fi
+
+          # Confirm ok:true in JSON
+          OK=$(python3 -c "import json; print(json.load(open('/tmp/tg-resp.json')).get('ok'))")
+          if [ "$OK" != "True" ]; then
+            echo "::error::Telegram returned ok=false"
+            exit 1
+          fi
+
+          echo "✓ Message delivered — check your Telegram now."
