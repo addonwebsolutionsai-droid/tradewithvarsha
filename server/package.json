@@ -6,7 +6,10 @@
     "build": "tsc",
     "start": "node dist/index.js",
     "bot:telegram": "ts-node-dev --transpile-only src/bots/telegram.ts",
-    "backtest": "ts-node-dev --transpile-only src/backtest/runner.ts"
+    "backtest": "ts-node-dev --transpile-only src/backtest/runner.ts",
+    "tick:intraday": "ts-node-dev --transpile-only scripts/gh-tick-intraday.ts",
+    "tick:preopen": "ts-node-dev --transpile-only scripts/gh-tick-preopen.ts",
+    "tick:eod": "ts-node-dev --transpile-only scripts/gh-tick-eod.ts"
   },
   "dependencies": {
     "axios": "^1.6.7",

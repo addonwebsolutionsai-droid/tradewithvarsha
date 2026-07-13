@@ -1,0 +1,87 @@
+name: Intraday Tick (every 5 min · Mon-Fri 09:15-15:30 IST)
+
+# Why: user's local server isn't always on. This runs on GitHub-hosted
+# runners so scans, Telegram signals, and snapshot publishing happen 24/5
+# regardless of whether the laptop is on.
+#
+# Cron in GitHub Actions is UTC. IST = UTC+5:30, so:
+#   09:15 IST = 03:45 UTC
+#   15:30 IST = 10:00 UTC
+# We fire every 5 min from 03:40 UTC to 10:05 UTC as a safety buffer,
+# and the tick script itself short-circuits outside the exact 09:15-15:30
+# IST window so we never operate on stale/pre-market data.
+
+on:
+  schedule:
+    # Every 5 min, 03:00-10:55 UTC, Mon-Fri.
+    # Broader-than-needed window is deliberate: GitHub Actions cron is
+    # scheduled on a best-effort basis and can be delayed 5-15+ min under
+    # peak load. The tick script itself is the source of truth for
+    # "am I inside 09:15-15:30 IST?"
+    - cron: '*/5 3-10 * * 1-5'
+  workflow_dispatch: {}   # allow manual run for testing
+
+concurrency:
+  group: intraday-tick
+  cancel-in-progress: false   # let overlapping ticks queue rather than skip
+
+permissions:
+  contents: write   # so the job can commit refreshed snapshots back
+
+jobs:
+  tick:
+    runs-on: ubuntu-latest
+    timeout-minutes: 4        # fail fast if something hangs
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server deps
+        working-directory: server
+        run: npm ci --no-audit --no-fund --prefer-offline
+
+      - name: Run intraday tick
+        working-directory: server
+        env:
+          NODE_ENV: production
+          # ─── Secrets injected from repo settings → Secrets and variables
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALLOWED_CHAT_IDS: ${{ secrets.TELEGRAM_ALLOWED_CHAT_IDS }}
+          ANGEL_API_KEY: ${{ secrets.ANGEL_API_KEY }}
+          ANGEL_SECRET_KEY: ${{ secrets.ANGEL_SECRET_KEY }}
+          ANGEL_CLIENT_CODE: ${{ secrets.ANGEL_CLIENT_CODE }}
+          ANGEL_MPIN: ${{ secrets.ANGEL_MPIN }}
+          ANGEL_TOTP_SECRET: ${{ secrets.ANGEL_TOTP_SECRET }}
+          ALPHA_VANTAGE_KEY: ${{ secrets.ALPHA_VANTAGE_KEY }}
+          TWELVE_DATA_KEY: ${{ secrets.TWELVE_DATA_KEY }}
+          FMP_KEY: ${{ secrets.FMP_KEY }}
+          # Alert gates: keep strict (only A-grade, score ≥9) so Telegram
+          # doesn't flood the user's chat.
+          ALERT_MIN_GRADE: 'A'
+          ALERT_MIN_SCORE: '9'
+          ALERT_ON_NEW_SIGNAL: 'true'
+        run: npm run tick:intraday
+
+      - name: Commit refreshed snapshots
+        if: success()
+        run: |
+          git config user.name  'tradewithvarsha-bot'
+          git config user.email 'bot@tradewithvarsha.local'
+          if git diff --quiet server/data/public-snapshots/ ; then
+            echo "No snapshot changes — skipping commit."
+          else
+            git add server/data/public-snapshots/
+            git commit -m "snapshot: intraday tick $(TZ=Asia/Kolkata date '+%d/%-m/%Y, %H:%M:%S')"
+            # Retry push once on non-fast-forward — another concurrent tick
+            # may have pushed while we were computing.
+            git push || (git pull --rebase && git push) || echo "Push failed — will retry next tick."
+          fi

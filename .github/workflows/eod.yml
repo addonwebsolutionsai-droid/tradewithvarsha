@@ -1,0 +1,70 @@
+name: End-of-Day Routine (Mon-Fri 18:30 IST)
+
+# 18:30 IST = 13:00 UTC. Full learning + scan + self-improve cascade so
+# tomorrow's signals are ready before 08:30 pre-open.
+
+on:
+  schedule:
+    - cron: '0 13 * * 1-5'
+  workflow_dispatch: {}
+
+concurrency:
+  group: eod
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  eod:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30       # heavier: full cascade (chart-patterns
+                              # NIFTY-500 × 2 timeframes takes ~5-10 min)
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server deps
+        working-directory: server
+        run: npm ci --no-audit --no-fund --prefer-offline
+
+      - name: Run EOD routine
+        working-directory: server
+        env:
+          NODE_ENV: production
+          TELEGRAM_BOT_TOKEN: ${{ secrets.TELEGRAM_BOT_TOKEN }}
+          TELEGRAM_ALLOWED_CHAT_IDS: ${{ secrets.TELEGRAM_ALLOWED_CHAT_IDS }}
+          ANGEL_API_KEY: ${{ secrets.ANGEL_API_KEY }}
+          ANGEL_SECRET_KEY: ${{ secrets.ANGEL_SECRET_KEY }}
+          ANGEL_CLIENT_CODE: ${{ secrets.ANGEL_CLIENT_CODE }}
+          ANGEL_MPIN: ${{ secrets.ANGEL_MPIN }}
+          ANGEL_TOTP_SECRET: ${{ secrets.ANGEL_TOTP_SECRET }}
+          ALPHA_VANTAGE_KEY: ${{ secrets.ALPHA_VANTAGE_KEY }}
+          TWELVE_DATA_KEY: ${{ secrets.TWELVE_DATA_KEY }}
+          FMP_KEY: ${{ secrets.FMP_KEY }}
+          ALERT_MIN_GRADE: 'A'
+          ALERT_MIN_SCORE: '9'
+          ALERT_ON_NEW_SIGNAL: 'true'
+        run: npm run tick:eod
+
+      - name: Commit refreshed snapshots
+        if: success()
+        run: |
+          git config user.name  'tradewithvarsha-bot'
+          git config user.email 'bot@tradewithvarsha.local'
+          if git diff --quiet server/data/public-snapshots/ ; then
+            echo "No snapshot changes."
+          else
+            git add server/data/public-snapshots/
+            git commit -m "snapshot: EOD $(TZ=Asia/Kolkata date '+%d/%-m/%Y, %H:%M:%S')"
+            git push || (git pull --rebase && git push) || echo "Push failed — next run will retry."
+          fi
