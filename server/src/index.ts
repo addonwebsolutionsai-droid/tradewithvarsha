@@ -221,6 +221,15 @@ cron.schedule('20 9 * * 1-5',  pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata'
 cron.schedule('30 12 * * 1-5', pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
 cron.schedule('35 15 * * 1-5', pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
 cron.schedule('5 17 * * 1-5',  pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
+// 2026-07-12: weekend pushes added — publishSnapshots writes every 30 min
+// all week, and Sunday-prep at 19:00 IST regenerates every tab for Monday.
+// Without weekend push crons, all that work sat uncommitted until Mon 09:20
+// — Vercel stayed stale all weekend and the user saw "no updates."
+//   Sat 18:30 IST — commits accuracy/lifecycle snapshots refreshed post-Fri
+//   Sun 19:30 IST — commits Sunday-prep output (fires 30 min after
+//                   Sunday-prep starts at 19:00 to let the cascade finish).
+cron.schedule('30 18 * * 6', pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
+cron.schedule('30 19 * * 0', pushSnapshotsToGitHub, { timezone: 'Asia/Kolkata' })
 
 // 2026-05-06: cors with credentials so the dashboard can carry the auth
 // cookie cross-origin during local dev (vite :3000 → api :4000).
