@@ -22,6 +22,8 @@
  * ₹ / Rs / target / entry / SL, and stop-loss mentions.
  */
 import axios from 'axios'
+import fs from 'fs'
+import path from 'path'
 import { log } from '../util/logger'
 
 const UA = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/605.1.15 (KHTML, like Gecko) Version/16.6 Safari/605.1.15'
@@ -283,7 +285,51 @@ function parseRssItems(xml: string, handle: string, validTickers: Set<string>): 
   return out
 }
 
-export async function fetchXRecommendations(opts?: { perHandle?: number }): Promise<{ generatedAt: string; bySite: Record<string, string>; recommendations: XRecommendation[] }> {
+// 2026-07-14 — user directive: "Why you are removing old posts? you should
+// keep all the posts from x here." Prior behaviour overwrote the snapshot
+// every scrape → anything older than the current nitter RSS window
+// (typically ~24-48h) disappeared. Fix: merge fresh scrape with retained
+// history, dedup by (handle + text) + (handle + sourceUrl), keep everything
+// for RETENTION_DAYS, and cap total at RETENTION_MAX_ROWS so the JSON
+// snapshot doesn't grow unbounded.
+const RETENTION_DAYS = 90
+const RETENTION_MAX_ROWS = 500
+
+async function loadExistingRecommendations(): Promise<XRecommendation[]> {
+  try {
+    const p = path.resolve(__dirname, '../../data/public-snapshots/x-recs.json')
+    const raw = await fs.promises.readFile(p, 'utf8')
+    const parsed = JSON.parse(raw) as { recommendations?: XRecommendation[] }
+    return Array.isArray(parsed.recommendations) ? parsed.recommendations : []
+  } catch {
+    return []
+  }
+}
+
+function mergeAndRetain(fresh: XRecommendation[], existing: XRecommendation[]): XRecommendation[] {
+  const seen = new Set<string>()
+  const merged: XRecommendation[] = []
+  // Fresh first so we always keep the newest parsed version if the same
+  // post was re-scraped (nitter sometimes re-encodes descriptions).
+  for (const r of [...fresh, ...existing]) {
+    const keyByUrl = `${r.handle}|${r.sourceUrl}`
+    const keyByText = `${r.handle}|${(r.text ?? '').slice(0, 120)}`
+    if (seen.has(keyByUrl) || seen.has(keyByText)) continue
+    seen.add(keyByUrl)
+    seen.add(keyByText)
+    merged.push(r)
+  }
+  // Retention window
+  const cutoffMs = Date.now() - RETENTION_DAYS * 86_400_000
+  const withinWindow = merged.filter(r => {
+    const t = Date.parse(r.postedAt)
+    return Number.isFinite(t) ? t >= cutoffMs : true   // keep unparseable dates
+  })
+  withinWindow.sort((a, b) => b.postedAt.localeCompare(a.postedAt))
+  return withinWindow.slice(0, RETENTION_MAX_ROWS)
+}
+
+export async function fetchXRecommendations(opts?: { perHandle?: number }): Promise<{ generatedAt: string; bySite: Record<string, string>; recommendations: XRecommendation[]; freshThisRun?: number; retainedCarryOver?: number }> {
   const perHandle = opts?.perHandle ?? 10
   const bySite: Record<string, string> = {}
   const all: XRecommendation[] = []
@@ -318,10 +364,18 @@ export async function fetchXRecommendations(opts?: { perHandle?: number }): Prom
   const droppedNoSymbol = all.filter(r => !r.parsedSymbol).length
   const droppedNotActionable = all.filter(r => r.parsedSymbol && !isActionableRec(r)).length
 
-  log.ok('X-RECS', `parsed ${filtered.length} actionable stock recommendations (raw ${before}, dropped ${droppedNoSymbol} no-symbol + ${droppedNotActionable} not-actionable) · sources: ${Object.entries(bySite).map(([k, v]) => `${k}=${v}`).join(' · ')}`)
+  // Merge with retained history so we NEVER lose a legit past post just
+  // because nitter's RSS window rolled off it.
+  const existing = await loadExistingRecommendations()
+  const merged = mergeAndRetain(filtered, existing)
+  const carryOver = merged.length - filtered.length
+
+  log.ok('X-RECS', `parsed ${filtered.length} fresh actionable (raw ${before}, dropped ${droppedNoSymbol} no-symbol + ${droppedNotActionable} not-actionable) · retained ${carryOver} historical → total ${merged.length} · sources: ${Object.entries(bySite).map(([k, v]) => `${k}=${v}`).join(' · ')}`)
   return {
     generatedAt: new Date().toISOString(),
     bySite,
-    recommendations: filtered,
+    recommendations: merged,
+    freshThisRun: filtered.length,
+    retainedCarryOver: carryOver,
   }
 }
