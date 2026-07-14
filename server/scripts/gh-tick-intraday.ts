@@ -25,7 +25,11 @@ import dotenv from 'dotenv'
 dotenv.config({ path: path.resolve(__dirname, '../.env') })
 
 import { log } from '../src/util/logger'
-import { createBot } from '../src/bots/telegram'
+import { createBot, broadcastSignal } from '../src/bots/telegram'
+import { config } from '../src/config'
+import { runSignalEngine } from '../src/engine/signalEngine'
+import { gradeMeetsThreshold } from '../src/engine/scoring'
+import { onSignalGenerated } from '../src/engine/tradeTracker'
 
 const SNAPSHOT_DIR = path.resolve(__dirname, '../data/public-snapshots')
 
@@ -73,6 +77,38 @@ async function main() {
   else console.log('[TICK] Telegram bot NOT initialised — token missing.')
 
   const results: Record<string, string> = {}
+
+  // ─── 0. Signal Engine — the ONLY path that actually fires Telegram alerts
+  //        for new A-grade / score-≥9 setups. Mirrors index.ts:runAndBroadcast
+  //        so the GH runner delivers Telegram messages exactly like the
+  //        always-on local server would.
+  try {
+    const t = Date.now()
+    const run = await runSignalEngine()
+    const live = run.signals ?? []
+    let broadcast = 0
+    let filtered = 0
+
+    if (config.alerts.onNewSignal) {
+      for (const s of live) {
+        if (!gradeMeetsThreshold(s.grade, config.alerts.minGrade)) { filtered++; continue }
+        if (s.score < config.alerts.minScore) { filtered++; continue }
+        try {
+          const openEvent = await onSignalGenerated(s)
+          if (openEvent) {
+            await broadcastSignal(s)
+            broadcast++
+          }
+        } catch (e) {
+          log.warn('TICK', `broadcast ${s.instrument}: ${(e as Error).message}`)
+        }
+      }
+    }
+    results['signal-engine'] = `${live.length} live · ${broadcast} broadcast · ${filtered} filtered · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['signal-engine'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `signal-engine: ${(e as Error).message}`)
+  }
 
   // ─── 1. Cross-Engine Confluence
   try {
