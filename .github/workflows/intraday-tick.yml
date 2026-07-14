@@ -26,12 +26,13 @@ concurrency:
   cancel-in-progress: false   # let overlapping ticks queue rather than skip
 
 permissions:
-  contents: write   # so the job can commit refreshed snapshots back
+  contents: write   # commit refreshed snapshots back
+  actions: write    # dispatch the next tick via API (self-perpetuating chain)
 
 jobs:
   tick:
     runs-on: ubuntu-latest
-    timeout-minutes: 4        # fail fast if something hangs
+    timeout-minutes: 8        # tick itself: <2min; chain sleep: 4min; buffer: 2min
     steps:
       - uses: actions/checkout@v4
         with:
@@ -85,3 +86,41 @@ jobs:
             # may have pushed while we were computing.
             git push || (git pull --rebase && git push) || echo "Push failed — will retry next tick."
           fi
+
+      # ─── Self-perpetuating chain ─────────────────────────────────────
+      # GitHub's schedule event is best-effort and DROPS runs entirely under
+      # peak load — 2026-07-14 saw ZERO of the ~50 scheduled fires actually
+      # execute between 08:30 and 10:00 IST. Fix: at the end of every
+      # successful run inside the market window, sleep 4 min then dispatch
+      # the next run via API. That gives us 100% reliable ~5-min cadence
+      # independent of GitHub's scheduler queue.
+      #
+      # We still keep the `schedule:` block above as a safety net — if a
+      # chain link ever breaks (e.g. transient API error), the next scheduled
+      # fire (whenever GH decides to honour it) re-arms the chain.
+      - name: Chain to next tick
+        if: always()
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Only chain during the market window: 09:15-15:30 IST = 03:45-10:00 UTC
+          NOW_HHMM=$(date -u '+%H%M')
+          if [ "$NOW_HHMM" -lt "0345" ] || [ "$NOW_HHMM" -gt "1000" ]; then
+            echo "Outside market window (UTC $NOW_HHMM) — not chaining. Scheduler will pick up tomorrow."
+            exit 0
+          fi
+          # Only chain on Mon-Fri
+          DOW=$(date -u '+%u')  # 1=Mon .. 7=Sun
+          if [ "$DOW" -gt 5 ]; then
+            echo "Weekend — not chaining."
+            exit 0
+          fi
+          echo "Sleeping 4 min then dispatching next tick..."
+          sleep 240
+          curl -sS -X POST \
+            -H "Accept: application/vnd.github+json" \
+            -H "Authorization: Bearer $GH_TOKEN" \
+            -H "X-GitHub-Api-Version: 2022-11-28" \
+            "https://api.github.com/repos/${GITHUB_REPOSITORY}/actions/workflows/intraday-tick.yml/dispatches" \
+            -d '{"ref":"main"}' \
+            -w "Dispatch HTTP %{http_code}\n"
