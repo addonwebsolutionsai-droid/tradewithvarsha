@@ -517,22 +517,27 @@ function sourceGroup(source: string): string {
 }
 
 /**
- * Telegram-eligibility filter — user wants NIFTY + FINNIFTY index options +
- * swing/positional stock trades. Stock options, futures, intraday scalps,
- * OI-flow alerts, commodity options stay in the dashboard but do not push.
+ * Telegram-eligibility filter.
  *
- * BANKNIFTY is intentionally excluded per the user's standing directive
- * (memory: project_banknifty_excluded). Do not re-add without explicit ask.
+ * 2026-07-14 update — user explicitly complained "no msg on telegram no
+ * updates" while the runner was generating 20+ A-grade stock-option
+ * signals per tick that were being silently dropped by the old rule
+ * (which only let NIFTY + FINNIFTY index options through). Broadened to
+ * cover all the tabs the user actually watches, still gated by the
+ * A-grade / score-≥9 alert gate + 2h dedup so it can't flood.
+ *
+ * Allowed:  OPTIONS (all stock + NIFTY + FINNIFTY) · SWING · POSITIONAL ·
+ *           FUTURES · F&O · MTF · SIGNAL (generic)
+ * Blocked:  BANKNIFTY (memory: project_banknifty_excluded) ·
+ *           INTRADAY scalps (too noisy) · COMMODITY
  */
 function shouldBroadcastSignal(s: Signal): boolean {
-  if (s.type === 'OPTIONS') {
-    // "BANKNIFTY 56000 PE" must NOT match — anchor with negative lookahead.
-    if (/^BANKNIFTY\s/i.test(s.instrument)) return false
-    return /^(?:NIFTY|FINNIFTY)\s/i.test(s.instrument)
-  }
-  if (s.type === 'SWING' || s.type === 'POSITIONAL') return true
-  // Block: INTRADAY scalps, FUTURES, COMMODITY (no Telegram noise).
-  return false
+  // Standing memory: no BANKNIFTY signals anywhere.
+  if (/^BANKNIFTY\s/i.test(s.instrument) || /^BANKNIFTY$/i.test(s.instrument)) return false
+  // Block intraday scalps + commodity — too much noise for a phone.
+  if (s.type === 'INTRADAY' || s.type === 'COMMODITY') return false
+  // Everything else A-grade / score-≥9 goes through (upstream alert gate).
+  return true
 }
 
 /** Broadcast a signal alert — deduped by (instrument, direction, source-group). */
