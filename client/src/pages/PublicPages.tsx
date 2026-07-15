@@ -2577,6 +2577,250 @@ export function PublicVolumeProfilePage(): JSX.Element {
 // ── 💎 PEDIGREE ACCUMULATION — good companies 50%+ off 52w-hi where
 // FII/DII/Promoter are increasing stakes. The "big hands grabbing from
 // retailers" setup — when retail finishes exiting, the move starts.
+// ── 💎🎯 ELITE PICKS — combined Pedigree + PRO Edge view (2026-07-15).
+// User asked: "Combine Pedigree and Pro-Edge into one Tab."
+// Symbols appearing in BOTH snapshots are surfaced as DOUBLE-CONFLUENCE
+// with a special badge + top sort priority.
+export function PublicElitePicksPage(): JSX.Element {
+  const pedQ = useQuery({
+    queryKey: ['public-elite-pedigree'],
+    queryFn: () => snapshots.pedigreeAccumulation(),
+    refetchInterval: 60 * 60_000, retry: false,
+  })
+  const proQ = useQuery({
+    queryKey: ['public-elite-pro-edge'],
+    queryFn: () => snapshots.proEdge(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const isLoading = pedQ.isLoading || proQ.isLoading
+  const err = pedQ.error || proQ.error
+
+  // ── Merge by symbol
+  interface Merged {
+    symbol: string
+    sources: string[]                 // ['Pedigree', 'PRO Edge'] or one
+    direction: 'BUY' | 'SELL' | '?'
+    ltp: number
+    entry: number
+    stopLoss: number
+    target1: number
+    target2: number
+    target3: number
+    conviction: number                // 0-100
+    score: number                     // combined ranking score
+    reasoning: string[]
+    smartMoneySide?: string
+    sectorTrend?: string
+    sectorLabel?: string
+    pctOffHigh?: number
+    accumBuyerCount?: number
+    pullbackTier?: string
+  }
+  const merged = new Map<string, Merged>()
+  const pedRows = ((pedQ.data as any)?.rows ?? []) as any[]
+  const proRows = ((proQ.data as any)?.rows ?? []) as any[]
+
+  for (const r of pedRows) {
+    const sym = (r.symbol ?? '').toUpperCase()
+    if (!sym) continue
+    merged.set(sym, {
+      symbol: sym,
+      sources: ['Pedigree'],
+      direction: r.direction ?? 'BUY',
+      ltp: r.close ?? r.ltp ?? 0,
+      entry: r.entry ?? r.close ?? 0,
+      stopLoss: r.stopLoss ?? r.sl ?? 0,
+      target1: r.target1 ?? r.t1 ?? 0,
+      target2: r.target2 ?? r.t2 ?? 0,
+      target3: r.target3 ?? r.t3 ?? 0,
+      conviction: r.score ?? 0,
+      score: r.score ?? 0,
+      reasoning: Array.isArray(r.reasons) ? r.reasons : Array.isArray(r.reasoning) ? r.reasoning : [],
+      pctOffHigh: r.pctOffHigh,
+      accumBuyerCount: r.accumBuyerCount,
+      pullbackTier: r.pullbackTier,
+    })
+  }
+  for (const r of proRows) {
+    const sym = (r.symbol ?? '').toUpperCase()
+    if (!sym) continue
+    const ex = merged.get(sym)
+    if (ex) {
+      ex.sources.push('PRO Edge')
+      // Prefer PRO Edge's tight levels since they're the composite confluence output.
+      ex.direction = r.direction ?? ex.direction
+      ex.ltp = r.ltp ?? ex.ltp
+      ex.entry = r.entry ?? ex.entry
+      ex.stopLoss = r.stopLoss ?? ex.stopLoss
+      ex.target1 = r.target1 ?? ex.target1
+      ex.target2 = r.target2 ?? ex.target2
+      ex.target3 = r.target3 ?? ex.target3
+      ex.conviction = Math.max(ex.conviction, r.conviction ?? 0)
+      // +25 score bonus for double-confluence
+      ex.score = (ex.score + (r.conviction ?? 0)) + 25
+      ex.reasoning = [...(ex.reasoning ?? []), ...(Array.isArray(r.reasoning) ? r.reasoning : [])]
+      ex.smartMoneySide = r.smartMoneySide
+      ex.sectorLabel = r.sectorLabel
+      ex.sectorTrend = r.sectorTrend
+    } else {
+      merged.set(sym, {
+        symbol: sym,
+        sources: ['PRO Edge'],
+        direction: r.direction ?? 'BUY',
+        ltp: r.ltp ?? 0,
+        entry: r.entry ?? 0,
+        stopLoss: r.stopLoss ?? 0,
+        target1: r.target1 ?? 0,
+        target2: r.target2 ?? 0,
+        target3: r.target3 ?? 0,
+        conviction: r.conviction ?? 0,
+        score: r.conviction ?? 0,
+        reasoning: Array.isArray(r.reasoning) ? r.reasoning : [],
+        smartMoneySide: r.smartMoneySide,
+        sectorLabel: r.sectorLabel,
+        sectorTrend: r.sectorTrend,
+      })
+    }
+  }
+  const all = Array.from(merged.values())
+  const [tier, setTier] = useState<'ALL' | 'DOUBLE' | 'PRO' | 'PED'>('ALL')
+  const filtered = tier === 'ALL'
+    ? all
+    : tier === 'DOUBLE'
+      ? all.filter(r => r.sources.length >= 2)
+      : tier === 'PRO'
+        ? all.filter(r => r.sources.includes('PRO Edge') && r.sources.length === 1)
+        : all.filter(r => r.sources.includes('Pedigree') && r.sources.length === 1)
+  const { rows, headerProps, sortIndicator } = useSortableTable<Merged>(
+    filtered, { key: 'score', dir: 'desc' },
+    {
+      symbol: r => r.symbol,
+      conviction: r => r.conviction ?? 0,
+      score: r => r.score ?? 0,
+      ltp: r => r.ltp ?? 0,
+      entry: r => r.entry ?? 0,
+      stopLoss: r => r.stopLoss ?? 0,
+      target1: r => r.target1 ?? 0,
+      pctOffHigh: r => r.pctOffHigh ?? 0,
+      sources: r => r.sources.length,
+    },
+  )
+
+  const doubleCount = all.filter(r => r.sources.length >= 2).length
+  const proOnlyCount = all.filter(r => r.sources.length === 1 && r.sources[0] === 'PRO Edge').length
+  const pedOnlyCount = all.filter(r => r.sources.length === 1 && r.sources[0] === 'Pedigree').length
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-violet/15 to-accent-green/5 border border-accent-violet/50 rounded-lg">
+        <div className="text-3xl">💎🎯</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-violet">Elite Picks · Pedigree + PRO Edge combined</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Combined view of two of the strictest scanners: <b>💎 Pedigree Accumulation</b> (good-pedigree companies 40%+ off 52w-high with FII/DII/Promoter stakes rising QoQ) and <b>🎯 PRO Edge</b> (multi-engine confluence, conviction ≥ 85). Symbols appearing in <b>BOTH</b> get 🔥 DOUBLE-CONFLUENCE tag and top ranking.
+          </div>
+          <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+            🔥 DOUBLE (both): {doubleCount} · 🎯 PRO Edge only: {proOnlyCount} · 💎 Pedigree only: {pedOnlyCount} · Total: {all.length}
+          </div>
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Filter:</span>
+        {([
+          ['ALL', 'ALL', all.length],
+          ['DOUBLE', '🔥 DOUBLE', doubleCount],
+          ['PRO', '🎯 PRO Edge only', proOnlyCount],
+          ['PED', '💎 Pedigree only', pedOnlyCount],
+        ] as const).map(([key, label, count]) => (
+          <button key={key} onClick={() => setTier(key as any)}
+            className={`px-2 py-1 rounded border ${tier === key ? 'bg-accent-violet/25 border-accent-violet text-accent-violet' : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+            {label} ({count})
+          </button>
+        ))}
+      </div>
+      {isLoading && <Loading />}
+      {err && <Empty msg="Couldn't load Elite Picks. PRO Edge refreshes every 5 min, Pedigree every 60 min." />}
+      {!isLoading && !err && rows.length === 0 && <Empty msg="No picks match the current filter." />}
+      {!isLoading && !err && rows.length > 0 && (
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1400 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500')}>Symbol{sortIndicator('symbol')}</th>
+                <th {...headerProps('sources', 'text-left px-2 py-3')}>Source{sortIndicator('sources')}</th>
+                <th className="text-center px-2 py-3">Dir</th>
+                <th {...headerProps('conviction', 'text-right px-2 py-3 text-accent-cyan')}>Conv{sortIndicator('conviction')}</th>
+                <th {...headerProps('score', 'text-right px-2 py-3 text-accent-amber')}>Score{sortIndicator('score')}</th>
+                <th {...headerProps('ltp', 'text-right px-2 py-3')}>LTP{sortIndicator('ltp')}</th>
+                <th {...headerProps('entry', 'text-right px-2 py-3 text-accent-cyan')}>Entry{sortIndicator('entry')}</th>
+                <th {...headerProps('stopLoss', 'text-right px-2 py-3 text-accent-red')}>SL{sortIndicator('stopLoss')}</th>
+                <th {...headerProps('target1', 'text-right px-2 py-3 text-accent-green')}>T1{sortIndicator('target1')}</th>
+                <th className="text-right px-2 py-3 text-accent-green">T2</th>
+                <th className="text-right px-2 py-3 text-accent-green">T3</th>
+                <th {...headerProps('pctOffHigh', 'text-right px-2 py-3')}>% off 52w-Hi{sortIndicator('pctOffHigh')}</th>
+                <th className="text-left px-3 py-3">Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r, i) => {
+                const isDouble = r.sources.length >= 2
+                const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+                const rowClass = isDouble
+                  ? 'group border-t border-accent-amber/40 bg-gradient-to-r from-accent-amber/8 to-transparent'
+                  : 'group border-t border-ink-500'
+                const dirColor = r.direction === 'BUY' ? '#00c853' : r.direction === 'SELL' ? '#ff4560' : '#9aa0a6'
+                return (
+                  <tr key={r.symbol + i} className={rowClass}>
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100 bg-ink-800`}>
+                      {r.symbol}
+                      {isDouble && (
+                        <span className="ml-2 text-[9px] font-bold px-1.5 py-0.5 rounded border" style={{ background: '#f59e0b22', color: '#fbbf24', borderColor: '#f59e0b66' }}>
+                          🔥 DOUBLE
+                        </span>
+                      )}
+                    </td>
+                    <td className={`${tdb} text-left`}>
+                      <div className="flex flex-wrap gap-1">
+                        {r.sources.map(s => (
+                          <span key={s} className={`px-1.5 py-0.5 rounded text-[9px] font-bold border ${s === 'PRO Edge' ? 'bg-accent-cyan/15 text-accent-cyan border-accent-cyan/50' : 'bg-accent-violet/15 text-accent-violet border-accent-violet/50'}`}>
+                            {s === 'PRO Edge' ? '🎯 PRO' : '💎 PED'}
+                          </span>
+                        ))}
+                      </div>
+                    </td>
+                    <td className={`${tdb} text-center font-bold`} style={{ color: dirColor }}>{r.direction}</td>
+                    <td className={`${tdb} text-right font-bold text-accent-cyan`}>{r.conviction}</td>
+                    <td className={`${tdb} text-right font-bold text-accent-amber`}>{Math.round(r.score)}</td>
+                    <td className={`${tdb} text-right text-neutral-200`}>{r.ltp ? `₹${r.ltp.toFixed(2)}` : '—'}</td>
+                    <td className={`${tdb} text-right text-accent-cyan`}>{r.entry ? `₹${r.entry.toFixed(2)}` : '—'}</td>
+                    <td className={`${tdb} text-right text-accent-red`}>{r.stopLoss ? `₹${r.stopLoss.toFixed(2)}` : '—'}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>{r.target1 ? `₹${r.target1.toFixed(2)}` : '—'}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>{r.target2 ? `₹${r.target2.toFixed(2)}` : '—'}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>{r.target3 ? `₹${r.target3.toFixed(2)}` : '—'}</td>
+                    <td className={`${tdb} text-right text-accent-red`}>{typeof r.pctOffHigh === 'number' ? `−${r.pctOffHigh.toFixed(0)}%` : '—'}</td>
+                    <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 300 }}>
+                      <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
+                        {r.reasoning.join(' · ')}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <HowToTradeBox tab="Elite Picks" rules={[
+        { title: 'Why DOUBLE-CONFLUENCE matters', body: 'A stock appearing in BOTH Pedigree (institutional accumulation footprint) AND PRO Edge (technical confluence, conviction ≥ 85) is showing up on completely different lenses — one shareholding-driven, one price/momentum-driven. When both align, that\'s the highest-confluence setup this platform produces.' },
+        { title: 'How the score is computed', body: 'For DOUBLE-CONFLUENCE rows: sum of both engines\' individual scores + 25-point bonus for cross-source agreement. For single-source rows: that engine\'s score alone. Sort by score-desc to see the highest-conviction picks first.' },
+        { title: 'Why levels come from PRO Edge when both fire', body: 'PRO Edge computes entry/SL/T1/T2/T3 from the tightest multi-engine composite, so we prefer its levels over Pedigree\'s coarser accumulation-tier stops when both are present. If only Pedigree fires, its levels are used.' },
+        { title: 'Filter tabs', body: '🔥 DOUBLE — the top-tier confluence · 🎯 PRO Edge only — strict technical confluence (conv ≥ 85) · 💎 Pedigree only — institutional accumulation without a fresh technical trigger yet · ALL — full list ranked by combined score.' },
+        { title: 'Cross-check before sizing in', body: 'Check the /nifty-outlook tab for macro bias, /volume-profile for the intraday entry level, and /insider-buys for whether the promoter is also buying. When 3+ lenses agree on a name, that\'s the money-printing setup.' },
+      ]} />
+    </div>
+  )
+}
+
 export function PublicPedigreeAccumulationPage(): JSX.Element {
   const { data, isLoading, error } = useQuery({
     queryKey: ['public-pedigree-accumulation'], queryFn: () => snapshots.pedigreeAccumulation(),

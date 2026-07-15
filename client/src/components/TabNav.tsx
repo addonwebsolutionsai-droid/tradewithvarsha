@@ -106,6 +106,7 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     '/options': ['OPTIONS'],
     '/early-momentum': ['EARLY_MOMENTUM'],
     '/pedigree': ['PEDIGREE'],
+    '/elite-picks': ['PEDIGREE', 'PRO_EDGE'],
     '/insider-buys': ['INSIDER_BUYS'],
     '/chart-patterns': ['CHART_PATTERNS'],
     '/nifty-outlook': ['NIFTY_OUTLOOK'],
@@ -133,18 +134,12 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/superstar',    label: '🌟 Superstar',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: "India's top 10 investors (Jhunjhunwala / Damani / Kacholia / Kedia / Dolly Khanna / Goel / Singhania / Kela / Porinju / Mukul Agrawal) — their holdings × our signal scoring." },
-    // 2026-06-26: Pedigree-accumulation tab — good companies 50%+ off
-    // 52w-high where FII/DII/Promoter are increasing stakes. "Big hands
-    // grabbing from retailers" setup.
-    { to: '/pedigree',     label: '💎 Pedigree',  icon: <Star size={14} />,
+    // 2026-07-15 — Pedigree + PRO Edge merged into single Elite Picks tab.
+    // Symbols in BOTH get 🔥 DOUBLE-CONFLUENCE badge and top ranking.
+    // Old /pedigree + /pro-edge routes preserved for bookmarks.
+    { to: '/elite-picks',  label: '💎🎯 Elite Picks', icon: <Star size={14} />,
       acc: null, highProb: true,
-      title: 'Pedigree Accumulation — good-pedigree companies 40%+ off 52-week high where FII/DII/Promoter are increasing stakes QoQ. Big-hands accumulating from retailers.' },
-    // 2026-06-26: X-Recs moved to More dropdown — best-effort scrape via
-    // nitter mirrors, data reliability fluctuates day-to-day. Per user
-    // request: doesn't need primary-nav slot.
-    { to: '/pro-edge',     label: '💎 PRO Edge',  icon: <Star size={14} />,
-      acc: null, highProb: true,
-      title: 'PRO Edge — strictest signal feed. Highest-probability picks in the platform.' },
+      title: 'Elite Picks — Pedigree Accumulation (institutional FII/DII/Promoter build) + PRO Edge (multi-engine confluence, conv ≥ 85) MERGED. Symbols in both get 🔥 DOUBLE-CONFLUENCE tag. Sorted by combined score.' },
     { to: '/picks',        label: 'Cash / Equity', icon: <Target size={14} />,
       acc: picksAcc,
       title: 'Cash / Equity picks — swing (Weekly · 1-4 weeks) + short-term (Daily · 1-15 days) + early-stage (5-20% Move) + Top Trades curated stream.' },
