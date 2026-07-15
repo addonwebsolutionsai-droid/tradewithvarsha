@@ -80,6 +80,41 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     return tot > 0 ? wins / tot : null
   })()
   const trackAcc = (accSnap as any)?.winRate ?? null
+
+  // 2026-07-15 — user asked to auto-highlight the tab whose live-tracked
+  // accuracy is ≥ 85%. Any source that clears the 85% bar (with a minimum
+  // sample of 20 closed signals so we're not certifying a lucky streak) gets
+  // an ORANGE background + "🏆 85%+" tag. Zero tabs qualify today (best is
+  // FIB at 56.5% n=24 · HARMONIC 55.6% n=10) but the mapping is dynamic so
+  // once auto-tune drives a source above 85%, its tab lights up automatically.
+  const eliteMinSample = 20
+  const eliteThreshold = 85
+  const eliteSourceKeys = new Set(
+    Object.entries(bySrc)
+      .filter(([_, v]) => (v.winRate ?? 0) >= eliteThreshold && (v.total ?? 0) >= eliteMinSample)
+      .map(([k]) => k),
+  )
+  const topSource = Object.entries(bySrc)
+    .filter(([_, v]) => (v.total ?? 0) >= 5)
+    .sort(([, a], [, b]) => (b.winRate ?? 0) - (a.winRate ?? 0))[0]
+  const topSourceKey = topSource?.[0]
+  const topSourceWr = topSource?.[1]?.winRate ?? 0
+  // Tab-route → source-key map so we know which nav item's WR to check.
+  const routeToSource: Record<string, string[]> = {
+    '/picks': ['WEEKLY', 'DAILY'],
+    '/pre-move': ['PREMOVE'],
+    '/options': ['OPTIONS'],
+    '/early-momentum': ['EARLY_MOMENTUM'],
+    '/pedigree': ['PEDIGREE'],
+    '/insider-buys': ['INSIDER_BUYS'],
+    '/chart-patterns': ['CHART_PATTERNS'],
+    '/nifty-outlook': ['NIFTY_OUTLOOK'],
+    '/pro-edge': ['PRO_EDGE'],
+    '/confluence': ['CROSS_CONFLUENCE'],
+    '/fno-futures': ['FNO'],
+  }
+  const isElite = (to: string): boolean => (routeToSource[to] ?? []).some(k => eliteSourceKeys.has(k))
+  const isTopPerformer = (to: string): boolean => !!topSourceKey && (routeToSource[to] ?? []).includes(topSourceKey)
   // 2026-06-25: NAV CONSOLIDATION per user audit — 17 tabs → 8 primary +
   // "More ▾" dropdown. Removed Elite (redundant with PRO Edge). Demoted
   // SL Traps, Smart Money (OBV), Old-WeeklyPick, OI Build-up, F&O Futures,
@@ -210,10 +245,18 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
                 : (t as any).isParent
                   ? onInvestment
                   : location.pathname === t.to || location.pathname.startsWith(t.to + '/')
+            // 2026-07-15 — dynamic elite highlight: if this tab's source(s) hit
+            // ≥85% WR live-tracked (n ≥ 20), paint ORANGE and mark with 🏆.
+            const eliteTab = isElite(t.to)
+            const topPerformerTab = isTopPerformer(t.to) && !eliteTab
             return (
               <button
                 key={t.to}
-                title={(t as any).title}
+                title={eliteTab
+                  ? `🏆 ELITE ≥85% accuracy — ${(t as any).title ?? ''}`
+                  : topPerformerTab
+                    ? `Current top-performer live-tracked (${topSourceWr.toFixed(1)}%) — ${(t as any).title ?? ''}`
+                    : (t as any).title}
                 onClick={() => {
                   if ((t as any).isParent) navigate('/investment/symbols')
                   else navigate(t.to)
@@ -224,14 +267,27 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
                     ? 'text-accent-cyan border-accent-cyan'
                     : 'text-neutral-500 border-transparent hover:text-neutral-300',
                   // 2026-06-16 — high-probability tabs visually stand out.
-                  // Strong amber tint + glowing background ring so the user
-                  // never misses where the best signals live.
-                  (t as any).highProb && !active && 'bg-gradient-to-b from-accent-amber/25 to-accent-amber/10 text-accent-amber hover:from-accent-amber/35 hover:to-accent-amber/15',
-                  (t as any).highProb && active && 'bg-gradient-to-b from-accent-amber/30 to-accent-amber/15',
+                  (t as any).highProb && !active && !eliteTab && 'bg-gradient-to-b from-accent-amber/25 to-accent-amber/10 text-accent-amber hover:from-accent-amber/35 hover:to-accent-amber/15',
+                  (t as any).highProb && active && !eliteTab && 'bg-gradient-to-b from-accent-amber/30 to-accent-amber/15',
+                  // 2026-07-15 — ELITE ≥85% tabs get an aggressive orange
+                  // background so they're impossible to miss. Overrides the
+                  // amber highProb tint above.
+                  eliteTab && 'bg-gradient-to-b from-[#FF8A00]/60 to-[#FF6B00]/40 !text-white ring-1 ring-[#FF8A00] shadow-[0_0_10px_rgba(255,138,0,0.5)] hover:from-[#FF8A00]/70 hover:to-[#FF6B00]/50',
                 )}
+                style={eliteTab ? { animation: 'elitePulse 2.4s ease-in-out infinite' } : undefined}
               >
                 {t.icon}
                 {t.label}
+                {eliteTab && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-white text-[#FF6B00] leading-none border border-[#FF6B00]">
+                    🏆 85%+
+                  </span>
+                )}
+                {topPerformerTab && (
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#FF8A00]/20 text-[#FF8A00] leading-none border border-[#FF8A00]/40">
+                    #1 · {Math.round(topSourceWr)}%
+                  </span>
+                )}
                 {(t as any).isParent && <ChevronDown size={11} />}
                 {(t as any).badge && (
                   <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-accent-green text-ink-900 leading-none">

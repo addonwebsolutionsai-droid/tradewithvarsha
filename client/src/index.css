@@ -76,3 +76,15 @@ body {
   50%      { filter: drop-shadow(0 0 10px rgba(255,152,0,0.85)); }
 }
 .animate-star-glow { animation: star-glow 1.8s ease-in-out infinite; }
+
+/* 2026-07-15 — elite ≥85% tab pulse. Draws the eye to any nav item whose
+   live-tracked source WR clears the 85% bar. Uses the orange range
+   #FF6B00-#FF8A00 for maximum contrast against the ink theme. */
+@keyframes elitePulse {
+  0%, 100% {
+    box-shadow: 0 0 8px rgba(255, 138, 0, 0.5), inset 0 -2px 0 rgba(255, 107, 0, 0.6);
+  }
+  50% {
+    box-shadow: 0 0 16px rgba(255, 138, 0, 0.9), inset 0 -2px 0 rgba(255, 107, 0, 1);
+  }
+}

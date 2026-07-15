@@ -504,8 +504,29 @@ export function createBot(): Bot | null {
  * Source-group collapses similar strategies into one key so MTF + strict +
  * reversal don't all fire for the same underlying setup.
  */
-const DEDUPE_WINDOW_MS = 2 * 60 * 60_000    // 2 hours
+// 2026-07-15 EMERGENCY tighten — user got 5000+ Telegram messages on 14-Jul
+// after the 14-Jul over-relaxation. Standing rules going forward:
+//   1. NO F&O EXCEPT NIFTY 50 — no stock options, no stock futures, no BANKNIFTY
+//   2. PRE-MOVE ONLY — pre-breakout sources only, no live intraday triggers
+//   3. TOP-NOTCH ONLY — A-grade + score ≥ 9.5 + conviction ≥ 80
+//   4. HARD DAILY CAP 40 · HARD HOURLY CAP 8
+//   5. 6-hour dedup window (was 2h) — same setup can't re-fire same session
+
+const DEDUPE_WINDOW_MS = 6 * 60 * 60_000    // was 2h → 6h
 const alertLedger: Record<string, number> = {}
+
+// Rolling per-hour and per-day counters, keyed by IST hour/date bucket.
+const hourlyCount: Record<string, number> = {}
+const dailyCount: Record<string, number> = {}
+const HOURLY_CAP = 8
+const DAILY_CAP = 40
+
+function istBucket(ms: number, granularity: 'hour' | 'day'): string {
+  const d = new Date(ms + 5.5 * 3600_000)
+  const y = d.getUTCFullYear(), m = String(d.getUTCMonth() + 1).padStart(2, '0'), day = String(d.getUTCDate()).padStart(2, '0')
+  if (granularity === 'day') return `${y}-${m}-${day}`
+  return `${y}-${m}-${day}T${String(d.getUTCHours()).padStart(2, '0')}`
+}
 
 function sourceGroup(source: string): string {
   if (source.startsWith('options-mtf') || source.startsWith('nifty-strict')) return 'options-primary'
@@ -517,27 +538,77 @@ function sourceGroup(source: string): string {
 }
 
 /**
- * Telegram-eligibility filter.
- *
- * 2026-07-14 update — user explicitly complained "no msg on telegram no
- * updates" while the runner was generating 20+ A-grade stock-option
- * signals per tick that were being silently dropped by the old rule
- * (which only let NIFTY + FINNIFTY index options through). Broadened to
- * cover all the tabs the user actually watches, still gated by the
- * A-grade / score-≥9 alert gate + 2h dedup so it can't flood.
- *
- * Allowed:  OPTIONS (all stock + NIFTY + FINNIFTY) · SWING · POSITIONAL ·
- *           FUTURES · F&O · MTF · SIGNAL (generic)
- * Blocked:  BANKNIFTY (memory: project_banknifty_excluded) ·
- *           INTRADAY scalps (too noisy) · COMMODITY
+ * Pre-move / top-notch sources ONLY. These are the sources whose signals
+ * fire BEFORE the move (structural setups, accumulation, insider signals),
+ * not live intraday reversals or opening-range scalps.
+ */
+const PRE_MOVE_SOURCES = new Set([
+  'WEEKLY', 'weekly-pick',
+  'PREMOVE', 'pre-move-identifier',
+  'PEDIGREE', 'pedigree-accumulation',
+  'INSIDER_BUYS', 'insider-buys',
+  'EARLY_MOMENTUM', 'early-momentum',
+  'HARMONIC', 'harmonic',
+  'FIB', 'fib-lrc',
+  'CHART_PATTERNS', 'chart-patterns',
+  'nifty-outlook', 'NIFTY_OUTLOOK', 'NIFTY_FORESIGHT',
+  'PRO_EDGE', 'pro-edge',
+  'CROSS_CONFLUENCE', 'cross-confluence',
+])
+
+/**
+ * Telegram-eligibility filter (2026-07-15 restrictive rewrite).
+ * Strict order-of-operations — a signal must pass EVERY check:
  */
 function shouldBroadcastSignal(s: Signal): boolean {
-  // Standing memory: no BANKNIFTY signals anywhere.
-  if (/^BANKNIFTY\s/i.test(s.instrument) || /^BANKNIFTY$/i.test(s.instrument)) return false
-  // Block intraday scalps + commodity — too much noise for a phone.
+  // 1. Standing memory: no BANKNIFTY.
+  if (/^BANKNIFTY\b/i.test(s.instrument)) return false
+
+  // 2. NO F&O EXCEPT NIFTY 50 — user directive 2026-07-15.
+  //    For OPTIONS/FUTURES types the instrument must start with "NIFTY " and
+  //    NOT with BANKNIFTY / FINNIFTY / MIDCPNIFTY.
+  if (s.type === 'OPTIONS' || s.type === 'FUTURES') {
+    if (!/^NIFTY\b/i.test(s.instrument)) return false
+    if (/^(?:BANKNIFTY|FINNIFTY|MIDCPNIFTY|NIFTYMID|NIFTYFIN|NIFTYIT|NIFTYPHARMA|NIFTYAUTO|NIFTYNXT)/i.test(s.instrument)) return false
+  }
+
+  // 3. Block noisy signal types outright.
   if (s.type === 'INTRADAY' || s.type === 'COMMODITY') return false
-  // Everything else A-grade / score-≥9 goes through (upstream alert gate).
+
+  // 4. Pre-move sources only — no live scalps, no oi-flow noise.
+  const src = String(s.source ?? '').toLowerCase()
+  const srcMatch = Array.from(PRE_MOVE_SOURCES).some(a => src === a.toLowerCase() || src.startsWith(a.toLowerCase()))
+  if (!srcMatch) return false
+
+  // 5. Top-notch quality — user directive: "Only Share Top Notch quality"
+  if (typeof s.score === 'number' && s.score < 9.5) return false
+  const conv = (s as unknown as { conviction?: number }).conviction
+  if (typeof conv === 'number' && conv < 80) return false
+
   return true
+}
+
+function withinRateCaps(): { ok: boolean; reason: string } {
+  const now = Date.now()
+  const hb = istBucket(now, 'hour')
+  const db = istBucket(now, 'day')
+  const h = hourlyCount[hb] ?? 0
+  const d = dailyCount[db] ?? 0
+  if (d >= DAILY_CAP) return { ok: false, reason: `daily cap ${DAILY_CAP} hit (today count=${d})` }
+  if (h >= HOURLY_CAP) return { ok: false, reason: `hourly cap ${HOURLY_CAP} hit (hour count=${h})` }
+  return { ok: true, reason: `h=${h}/${HOURLY_CAP} d=${d}/${DAILY_CAP}` }
+}
+
+function incrementRateCaps(): void {
+  const now = Date.now()
+  const hb = istBucket(now, 'hour')
+  const db = istBucket(now, 'day')
+  hourlyCount[hb] = (hourlyCount[hb] ?? 0) + 1
+  dailyCount[db] = (dailyCount[db] ?? 0) + 1
+  // Prune old buckets (keep 48h horizon)
+  const cutoffDay = istBucket(now - 3 * 86_400_000, 'day')
+  for (const k of Object.keys(dailyCount)) if (k < cutoffDay) delete dailyCount[k]
+  for (const k of Object.keys(hourlyCount)) if (k.slice(0, 10) < cutoffDay) delete hourlyCount[k]
 }
 
 /** Broadcast a signal alert — deduped by (instrument, direction, source-group). */
@@ -547,13 +618,29 @@ export async function broadcastSignal(signal: Signal): Promise<void> {
     log.info('TG', `Skipped ${signal.type} ${signal.instrument} (off-Telegram type per user filter)`)
     return
   }
+  // Also dedup on the SAME (instrument|direction) across ALL sources for
+  // 6h — a Weekly + Pedigree + Chart-Patterns hit on the same stock
+  // shouldn't triple-fire.
+  const crossSourceKey = `${signal.instrument}|${signal.direction}`
   const key = `${signal.instrument}|${signal.direction}|${sourceGroup(signal.source)}`
+  const lastCross = alertLedger[crossSourceKey] ?? 0
+  if (Date.now() - lastCross < DEDUPE_WINDOW_MS) {
+    log.info('TG', `Deduped ${crossSourceKey} cross-source (fired ${Math.round((Date.now() - lastCross) / 60000)}m ago)`)
+    return
+  }
   const last = alertLedger[key] ?? 0
   if (Date.now() - last < DEDUPE_WINDOW_MS) {
     log.info('TG', `Deduped ${key} (fired ${Math.round((Date.now() - last) / 60000)}m ago)`)
     return
   }
+  // Rate caps — hard hourly + daily limits so we can NEVER spam.
+  const cap = withinRateCaps()
+  if (!cap.ok) {
+    log.warn('TG', `Rate-cap: ${signal.instrument} ${signal.direction} dropped — ${cap.reason}`)
+    return
+  }
   alertLedger[key] = Date.now()
+  alertLedger[crossSourceKey] = Date.now()
   // Prune old entries (>24h)
   const cutoff = Date.now() - 24 * 3600_000
   for (const k of Object.keys(alertLedger)) if (alertLedger[k] < cutoff) delete alertLedger[k]
@@ -562,6 +649,7 @@ export async function broadcastSignal(signal: Signal): Promise<void> {
   for (const chatId of config.bots.telegramChatIds) {
     try {
       await state.bot.api.sendMessage(chatId, msg, { parse_mode: 'Markdown' })
+      incrementRateCaps()
     } catch (e) {
       log.err('TG', `Broadcast to ${chatId} failed: ${(e as Error).message}`)
     }
