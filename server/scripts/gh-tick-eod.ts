@@ -79,6 +79,13 @@ async function main() {
       const rowsLen = Array.isArray((pe as { rows?: unknown[] }).rows) ? (pe as { rows: unknown[] }).rows.length : 0
       return `${rowsLen} signals`
     }],
+    ['lifecycle-backfill', async () => {
+      const { backfillAllOpenLifecycle } = await import('../src/engine/lifecycleBackfill')
+      // Cap so a single EOD run stays bounded; if store has 20k+ stuck
+      // trades, subsequent EODs chew through the tail.
+      const r = await backfillAllOpenLifecycle({ maxEntries: 3000, concurrency: 6 })
+      return `scanned ${r.scannedEntries} · resolved ${r.entriesResolved} (won ${Object.values(r.bySource).reduce((s, v) => s + v.won, 0)} · lost ${Object.values(r.bySource).reduce((s, v) => s + v.lost, 0)}) · triggered ${r.entriesTriggered} · expired ${r.entriesExpired}`
+    }],
     ['bulk-deals', async () => {
       const m = await import('../src/engine/superstarPicksScanner')
       const runner: unknown = (m as { runAndPublishBulkDeals?: () => Promise<{ total?: number }> }).runAndPublishBulkDeals

@@ -175,6 +175,19 @@ async function main() {
     log.err('TICK', `oi-monitor: ${(e as Error).message}`)
   }
 
+  // ─── 4b. Lifecycle backfill — small chunk per tick so we chew through
+  //         historical stuck-OPEN entries without blowing the 4-min budget.
+  try {
+    const { backfillAllOpenLifecycle } = await import('../src/engine/lifecycleBackfill')
+    const t = Date.now()
+    const r = await backfillAllOpenLifecycle({ maxEntries: 150, concurrency: 4 })
+    const wonTotal = Object.values(r.bySource).reduce((s, v) => s + v.won, 0)
+    results['lifecycle-backfill'] = `scanned ${r.scannedEntries} · resolved ${r.entriesResolved} (won ${wonTotal}) · triggered ${r.entriesTriggered} · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['lifecycle-backfill'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `lifecycle-backfill: ${(e as Error).message}`)
+  }
+
   // ─── 5. Lifecycle checker — updates open trades' T-hit / SL-hit / expiry
   try {
     const lc = await import('../src/engine/signalLifecycle')

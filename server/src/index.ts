@@ -2418,6 +2418,19 @@ app.post('/api/nifty-volume-profile/run', async (_req, res) => {
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
 
+// 2026-07-15 — lifecycle backfill. Resolves stale OPEN trades by walking
+// full candle history. Fixes user-reported "4.3% hit rate" caused by
+// signals being stuck in ACTIVE for months without T*/SL resolution.
+app.post('/api/lifecycle/backfill', async (req, res) => {
+  try {
+    const { backfillAllOpenLifecycle } = await import('./engine/lifecycleBackfill')
+    const maxEntries = Number((req.query.max ?? req.body?.max ?? 5000))
+    const sources = req.query.sources ? String(req.query.sources).split(',') : undefined
+    const result = await backfillAllOpenLifecycle({ maxEntries, onlySources: sources })
+    res.json(result)
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
 // 2026-06-26: CHART PATTERNS — PILOT MODE classical TA pattern scanner
 // (H&S, Double Top/Bottom, Triangles, Flag, Wedge, Cup & Handle, candles).
 // Scans NIFTY-500 × DAILY + WEEKLY timeframes.
