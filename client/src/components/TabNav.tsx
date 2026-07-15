@@ -217,6 +217,7 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // 2026-06-30: PILOT — Insider buys (SEBI PIT + SAST). Promote to main
     // nav once user confirms outputs match the expected insider trade flow.
     { to: '/insider-buys',   label: '🕵️ Insider Buys (Pilot)', title: 'PILOT — SEBI PIT (Reg 7) + SAST (Reg 29) filings. Promoter / KMP / external 5%+ acquirer buys per stock with technical + shareholding context. Smartest single insider signal Indian markets give us, free.' },
+    { to: '/stock-fno-vp',   label: '📊 Stock F&O VP', title: 'Volume Profile scanner extended to ~180 F&O underlyings on 15m + 1h + 1D. Only rows with 2+ TF agreement OR 1D setup ≥ 70 strength. UI-only (no Telegram per NIFTY-only F&O rule).' },
     // 2026-06-26: X-Recs relocated to More per user request (best-effort
     // data, doesn't need primary-nav slot).
     { to: '/x-recs',         label: '🐦 X-Recs (analyst posts)', title: 'Analyst X-Recs — best-effort scrape of stock calls from 6 named profiles via nitter mirrors. Reliability fluctuates day-to-day.' },

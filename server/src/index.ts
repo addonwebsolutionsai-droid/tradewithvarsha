@@ -2418,6 +2418,24 @@ app.post('/api/nifty-volume-profile/run', async (_req, res) => {
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
 
+// 2026-07-15 — Stock F&O Volume Profile scanner. UI-only per NIFTY-only
+// Telegram directive. Applies the same VP framework as the NIFTY engine
+// across ~180 F&O underlyings on 15m/1h/1D. Requires 2+ TF agreement OR
+// 1D strength ≥ 70 to include a row.
+app.get('/api/stock-fno-volume-profile', async (_req, res) => {
+  try {
+    const raw = await fsAsync.readFile(path.resolve(__dirname, '../data/public-snapshots/stock-fno-volume-profile.json'), 'utf8').catch(() => null)
+    if (!raw) return res.status(404).json({ error: 'No scan yet — POST /api/stock-fno-volume-profile/run' })
+    res.json(JSON.parse(raw))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+app.post('/api/stock-fno-volume-profile/run', async (_req, res) => {
+  try {
+    const { runAndPublishStockFnoVolumeProfile } = await import('./engine/stockFnoVolumeProfileScanner')
+    res.json(await runAndPublishStockFnoVolumeProfile())
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
 // 2026-07-15 — lifecycle backfill. Resolves stale OPEN trades by walking
 // full candle history. Fixes user-reported "4.3% hit rate" caused by
 // signals being stuck in ACTIVE for months without T*/SL resolution.

@@ -2577,6 +2577,122 @@ export function PublicVolumeProfilePage(): JSX.Element {
 // ── 💎 PEDIGREE ACCUMULATION — good companies 50%+ off 52w-hi where
 // FII/DII/Promoter are increasing stakes. The "big hands grabbing from
 // retailers" setup — when retail finishes exiting, the move starts.
+// ── 📊 STOCK F&O VOLUME PROFILE — extension of the NIFTY VP engine to
+// ~180 F&O underlyings, UI-only per NIFTY-only-Telegram directive.
+export function PublicStockFnoVolumeProfilePage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-stock-fno-vp'],
+    queryFn: () => snapshots.stockFnoVolumeProfile(),
+    refetchInterval: 60 * 60_000, retry: false,
+  })
+  const all: any[] = data?.rows ?? []
+  const [tier, setTier] = useState<'ALL' | 'BULLISH' | 'BEARISH'>('ALL')
+  const filtered = tier === 'ALL' ? all : all.filter(r => r.side === tier)
+  const { rows, headerProps, sortIndicator } = useSortableTable<any>(
+    filtered, { key: 'compositeStrength', dir: 'desc' },
+    {
+      symbol: r => r.symbol ?? '',
+      compositeStrength: r => r.compositeStrength ?? 0,
+      agreementScore: r => r.agreementScore ?? 0,
+      ltp: r => r.ltp ?? 0,
+      entry: r => r.entry ?? 0,
+      stopLoss: r => r.stopLoss ?? 0,
+      target1: r => r.target1 ?? 0,
+    },
+  )
+  const setupLabel = (s: string): string => (s || '').replace(/_/g, ' ')
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-cyan/15 to-accent-violet/5 border border-accent-cyan/50 rounded-lg">
+        <div className="text-3xl">📊</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-cyan">Stock F&O · Volume Profile Setups</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Same engine as NIFTY Volume Profile, applied to ~180 F&O underlyings on 15m + 1h + 1D. Only rows with <b>2+ timeframe agreement</b> OR <b>1D setup strength ≥ 70</b> included. UI-only — no Telegram alerts (F&O Telegram is NIFTY-only).
+          </div>
+          {data && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              Scanned {data.scanned} F&O underlyings · {all.length} qualified setups · {all.filter(r => r.side === 'BULLISH').length} bull · {all.filter(r => r.side === 'BEARISH').length} bear
+            </div>
+          )}
+        </div>
+      </div>
+      <div className="flex flex-wrap items-center gap-2 text-[11px]">
+        <span className="text-neutral-500">Side:</span>
+        {(['ALL', 'BULLISH', 'BEARISH'] as const).map(t => {
+          const cnt = t === 'ALL' ? all.length : all.filter(r => r.side === t).length
+          const color = t === 'BULLISH' ? 'accent-green' : t === 'BEARISH' ? 'accent-red' : 'accent-cyan'
+          return (
+            <button key={t} onClick={() => setTier(t)}
+              className={`px-2 py-1 rounded border ${tier === t ? `bg-${color}/20 border-${color} text-${color}` : 'bg-ink-700 border-ink-500 text-neutral-500'}`}>
+              {t} ({cnt})
+            </button>
+          )
+        })}
+      </div>
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load Stock F&O VP. Snapshot refreshes each EOD." />}
+      {!isLoading && !error && rows.length === 0 && <Empty msg="No qualifying VP setups right now. Scan runs at EOD (18:30 IST)." />}
+      {!isLoading && !error && rows.length > 0 && (
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '78vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1300 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500')}>Symbol{sortIndicator('symbol')}</th>
+                <th className="text-center px-2 py-3">Side</th>
+                <th {...headerProps('compositeStrength', 'text-right px-2 py-3 text-accent-amber')}>Strength{sortIndicator('compositeStrength')}</th>
+                <th {...headerProps('agreementScore', 'text-right px-2 py-3 text-accent-cyan')}>TFs{sortIndicator('agreementScore')}</th>
+                <th className="text-left px-2 py-3">Best Setup</th>
+                <th {...headerProps('ltp', 'text-right px-2 py-3')}>LTP{sortIndicator('ltp')}</th>
+                <th {...headerProps('entry', 'text-right px-2 py-3 text-accent-cyan')}>Entry{sortIndicator('entry')}</th>
+                <th {...headerProps('stopLoss', 'text-right px-2 py-3 text-accent-red')}>SL{sortIndicator('stopLoss')}</th>
+                <th {...headerProps('target1', 'text-right px-2 py-3 text-accent-green')}>T1{sortIndicator('target1')}</th>
+                <th className="text-right px-2 py-3 text-accent-green">T2</th>
+                <th className="text-right px-2 py-3 text-accent-green">T3</th>
+                <th className="text-right px-2 py-3">1D POC</th>
+                <th className="text-left px-3 py-3">Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {rows.map((r: any, i: number) => {
+                const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+                const sideColor = r.side === 'BULLISH' ? '#00c853' : '#ff4560'
+                return (
+                  <tr key={r.symbol + i} className="group border-t border-ink-500">
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100 bg-ink-800`}>{r.symbol}</td>
+                    <td className={`${tdb} text-center font-bold`} style={{ color: sideColor }}>{r.side}</td>
+                    <td className={`${tdb} text-right font-bold text-accent-amber`}>{r.compositeStrength}</td>
+                    <td className={`${tdb} text-right text-accent-cyan`}>{r.agreementScore}</td>
+                    <td className={`${tdb} text-left text-neutral-200 text-[10px]`}>{r.bestTf} · {setupLabel(r.bestSetup)}</td>
+                    <td className={`${tdb} text-right text-neutral-200`}>₹{r.ltp?.toFixed?.(2)}</td>
+                    <td className={`${tdb} text-right text-accent-cyan`}>₹{r.entry?.toFixed?.(2)}</td>
+                    <td className={`${tdb} text-right text-accent-red`}>₹{r.stopLoss?.toFixed?.(2)}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>₹{r.target1?.toFixed?.(2)}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>₹{r.target2?.toFixed?.(2)}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>₹{r.target3?.toFixed?.(2)}</td>
+                    <td className={`${tdb} text-right text-accent-amber`}>₹{r.poc1D?.toFixed?.(2)}</td>
+                    <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 260 }}>
+                      <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
+                        {(r.reasoning ?? []).join(' · ')}
+                      </div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+      <HowToTradeBox tab="Stock F&O VP" rules={[
+        { title: 'Same framework as NIFTY VP', body: 'POC / VAH / VAL / HVN / LVN / IB on 15m + 1h + 1D. Only rows with 2+ TF agreement OR one HIGH-strength (≥70) 1D setup make it through the filter — this is intentionally strict to keep the table actionable.' },
+        { title: 'Why UI-only (no Telegram)', body: 'Your standing rule: no F&O Telegram alerts except NIFTY 50. So these live here on the dashboard for you to scan visually. Sort by strength-desc to see the strongest setups first.' },
+        { title: 'Best setups to trade first', body: 'DOUBLE / TRIPLE TF agreement + strength ≥ 80 = highest conviction. Cross-check against Elite Picks (💎🎯) and Chart Patterns tabs — if the same symbol shows up in 3+ tabs, that\'s a rare institutional setup.' },
+        { title: 'Options routing', body: 'For BULLISH row: buy ATM/ITM stock CE nearest expiry. For BEARISH: buy ATM/ITM stock PE. Sizing: 1-2% capital per position; F&O options can decay fast if the move takes longer than expected.' },
+      ]} />
+    </div>
+  )
+}
+
 // ── 💎🎯 ELITE PICKS — combined Pedigree + PRO Edge view (2026-07-15).
 // User asked: "Combine Pedigree and Pro-Edge into one Tab."
 // Symbols appearing in BOTH snapshots are surfaced as DOUBLE-CONFLUENCE

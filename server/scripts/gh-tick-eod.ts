@@ -79,6 +79,11 @@ async function main() {
       const rowsLen = Array.isArray((pe as { rows?: unknown[] }).rows) ? (pe as { rows: unknown[] }).rows.length : 0
       return `${rowsLen} signals`
     }],
+    ['stock-fno-volume-profile', async () => {
+      const m = await import('../src/engine/stockFnoVolumeProfileScanner')
+      const r = await m.runAndPublishStockFnoVolumeProfile()
+      return `scanned ${r.scanned} · ${r.total} setups (${r.bullCount} bull · ${r.bearCount} bear)`
+    }],
     ['lifecycle-backfill', async () => {
       const { backfillAllOpenLifecycle } = await import('../src/engine/lifecycleBackfill')
       // Cap so a single EOD run stays bounded; if store has 20k+ stuck
