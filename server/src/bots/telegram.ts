@@ -554,6 +554,17 @@ const PRE_MOVE_SOURCES = new Set([
   'nifty-outlook', 'NIFTY_OUTLOOK', 'NIFTY_FORESIGHT',
   'PRO_EDGE', 'pro-edge',
   'CROSS_CONFLUENCE', 'cross-confluence',
+  // 2026-07-15 safety expansion:
+  //   OPTIONS — NIFTY-only options are the ONLY ones that pass rule 2
+  //             (instrument gate), so allowing this source doesn't leak
+  //             stock options.
+  //   CURATED — the user's own hand-picked list, always high quality.
+  //   NIFTY_VOLUME_PROFILE — Volume Profile setup detector (POC/VAH/VAL/
+  //             HVN/LVN rejection + rotation + IB break). Same setup type
+  //             as the user's manual 15-Jul 24200 PE trade @165 → 300+.
+  'OPTIONS',
+  'CURATED',
+  'NIFTY_VOLUME_PROFILE', 'nifty-volume-profile', 'volume-profile',
 ])
 
 /**

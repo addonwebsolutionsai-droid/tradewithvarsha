@@ -133,6 +133,19 @@ async function main() {
     log.err('TICK', `pro-edge: ${(e as Error).message}`)
   }
 
+  // ─── 2b. NIFTY Volume Profile (multi-TF POC/VAH/VAL/HVN/LVN detector)
+  //         Emits an ATM PE/CE recommendation when 2+ timeframes agree.
+  try {
+    const { runAndPublishNiftyVolumeProfile } = await import('../src/engine/niftyVolumeProfileEngine')
+    const vp = await runAndPublishNiftyVolumeProfile()
+    results['nifty-volume-profile'] = vp.ok
+      ? `${vp.bias} ${vp.confidence} · ${vp.setup} @${vp.spot}`
+      : 'no candles'
+  } catch (e) {
+    results['nifty-volume-profile'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `nifty-volume-profile: ${(e as Error).message}`)
+  }
+
   // ─── 3. NIFTY Directional Foresight (writes own snapshot)
   try {
     const { runAndPublishNiftyForesight } = await import('../src/engine/niftyForesight')

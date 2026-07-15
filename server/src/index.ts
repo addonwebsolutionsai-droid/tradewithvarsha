@@ -2398,6 +2398,26 @@ app.post('/api/nifty-outlook/run', async (_req, res) => {
   } catch (e) { res.status(500).json({ error: (e as Error).message }) }
 })
 
+// 2026-07-15 — NIFTY VOLUME PROFILE engine. Multi-timeframe (5m / 15m /
+// 30m / 45m / 1h / 2h / 4h / 1D) POC + Value Area + HVN/LVN detector.
+// Fires 7 setup families: VA-Breakout, VA-Rotation, HVN-Reject, LVN-Slice,
+// IB-Break, Failed-Auction, Naked-POC. Requires 2+ timeframe agreement
+// before shipping a trade recommendation. NIFTY-only (respects user's
+// no-stock-F&O directive).
+app.get('/api/nifty-volume-profile', async (_req, res) => {
+  try {
+    const raw = await fsAsync.readFile(path.resolve(__dirname, '../data/public-snapshots/nifty-volume-profile.json'), 'utf8').catch(() => null)
+    if (!raw) return res.status(404).json({ error: 'No scan yet — POST /api/nifty-volume-profile/run' })
+    res.json(JSON.parse(raw))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+app.post('/api/nifty-volume-profile/run', async (_req, res) => {
+  try {
+    const { runAndPublishNiftyVolumeProfile } = await import('./engine/niftyVolumeProfileEngine')
+    res.json(await runAndPublishNiftyVolumeProfile())
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
 // 2026-06-26: CHART PATTERNS — PILOT MODE classical TA pattern scanner
 // (H&S, Double Top/Bottom, Triangles, Flag, Wedge, Cup & Handle, candles).
 // Scans NIFTY-500 × DAILY + WEEKLY timeframes.

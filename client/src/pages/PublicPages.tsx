@@ -2423,6 +2423,157 @@ export function PublicNiftyForesightPage(): JSX.Element {
   )
 }
 
+// ── 📊 NIFTY VOLUME PROFILE — the setup that caught the user's 15-Jul-2026
+// 24200 PE @165 → 300+ move. Multi-timeframe POC/VAH/VAL/HVN/LVN detector
+// across 5m/15m/30m/45m/1h/2h/4h/1D. Requires 2+ timeframe agreement before
+// shipping a trade. NIFTY-only per no-stock-F&O directive.
+export function PublicVolumeProfilePage(): JSX.Element {
+  const { data, isLoading, error } = useQuery({
+    queryKey: ['public-nifty-vp'],
+    queryFn: () => snapshots.niftyVolumeProfile(),
+    refetchInterval: 4 * 60_000, retry: false,
+  })
+  const d: any = data
+  const biasColor = d?.compositeBias === 'BULLISH' ? '#00c853' : d?.compositeBias === 'BEARISH' ? '#ff4560' : d?.compositeBias === 'MIXED' ? '#ffb454' : '#9aa0a6'
+  const confBadge = d?.confidence === 'HIGH' ? 'bg-accent-green/25 text-accent-green border-accent-green'
+    : d?.confidence === 'MEDIUM' ? 'bg-accent-amber/25 text-accent-amber border-accent-amber'
+    : 'bg-neutral-700/30 text-neutral-400 border-neutral-500'
+  const setupLabel = (s: string): string => (s || '').replace(/_/g, ' ')
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-cyan/15 to-accent-purple/5 border border-accent-cyan/50 rounded-lg">
+        <div className="text-3xl">📊</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-cyan">
+            NIFTY Volume Profile
+            <span className="ml-2 text-accent-red">🔴 LIVE</span>
+            <span className="text-neutral-500"> · refreshes every 4 min during 09:15–15:30 IST</span>
+          </div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Built 2026-07-15 — the framework used by institutions, hedge funds, and market-makers to read where the auction accepted or rejected price. Detects <b>7 setup families</b> (VA-Breakout, VA-Rotation, HVN-Reject, LVN-Slice, IB-Break, Failed-Auction) across <b>8 timeframes</b> (5m/15m/30m/45m/1h/2h/4h/1D) and emits an ATM PE/CE trade only when 2+ timeframes agree. This is the exact setup type as your 15-Jul manual 24200 PE @165→300+ trade.
+          </div>
+          {d && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              📊 {d.bullTfCount} bullish TFs · {d.bearTfCount} bearish TFs · agreement {d.agreementScore}%
+            </div>
+          )}
+        </div>
+      </div>
+      {isLoading && <Loading />}
+      {error && <Empty msg="Couldn't load NIFTY Volume Profile. Live refresh every 4 min during market hours." />}
+      {!isLoading && !error && d && (
+        <>
+          <div className="grid gap-3 md:grid-cols-3">
+            <div className="p-4 rounded-lg border-2" style={{ borderColor: biasColor, background: `${biasColor}11` }}>
+              <div className="text-[10px] uppercase text-neutral-400 tracking-wider">Composite Bias</div>
+              <div className="text-3xl font-bold mt-1" style={{ color: biasColor }}>{d.compositeBias}</div>
+              <div className={`inline-block mt-2 px-2 py-1 rounded border text-[10px] font-bold ${confBadge}`}>
+                {d.confidence} CONFIDENCE
+              </div>
+            </div>
+            <div className="p-4 rounded-lg border border-ink-500 bg-ink-800">
+              <div className="text-[10px] uppercase text-neutral-400 tracking-wider">NIFTY Spot</div>
+              <div className="text-3xl font-bold mt-1 text-neutral-100">{d.spot?.toFixed?.(2) ?? '—'}</div>
+              <div className="text-[10px] mt-2 text-neutral-500">Generated: {new Date(d.generatedAt).toLocaleString('en-IN')}</div>
+            </div>
+            <div className="p-4 rounded-lg border border-accent-amber/50 bg-accent-amber/5">
+              <div className="text-[10px] uppercase text-accent-amber tracking-wider">Strongest Setup</div>
+              <div className="text-lg font-bold mt-1 text-accent-amber">{setupLabel(d.strongestSetup?.setup ?? '—')}</div>
+              <div className="text-[10px] mt-2 text-neutral-500">
+                on <b>{d.strongestSetup?.tf ?? '—'}</b> TF · strength {d.strongestSetup?.strength ?? 0} · key {d.strongestSetup?.keyLevel?.toFixed?.(2) ?? '—'}
+              </div>
+            </div>
+          </div>
+
+          {d.tradeRecommendation && d.tradeRecommendation.side !== 'WAIT' && (
+            <div className="p-4 rounded-lg border border-accent-green/50 bg-accent-green/5">
+              <div className="text-sm font-bold text-accent-green mb-2">🎯 Trade Recommendation</div>
+              <div className="grid gap-3 md:grid-cols-6 text-[11px]">
+                <div><div className="text-neutral-500 text-[10px] uppercase">Side</div><div className="font-bold text-neutral-100">{d.tradeRecommendation.side}</div></div>
+                <div><div className="text-neutral-500 text-[10px] uppercase">Instrument</div><div className="text-neutral-200 text-[10px]">{d.tradeRecommendation.instrument}</div></div>
+                <div><div className="text-neutral-500 text-[10px] uppercase">Entry ({d.tradeRecommendation.entryDate})</div><div className="font-mono text-accent-cyan">{d.tradeRecommendation.entry}</div></div>
+                <div><div className="text-neutral-500 text-[10px] uppercase">SL</div><div className="font-mono text-accent-red">{d.tradeRecommendation.stopLoss}</div></div>
+                <div>
+                  <div className="text-neutral-500 text-[10px] uppercase">T1 ({d.tradeRecommendation.target1Date})</div>
+                  <div className="font-mono text-accent-green">{d.tradeRecommendation.target1}</div>
+                  <div className="text-neutral-500 text-[10px] mt-1">T2 ({d.tradeRecommendation.target2Date}): <span className="font-mono text-accent-green">{d.tradeRecommendation.target2}</span></div>
+                </div>
+                <div>
+                  <div className="text-neutral-500 text-[10px] uppercase">T3 ({d.tradeRecommendation.target3Date})</div>
+                  <div className="font-mono text-accent-green">{d.tradeRecommendation.target3}</div>
+                </div>
+              </div>
+              <div className="text-[11px] text-neutral-400 mt-3 leading-relaxed">
+                <b>Why:</b> {d.tradeRecommendation.rationale}
+              </div>
+            </div>
+          )}
+          {d.tradeRecommendation?.side === 'WAIT' && (
+            <div className="p-3 rounded-lg border border-neutral-500 bg-ink-800 text-[11px] text-neutral-400">
+              No decisive Volume Profile setup right now — wait for clearer rejection or breakout. Agreement across timeframes is below the confidence threshold.
+            </div>
+          )}
+
+          <div className="p-3 rounded-lg border border-ink-500 bg-ink-800">
+            <div className="text-[11px] font-bold text-neutral-200 mb-3">📈 Multi-Timeframe Volume Profile Levels</div>
+            <div className="overflow-auto rounded border border-ink-500">
+              <table className="w-full text-[11px]" style={{ minWidth: 900 }}>
+                <thead className="bg-ink-700 text-neutral-400">
+                  <tr>
+                    <th className="text-left px-2 py-2">TF</th>
+                    <th className="text-right px-2 py-2">POC</th>
+                    <th className="text-right px-2 py-2">VAH</th>
+                    <th className="text-right px-2 py-2">VAL</th>
+                    <th className="text-right px-2 py-2">HVN Count</th>
+                    <th className="text-right px-2 py-2">LVN Count</th>
+                    <th className="text-right px-2 py-2">IB H / L</th>
+                    <th className="text-left px-2 py-2">Setups Fired</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {(d.timeframes ?? []).map((t: any, i: number) => (
+                    <tr key={i} className="border-t border-ink-500 hover:bg-ink-700">
+                      <td className="px-2 py-2 font-bold text-neutral-200">{t.tf}</td>
+                      <td className="px-2 py-2 text-right font-mono text-accent-amber">{t.profile?.poc?.toFixed?.(2) ?? '—'}</td>
+                      <td className="px-2 py-2 text-right font-mono text-accent-green">{t.profile?.vah?.toFixed?.(2) ?? '—'}</td>
+                      <td className="px-2 py-2 text-right font-mono text-accent-red">{t.profile?.val?.toFixed?.(2) ?? '—'}</td>
+                      <td className="px-2 py-2 text-right text-neutral-300">{t.profile?.hvn?.length ?? 0}</td>
+                      <td className="px-2 py-2 text-right text-neutral-300">{t.profile?.lvn?.length ?? 0}</td>
+                      <td className="px-2 py-2 text-right text-[10px] font-mono text-neutral-400">
+                        {t.profile?.ibH?.toFixed?.(0) ?? '—'} / {t.profile?.ibL?.toFixed?.(0) ?? '—'}
+                      </td>
+                      <td className="px-2 py-2 text-[10px] text-neutral-300">
+                        {(t.signals ?? []).length === 0 ? <span className="text-neutral-500">—</span> : (
+                          <div className="flex flex-wrap gap-1">
+                            {t.signals.map((s: any, j: number) => {
+                              const c = s.side === 'BULLISH' ? '#00c853' : '#ff4560'
+                              return <span key={j} className="px-1 py-0.5 rounded border" style={{ background: `${c}22`, color: c, borderColor: `${c}66` }}>{setupLabel(s.setup)}</span>
+                            })}
+                          </div>
+                        )}
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono leading-relaxed">
+              <b>Reading the table:</b> POC = Point of Control (highest-volume price) · VAH/VAL = Value Area boundaries (70% volume band) · HVN = High-Volume Nodes (magnet zones) · LVN = Low-Volume Nodes (vacuum zones) · IB = Initial-Balance range (first 60m).
+            </div>
+          </div>
+        </>
+      )}
+      <HowToTradeBox tab="Volume Profile" rules={[
+        { title: 'Why Volume Profile catches moves others miss', body: 'Standard indicators (EMA, RSI, MACD) look at price+time. Volume Profile looks at price+VOLUME — where the auction actually happened. Institutions, hedge funds and market-makers use this to identify where they\'ve accumulated or distributed. The 15-Jul 24200 PE @165→300+ trade was a textbook VA_ROTATION_FROM_VAH setup on the 5m/15m NIFTY chart.' },
+        { title: 'The 7 setups the engine fires', body: 'VA_BREAKOUT (close outside Value Area on volume) · VA_ROTATION (reject at VAH/VAL, return to POC — mean-revert entry) · HVN_REJECT (rejection at a High-Volume Node — magnet defended) · LVN_SLICE (fast candle through a Low-Volume Node — vacuum breakout) · IB_BREAK (Initial-Balance high/low broken — trend-day signature) · FAILED_AUCTION (spike outside VA rejected — reversal) · NAKED_POC (untested prior POC — magnet for future price).' },
+        { title: 'Why 2+ timeframe agreement matters', body: 'A signal on 5m alone is noise. When 15m + 30m + 1h all show the same rejection/breakout, that\'s institutional flow imprinting across timeframes. HIGH confidence = 3+ TFs agree with agreement score ≥ 70%.' },
+        { title: 'ATM option routing', body: 'BEARISH bias → buy ATM PE (nearest 50-step strike). BULLISH bias → buy ATM CE. Weekly expiry preferred for intraday setups; monthly for multi-day. Never sell options unless you have a delta-hedged book.' },
+        { title: 'Trade management', body: 'Trail SL to entry after T1 hits. Trail SL to T1 after T2 hits. If a WAIT signal appears mid-trade, exit remaining size. Volume Profile is a discretionary framework — this engine automates level detection, not conviction; always cross-check against F&O OI + NIFTY Foresight before sizing in.' },
+      ]} />
+    </div>
+  )
+}
+
 // ── 💎 PEDIGREE ACCUMULATION — good companies 50%+ off 52w-hi where
 // FII/DII/Promoter are increasing stakes. The "big hands grabbing from
 // retailers" setup — when retail finishes exiting, the move starts.
@@ -2593,16 +2744,40 @@ export function PublicXRecsPage(): JSX.Element {
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
           {filtered.map((r: any, i: number) => {
             const dirColor = r.parsedDirection === 'BUY' ? '#00c853' : r.parsedDirection === 'SHORT' ? '#ff5e7c' : '#9aa0a6'
+            // 2026-07-15 — user directive: if the analyst's stock matches
+            // our criteria (appears in any of our high-conviction snapshots),
+            // paint the whole card GREEN so we know it's tradeable.
+            const matches: boolean = !!r.matchesOurCriteria
+            const matchReasons: string[] = Array.isArray(r.matchReasons) ? r.matchReasons : []
             return (
-              <div key={i} className="bg-ink-800 border border-ink-500 rounded-lg p-3 hover:border-accent-cyan/40 transition-colors">
+              <div
+                key={i}
+                className={
+                  matches
+                    ? 'bg-gradient-to-br from-accent-green/15 to-accent-green/5 border-2 border-accent-green/60 rounded-lg p-3 hover:border-accent-green transition-colors shadow-[0_0_10px_rgba(0,200,83,0.15)]'
+                    : 'bg-ink-800 border border-ink-500 rounded-lg p-3 hover:border-accent-cyan/40 transition-colors'
+                }
+              >
                 <div className="flex items-center justify-between gap-2 mb-2">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 flex-wrap">
                     <span className="font-bold text-accent-cyan text-[11px]">@{r.handle}</span>
                     {r.parsedSymbol && <span className="font-bold text-neutral-100 text-[13px]">{r.parsedSymbol}</span>}
                     {r.parsedDirection && <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.parsedDirection}</span>}
+                    {matches && (
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-green text-ink-900 leading-none" title={`Matches: ${matchReasons.join(', ')}`}>
+                        ✅ MATCHES OUR CRITERIA
+                      </span>
+                    )}
                   </div>
                   <div className="text-[9px] text-neutral-500">{r.postedAt ? new Date(r.postedAt).toLocaleDateString('en-IN') : ''}</div>
                 </div>
+                {matches && matchReasons.length > 0 && (
+                  <div className="mb-2 text-[10px] text-accent-green/90">
+                    Also in: {matchReasons.map(rn => (
+                      <span key={rn} className="inline-block mx-0.5 px-1.5 py-0.5 rounded bg-accent-green/15 border border-accent-green/40">{rn}</span>
+                    ))}
+                  </div>
+                )}
                 {(r.parsedEntry || r.parsedSL || r.parsedTargets?.length > 0) && (
                   <div className="grid grid-cols-3 gap-1.5 text-[10px] font-mono mb-2">
                     {r.parsedEntry && (

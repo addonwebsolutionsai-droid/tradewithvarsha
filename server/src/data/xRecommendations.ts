@@ -329,7 +329,7 @@ function mergeAndRetain(fresh: XRecommendation[], existing: XRecommendation[]): 
   return withinWindow.slice(0, RETENTION_MAX_ROWS)
 }
 
-export async function fetchXRecommendations(opts?: { perHandle?: number }): Promise<{ generatedAt: string; bySite: Record<string, string>; recommendations: XRecommendation[]; freshThisRun?: number; retainedCarryOver?: number }> {
+export async function fetchXRecommendations(opts?: { perHandle?: number }): Promise<{ generatedAt: string; bySite: Record<string, string>; recommendations: XRecommendation[]; freshThisRun?: number; retainedCarryOver?: number; matchedOurCriteria?: number }> {
   const perHandle = opts?.perHandle ?? 10
   const bySite: Record<string, string> = {}
   const all: XRecommendation[] = []
@@ -370,12 +370,78 @@ export async function fetchXRecommendations(opts?: { perHandle?: number }): Prom
   const merged = mergeAndRetain(filtered, existing)
   const carryOver = merged.length - filtered.length
 
-  log.ok('X-RECS', `parsed ${filtered.length} fresh actionable (raw ${before}, dropped ${droppedNoSymbol} no-symbol + ${droppedNotActionable} not-actionable) · retained ${carryOver} historical → total ${merged.length} · sources: ${Object.entries(bySite).map(([k, v]) => `${k}=${v}`).join(' · ')}`)
+  // 2026-07-15 — annotate each recommendation with our own view. User asked
+  // for green highlight if the analyst's pick matches our criteria. We
+  // cross-reference the parsed symbol against every high-conviction snapshot
+  // and tag matchesOurCriteria + matchReasons.
+  const ourUniverse = await buildOurConvictionUniverse()
+  const annotated = merged.map(r => {
+    const upSym = (r.parsedSymbol ?? '').toUpperCase()
+    if (!upSym) return { ...r, matchesOurCriteria: false, matchReasons: [] as string[] }
+    const reasons: string[] = []
+    for (const [tabName, syms] of Object.entries(ourUniverse)) {
+      if (syms.has(upSym)) reasons.push(tabName)
+    }
+    return { ...r, matchesOurCriteria: reasons.length > 0, matchReasons: reasons }
+  })
+
+  const matchedCount = annotated.filter(r => (r as { matchesOurCriteria?: boolean }).matchesOurCriteria).length
+  log.ok('X-RECS', `parsed ${filtered.length} fresh actionable (raw ${before}, dropped ${droppedNoSymbol} no-symbol + ${droppedNotActionable} not-actionable) · retained ${carryOver} historical · matched-our-criteria ${matchedCount}/${annotated.length} → total ${annotated.length} · sources: ${Object.entries(bySite).map(([k, v]) => `${k}=${v}`).join(' · ')}`)
   return {
     generatedAt: new Date().toISOString(),
     bySite,
-    recommendations: merged,
+    recommendations: annotated,
     freshThisRun: filtered.length,
     retainedCarryOver: carryOver,
+    matchedOurCriteria: matchedCount,
+  }
+}
+
+/**
+ * Load our high-conviction snapshots and build a { tab -> Set<symbol> } map.
+ * X-recs whose parsedSymbol appears in ANY set get marked as
+ * matchesOurCriteria = true, with the tab names as matchReasons.
+ */
+async function buildOurConvictionUniverse(): Promise<Record<string, Set<string>>> {
+  const dir = path.resolve(__dirname, '../../data/public-snapshots')
+  const load = async (file: string): Promise<Record<string, unknown> | null> => {
+    try {
+      const raw = await fs.promises.readFile(path.join(dir, file), 'utf8')
+      return JSON.parse(raw) as Record<string, unknown>
+    } catch { return null }
+  }
+  const extract = (obj: Record<string, unknown> | null, key: string): Set<string> => {
+    const out = new Set<string>()
+    if (!obj) return out
+    const rows = obj[key]
+    if (!Array.isArray(rows)) return out
+    for (const r of rows) {
+      const rec = r as { symbol?: string; instrument?: string; sym?: string; ticker?: string }
+      const s = (rec.symbol ?? rec.instrument ?? rec.sym ?? rec.ticker ?? '').toUpperCase().replace(/\s.*$/, '')
+      if (s) out.add(s)
+    }
+    return out
+  }
+  const [wp, pe, ib, em, cp, cc, pro, ss, bd] = await Promise.all([
+    load('weekly-pick.json'),
+    load('pedigree-accumulation.json'),
+    load('insider-buys.json'),
+    load('early-momentum.json'),
+    load('chart-patterns.json'),
+    load('cross-confluence.json'),
+    load('pro-edge.json'),
+    load('superstar-picks.json'),
+    load('bulk-deals.json'),
+  ])
+  return {
+    'Weekly Pick':        extract(wp, 'rows'),
+    'Pedigree':           extract(pe, 'rows'),
+    'Insider Buys':       extract(ib, 'rows'),
+    'Early Momentum':     extract(em, 'rows'),
+    'Chart Patterns':     extract(cp, 'rows'),
+    'Cross Confluence':   extract(cc, 'rows'),
+    'PRO Edge':           extract(pro, 'rows'),
+    'Superstar':          extract(ss, 'rows'),
+    'Bulk Deals':         extract(bd, 'rows'),
   }
 }

@@ -165,6 +165,13 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/nifty-outlook', label: '🧭 NIFTY Outlook', icon: <Target size={14} />,
       acc: null, highProb: true,
       title: 'NIFTY Directional Foresight — multi-expiry OI (current+monthly+quarterly), max-pain drift, PCR trend, time cycles from 2020 daily, momentum, KP+Bradley astro, operator playbook detection. Unified BULLISH/BEARISH call with entry/SL/T1/T2/T3 dated trade plan. Refreshes every 4 min live.' },
+    // 2026-07-15 — Volume Profile setup detector — the framework used by
+    // institutions, hedge funds, market-makers. Caught user's 15-Jul 24200
+    // PE @165→300+ manual trade. Multi-TF (5m/15m/30m/45m/1h/2h/4h/1D)
+    // POC/VAH/VAL/HVN/LVN with 7 setup families.
+    { to: '/volume-profile', label: '📊 Volume Profile', icon: <BarChart3 size={14} />,
+      acc: null, highProb: true,
+      title: 'NIFTY Volume Profile — the framework institutions & hedge funds use. Multi-TF (5m/15m/30m/45m/1h/2h/4h/1D) POC/VAH/VAL/HVN/LVN detector. Fires 7 setup families (VA-Breakout, VA-Rotation, HVN-Reject, LVN-Slice, IB-Break, Failed-Auction) with ATM PE/CE recommendation when 2+ timeframes agree. NIFTY-only.' },
     { to: '/confluence',   label: 'Ultra Picks',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: 'Ultra Picks — names confirmed by multiple independent scanners. Structurally higher conviction.' },
@@ -273,6 +280,11 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
                   // background so they're impossible to miss. Overrides the
                   // amber highProb tint above.
                   eliteTab && 'bg-gradient-to-b from-[#FF8A00]/60 to-[#FF6B00]/40 !text-white ring-1 ring-[#FF8A00] shadow-[0_0_10px_rgba(255,138,0,0.5)] hover:from-[#FF8A00]/70 hover:to-[#FF6B00]/50',
+                  // 2026-07-15 — current #1 top-performer (below the 85% bar)
+                  // gets a NAVY BLUE tint. Distinct from orange elite so the
+                  // user knows this is "current best" not "certified elite".
+                  topPerformerTab && !active && 'bg-gradient-to-b from-[#1E3A8A]/40 to-[#1E40AF]/25 !text-[#93C5FD] ring-1 ring-[#3B82F6]/60 hover:from-[#1E3A8A]/55',
+                  topPerformerTab && active && 'bg-gradient-to-b from-[#1E3A8A]/50 to-[#1E40AF]/35',
                 )}
                 style={eliteTab ? { animation: 'elitePulse 2.4s ease-in-out infinite' } : undefined}
               >
@@ -284,7 +296,7 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
                   </span>
                 )}
                 {topPerformerTab && (
-                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#FF8A00]/20 text-[#FF8A00] leading-none border border-[#FF8A00]/40">
+                  <span className="text-[9px] font-bold px-1.5 py-0.5 rounded-full bg-[#1E3A8A]/25 text-[#93C5FD] leading-none border border-[#3B82F6]/50">
                     #1 · {Math.round(topSourceWr)}%
                   </span>
                 )}
