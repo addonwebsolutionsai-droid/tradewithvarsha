@@ -126,8 +126,42 @@ async function main() {
     const { aggregateProEdge } = await import('../src/engine/proEdge')
     const pe = await aggregateProEdge({ minConviction: 85 })
     await writeSnapshot('pro-edge.json', pe)
-    const rowsLen = Array.isArray((pe as { rows?: unknown[] }).rows) ? (pe as { rows: unknown[] }).rows.length : 0
-    results['pro-edge'] = `${rowsLen} signals`
+    const peRows = Array.isArray((pe as { rows?: unknown[] }).rows) ? ((pe as { rows: unknown[] }).rows as Array<Record<string, unknown>>) : []
+
+    // 2026-07-16 — broadcast the TOP-3 fresh PRO Edge picks to Telegram.
+    // Yesterday's fix was too strict: intraday tick only broadcast the
+    // (blocked) stock-option scalps and never surfaced the pre-move
+    // PRO Edge picks that ARE the money-printing setups. broadcastSignal
+    // handles dedup + rate caps + filter — we just have to feed it a Signal.
+    let peBroadcast = 0
+    for (const r of peRows.slice(0, 3)) {
+      try {
+        const symbol = String(r.symbol ?? '')
+        const direction = (r.direction === 'SHORT' || r.direction === 'SELL') ? 'SHORT' : 'BUY'
+        const conv = Number(r.conviction ?? 0)
+        if (!symbol || conv < 85) continue
+        const sig = {
+          type: 'SWING' as const,
+          direction: direction as 'BUY' | 'SHORT',
+          instrument: symbol,
+          symbol,
+          score: Math.min(10, conv / 10),
+          grade: 'A' as const,
+          source: 'PRO_EDGE',
+          conviction: conv,
+          entry: Number(r.entry ?? 0),
+          stopLoss: Number(r.stopLoss ?? 0),
+          target1: Number(r.target1 ?? 0),
+          target2: Number(r.target2 ?? 0),
+          target3: Number(r.target3 ?? 0),
+          reason: Array.isArray(r.reasoning) ? (r.reasoning as string[]).join(' · ').slice(0, 400) : '',
+          time: Date.now(),
+        } as unknown as Parameters<typeof broadcastSignal>[0]
+        await broadcastSignal(sig)
+        peBroadcast++
+      } catch (e) { log.warn('TICK', `pe-broadcast: ${(e as Error).message}`) }
+    }
+    results['pro-edge'] = `${peRows.length} signals · ${peBroadcast} broadcast (top-3)`
   } catch (e) {
     results['pro-edge'] = `ERR ${(e as Error).message}`
     log.err('TICK', `pro-edge: ${(e as Error).message}`)
@@ -136,11 +170,37 @@ async function main() {
   // ─── 2b. NIFTY Volume Profile (multi-TF POC/VAH/VAL/HVN/LVN detector)
   //         Emits an ATM PE/CE recommendation when 2+ timeframes agree.
   try {
-    const { runAndPublishNiftyVolumeProfile } = await import('../src/engine/niftyVolumeProfileEngine')
+    const { runAndPublishNiftyVolumeProfile, runNiftyVolumeProfile } = await import('../src/engine/niftyVolumeProfileEngine')
     const vp = await runAndPublishNiftyVolumeProfile()
     results['nifty-volume-profile'] = vp.ok
       ? `${vp.bias} ${vp.confidence} · ${vp.setup} @${vp.spot}`
       : 'no candles'
+    // Broadcast VP recommendation when confidence ≥ MEDIUM and a side is set.
+    if (vp.ok && (vp.confidence === 'HIGH' || vp.confidence === 'MEDIUM')) {
+      const full = await runNiftyVolumeProfile()
+      if (full?.tradeRecommendation && full.tradeRecommendation.side !== 'WAIT' && full.tradeRecommendation.optionType) {
+        const rec = full.tradeRecommendation
+        const inst = rec.instrument.startsWith('NIFTY') ? rec.instrument : `NIFTY ${rec.optionStrike} ${rec.optionType}`
+        const sig = {
+          type: 'OPTIONS' as const,
+          direction: (rec.side === 'SELL' ? 'SHORT' : 'BUY') as 'BUY' | 'SHORT',
+          instrument: inst,
+          symbol: inst,
+          score: full.confidence === 'HIGH' ? 10 : 9,
+          grade: 'A' as const,
+          source: 'NIFTY_VOLUME_PROFILE',
+          conviction: full.confidence === 'HIGH' ? 90 : 75,
+          entry: rec.entry,
+          stopLoss: rec.stopLoss,
+          target1: rec.target1,
+          target2: rec.target2,
+          target3: rec.target3,
+          reason: (rec.rationale || '').slice(0, 400),
+          time: Date.now(),
+        } as unknown as Parameters<typeof broadcastSignal>[0]
+        try { await broadcastSignal(sig) } catch (e) { log.warn('TICK', `vp-broadcast: ${(e as Error).message}`) }
+      }
+    }
   } catch (e) {
     results['nifty-volume-profile'] = `ERR ${(e as Error).message}`
     log.err('TICK', `nifty-volume-profile: ${(e as Error).message}`)
@@ -148,11 +208,36 @@ async function main() {
 
   // ─── 3. NIFTY Directional Foresight (writes own snapshot)
   try {
-    const { runAndPublishNiftyForesight } = await import('../src/engine/niftyForesight')
+    const { runAndPublishNiftyForesight, runNiftyForesight } = await import('../src/engine/niftyForesight')
     const nf = await runAndPublishNiftyForesight()
     results['nifty-outlook'] = nf.ok
       ? `${nf.direction} ${nf.confidence} (net ${nf.netScore}) @${nf.spot}${nf.playbook.length > 0 ? ' · ' + nf.playbook.join(',') : ''}`
       : 'no OC data'
+    // Broadcast when confidence ≥ HIGH and direction is decisive.
+    if (nf.ok && nf.confidence === 'HIGH' && nf.direction !== 'NEUTRAL') {
+      const full = await runNiftyForesight()
+      if (full?.tradePlan && full.tradePlan.side !== 'WAIT') {
+        const tp = full.tradePlan
+        const sig = {
+          type: 'OPTIONS' as const,
+          direction: (tp.side === 'SELL' ? 'SHORT' : 'BUY') as 'BUY' | 'SHORT',
+          instrument: tp.instrument,
+          symbol: tp.instrument,
+          score: 10,
+          grade: 'A' as const,
+          source: 'NIFTY_OUTLOOK',
+          conviction: 90,
+          entry: tp.entry,
+          stopLoss: tp.stopLoss,
+          target1: tp.target1,
+          target2: tp.target2,
+          target3: tp.target3,
+          reason: full.reasoning?.playbook || full.reasoning?.multiExpiryOI?.join(' · ') || '',
+          time: Date.now(),
+        } as unknown as Parameters<typeof broadcastSignal>[0]
+        try { await broadcastSignal(sig) } catch (e) { log.warn('TICK', `nf-broadcast: ${(e as Error).message}`) }
+      }
+    }
   } catch (e) {
     results['nifty-outlook'] = `ERR ${(e as Error).message}`
     log.err('TICK', `nifty-outlook: ${(e as Error).message}`)

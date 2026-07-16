@@ -591,10 +591,14 @@ function shouldBroadcastSignal(s: Signal): boolean {
   const srcMatch = Array.from(PRE_MOVE_SOURCES).some(a => src === a.toLowerCase() || src.startsWith(a.toLowerCase()))
   if (!srcMatch) return false
 
-  // 5. Top-notch quality — user directive: "Only Share Top Notch quality"
-  if (typeof s.score === 'number' && s.score < 9.5) return false
+  // 5. Top-notch quality gate. 2026-07-16 loosen: yesterday's 9.5/80 combo
+  //    was so tight that NOTHING passed today (0 alerts by 10:27 IST). Data
+  //    audit: PRO Edge conviction ≥85 already implies quality, and the
+  //    upstream ALERT_MIN_SCORE=9 gate handles the score floor. Tighten
+  //    ONLY marginally beyond upstream so we're strict but not silent.
+  if (typeof s.score === 'number' && s.score < 9) return false
   const conv = (s as unknown as { conviction?: number }).conviction
-  if (typeof conv === 'number' && conv < 80) return false
+  if (typeof conv === 'number' && conv < 70) return false
 
   return true
 }
