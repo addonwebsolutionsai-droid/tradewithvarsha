@@ -889,13 +889,15 @@ export async function runAndPublishChartPatterns(): Promise<{ generatedAt: strin
   const rows = await scanChartPatterns()
   const byPattern: Record<string, number> = {}
   for (const r of rows) byPattern[r.pattern] = (byPattern[r.pattern] ?? 0) + 1
+  const { enrichRows } = await import('../lib/reasonEnrichment')
+  const enriched = enrichRows(rows as unknown as Array<Record<string, unknown>>, 'chartPattern') as unknown as PatternHit[]
   const out = {
     generatedAt: new Date().toISOString(),
     criterion: 'Chart-pattern scan over NIFTY-500 universe × DAILY + WEEKLY timeframes',
     note: 'PILOT MODE — patterns + measured-move targets are output for review. Cross-check before sizing.',
-    total: rows.length,
+    total: enriched.length,
     byPattern,
-    rows,
+    rows: enriched,
   }
   await fs.mkdir(SNAP_DIR, { recursive: true })
   await fs.writeFile(path.join(SNAP_DIR, 'chart-patterns.json'), JSON.stringify(out, null, 2))

@@ -236,13 +236,15 @@ export async function runAndPublishPedigree(): Promise<{ generatedAt: string; to
   const rows = await runPedigreeAccumulation()
   const deepCount = rows.filter(r => r.pullbackTier === 'DEEP').length
   const moderateCount = rows.length - deepCount
+  const { enrichRows } = await import('../lib/reasonEnrichment')
+  const enriched = enrichRows(rows as unknown as Array<Record<string, unknown>>, 'pedigree') as unknown as PedigreeRow[]
   const out = {
     generatedAt: new Date().toISOString(),
     criterion: '≥40% off 52w-high · NIFTY-500 OR mcap ≥₹1KCr · turnover ≥₹2Cr · FII OR DII OR Promoter ↑ QoQ · pledge <25%',
-    total: rows.length,
+    total: enriched.length,
     deepCount,
     moderateCount,
-    rows,
+    rows: enriched,
   }
   await fs.mkdir(SNAP_DIR, { recursive: true })
   await fs.writeFile(path.join(SNAP_DIR, 'pedigree-accumulation.json'), JSON.stringify(out, null, 2))

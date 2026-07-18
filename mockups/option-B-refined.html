@@ -85,7 +85,7 @@
   .brand-1 { font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
   .brand-2 { font-size: 10.5px; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; display: block; }
 
-  .h-nav { display: flex; gap: 2px; align-items: center; }
+  .h-nav { display: flex; gap: 2px; align-items: center; overflow: hidden; min-width: 0; }
   .h-tab {
     display: inline-flex; align-items: center; gap: 6px;
     padding: 7px 13px;
@@ -314,12 +314,12 @@
   /* 2026-07-18 — NO horizontal scroll. Table always fits its container. */
   .table-x { max-height: 65vh; overflow-y: auto; overflow-x: hidden; }
   .grid { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
-  .grid col.w-symbol   { width: 14%; }
-  .grid col.w-status   { width: 10%; }
-  .grid col.w-conv     { width: 6%; }
-  .grid col.w-ltp      { width: 9%; }
-  .grid col.w-plan     { width: 22%; }
-  .grid col.w-horizon  { width: 10%; }
+  .grid col.w-symbol   { width: 13%; }
+  .grid col.w-status   { width: 9%; }
+  .grid col.w-conv     { width: 5%; }
+  .grid col.w-ltp      { width: 8%; }
+  .grid col.w-plan     { width: 27%; }   /* wider to fit dates */
+  .grid col.w-horizon  { width: 9%; }
   .grid col.w-why      { width: 29%; }
   .grid col.w-sm-plan  { width: 20%; }
   .grid col.w-sm-share { width: 22%; }
@@ -383,11 +383,11 @@
   .status-tag.expired   { background: var(--surface-2); color: var(--text-3); border: 1px solid var(--border); }
   :root[data-theme="light"] .status-tag.waiting { background: #F0EEE8; color: #5A6270; }
 
-  /* Compact trade plan cell — 2 stacked lines, mono numbers */
+  /* Compact trade plan cell — 4-col mini-grid: label · value · pct · date */
   .plan-mini {
     display: grid;
-    grid-template-columns: auto auto auto;
-    gap: 3px 12px;
+    grid-template-columns: auto auto auto auto;
+    gap: 3px 10px;
     font-family: ui-monospace, "SF Mono", Menlo, monospace;
     font-size: 11px;
     align-items: baseline;
@@ -408,6 +408,16 @@
   }
   .plan-mini .pct.bear { color: var(--bear); }
   .plan-mini .pct.bull { color: var(--bull); }
+  .plan-mini .date {
+    font-size: 9.5px;
+    color: var(--text-3);
+    letter-spacing: 0.02em;
+    white-space: nowrap;
+    font-weight: 500;
+  }
+  .plan-mini .date.hit { color: var(--bull); font-weight: 600; }
+  .plan-mini .date.stopped { color: var(--bear); font-weight: 600; }
+  .plan-mini .date.dim { color: var(--text-3); opacity: 0.5; }
 
   /* Compact ₹Cr row (Smart Money) */
   .cr-mini {
@@ -901,11 +911,11 @@
                   <td class="r-right"><div class="stack-2"><span class="l1">₹4,599.50</span><span class="l2 bull">+1.5%</span></div></td>
                   <td>
                     <div class="plan-mini">
-                      <span class="lbl">Entry</span><span class="val">₹4,530.51</span><span class="pct"></span>
-                      <span class="lbl">SL</span><span class="val bear">₹4,339.27</span><span class="pct bear">−4.2%</span>
-                      <span class="lbl">T1</span><span class="val bull">₹4,893</span><span class="pct bull">+8.0%</span>
-                      <span class="lbl">T2</span><span class="val bull">₹5,165</span><span class="pct bull">+14%</span>
-                      <span class="lbl">T3</span><span class="val bull">₹5,527</span><span class="pct bull">+22%</span>
+                      <span class="lbl">Entry</span><span class="val">₹4,530.51</span><span class="pct"></span><span class="date">21 Jul</span>
+                      <span class="lbl">SL</span><span class="val bear">₹4,339.27</span><span class="pct bear">−4.2%</span><span class="date">05 Aug</span>
+                      <span class="lbl">T1</span><span class="val bull">₹4,893</span><span class="pct bull">+8.0%</span><span class="date">25 Jul</span>
+                      <span class="lbl">T2</span><span class="val bull">₹5,165</span><span class="pct bull">+14%</span><span class="date">30 Jul</span>
+                      <span class="lbl">T3</span><span class="val bull">₹5,527</span><span class="pct bull">+22%</span><span class="date">05 Aug</span>
                     </div>
                   </td>
                   <td>
@@ -936,11 +946,11 @@
                   <td class="r-right"><div class="stack-2"><span class="l1">₹1,412.20</span><span class="l2 bull">+0.4%</span></div></td>
                   <td>
                     <div class="plan-mini">
-                      <span class="lbl">Entry</span><span class="val">₹1,417.70</span><span class="pct"></span>
-                      <span class="lbl">SL</span><span class="val bear">₹1,325.06</span><span class="pct bear">−6.5%</span>
-                      <span class="lbl">T1</span><span class="val bull">₹1,572</span><span class="pct bull">+11%</span>
-                      <span class="lbl">T2</span><span class="val bull">₹1,635</span><span class="pct bull">+15%</span>
-                      <span class="lbl">T3</span><span class="val bull">₹1,703</span><span class="pct bull">+20%</span>
+                      <span class="lbl">Entry</span><span class="val">₹1,417.70</span><span class="pct"></span><span class="date">15 Jul</span>
+                      <span class="lbl">SL</span><span class="val bear">₹1,325.06</span><span class="pct bear">−6.5%</span><span class="date">02 Aug</span>
+                      <span class="lbl">T1</span><span class="val bull">₹1,572</span><span class="pct bull">+11%</span><span class="date">24 Jul</span>
+                      <span class="lbl">T2</span><span class="val bull">₹1,635</span><span class="pct bull">+15%</span><span class="date">30 Jul</span>
+                      <span class="lbl">T3</span><span class="val bull">₹1,703</span><span class="pct bull">+20%</span><span class="date">08 Aug</span>
                     </div>
                   </td>
                   <td>
@@ -971,11 +981,11 @@
                   <td class="r-right"><div class="stack-2"><span class="l1">₹1,349.80</span><span class="l2 bull">+4.7%</span></div></td>
                   <td>
                     <div class="plan-mini">
-                      <span class="lbl">Entry</span><span class="val">₹1,290.00</span><span class="pct"></span>
-                      <span class="lbl">SL</span><span class="val bear">₹1,238.00</span><span class="pct bear">−4.0%</span>
-                      <span class="lbl">T1</span><span class="val bull" style="text-decoration: underline;">₹1,342</span><span class="pct bull">✓ hit</span>
-                      <span class="lbl">T2</span><span class="val bull">₹1,388</span><span class="pct bull">+7.6%</span>
-                      <span class="lbl">T3</span><span class="val bull">₹1,442</span><span class="pct bull">+11.8%</span>
+                      <span class="lbl">Entry</span><span class="val">₹1,290.00</span><span class="pct"></span><span class="date">13 Jul</span>
+                      <span class="lbl">SL</span><span class="val bear">₹1,238.00</span><span class="pct bear">−4.0%</span><span class="date">01 Aug</span>
+                      <span class="lbl">T1</span><span class="val bull" style="text-decoration: underline;">₹1,342</span><span class="pct bull">✓ hit</span><span class="date hit">18 Jul</span>
+                      <span class="lbl">T2</span><span class="val bull">₹1,388</span><span class="pct bull">+7.6%</span><span class="date">25 Jul</span>
+                      <span class="lbl">T3</span><span class="val bull">₹1,442</span><span class="pct bull">+11.8%</span><span class="date">03 Aug</span>
                     </div>
                   </td>
                   <td>
@@ -1006,11 +1016,11 @@
                   <td class="r-right"><div class="stack-2"><span class="l1">₹638.20</span><span class="l2 bull">+7.8%</span></div></td>
                   <td>
                     <div class="plan-mini">
-                      <span class="lbl">Entry</span><span class="val">₹592.00</span><span class="pct"></span>
-                      <span class="lbl">SL</span><span class="val bear">₹614.00</span><span class="pct" style="color: var(--text-3);">trail T1</span>
-                      <span class="lbl">T1</span><span class="val bull" style="text-decoration: underline;">₹614</span><span class="pct bull">✓ hit</span>
-                      <span class="lbl">T2</span><span class="val bull" style="text-decoration: underline;">₹632</span><span class="pct bull">✓ hit</span>
-                      <span class="lbl">T3</span><span class="val bull">₹655</span><span class="pct bull">+10.6%</span>
+                      <span class="lbl">Entry</span><span class="val">₹592.00</span><span class="pct"></span><span class="date">09 Jul</span>
+                      <span class="lbl">SL</span><span class="val bear">₹614.00</span><span class="pct" style="color: var(--text-3);">trail T1</span><span class="date dim">—</span>
+                      <span class="lbl">T1</span><span class="val bull" style="text-decoration: underline;">₹614</span><span class="pct bull">✓ hit</span><span class="date hit">14 Jul</span>
+                      <span class="lbl">T2</span><span class="val bull" style="text-decoration: underline;">₹632</span><span class="pct bull">✓ hit</span><span class="date hit">18 Jul</span>
+                      <span class="lbl">T3</span><span class="val bull">₹655</span><span class="pct bull">+10.6%</span><span class="date">25 Jul</span>
                     </div>
                   </td>
                   <td>
@@ -1041,11 +1051,11 @@
                   <td class="r-right"><div class="stack-2"><span class="l1">₹831.40</span><span class="l2 bull">+21.2%</span></div></td>
                   <td>
                     <div class="plan-mini">
-                      <span class="lbl">Entry</span><span class="val">₹685.75</span><span class="pct"></span>
-                      <span class="lbl">SL</span><span class="val bear">₹646.59</span><span class="pct" style="color: var(--text-3);">closed</span>
-                      <span class="lbl">T1</span><span class="val bull" style="text-decoration: underline;">₹751</span><span class="pct bull">✓</span>
-                      <span class="lbl">T2</span><span class="val bull" style="text-decoration: underline;">₹782</span><span class="pct bull">✓</span>
-                      <span class="lbl">T3</span><span class="val bull" style="text-decoration: underline;">₹823</span><span class="pct bull">✓</span>
+                      <span class="lbl">Entry</span><span class="val">₹685.75</span><span class="pct"></span><span class="date">26 Jun</span>
+                      <span class="lbl">SL</span><span class="val bear">₹646.59</span><span class="pct" style="color: var(--text-3);">closed</span><span class="date dim">—</span>
+                      <span class="lbl">T1</span><span class="val bull" style="text-decoration: underline;">₹751</span><span class="pct bull">✓</span><span class="date hit">07 Jul</span>
+                      <span class="lbl">T2</span><span class="val bull" style="text-decoration: underline;">₹782</span><span class="pct bull">✓</span><span class="date hit">12 Jul</span>
+                      <span class="lbl">T3</span><span class="val bull" style="text-decoration: underline;">₹823</span><span class="pct bull">✓</span><span class="date hit">18 Jul</span>
                     </div>
                   </td>
                   <td>
@@ -1076,11 +1086,11 @@
                   <td class="r-right"><div class="stack-2"><span class="l1">₹4,038.10</span><span class="l2 bear">−1.2%</span></div></td>
                   <td>
                     <div class="plan-mini">
-                      <span class="lbl">Entry</span><span class="val">₹3,988.00</span><span class="pct"></span>
-                      <span class="lbl">SL</span><span class="val bear" style="text-decoration: underline;">₹4,030</span><span class="pct bear">✗ stopped</span>
-                      <span class="lbl">T1</span><span class="val" style="color: var(--text-3);">₹3,925</span><span class="pct" style="color: var(--text-3);">missed</span>
-                      <span class="lbl">T2</span><span class="val" style="color: var(--text-3);">₹3,860</span><span class="pct" style="color: var(--text-3);">−</span>
-                      <span class="lbl">T3</span><span class="val" style="color: var(--text-3);">₹3,790</span><span class="pct" style="color: var(--text-3);">−</span>
+                      <span class="lbl">Entry</span><span class="val">₹3,988.00</span><span class="pct"></span><span class="date">18 Jul</span>
+                      <span class="lbl">SL</span><span class="val bear" style="text-decoration: underline;">₹4,030</span><span class="pct bear">✗ stopped</span><span class="date stopped">18 Jul</span>
+                      <span class="lbl">T1</span><span class="val" style="color: var(--text-3);">₹3,925</span><span class="pct" style="color: var(--text-3);">missed</span><span class="date dim">—</span>
+                      <span class="lbl">T2</span><span class="val" style="color: var(--text-3);">₹3,860</span><span class="pct" style="color: var(--text-3);">−</span><span class="date dim">—</span>
+                      <span class="lbl">T3</span><span class="val" style="color: var(--text-3);">₹3,790</span><span class="pct" style="color: var(--text-3);">−</span><span class="date dim">—</span>
                     </div>
                   </td>
                   <td>
@@ -1111,11 +1121,11 @@
                   <td class="r-right"><div class="stack-2"><span class="l1">₹184.30</span><span class="l2 bull">+11.6%</span></div></td>
                   <td>
                     <div class="plan-mini">
-                      <span class="lbl">Entry</span><span class="val">₹165.00</span><span class="pct"></span>
-                      <span class="lbl">SL</span><span class="val bear">₹138.00</span><span class="pct bear">−16%</span>
-                      <span class="lbl">T1</span><span class="val bull">₹210</span><span class="pct bull">+27%</span>
-                      <span class="lbl">T2</span><span class="val bull">₹275</span><span class="pct bull">+67%</span>
-                      <span class="lbl">T3</span><span class="val bull">₹340</span><span class="pct bull">+106%</span>
+                      <span class="lbl">Entry</span><span class="val">₹165.00</span><span class="pct"></span><span class="date">15 Jul</span>
+                      <span class="lbl">SL</span><span class="val bear">₹138.00</span><span class="pct bear">−16%</span><span class="date">25 Jul</span>
+                      <span class="lbl">T1</span><span class="val bull">₹210</span><span class="pct bull">+27%</span><span class="date">21 Jul</span>
+                      <span class="lbl">T2</span><span class="val bull">₹275</span><span class="pct bull">+67%</span><span class="date">23 Jul</span>
+                      <span class="lbl">T3</span><span class="val bull">₹340</span><span class="pct bull">+106%</span><span class="date">25 Jul</span>
                     </div>
                   </td>
                   <td>
@@ -1146,11 +1156,11 @@
                   <td class="r-right"><div class="stack-2"><span class="l1">₹1,318.40</span><span class="l2 bull">+0.6%</span></div></td>
                   <td>
                     <div class="plan-mini">
-                      <span class="lbl">Entry</span><span class="val">₹1,310.00</span><span class="pct">on dip</span>
-                      <span class="lbl">SL</span><span class="val bear">₹1,258.00</span><span class="pct bear">−4.0%</span>
-                      <span class="lbl">T1</span><span class="val bull">₹1,388</span><span class="pct bull">+6.0%</span>
-                      <span class="lbl">T2</span><span class="val bull">₹1,442</span><span class="pct bull">+10%</span>
-                      <span class="lbl">T3</span><span class="val bull">₹1,506</span><span class="pct bull">+15%</span>
+                      <span class="lbl">Entry</span><span class="val">₹1,310.00</span><span class="pct">on dip</span><span class="date">on trigger</span>
+                      <span class="lbl">SL</span><span class="val bear">₹1,258.00</span><span class="pct bear">−4.0%</span><span class="date">08 Aug</span>
+                      <span class="lbl">T1</span><span class="val bull">₹1,388</span><span class="pct bull">+6.0%</span><span class="date">25 Jul</span>
+                      <span class="lbl">T2</span><span class="val bull">₹1,442</span><span class="pct bull">+10%</span><span class="date">04 Aug</span>
+                      <span class="lbl">T3</span><span class="val bull">₹1,506</span><span class="pct bull">+15%</span><span class="date">15 Aug</span>
                     </div>
                   </td>
                   <td>
@@ -1181,11 +1191,11 @@
                   <td class="r-right"><div class="stack-2"><span class="l1">₹1,132.75</span><span class="l2 bear">−0.8%</span></div></td>
                   <td>
                     <div class="plan-mini">
-                      <span class="lbl">Entry</span><span class="val">₹1,140.00</span><span class="pct"></span>
-                      <span class="lbl">SL</span><span class="val bear">₹1,168.00</span><span class="pct bear">+2.5%</span>
-                      <span class="lbl">T1</span><span class="val bull">₹1,105</span><span class="pct bull">−3.1%</span>
-                      <span class="lbl">T2</span><span class="val bull">₹1,072</span><span class="pct bull">−6.0%</span>
-                      <span class="lbl">T3</span><span class="val bull">₹1,032</span><span class="pct bull">−9.5%</span>
+                      <span class="lbl">Entry</span><span class="val">₹1,140.00</span><span class="pct"></span><span class="date">21 Jul</span>
+                      <span class="lbl">SL</span><span class="val bear">₹1,168.00</span><span class="pct bear">+2.5%</span><span class="date">30 Jul</span>
+                      <span class="lbl">T1</span><span class="val bull">₹1,105</span><span class="pct bull">−3.1%</span><span class="date">23 Jul</span>
+                      <span class="lbl">T2</span><span class="val bull">₹1,072</span><span class="pct bull">−6.0%</span><span class="date">26 Jul</span>
+                      <span class="lbl">T3</span><span class="val bull">₹1,032</span><span class="pct bull">−9.5%</span><span class="date">30 Jul</span>
                     </div>
                   </td>
                   <td>
@@ -1216,11 +1226,11 @@
                   <td class="r-right"><div class="stack-2"><span class="l1">₹3,872.60</span><span class="l2 bull">+2.2%</span></div></td>
                   <td>
                     <div class="plan-mini">
-                      <span class="lbl">Entry</span><span class="val">₹3,790.00</span><span class="pct"></span>
-                      <span class="lbl">SL</span><span class="val bear">₹3,620.00</span><span class="pct bear">−4.5%</span>
-                      <span class="lbl">T1</span><span class="val bull">₹3,988</span><span class="pct bull">+5.2%</span>
-                      <span class="lbl">T2</span><span class="val bull">₹4,152</span><span class="pct bull">+9.6%</span>
-                      <span class="lbl">T3</span><span class="val bull">₹4,320</span><span class="pct bull">+14.0%</span>
+                      <span class="lbl">Entry</span><span class="val">₹3,790.00</span><span class="pct"></span><span class="date">14 Jul</span>
+                      <span class="lbl">SL</span><span class="val bear">₹3,620.00</span><span class="pct bear">−4.5%</span><span class="date">15 Aug</span>
+                      <span class="lbl">T1</span><span class="val bull">₹3,988</span><span class="pct bull">+5.2%</span><span class="date">25 Jul</span>
+                      <span class="lbl">T2</span><span class="val bull">₹4,152</span><span class="pct bull">+9.6%</span><span class="date">03 Aug</span>
+                      <span class="lbl">T3</span><span class="val bull">₹4,320</span><span class="pct bull">+14.0%</span><span class="date">15 Aug</span>
                     </div>
                   </td>
                   <td>

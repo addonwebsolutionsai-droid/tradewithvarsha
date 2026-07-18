@@ -17,6 +17,22 @@ const fmtDate = (iso?: string) => {
 }
 const fmtTs = (iso?: string) => iso ? new Date(iso).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—'
 // Expiry as "8-Jun" — accepts both "YYYY-MM-DD" and Angel's "08JUN2026".
+// 2026-07-18 · unified reason preference — every "why / reason" render in
+// the public tabs goes through this helper. When the server-side enrichment
+// flag (config.features.unifiedReasonEnabled) is on, snapshot rows carry a
+// `unifiedReason: { collapsed, expanded, ... }` field — this helper prefers
+// it. When the flag is off (or the row was written before the roll-out),
+// we fall back to the legacy `reasons` / `reasoning` arrays, so nothing
+// visibly breaks. Rollback = flip the server flag or drop the field.
+function pickReason(r: any): string {
+  const u = r?.unifiedReason
+  if (u && typeof u.collapsed === 'string' && u.collapsed.length > 0) return u.collapsed
+  if (Array.isArray(r?.reasoning) && r.reasoning.length > 0) return r.reasoning.join(' · ')
+  if (Array.isArray(r?.reasons) && r.reasons.length > 0) return r.reasons.join(' · ')
+  if (typeof r?.reasoning === 'string' && r.reasoning) return r.reasoning
+  return ''
+}
+
 const fmtExpiry = (s?: string | null): string => {
   if (!s) return '—'
   const d = new Date(s)
@@ -2065,7 +2081,7 @@ export function PublicChartPatternsPage(): JSX.Element {
                     <td className={`${tdb} text-left text-neutral-300`}>{r.formedAt}</td>
                     <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 280 }}>
                       <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
-                        {(r.reasoning ?? []).join(' · ')}
+                        {pickReason(r)}
                       </div>
                     </td>
                   </tr>
@@ -2192,7 +2208,7 @@ export function PublicInsiderBuysPage(): JSX.Element {
                     <td className={`${tdb} text-left text-neutral-300`}>{r.mostRecentDate ?? '—'}</td>
                     <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 280 }}>
                       <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
-                        {(r.reasons ?? []).join(' · ')}
+                        {pickReason(r)}
                       </div>
                     </td>
                   </tr>
@@ -2673,7 +2689,7 @@ export function PublicStockFnoVolumeProfilePage(): JSX.Element {
                     <td className={`${tdb} text-right text-accent-amber`}>₹{r.poc1D?.toFixed?.(2)}</td>
                     <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 260 }}>
                       <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
-                        {(r.reasoning ?? []).join(' · ')}
+                        {pickReason(r)}
                       </div>
                     </td>
                   </tr>
@@ -2916,7 +2932,7 @@ export function PublicElitePicksPage(): JSX.Element {
                     <td className={`${tdb} text-right text-accent-red`}>{typeof r.pctOffHigh === 'number' ? `−${r.pctOffHigh.toFixed(0)}%` : '—'}</td>
                     <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 300 }}>
                       <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
-                        {r.reasoning.join(' · ')}
+                        {pickReason(r)}
                       </div>
                     </td>
                   </tr>
@@ -3036,7 +3052,7 @@ export function PublicPedigreeAccumulationPage(): JSX.Element {
                     <td className={`${tdb} text-right text-neutral-300`}>{r.rsi14.toFixed(0)}</td>
                     <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 220 }}>
                       <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
-                        {(r.reasons ?? []).join(' · ')}
+                        {pickReason(r)}
                       </div>
                     </td>
                   </tr>

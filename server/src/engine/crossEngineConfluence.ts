@@ -265,11 +265,14 @@ export async function aggregateConfluence(): Promise<UltraConfluence> {
     r.reasoning = (r.reasoning ?? []).slice(0, 6)
   }
 
+  const { enrichRows } = await import('../lib/reasonEnrichment')
+  const enrichedRows = enrichRows(finalRows as unknown as Array<Record<string, unknown>>, 'elite')
+
   return {
     generatedAt: ts,
     totalEvaluated: map.size,
     ultraCount, strongCount,
-    rows: finalRows,
+    rows: enrichedRows as unknown as typeof finalRows,
   }
 }
 

@@ -190,12 +190,15 @@ export async function runInsiderBuysScan(opts?: { windowDays?: number; topN?: nu
 export async function runAndPublishInsiderBuys(): Promise<{ generatedAt: string; total: number; strongCount: number; rows: InsiderBuyRow[] }> {
   const rows = await runInsiderBuysScan()
   const strongCount = rows.filter(r => r.signal === 'STRONG_INSIDER_BUY').length
+  // 2026-07-18 · unified reason enrichment — no-op when flag is off
+  const { enrichRows } = await import('../lib/reasonEnrichment')
+  const enriched = enrichRows(rows as unknown as Array<Record<string, unknown>>, 'insider') as unknown as InsiderBuyRow[]
   const out = {
     generatedAt: new Date().toISOString(),
     criterion: 'SEBI PIT (Reg 7) + SAST (Reg 29) filings · last 30d · classified by actor type (promoter / KMP / external) and direction',
-    total: rows.length,
+    total: enriched.length,
     strongCount,
-    rows,
+    rows: enriched,
   }
   await fs.mkdir(SNAP_DIR, { recursive: true })
   await fs.writeFile(path.join(SNAP_DIR, 'insider-buys.json'), JSON.stringify(out, null, 2))

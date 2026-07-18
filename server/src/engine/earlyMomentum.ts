@@ -465,12 +465,14 @@ export async function runAndPublishEarlyMomentum(): Promise<{ generatedAt: strin
   await applyProCriteria(rows)
   const tierCounts: Record<string, number> = { EARLY: 0, WAVE_2: 0, CONFIRMED: 0 }
   for (const r of rows) tierCounts[r.tier]++
+  const { enrichRows } = await import('../lib/reasonEnrichment')
+  const enriched = enrichRows(rows as unknown as Array<Record<string, unknown>>, 'earlyMomentum') as unknown as EarlyMomentumRow[]
   const out = {
     generatedAt: new Date().toISOString(),
     criterion: '₹50-500 close · score ≥ 25 · ranked by composite momentum + institutional-footprint signature',
-    total: rows.length,
+    total: enriched.length,
     tierCounts,
-    rows,
+    rows: enriched,
   }
   await fs.mkdir(SNAP_DIR, { recursive: true })
   await fs.writeFile(path.join(SNAP_DIR, 'early-momentum.json'), JSON.stringify(out, null, 2))
