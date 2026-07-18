@@ -42,16 +42,20 @@ async function readSnap(name: string): Promise<any | null> {
 
 function norm(s: string): string { return (s || '').toUpperCase().replace(/[-_\s]/g, '') }
 
+// 2026-07-18 — strict ticker validator. NSE_500_CORE occasionally contains
+// positional indices ('1', '2') leaking through — reject anything that's
+// not a plausible ticker before doing an expensive candle fetch.
+function isPlausibleTicker(s: string): boolean {
+  return typeof s === 'string' && s.length >= 3 && s.length <= 15 && /^[A-Z][A-Z0-9&-]+$/.test(s)
+}
+
 async function fetchTodayGainers(): Promise<{ symbol: string; gainPct: number }[]> {
-  // Use NIFTY 500 derivatives screener which already supports getCandles.
-  // Compute today's % move from last-candle vs prior close. This bypasses
-  // 3rd-party scraping (which can block) and uses the same data layer
-  // every other scanner uses.
   const { NIFTY_500_CORE } = require('../screeners/universe')
+  const cleanUniverse = (NIFTY_500_CORE as string[]).filter(isPlausibleTicker)
   const out: { symbol: string; gainPct: number }[] = []
   const BATCH = 8
-  for (let i = 0; i < NIFTY_500_CORE.length; i += BATCH) {
-    const batch = NIFTY_500_CORE.slice(i, i + BATCH)
+  for (let i = 0; i < cleanUniverse.length; i += BATCH) {
+    const batch = cleanUniverse.slice(i, i + BATCH)
     const results = await Promise.all(batch.map(async (sym: string) => {
       try {
         const c = await data.getCandles(sym, '1D' as any, 3)

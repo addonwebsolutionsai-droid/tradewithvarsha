@@ -79,6 +79,30 @@ async function main() {
       const rowsLen = Array.isArray((pe as { rows?: unknown[] }).rows) ? (pe as { rows: unknown[] }).rows.length : 0
       return `${rowsLen} signals`
     }],
+    ['miss-analysis', async () => {
+      const m = await import('../src/engine/missAnalyzer')
+      const r = await m.runMissAnalysis()
+      // Publish snapshot the /5-20-move + /desk consume
+      const fs = await import('fs')
+      const path = await import('path')
+      const outPath = path.resolve(__dirname, '../data/public-snapshots/miss-analysis.json')
+      fs.writeFileSync(outPath, JSON.stringify(r, null, 2))
+      return `${r.caughtCount}/${r.totalGainers} caught (${(r.catchRate * 100).toFixed(1)}%)`
+    }],
+    ['gainer-postmortem', async () => {
+      const m = await import('../src/engine/gainerPostmortem')
+      const r = await m.runGainerPostmortem()
+      const fs = await import('fs')
+      const path = await import('path')
+      const outPath = path.resolve(__dirname, '../data/public-snapshots/gainer-postmortem.json')
+      fs.writeFileSync(outPath, JSON.stringify(r, null, 2))
+      return `${r.wouldHaveCaughtCount}/${r.totalGainers} would've been caught with tuning`
+    }],
+    ['miss-digest', async () => {
+      const m = await import('../src/engine/missDigest')
+      const r = await m.sendMissDigest()
+      return `sent to ${r.sent} chats`
+    }],
     ['daily-summary', async () => {
       const m = await import('../src/engine/dailyPerformanceSummary')
       const r = await m.sendDailyPerformanceSummary()
