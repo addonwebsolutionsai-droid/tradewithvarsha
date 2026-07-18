@@ -69,7 +69,15 @@ function mapRowToDateInput(row: Record<string, unknown>, tab: DateTab): TargetDa
   const ret5d = numOrUndef(row.ret5d ?? row.ret5dPct)
   const ret20d = numOrUndef(row.ret20d ?? row.ret20dPct)
   const atr14 = numOrUndef(row.atr14 ?? row.atr)
-  const atrPct = numOrUndef(row.atrPctOfPrice)
+  let atrPct = numOrUndef(row.atrPctOfPrice)
+
+  // 2026-07-18 · If no ATR was provided by the engine, infer it from the
+  // SL distance — traders typically set SL at ~1.75× ATR. This lifts most
+  // rows from LOW-confidence defaults to MEDIUM with a plausible ATR.
+  if (atrPct == null && atr14 == null && Number.isFinite(stopLoss) && stopLoss > 0 && Number.isFinite(entry) && entry > 0 && stopLoss !== entry) {
+    const slDistPct = (Math.abs(entry - stopLoss) / entry) * 100
+    if (slDistPct > 0.3 && slDistPct < 25) atrPct = slDistPct / 1.75
+  }
 
   // Tab-specific tuning of the pattern hint.
   let effectivePattern = pattern
