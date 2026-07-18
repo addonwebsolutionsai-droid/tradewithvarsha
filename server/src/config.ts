@@ -72,6 +72,13 @@ export const config = {
     oiTtl: num(process.env.OI_CACHE_TTL, 30),
     signalTtl: num(process.env.SIGNAL_CACHE_TTL, 60),
   },
+  // 2026-07-18 — behind-flag features. Default OFF so shipping the code is
+  // a no-op until the user flips the flag. Rollback = set flag false (or
+  // omit the env var), no code change needed.
+  features: {
+    /** Attach unifiedReason.{s1..s5, collapsed, expanded} to snapshot rows. */
+    unifiedReasonEnabled: bool(process.env.UNIFIED_REASON_ENABLED, false),
+  },
 }
 
 export function hasKey(keyName: keyof typeof config.apis): boolean {

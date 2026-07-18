@@ -1,0 +1,1618 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="dark">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Option B refined · tradewithvarsha</title>
+<style>
+  :root[data-theme="dark"] {
+    --bg:        #0E1116;
+    --surface:   #171B22;
+    --surface-2: #1D222A;
+    --border:    #262C36;
+    --border-2:  #333B47;
+    --text:      #E8EBEE;
+    --text-2:    #98A0AA;
+    --text-3:    #626A75;
+    --accent:    #6366F1;
+    --accent-2:  #4F46E5;
+    --accent-bg: rgba(99,102,241,0.14);
+    --accent-hl: rgba(99,102,241,0.28);
+    --bull:      #22C55E;
+    --bear:      #F43F5E;
+    --warn:      #F59E0B;
+    --elite:     #F59E0B;
+    --hover:     rgba(255,255,255,0.03);
+    --stripe:    rgba(255,255,255,0.015);
+  }
+  :root[data-theme="light"] {
+    --bg:        #F6F5F2;
+    --surface:   #FFFFFF;
+    --surface-2: #F0EEE8;
+    --border:    #E4E1D9;
+    --border-2:  #D5D1C6;
+    --text:      #14171C;
+    --text-2:    #5A6270;
+    --text-3:    #9299A3;
+    --accent:    #4F46E5;
+    --accent-2:  #4338CA;
+    --accent-bg: rgba(79,70,229,0.08);
+    --accent-hl: rgba(79,70,229,0.18);
+    --bull:      #15803D;
+    --bear:      #B91C1C;
+    --warn:      #B45309;
+    --elite:     #B45309;
+    --hover:     rgba(0,0,0,0.02);
+    --stripe:    rgba(0,0,0,0.015);
+  }
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { height: 100%; }
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: -apple-system, BlinkMacSystemFont, "Inter", ui-sans-serif, system-ui, sans-serif;
+    font-size: 13.5px;
+    line-height: 1.5;
+    -webkit-font-smoothing: antialiased;
+    font-variant-numeric: tabular-nums;
+    transition: background 200ms ease, color 200ms ease;
+  }
+  .mono { font-family: ui-monospace, "SF Mono", Menlo, Consolas, monospace; font-variant-numeric: tabular-nums; }
+  .app { display: flex; flex-direction: column; height: 100vh; }
+
+  /* ─── HEADER ─────────────────────────────────────────────────────── */
+  .header {
+    height: 60px;
+    background: var(--surface);
+    border-bottom: 1px solid var(--border);
+    padding: 0 32px;
+    display: grid;
+    grid-template-columns: auto 1fr auto;
+    gap: 32px;
+    align-items: center;
+    position: sticky; top: 0; z-index: 20;
+  }
+  .brand { display: flex; align-items: center; gap: 12px; }
+  .brand-mark {
+    width: 32px; height: 32px;
+    background: linear-gradient(135deg, var(--accent), var(--accent-2));
+    border-radius: 8px;
+    display: grid; place-items: center;
+    color: white; font-size: 13px; font-weight: 700;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    letter-spacing: -0.02em;
+  }
+  .brand-1 { font-size: 13.5px; font-weight: 600; letter-spacing: -0.01em; color: var(--text); }
+  .brand-2 { font-size: 10.5px; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; display: block; }
+
+  .h-nav { display: flex; gap: 2px; align-items: center; }
+  .h-tab {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 7px 13px;
+    color: var(--text-2);
+    font-size: 13px; font-weight: 500;
+    border-radius: 7px;
+    cursor: pointer; text-decoration: none;
+    white-space: nowrap;
+    transition: background 120ms ease, color 120ms ease;
+    background: transparent; border: none;
+    font-family: inherit;
+  }
+  .h-tab:hover { color: var(--text); background: var(--hover); }
+  .h-tab.active { color: var(--accent); background: var(--accent-bg); font-weight: 600; }
+  .h-tab .h-icon { font-size: 14px; opacity: 0.85; }
+  .h-tab .h-count {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10px;
+    padding: 1px 5px;
+    background: var(--surface-2);
+    color: var(--text-3);
+    border-radius: 3px;
+    font-weight: 500;
+    letter-spacing: 0.02em;
+    margin-left: 2px;
+  }
+  .h-tab.active .h-count { background: var(--accent); color: white; }
+
+  .header-right { display: flex; gap: 8px; align-items: center; }
+  .util-btn {
+    height: 32px; width: 32px;
+    display: grid; place-items: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text-2); cursor: pointer;
+    font-size: 13.5px;
+    transition: color 120ms ease, border-color 120ms ease;
+    position: relative;
+  }
+  .util-btn:hover { color: var(--text); border-color: var(--border-2); }
+  .util-btn .util-label {
+    position: absolute; bottom: -22px; left: 50%; transform: translateX(-50%);
+    font-size: 9.5px; letter-spacing: 0.08em; text-transform: uppercase;
+    color: var(--text-3); white-space: nowrap;
+    opacity: 0; transition: opacity 160ms ease;
+    pointer-events: none;
+  }
+  .util-btn:hover .util-label { opacity: 1; }
+  .theme-btn {
+    display: flex; align-items: center; gap: 6px;
+    height: 32px; padding: 0 12px;
+    background: transparent;
+    border: 1px solid var(--border);
+    border-radius: 6px;
+    color: var(--text);
+    font-size: 11.5px; font-weight: 500;
+    cursor: pointer;
+    font-family: inherit;
+    transition: border-color 120ms ease;
+  }
+  .theme-btn:hover { border-color: var(--accent); }
+  .theme-btn .th-mode { color: var(--accent); font-weight: 600; text-transform: uppercase; letter-spacing: 0.05em; font-size: 10.5px; }
+
+  /* ─── BODY LAYOUT ────────────────────────────────────────────────── */
+  .body { display: grid; grid-template-columns: 220px 1fr; height: calc(100vh - 60px); }
+  .rail {
+    background: var(--surface);
+    border-right: 1px solid var(--border);
+    overflow-y: auto;
+    padding: 24px 0;
+  }
+  .rail-context {
+    padding: 0 22px 16px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 8px;
+  }
+  .rail-context-tab {
+    font-size: 10px; letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-3); font-weight: 500; margin-bottom: 4px;
+  }
+  .rail-context-title {
+    font-size: 15px; font-weight: 600; color: var(--text); letter-spacing: -0.01em;
+    display: flex; align-items: center; gap: 6px;
+  }
+  .rail-context-desc {
+    font-size: 11.5px; color: var(--text-2); margin-top: 4px; line-height: 1.5;
+  }
+  .rail-title {
+    padding: 14px 22px 6px;
+    font-size: 10px;
+    letter-spacing: 0.14em; text-transform: uppercase;
+    color: var(--text-3); font-weight: 500;
+  }
+  .rail-item {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 22px;
+    color: var(--text-2);
+    font-size: 12.5px;
+    text-decoration: none;
+    cursor: pointer;
+    transition: color 120ms ease, background 120ms ease;
+    position: relative;
+    font-family: inherit; background: transparent; border: none; width: 100%; text-align: left;
+  }
+  .rail-item:hover { color: var(--text); background: var(--hover); }
+  .rail-item.on {
+    color: var(--accent);
+    font-weight: 600;
+    background: var(--accent-bg);
+  }
+  .rail-item.on::before {
+    content: ""; position: absolute; left: 0; top: 7px; bottom: 7px;
+    width: 3px; background: var(--accent); border-radius: 0 2px 2px 0;
+  }
+  .rail-item .rail-icon { display: inline-block; width: 14px; text-align: center; opacity: 0.75; }
+  .rail-item .rail-count {
+    margin-left: auto;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 10.5px;
+    color: var(--text-3);
+  }
+  .rail-item.on .rail-count { color: var(--accent); font-weight: 600; }
+  .live-dot { width: 5px; height: 5px; background: var(--bull); border-radius: 50%; margin-left: auto; animation: pulse 1.6s ease-in-out infinite; }
+  @keyframes pulse { 0%, 100% { opacity: 1; } 50% { opacity: 0.35; } }
+
+  .rail-footer {
+    margin-top: 30px;
+    padding: 16px 22px;
+    border-top: 1px solid var(--border);
+    display: flex; flex-direction: column; gap: 4px;
+  }
+  .rail-footer-link {
+    display: flex; align-items: center; gap: 10px;
+    padding: 5px 0;
+    color: var(--text-3);
+    font-size: 11.5px;
+    text-decoration: none;
+    cursor: pointer;
+    background: transparent; border: none; font-family: inherit;
+    transition: color 120ms ease;
+  }
+  .rail-footer-link:hover { color: var(--text); }
+  .rail-footer-link .rf-icon { opacity: 0.6; }
+
+  /* ─── CANVAS + reuse Option B styles from earlier ────────────────── */
+  .canvas { overflow-y: auto; padding: 32px 40px; }
+  .page-head {
+    display: flex; justify-content: space-between; align-items: flex-start;
+    padding-bottom: 24px;
+    border-bottom: 1px solid var(--border);
+    margin-bottom: 28px;
+    gap: 24px;
+  }
+  .page-title { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); margin-bottom: 4px; }
+  .page-title .live-tag {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-size: 11px; font-weight: 600;
+    color: var(--bear);
+    letter-spacing: 0.06em; text-transform: uppercase;
+    margin-left: 10px;
+    padding: 3px 8px;
+    background: rgba(244,63,94,0.10);
+    border-radius: 4px;
+    vertical-align: 6px;
+  }
+  .page-live-dot { width: 6px; height: 6px; background: var(--bear); border-radius: 50%; animation: pulse 1.4s infinite; }
+  .page-desc { font-size: 13px; color: var(--text-2); max-width: 780px; line-height: 1.6; }
+  .btn-row { display: flex; gap: 8px; flex-shrink: 0; }
+  .btn {
+    height: 34px; padding: 0 14px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    color: var(--text);
+    font-size: 12.5px; font-weight: 500;
+    border-radius: 8px;
+    cursor: pointer;
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: inherit;
+    transition: background 120ms ease, border-color 120ms ease;
+  }
+  .btn:hover { border-color: var(--border-2); background: var(--surface-2); }
+  .btn-primary { background: var(--accent); border-color: var(--accent); color: white; }
+  .btn-primary:hover { background: var(--accent-2); border-color: var(--accent-2); }
+
+  .hero { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 28px; }
+  .kpi {
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-radius: 12px;
+    padding: 18px 20px;
+    position: relative;
+    overflow: hidden;
+  }
+  .kpi.hero-accent { border-color: var(--accent); background: linear-gradient(180deg, var(--accent-bg), var(--surface)); }
+  .kpi.hero-bull { border-color: var(--bull); background: linear-gradient(180deg, rgba(34,197,94,0.06), var(--surface)); }
+  :root[data-theme="light"] .kpi.hero-bull { background: linear-gradient(180deg, rgba(21,128,61,0.06), var(--surface)); }
+  .kpi-label { font-size: 10.5px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--text-3); font-weight: 500; margin-bottom: 10px; }
+  .kpi-num { font-size: 28px; font-weight: 600; letter-spacing: -0.02em; color: var(--text); font-variant-numeric: tabular-nums; line-height: 1.15; }
+  .kpi-num.bull { color: var(--bull); }
+  .kpi-num.bear { color: var(--bear); }
+  .kpi-num.accent { color: var(--accent); }
+  .kpi-num.elite { color: var(--elite); }
+  .kpi-sub { font-size: 11.5px; color: var(--text-2); margin-top: 6px; font-family: ui-monospace, "SF Mono", Menlo, monospace; letter-spacing: 0.02em; }
+  .kpi-sub .up { color: var(--bull); }
+  .kpi-sub .dn { color: var(--bear); }
+
+  .toolbar { display: flex; justify-content: space-between; align-items: center; padding: 4px 0 16px; flex-wrap: wrap; gap: 12px; }
+  .filter-group { display: flex; gap: 5px; flex-wrap: wrap; }
+  .filter-chip {
+    display: inline-flex; align-items: baseline; gap: 6px;
+    padding: 6px 12px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--text-2); font-size: 12px; font-weight: 500;
+    border-radius: 20px; cursor: pointer; font-family: inherit;
+    transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  }
+  .filter-chip:hover { color: var(--text); }
+  .filter-chip.on { background: var(--accent-bg); border-color: var(--accent); color: var(--accent); font-weight: 600; }
+  .filter-chip .fc-n { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; color: var(--text-3); }
+  .filter-chip.on .fc-n { color: var(--accent); }
+  .toolbar-right { display: flex; gap: 12px; align-items: center; font-size: 12px; color: var(--text-3); }
+  .toolbar-right b { color: var(--text); font-weight: 500; }
+
+  .table-card { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  /* 2026-07-18 — NO horizontal scroll. Table always fits its container. */
+  .table-x { max-height: 65vh; overflow-y: auto; overflow-x: hidden; }
+  .grid { width: 100%; border-collapse: separate; border-spacing: 0; table-layout: fixed; }
+  .grid col.w-symbol   { width: 14%; }
+  .grid col.w-status   { width: 10%; }
+  .grid col.w-conv     { width: 6%; }
+  .grid col.w-ltp      { width: 9%; }
+  .grid col.w-plan     { width: 22%; }
+  .grid col.w-horizon  { width: 10%; }
+  .grid col.w-why      { width: 29%; }
+  .grid col.w-sm-plan  { width: 20%; }
+  .grid col.w-sm-share { width: 22%; }
+  .grid col.w-sm-ctx   { width: 12%; }
+  .grid th {
+    text-align: left; padding: 14px 14px;
+    background: var(--surface); border-bottom: 1px solid var(--border);
+    font-size: 10.5px; font-weight: 500; color: var(--text-3);
+    letter-spacing: 0.08em; text-transform: uppercase;
+    white-space: nowrap; position: sticky; top: 0; z-index: 2;
+  }
+  .grid td { padding: 16px 14px; border-bottom: 1px solid var(--border); font-size: 13px; vertical-align: middle; }
+  .grid tr:last-child td { border-bottom: none; }
+  .grid tr:hover td { background: var(--stripe); }
+  .grid tr.elite td { background: rgba(245,158,11,0.03); }
+  .grid tr.elite td:first-child { box-shadow: inset 3px 0 0 var(--elite); }
+  .r-right { text-align: right; }
+  .r-center { text-align: center; }
+
+  .sym-cell {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 13.5px; font-weight: 600; color: var(--text);
+    letter-spacing: 0.01em; display: flex; align-items: center; gap: 8px;
+  }
+  .dir-pill { display: inline-flex; align-items: center; gap: 4px; padding: 3px 10px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; font-weight: 600; letter-spacing: 0.06em; border-radius: 4px; }
+  .dir-pill.buy { background: rgba(34,197,94,0.13); color: var(--bull); }
+  .dir-pill.sell { background: rgba(244,63,94,0.13); color: var(--bear); }
+  :root[data-theme="light"] .dir-pill.buy { background: rgba(21,128,61,0.11); }
+  :root[data-theme="light"] .dir-pill.sell { background: rgba(185,28,28,0.10); }
+  .conv-badge { display: inline-flex; align-items: center; justify-content: center; min-width: 36px; height: 24px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; font-weight: 700; letter-spacing: -0.01em; background: var(--accent-bg); color: var(--accent); border-radius: 4px; padding: 0 6px; }
+  .conv-badge.mid { background: rgba(245,158,11,0.14); color: var(--warn); }
+  .num-cell { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--text); font-size: 13px; }
+  .num-cell.bull { color: var(--bull); }
+  .num-cell.bear { color: var(--bear); }
+  .why-cell { color: var(--text-2); font-size: 12.5px; line-height: 1.5; max-width: 400px; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; }
+  .src-tag { display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; background: var(--surface-2); border: 1px solid var(--border); border-radius: 4px; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10px; font-weight: 500; color: var(--text-2); letter-spacing: 0.03em; }
+  .src-tag.pro { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .src-tag.ped { background: rgba(245,158,11,0.12); color: var(--warn); border-color: var(--warn); }
+  .double-badge { display: inline-flex; align-items: center; gap: 4px; padding: 2px 6px; background: linear-gradient(135deg, var(--elite), #EA580C); color: white; font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em; border-radius: 3px; }
+
+  /* ─── STATUS TAGS · 2026-07-18 ─────────────────────────────────── */
+  /* Every row has ONE status telling the trader "what's happening right now" */
+  .status-tag {
+    display: inline-flex; align-items: center; gap: 3px;
+    padding: 3px 8px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 9.5px;
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    border-radius: 4px;
+    text-transform: uppercase;
+    white-space: nowrap;
+  }
+  .status-tag.new       { background: #16A34A; color: white; box-shadow: 0 0 0 1px rgba(22,163,74,0.35); }
+  .status-tag.live      { background: var(--accent); color: white; }
+  .status-tag.waiting   { background: var(--surface-2); color: var(--text-2); border: 1px solid var(--border-2); }
+  .status-tag.t1-hit    { background: #3B82F6; color: white; }
+  .status-tag.t2-hit    { background: #14B8A6; color: white; }
+  .status-tag.t3-hit    { background: linear-gradient(135deg, #F59E0B, #EA580C); color: white; box-shadow: 0 0 0 1px rgba(245,158,11,0.35); }
+  .status-tag.sl-hit    { background: var(--bear); color: white; }
+  .status-tag.expired   { background: var(--surface-2); color: var(--text-3); border: 1px solid var(--border); }
+  :root[data-theme="light"] .status-tag.waiting { background: #F0EEE8; color: #5A6270; }
+
+  /* Compact trade plan cell — 2 stacked lines, mono numbers */
+  .plan-mini {
+    display: grid;
+    grid-template-columns: auto auto auto;
+    gap: 3px 12px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    align-items: baseline;
+  }
+  .plan-mini .lbl {
+    font-size: 9.5px;
+    color: var(--text-3);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .plan-mini .val { color: var(--text); font-weight: 500; }
+  .plan-mini .val.bear { color: var(--bear); }
+  .plan-mini .val.bull { color: var(--bull); }
+  .plan-mini .pct {
+    font-size: 10px;
+    color: var(--text-3);
+  }
+  .plan-mini .pct.bear { color: var(--bear); }
+  .plan-mini .pct.bull { color: var(--bull); }
+
+  /* Compact ₹Cr row (Smart Money) */
+  .cr-mini {
+    display: grid;
+    grid-template-columns: 1fr 1fr 1fr 1fr;
+    gap: 3px 8px;
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+  }
+  .cr-mini .cr-lbl { font-size: 9px; color: var(--text-3); letter-spacing: 0.06em; text-transform: uppercase; }
+  .cr-mini .cr-val { color: var(--text); font-weight: 500; }
+  .cr-mini .cr-val.bull { color: var(--bull); }
+
+  /* Sub-line for LTP delta / horizon */
+  .stack-2 { display: flex; flex-direction: column; gap: 3px; }
+  .stack-2 .l1 { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13px; color: var(--text); font-weight: 500; }
+  .stack-2 .l2 { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; color: var(--text-3); }
+  .stack-2 .l2.bull { color: var(--bull); }
+  .stack-2 .l2.bear { color: var(--bear); }
+
+  /* Sources stack under symbol */
+  .sym-stack .sym-line { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 13.5px; font-weight: 600; color: var(--text); letter-spacing: 0.01em; display: flex; align-items: center; gap: 6px; }
+  .sym-stack .src-line { display: flex; gap: 3px; flex-wrap: wrap; margin-top: 4px; }
+  .sym-stack .src-mini {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 9px; font-weight: 500;
+    padding: 1px 5px;
+    border-radius: 2px;
+    background: var(--surface-2);
+    color: var(--text-2);
+    border: 1px solid var(--border);
+    letter-spacing: 0.03em;
+  }
+  .sym-stack .src-mini.pro { background: var(--accent-bg); color: var(--accent); border-color: var(--accent); }
+  .sym-stack .src-mini.smart { background: rgba(245,158,11,0.12); color: var(--warn); border-color: var(--warn); }
+
+  /* Status column stacks direction pill + status tag */
+  .status-stack { display: flex; flex-direction: column; gap: 4px; align-items: flex-start; }
+
+  /* Horizon column — days + tiny progress */
+  .horiz-cell { display: flex; flex-direction: column; gap: 4px; }
+  .horiz-cell .h-days { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 12px; color: var(--text); font-weight: 500; }
+  .horiz-cell .h-bar { height: 3px; background: var(--border); border-radius: 2px; position: relative; overflow: hidden; }
+  .horiz-cell .h-bar::after { content: ""; position: absolute; inset: 0; background: var(--accent); border-radius: 2px; transform-origin: left; }
+  .horiz-cell .h-bar[data-p="0"]::after { transform: scaleX(0); }
+  .horiz-cell .h-bar[data-p="20"]::after { transform: scaleX(0.20); }
+  .horiz-cell .h-bar[data-p="35"]::after { transform: scaleX(0.35); }
+  .horiz-cell .h-bar[data-p="50"]::after { transform: scaleX(0.50); }
+  .horiz-cell .h-bar[data-p="65"]::after { transform: scaleX(0.65); }
+  .horiz-cell .h-bar[data-p="80"]::after { transform: scaleX(0.80); }
+  .horiz-cell .h-bar[data-p="100"]::after { transform: scaleX(1.00); background: var(--bull); }
+  .horiz-cell .h-bar.stopped[data-p="100"]::after { background: var(--bear); }
+  .horiz-cell .h-when { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10px; color: var(--text-3); }
+
+  /* Load-more strip */
+  .load-more-strip {
+    padding: 18px 24px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    border-top: 1px solid var(--border);
+    background: var(--surface);
+    flex-wrap: wrap;
+    gap: 12px;
+  }
+  .showing-count {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11.5px;
+    color: var(--text-2);
+    letter-spacing: 0.02em;
+  }
+  .showing-count b { color: var(--text); font-weight: 600; }
+  .showing-count .accent { color: var(--accent); font-weight: 600; }
+  .load-more-actions { display: flex; gap: 8px; align-items: center; }
+  .page-info {
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 11px;
+    color: var(--text-3);
+    padding: 0 8px;
+  }
+  .load-more-btn {
+    padding: 8px 18px;
+    background: var(--accent-bg);
+    border: 1px solid var(--accent);
+    color: var(--accent);
+    font-family: inherit;
+    font-size: 12px;
+    font-weight: 600;
+    border-radius: 8px;
+    cursor: pointer;
+    transition: background 120ms ease, color 120ms ease;
+    letter-spacing: 0.01em;
+  }
+  .load-more-btn:hover { background: var(--accent); color: white; }
+  .page-btn {
+    width: 32px; height: 32px;
+    display: grid; place-items: center;
+    background: transparent;
+    border: 1px solid var(--border);
+    color: var(--text-2);
+    font-family: ui-monospace, "SF Mono", Menlo, monospace;
+    font-size: 12px;
+    border-radius: 6px;
+    cursor: pointer;
+  }
+  .page-btn:hover { color: var(--text); border-color: var(--border-2); }
+  .page-btn.on { background: var(--accent); color: white; border-color: var(--accent); }
+
+  /* Section label between blocks */
+  .section-label { font-size: 11px; color: var(--text-3); letter-spacing: 0.1em; text-transform: uppercase; font-weight: 500; margin: 8px 0 12px; }
+
+  /* NIFTY dashboard blocks */
+  .n-hero { display: grid; grid-template-columns: 1.4fr 1fr 1fr; gap: 16px; margin-bottom: 20px; }
+  .n-hero .kpi.big { padding: 24px 26px; }
+  .n-hero .kpi-num.big { font-size: 40px; line-height: 1; }
+  .conf-pill { display: inline-block; margin-top: 12px; padding: 4px 10px; background: var(--accent-bg); color: var(--accent); font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 10.5px; font-weight: 700; letter-spacing: 0.1em; border-radius: 4px; }
+  .conf-pill.high { background: rgba(34,197,94,0.14); color: var(--bull); }
+  .plan-bar { display: grid; grid-template-columns: repeat(6, 1fr); background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 18px 0; margin-bottom: 24px; }
+  .plan-slot { padding: 0 20px; border-right: 1px solid var(--border); }
+  .plan-slot:last-child { border-right: none; }
+  .plan-slot-label { font-size: 10px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--text-3); margin-bottom: 4px; font-weight: 500; }
+  .plan-slot-val { font-family: ui-monospace, "SF Mono", Menlo, monospace; font-size: 16px; font-weight: 600; color: var(--text); }
+  .plan-slot-val.bull { color: var(--bull); }
+  .plan-slot-val.bear { color: var(--bear); }
+  .plan-slot-note { font-size: 10.5px; color: var(--text-3); margin-top: 2px; font-family: ui-monospace, "SF Mono", Menlo, monospace; }
+  .reason-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 14px; margin-bottom: 24px; }
+  .reason-card { background: var(--surface); border: 1px solid var(--border); border-radius: 10px; padding: 16px 18px; }
+  .reason-card h4 { font-size: 11.5px; color: var(--accent); letter-spacing: 0.06em; text-transform: uppercase; font-weight: 600; margin-bottom: 10px; }
+  .reason-card ul { list-style: none; padding: 0; }
+  .reason-card li { font-size: 12.5px; color: var(--text-2); line-height: 1.5; padding-left: 14px; position: relative; margin-bottom: 5px; }
+  .reason-card li::before { content: "→"; color: var(--accent); position: absolute; left: 0; opacity: 0.6; }
+
+  .view { display: none; }
+  .view.on { display: block; }
+
+  /* Notice banner for design proposal */
+  .proposal-note {
+    background: var(--accent-bg);
+    border: 1px solid var(--accent);
+    border-radius: 10px;
+    padding: 14px 18px;
+    margin-bottom: 20px;
+    color: var(--text);
+    font-size: 12.5px;
+    display: flex;
+    gap: 12px;
+    align-items: flex-start;
+  }
+  .proposal-note b { color: var(--accent); font-weight: 600; }
+  .proposal-note-icon { font-size: 16px; color: var(--accent); }
+
+  ::-webkit-scrollbar { width: 8px; height: 8px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb { background: var(--border-2); border-radius: 4px; }
+  ::-webkit-scrollbar-thumb:hover { background: var(--text-3); }
+  :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; border-radius: 4px; }
+  @media (prefers-reduced-motion: reduce) { * { transition: none !important; animation: none !important; } }
+</style>
+</head>
+<body>
+
+<div class="app">
+
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <!-- HEADER · consolidated 8-tab nav                                   -->
+  <!-- ═══════════════════════════════════════════════════════════════ -->
+  <header class="header">
+    <div class="brand">
+      <div class="brand-mark">tv</div>
+      <div>
+        <span class="brand-1">tradewithvarsha</span>
+        <span class="brand-2">Command Center</span>
+      </div>
+    </div>
+
+    <nav class="h-nav">
+      <button class="h-tab active" onclick="switchView('master', event)"><span class="h-icon">✦</span>Master <span class="h-count">42</span></button>
+      <button class="h-tab" onclick="switchView('nifty', event)"><span class="h-icon">🧭</span>NIFTY</button>
+      <button class="h-tab" onclick="switchView('patterns', event)"><span class="h-icon">📐</span>Chart Patterns <span class="h-count">179</span></button>
+      <button class="h-tab" onclick="switchView('harmonic', event)"><span class="h-icon">∿</span>Harmonic <span class="h-count">14</span></button>
+      <button class="h-tab" onclick="switchView('elliott', event)"><span class="h-icon">⋀</span>Elliott</button>
+      <button class="h-tab" onclick="switchView('technicals', event)"><span class="h-icon">📊</span>Technicals <span class="h-count">42</span></button>
+      <button class="h-tab" onclick="switchView('swings', event)"><span class="h-icon">🌱</span>Swings <span class="h-count">24</span></button>
+      <button class="h-tab" onclick="switchView('smart', event)"><span class="h-icon">⛰</span>Smart Money <span class="h-count">57</span></button>
+    </nav>
+
+    <div class="header-right">
+      <button class="util-btn" title="Track Record">📈<span class="util-label">Track</span></button>
+      <button class="util-btn" title="Archive">🗄<span class="util-label">Archive</span></button>
+      <button class="util-btn" title="Backtest">🧾<span class="util-label">Backtest</span></button>
+      <button class="util-btn" title="Ask AI">💬<span class="util-label">Ask AI</span></button>
+      <button class="util-btn" title="Alerts">🔔<span class="util-label">Alerts</span></button>
+      <button class="theme-btn" id="themeBtn">
+        <span id="themeIcon">◐</span>
+        <span>Theme</span>
+        <span class="th-mode" id="themeLabel">DARK</span>
+      </button>
+    </div>
+  </header>
+
+  <div class="body">
+
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <!-- LEFT RAIL · contextual sub-nav for the current top tab         -->
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <aside class="rail" id="railHost">
+
+      <!-- Rail · MASTER -->
+      <div class="rail-set" id="rail-master">
+        <div class="rail-context">
+          <div class="rail-context-tab">Current tab</div>
+          <div class="rail-context-title">✦ Master</div>
+          <div class="rail-context-desc">Every pre-move, high-quality setup — combined and sorted by confluence × conviction.</div>
+        </div>
+        <div class="rail-title">View</div>
+        <button class="rail-item on"><span class="rail-icon">◉</span>All setups<span class="rail-count">42</span></button>
+        <button class="rail-item"><span class="rail-icon">🔥</span>Elite · multi-source<span class="rail-count">4</span></button>
+        <button class="rail-item"><span class="rail-icon">🌟</span>Superstar-backed<span class="rail-count">8</span></button>
+        <button class="rail-item"><span class="rail-icon">🚀</span>Early Move<span class="rail-count">12</span></button>
+        <button class="rail-item"><span class="rail-icon">◈</span>Pre-breakout<span class="rail-count">18</span></button>
+
+        <div class="rail-title">Horizon</div>
+        <button class="rail-item"><span class="rail-icon">⚡</span>Intraday</button>
+        <button class="rail-item"><span class="rail-icon">☀</span>Daily (1-15 d)<span class="rail-count">6</span></button>
+        <button class="rail-item"><span class="rail-icon">📅</span>Weekly (1-4 w)<span class="rail-count">18</span></button>
+        <button class="rail-item"><span class="rail-icon">🗓</span>Positional (1-3 m)<span class="rail-count">12</span></button>
+
+        <div class="rail-title">Instrument</div>
+        <button class="rail-item"><span class="rail-icon">◫</span>Equity<span class="rail-count">36</span></button>
+        <button class="rail-item"><span class="rail-icon">▤</span>Options<span class="rail-count">3</span></button>
+        <button class="rail-item"><span class="rail-icon">▥</span>Futures<span class="rail-count">3</span></button>
+      </div>
+
+      <!-- Rail · NIFTY -->
+      <div class="rail-set" id="rail-nifty" style="display:none">
+        <div class="rail-context">
+          <div class="rail-context-tab">Current tab</div>
+          <div class="rail-context-title">🧭 NIFTY</div>
+          <div class="rail-context-desc">Index-level composite bias, Volume Profile, OI positioning, playbook — one dashboard.</div>
+        </div>
+        <div class="rail-title">Panels</div>
+        <button class="rail-item on"><span class="rail-icon">◉</span>Composite Bias<span class="live-dot"></span></button>
+        <button class="rail-item"><span class="rail-icon">📊</span>Volume Profile · 8 TFs</button>
+        <button class="rail-item"><span class="rail-icon">🔁</span>OI Build-up · Multi-expiry</button>
+        <button class="rail-item"><span class="rail-icon">🎯</span>Operator Playbook</button>
+        <button class="rail-item"><span class="rail-icon">📜</span>History Rhymes</button>
+        <button class="rail-item"><span class="rail-icon">▦</span>Sectors</button>
+
+        <div class="rail-title">Timeframe (VP)</div>
+        <button class="rail-item"><span class="rail-icon">·</span>5m</button>
+        <button class="rail-item"><span class="rail-icon">·</span>15m</button>
+        <button class="rail-item"><span class="rail-icon">·</span>1h</button>
+        <button class="rail-item"><span class="rail-icon">·</span>1D</button>
+      </div>
+
+      <!-- Rail · CHART PATTERNS -->
+      <div class="rail-set" id="rail-patterns" style="display:none">
+        <div class="rail-context">
+          <div class="rail-context-tab">Current tab</div>
+          <div class="rail-context-title">📐 Chart Patterns</div>
+          <div class="rail-context-desc">Classical TA pattern scanner · NIFTY-500 × Daily/Weekly · measured-move targets.</div>
+        </div>
+        <div class="rail-title">Pattern family</div>
+        <button class="rail-item on"><span class="rail-icon">◉</span>All patterns<span class="rail-count">179</span></button>
+        <button class="rail-item"><span class="rail-icon">△</span>Head & Shoulders<span class="rail-count">24</span></button>
+        <button class="rail-item"><span class="rail-icon">▽</span>Double Top / Bottom<span class="rail-count">31</span></button>
+        <button class="rail-item"><span class="rail-icon">◁</span>Triangles<span class="rail-count">42</span></button>
+        <button class="rail-item"><span class="rail-icon">▷</span>Flag / Pennant<span class="rail-count">18</span></button>
+        <button class="rail-item"><span class="rail-icon">◇</span>Wedge<span class="rail-count">22</span></button>
+        <button class="rail-item"><span class="rail-icon">◊</span>Cup & Handle<span class="rail-count">14</span></button>
+        <button class="rail-item"><span class="rail-icon">▤</span>Candlesticks<span class="rail-count">28</span></button>
+
+        <div class="rail-title">Timeframe</div>
+        <button class="rail-item"><span class="rail-icon">·</span>Daily<span class="rail-count">127</span></button>
+        <button class="rail-item"><span class="rail-icon">·</span>Weekly<span class="rail-count">52</span></button>
+      </div>
+
+      <!-- Rail · HARMONIC -->
+      <div class="rail-set" id="rail-harmonic" style="display:none">
+        <div class="rail-context">
+          <div class="rail-context-tab">Current tab</div>
+          <div class="rail-context-title">∿ Harmonic</div>
+          <div class="rail-context-desc">Fibonacci-based harmonic pattern scanner · PRZ + invalidation levels per hit.</div>
+        </div>
+        <div class="rail-title">Pattern</div>
+        <button class="rail-item on"><span class="rail-icon">◉</span>All harmonics<span class="rail-count">14</span></button>
+        <button class="rail-item"><span class="rail-icon">▲</span>Gartley<span class="rail-count">4</span></button>
+        <button class="rail-item"><span class="rail-icon">▼</span>Bat<span class="rail-count">3</span></button>
+        <button class="rail-item"><span class="rail-icon">◆</span>Butterfly<span class="rail-count">2</span></button>
+        <button class="rail-item"><span class="rail-icon">◈</span>Crab<span class="rail-count">2</span></button>
+        <button class="rail-item"><span class="rail-icon">◇</span>Shark<span class="rail-count">2</span></button>
+        <button class="rail-item"><span class="rail-icon">▷</span>Cypher<span class="rail-count">1</span></button>
+
+        <div class="rail-title">Tier</div>
+        <button class="rail-item"><span class="rail-icon">·</span>Positional (NSE_ALL)</button>
+        <button class="rail-item"><span class="rail-icon">·</span>Hourly (CNX500)</button>
+        <button class="rail-item"><span class="rail-icon">·</span>Intraday (top-200)</button>
+      </div>
+
+      <!-- Rail · ELLIOTT -->
+      <div class="rail-set" id="rail-elliott" style="display:none">
+        <div class="rail-context">
+          <div class="rail-context-tab">Current tab</div>
+          <div class="rail-context-title">⋀ Elliott Wave</div>
+          <div class="rail-context-desc">Impulsive and corrective wave counts on NIFTY-500 stocks, weekly and daily.</div>
+        </div>
+        <div class="rail-title">Wave type</div>
+        <button class="rail-item on"><span class="rail-icon">◉</span>All counts</button>
+        <button class="rail-item"><span class="rail-icon">↑</span>Impulse 1-2-3-4-5</button>
+        <button class="rail-item"><span class="rail-icon">↓</span>Corrective A-B-C</button>
+        <button class="rail-item"><span class="rail-icon">∿</span>Neo Wave (Neely)</button>
+        <button class="rail-item"><span class="rail-icon">✧</span>Extensions</button>
+
+        <div class="rail-title">Position in count</div>
+        <button class="rail-item"><span class="rail-icon">·</span>Wave 3 setups (best-R)</button>
+        <button class="rail-item"><span class="rail-icon">·</span>Wave 5 endings</button>
+        <button class="rail-item"><span class="rail-icon">·</span>ABC completed</button>
+      </div>
+
+      <!-- Rail · TECHNICALS -->
+      <div class="rail-set" id="rail-technicals" style="display:none">
+        <div class="rail-context">
+          <div class="rail-context-tab">Current tab</div>
+          <div class="rail-context-title">📊 Technicals</div>
+          <div class="rail-context-desc">Stock Volume Profile (all F&amp;O + top NSE) + Fibonacci retracements / extensions.</div>
+        </div>
+        <div class="rail-title">Tool</div>
+        <button class="rail-item on"><span class="rail-icon">◉</span>All setups<span class="rail-count">42</span></button>
+        <button class="rail-item"><span class="rail-icon">📊</span>Volume Profile<span class="rail-count">28</span></button>
+        <button class="rail-item"><span class="rail-icon">φ</span>Fibonacci Retrace<span class="rail-count">10</span></button>
+        <button class="rail-item"><span class="rail-icon">Φ</span>Fibonacci Extension<span class="rail-count">4</span></button>
+
+        <div class="rail-title">VP setup family</div>
+        <button class="rail-item"><span class="rail-icon">·</span>VA Rotation<span class="rail-count">12</span></button>
+        <button class="rail-item"><span class="rail-icon">·</span>VA Breakout<span class="rail-count">6</span></button>
+        <button class="rail-item"><span class="rail-icon">·</span>HVN Reject<span class="rail-count">4</span></button>
+        <button class="rail-item"><span class="rail-icon">·</span>LVN Slice<span class="rail-count">3</span></button>
+        <button class="rail-item"><span class="rail-icon">·</span>Failed Auction<span class="rail-count">3</span></button>
+      </div>
+
+      <!-- Rail · SWINGS -->
+      <div class="rail-set" id="rail-swings" style="display:none">
+        <div class="rail-context">
+          <div class="rail-context-tab">Current tab</div>
+          <div class="rail-context-title">🌱 Swings</div>
+          <div class="rail-context-desc">All horizon-based signals — Pre-Move, Weekly, Daily, Positional — under one roof.</div>
+        </div>
+        <div class="rail-title">Horizon</div>
+        <button class="rail-item"><span class="rail-icon">◈</span>Pre-Move (pre-breakout)<span class="rail-count">6</span></button>
+        <button class="rail-item on"><span class="rail-icon">📅</span>Weekly (1-4 w)<span class="rail-count">18</span></button>
+        <button class="rail-item"><span class="rail-icon">☀</span>Daily (1-15 d)<span class="rail-count">6</span></button>
+        <button class="rail-item"><span class="rail-icon">🗓</span>Positional (1-3 m)</button>
+        <button class="rail-item"><span class="rail-icon">🚀</span>Multibagger (6-24 m)</button>
+
+        <div class="rail-title">Setup</div>
+        <button class="rail-item"><span class="rail-icon">·</span>VCP / tight base</button>
+        <button class="rail-item"><span class="rail-icon">·</span>Volume dry-up</button>
+        <button class="rail-item"><span class="rail-icon">·</span>Wyckoff spring</button>
+        <button class="rail-item"><span class="rail-icon">·</span>Old Weekly (legacy logic)</button>
+      </div>
+
+      <!-- Rail · SMART MONEY -->
+      <div class="rail-set" id="rail-smart" style="display:none">
+        <div class="rail-context">
+          <div class="rail-context-tab">Current tab</div>
+          <div class="rail-context-title">⛰ Smart Money</div>
+          <div class="rail-context-desc">Institutional footprint · Insider filings, superstar holdings, bulk deals, volume accumulation.</div>
+        </div>
+        <div class="rail-title">Source</div>
+        <button class="rail-item on"><span class="rail-icon">◉</span>All footprints<span class="rail-count">57</span></button>
+        <button class="rail-item"><span class="rail-icon">🕵</span>Insider Buys (PIT + SAST)<span class="rail-count">21</span></button>
+        <button class="rail-item"><span class="rail-icon">🌟</span>Superstar Holdings<span class="rail-count">14</span></button>
+        <button class="rail-item"><span class="rail-icon">📡</span>Bulk Deals<span class="rail-count">18</span></button>
+        <button class="rail-item"><span class="rail-icon">📈</span>Volume Accumulation<span class="rail-count">28</span></button>
+        <button class="rail-item"><span class="rail-icon">💎</span>Pedigree (FII/DII/P↑)<span class="rail-count">12</span></button>
+        <button class="rail-item"><span class="rail-icon">🧮</span>OBV Divergence<span class="rail-count">9</span></button>
+
+        <div class="rail-title">Tier</div>
+        <button class="rail-item"><span class="rail-icon">·</span>🔥 STRONG<span class="rail-count">6</span></button>
+        <button class="rail-item"><span class="rail-icon">·</span>Regular</button>
+      </div>
+
+      <div class="rail-footer">
+        <button class="rail-footer-link"><span class="rf-icon">⚙</span>Settings</button>
+        <button class="rail-footer-link"><span class="rf-icon">💬</span>Ask AI · what to trade?</button>
+        <button class="rail-footer-link"><span class="rf-icon">🔔</span>Notifications</button>
+      </div>
+
+    </aside>
+
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <!-- CANVAS                                                          -->
+    <!-- ═════════════════════════════════════════════════════════════ -->
+    <div class="canvas">
+
+      <!-- Design-proposal notice at top -->
+      <div class="proposal-note">
+        <span class="proposal-note-icon">✦</span>
+        <div>
+          <b>Consolidated nav proposal · 28 tabs → 8.</b> Every tab you previously used is still here, just organised by <b>what job it does</b>, not by which engine produced it. Left rail switches sub-views. Utility icons top-right for Track Record / Archive / Backtest / Ask AI.
+        </div>
+      </div>
+
+      <!-- ─── VIEW · MASTER ────────────────────────────────────────── -->
+      <div class="view on" id="v-master">
+        <div class="page-head">
+          <div>
+            <h1 class="page-title">✦ Master</h1>
+            <p class="page-desc">Every high-quality setup, combined across engines and sorted by <b>confluence × conviction</b>. This is your morning-coffee tab — if a signal isn't strong enough to make it here, it doesn't need your attention today.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn">↓ CSV</button>
+            <button class="btn">↓ PDF</button>
+            <button class="btn btn-primary">↻ Refresh</button>
+          </div>
+        </div>
+
+        <div class="hero">
+          <div class="kpi hero-accent">
+            <div class="kpi-label">Master signals</div>
+            <div class="kpi-num accent">42</div>
+            <div class="kpi-sub">refreshed 3 min ago</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Elite · multi-source</div>
+            <div class="kpi-num elite">4</div>
+            <div class="kpi-sub">3+ engines agree</div>
+          </div>
+          <div class="kpi">
+            <div class="kpi-label">Avg conviction</div>
+            <div class="kpi-num">91</div>
+            <div class="kpi-sub">median 92 · top decile 100</div>
+          </div>
+          <div class="kpi hero-bull">
+            <div class="kpi-label">30d win-rate</div>
+            <div class="kpi-num bull">78.1%</div>
+            <div class="kpi-sub"><span class="up">+3.4%</span> vs prior 30d · n=3,247</div>
+          </div>
+        </div>
+
+        <div class="toolbar">
+          <div class="filter-group">
+            <button class="filter-chip on">All <span class="fc-n">42</span></button>
+            <button class="filter-chip">🔥 DOUBLE+ <span class="fc-n">4</span></button>
+            <button class="filter-chip">BUY <span class="fc-n">38</span></button>
+            <button class="filter-chip">SELL <span class="fc-n">4</span></button>
+          </div>
+          <div class="toolbar-right">Sort <b>Confluence × Conv ↓</b> · Show <b>50</b></div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-x">
+            <table class="grid">
+              <colgroup>
+                <col class="w-symbol">
+                <col class="w-status">
+                <col class="w-conv">
+                <col class="w-ltp">
+                <col class="w-plan">
+                <col class="w-horizon">
+                <col class="w-why">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Symbol · Sources</th>
+                  <th>Dir · Status</th>
+                  <th class="r-right">Conv</th>
+                  <th class="r-right">LTP</th>
+                  <th>Trade Plan</th>
+                  <th>Horizon</th>
+                  <th>Why · combined</th>
+                </tr>
+              </thead>
+              <tbody>
+
+                <!-- 1. NEW · Fresh signal today -->
+                <tr class="elite">
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">TITAN <span class="double-badge">DBL</span></div>
+                      <div class="src-line"><span class="src-mini pro">ELITE</span><span class="src-mini smart">SMART</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="dir-pill buy">BUY</span>
+                      <span class="status-tag new">🆕 NEW</span>
+                    </div>
+                  </td>
+                  <td class="r-right"><span class="conv-badge">100</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹4,599.50</span><span class="l2 bull">+1.5%</span></div></td>
+                  <td>
+                    <div class="plan-mini">
+                      <span class="lbl">Entry</span><span class="val">₹4,530.51</span><span class="pct"></span>
+                      <span class="lbl">SL</span><span class="val bear">₹4,339.27</span><span class="pct bear">−4.2%</span>
+                      <span class="lbl">T1</span><span class="val bull">₹4,893</span><span class="pct bull">+8.0%</span>
+                      <span class="lbl">T2</span><span class="val bull">₹5,165</span><span class="pct bull">+14%</span>
+                      <span class="lbl">T3</span><span class="val bull">₹5,527</span><span class="pct bull">+22%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="horiz-cell">
+                      <span class="h-days">10 d</span>
+                      <div class="h-bar" data-p="0"></div>
+                      <span class="h-when">to 28-Jul</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Elite: WEEKLY + FNO_FUTURES confluence · Smart Money: FII+DII+Promoter delta positive QoQ · Consumer Discretionary sector IMPROVING · Conv 100 ≥ 85 floor</div></td>
+                </tr>
+
+                <!-- 2. LIVE · currently active -->
+                <tr class="elite">
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">GODREJIND <span class="double-badge">DBL</span></div>
+                      <div class="src-line"><span class="src-mini pro">ELITE</span><span class="src-mini smart">SMART</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="dir-pill buy">BUY</span>
+                      <span class="status-tag live">🔴 LIVE</span>
+                    </div>
+                  </td>
+                  <td class="r-right"><span class="conv-badge">100</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹1,412.20</span><span class="l2 bull">+0.4%</span></div></td>
+                  <td>
+                    <div class="plan-mini">
+                      <span class="lbl">Entry</span><span class="val">₹1,417.70</span><span class="pct"></span>
+                      <span class="lbl">SL</span><span class="val bear">₹1,325.06</span><span class="pct bear">−6.5%</span>
+                      <span class="lbl">T1</span><span class="val bull">₹1,572</span><span class="pct bull">+11%</span>
+                      <span class="lbl">T2</span><span class="val bull">₹1,635</span><span class="pct bull">+15%</span>
+                      <span class="lbl">T3</span><span class="val bull">₹1,703</span><span class="pct bull">+20%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="horiz-cell">
+                      <span class="h-days">15 d</span>
+                      <div class="h-bar" data-p="35"></div>
+                      <span class="h-when">to 02-Aug</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Elite: WEEKLY + PRO_EDGE + Sector rotation into Diversified Financials · Smart Money: Insider Buys STRONG (promoter net-bought ₹5.4 Cr) · 11-session tight base 1,380-1,420</div></td>
+                </tr>
+
+                <!-- 3. T1 HIT · target 1 reached -->
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">ICICIBANK</div>
+                      <div class="src-line"><span class="src-mini smart">SMART</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="dir-pill buy">BUY</span>
+                      <span class="status-tag t1-hit">🎯 T1 HIT</span>
+                    </div>
+                  </td>
+                  <td class="r-right"><span class="conv-badge">88</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹1,349.80</span><span class="l2 bull">+4.7%</span></div></td>
+                  <td>
+                    <div class="plan-mini">
+                      <span class="lbl">Entry</span><span class="val">₹1,290.00</span><span class="pct"></span>
+                      <span class="lbl">SL</span><span class="val bear">₹1,238.00</span><span class="pct bear">−4.0%</span>
+                      <span class="lbl">T1</span><span class="val bull" style="text-decoration: underline;">₹1,342</span><span class="pct bull">✓ hit</span>
+                      <span class="lbl">T2</span><span class="val bull">₹1,388</span><span class="pct bull">+7.6%</span>
+                      <span class="lbl">T3</span><span class="val bull">₹1,442</span><span class="pct bull">+11.8%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="horiz-cell">
+                      <span class="h-days">+2.4R</span>
+                      <div class="h-bar" data-p="50"></div>
+                      <span class="h-when">T1 hit 5d</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Bulk Deals: SBI MF bought 42L @ ₹1,285 · Pedigree: FII holding +40 bps QoQ · Banks sector STRONG · Institutional rotation into private banks confirmed</div></td>
+                </tr>
+
+                <!-- 4. T2 HIT · target 2 reached, trail SL to T1 -->
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">HDFCLIFE</div>
+                      <div class="src-line"><span class="src-mini">CHART</span><span class="src-mini pro">ELITE</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="dir-pill buy">BUY</span>
+                      <span class="status-tag t2-hit">🎯 T2 HIT</span>
+                    </div>
+                  </td>
+                  <td class="r-right"><span class="conv-badge">86</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹638.20</span><span class="l2 bull">+7.8%</span></div></td>
+                  <td>
+                    <div class="plan-mini">
+                      <span class="lbl">Entry</span><span class="val">₹592.00</span><span class="pct"></span>
+                      <span class="lbl">SL</span><span class="val bear">₹614.00</span><span class="pct" style="color: var(--text-3);">trail T1</span>
+                      <span class="lbl">T1</span><span class="val bull" style="text-decoration: underline;">₹614</span><span class="pct bull">✓ hit</span>
+                      <span class="lbl">T2</span><span class="val bull" style="text-decoration: underline;">₹632</span><span class="pct bull">✓ hit</span>
+                      <span class="lbl">T3</span><span class="val bull">₹655</span><span class="pct bull">+10.6%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="horiz-cell">
+                      <span class="h-days">+3.8R</span>
+                      <div class="h-bar" data-p="80"></div>
+                      <span class="h-when">T2 hit 9d</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Chart Patterns: inverse H&amp;S neckline 592 confirmed · Volume +38% vs 20d avg · Measured-move target = 200-day EMA at 632 · Insurance sector IMPROVING</div></td>
+                </tr>
+
+                <!-- 5. T3 HIT · all targets · full winner -->
+                <tr class="elite">
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">DLF <span class="double-badge">DBL</span></div>
+                      <div class="src-line"><span class="src-mini pro">ELITE</span><span class="src-mini">CHART</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="dir-pill buy">BUY</span>
+                      <span class="status-tag t3-hit">🏆 T3 HIT</span>
+                    </div>
+                  </td>
+                  <td class="r-right"><span class="conv-badge">100</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹831.40</span><span class="l2 bull">+21.2%</span></div></td>
+                  <td>
+                    <div class="plan-mini">
+                      <span class="lbl">Entry</span><span class="val">₹685.75</span><span class="pct"></span>
+                      <span class="lbl">SL</span><span class="val bear">₹646.59</span><span class="pct" style="color: var(--text-3);">closed</span>
+                      <span class="lbl">T1</span><span class="val bull" style="text-decoration: underline;">₹751</span><span class="pct bull">✓</span>
+                      <span class="lbl">T2</span><span class="val bull" style="text-decoration: underline;">₹782</span><span class="pct bull">✓</span>
+                      <span class="lbl">T3</span><span class="val bull" style="text-decoration: underline;">₹823</span><span class="pct bull">✓</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="horiz-cell">
+                      <span class="h-days" style="color: var(--bull); font-weight: 700;">+7.3R</span>
+                      <div class="h-bar" data-p="100"></div>
+                      <span class="h-when">T3 hit 22d</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Elite: Weekly Pick + F&amp;O Futures pre-breakout · Chart Patterns: Cup &amp; Handle confirmed · Realty leadership · Full sequence played out as designed</div></td>
+                </tr>
+
+                <!-- 6. SL HIT · stopped out -->
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">TCS</div>
+                      <div class="src-line"><span class="src-mini">VP</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="dir-pill sell">SELL</span>
+                      <span class="status-tag sl-hit">⛔ SL HIT</span>
+                    </div>
+                  </td>
+                  <td class="r-right"><span class="conv-badge mid">76</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹4,038.10</span><span class="l2 bear">−1.2%</span></div></td>
+                  <td>
+                    <div class="plan-mini">
+                      <span class="lbl">Entry</span><span class="val">₹3,988.00</span><span class="pct"></span>
+                      <span class="lbl">SL</span><span class="val bear" style="text-decoration: underline;">₹4,030</span><span class="pct bear">✗ stopped</span>
+                      <span class="lbl">T1</span><span class="val" style="color: var(--text-3);">₹3,925</span><span class="pct" style="color: var(--text-3);">missed</span>
+                      <span class="lbl">T2</span><span class="val" style="color: var(--text-3);">₹3,860</span><span class="pct" style="color: var(--text-3);">−</span>
+                      <span class="lbl">T3</span><span class="val" style="color: var(--text-3);">₹3,790</span><span class="pct" style="color: var(--text-3);">−</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="horiz-cell">
+                      <span class="h-days" style="color: var(--bear); font-weight: 700;">−0.5R</span>
+                      <div class="h-bar stopped" data-p="100"></div>
+                      <span class="h-when">stopped 09:41</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Technicals: Volume Profile breakdown attempt failed at VAL 3,995 · Auction reclaimed value · No other tabs voted this pre-trade — single-source penalty played out</div></td>
+                </tr>
+
+                <!-- 7. NIFTY option — LIVE -->
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">NIFTY 24200 CE</div>
+                      <div class="src-line"><span class="src-mini pro">NIFTY</span><span class="src-mini">TECH</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="dir-pill buy">BUY</span>
+                      <span class="status-tag live">🔴 LIVE</span>
+                    </div>
+                  </td>
+                  <td class="r-right"><span class="conv-badge">96</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹184.30</span><span class="l2 bull">+11.6%</span></div></td>
+                  <td>
+                    <div class="plan-mini">
+                      <span class="lbl">Entry</span><span class="val">₹165.00</span><span class="pct"></span>
+                      <span class="lbl">SL</span><span class="val bear">₹138.00</span><span class="pct bear">−16%</span>
+                      <span class="lbl">T1</span><span class="val bull">₹210</span><span class="pct bull">+27%</span>
+                      <span class="lbl">T2</span><span class="val bull">₹275</span><span class="pct bull">+67%</span>
+                      <span class="lbl">T3</span><span class="val bull">₹340</span><span class="pct bull">+106%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="horiz-cell">
+                      <span class="h-days">7 d</span>
+                      <div class="h-bar" data-p="20"></div>
+                      <span class="h-when">to 25-Jul</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">NIFTY: composite BULLISH HIGH-confidence · playbook INSTITUTIONAL_LONG_BUILD · Technicals: VP VAH-rejection 5m/15m + rotation toward POC 24,080 · Multi-expiry OI bullish</div></td>
+                </tr>
+
+                <!-- 8. WAITING · pre-entry -->
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">RELIANCE</div>
+                      <div class="src-line"><span class="src-mini pro">ELITE</span><span class="src-mini smart">SMART</span><span class="src-mini">CHART</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="dir-pill buy">BUY</span>
+                      <span class="status-tag waiting">⏸ WAITING</span>
+                    </div>
+                  </td>
+                  <td class="r-right"><span class="conv-badge">92</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹1,318.40</span><span class="l2 bull">+0.6%</span></div></td>
+                  <td>
+                    <div class="plan-mini">
+                      <span class="lbl">Entry</span><span class="val">₹1,310.00</span><span class="pct">on dip</span>
+                      <span class="lbl">SL</span><span class="val bear">₹1,258.00</span><span class="pct bear">−4.0%</span>
+                      <span class="lbl">T1</span><span class="val bull">₹1,388</span><span class="pct bull">+6.0%</span>
+                      <span class="lbl">T2</span><span class="val bull">₹1,442</span><span class="pct bull">+10%</span>
+                      <span class="lbl">T3</span><span class="val bull">₹1,506</span><span class="pct bull">+15%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="horiz-cell">
+                      <span class="h-days">3 w</span>
+                      <div class="h-bar" data-p="0"></div>
+                      <span class="h-when">3-week</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Elite: WEEKLY + CROSS_CONFLUENCE + PREMOVE · Smart Money: Insider STRONG (promoter ₹8.2 Cr yesterday) · Chart Patterns: ascending-triangle base on daily · Vol +38%</div></td>
+                </tr>
+
+                <!-- 9. NEW · fresh SELL setup -->
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">AXISBANK</div>
+                      <div class="src-line"><span class="src-mini">TECH</span><span class="src-mini smart">SMART</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="dir-pill sell">SELL</span>
+                      <span class="status-tag new">🆕 NEW</span>
+                    </div>
+                  </td>
+                  <td class="r-right"><span class="conv-badge">88</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹1,132.75</span><span class="l2 bear">−0.8%</span></div></td>
+                  <td>
+                    <div class="plan-mini">
+                      <span class="lbl">Entry</span><span class="val">₹1,140.00</span><span class="pct"></span>
+                      <span class="lbl">SL</span><span class="val bear">₹1,168.00</span><span class="pct bear">+2.5%</span>
+                      <span class="lbl">T1</span><span class="val bull">₹1,105</span><span class="pct bull">−3.1%</span>
+                      <span class="lbl">T2</span><span class="val bull">₹1,072</span><span class="pct bull">−6.0%</span>
+                      <span class="lbl">T3</span><span class="val bull">₹1,032</span><span class="pct bull">−9.5%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="horiz-cell">
+                      <span class="h-days">7 d</span>
+                      <div class="h-bar" data-p="0"></div>
+                      <span class="h-when">to 25-Jul</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Technicals: VP VAH-rejection 1h + fresh CE writing at 1,160 caps upside · Smart Money: Bulk Deals shows Prudential ICICI Fund exiting · 4 sessions distribution above 1,150</div></td>
+                </tr>
+
+                <!-- 10. LIVE (running well) -->
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">LT</div>
+                      <div class="src-line"><span class="src-mini pro">ELITE</span><span class="src-mini smart">SMART</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="status-stack">
+                      <span class="dir-pill buy">BUY</span>
+                      <span class="status-tag live">🔴 LIVE</span>
+                    </div>
+                  </td>
+                  <td class="r-right"><span class="conv-badge">82</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹3,872.60</span><span class="l2 bull">+2.2%</span></div></td>
+                  <td>
+                    <div class="plan-mini">
+                      <span class="lbl">Entry</span><span class="val">₹3,790.00</span><span class="pct"></span>
+                      <span class="lbl">SL</span><span class="val bear">₹3,620.00</span><span class="pct bear">−4.5%</span>
+                      <span class="lbl">T1</span><span class="val bull">₹3,988</span><span class="pct bull">+5.2%</span>
+                      <span class="lbl">T2</span><span class="val bull">₹4,152</span><span class="pct bull">+9.6%</span>
+                      <span class="lbl">T3</span><span class="val bull">₹4,320</span><span class="pct bull">+14.0%</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="horiz-cell">
+                      <span class="h-days">+0.5R</span>
+                      <div class="h-bar" data-p="35"></div>
+                      <span class="h-when">4-week</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Elite: WEEKLY + FNO_FUTURES + INSIDER_BUYS · Capex sector IMPROVING · Order-book run-rate 12M high · Two KMPs opened ₹1.4 Cr positions this week</div></td>
+                </tr>
+
+              </tbody>
+            </table>
+          </div>
+
+          <!-- LOAD MORE STRIP · 2026-07-18 -->
+          <div class="load-more-strip">
+            <div class="showing-count">
+              Showing <b>10</b> of <b class="accent">42</b> signals · sorted by <b>Confluence × Conviction ↓</b>
+            </div>
+            <div class="load-more-actions">
+              <button class="page-btn on">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <button class="page-btn">›</button>
+              <span class="page-info">or</span>
+              <button class="load-more-btn">Load next 20 ↓</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── VIEW · NIFTY ─────────────────────────────────────────── -->
+      <div class="view" id="v-nifty">
+        <div class="page-head">
+          <div>
+            <h1 class="page-title">🧭 NIFTY <span class="live-tag"><span class="page-live-dot"></span>LIVE</span></h1>
+            <p class="page-desc">Everything about the index in one place — composite bias, multi-timeframe Volume Profile, multi-expiry OI, operator playbook, history rhymes, sector rotation. Refreshes every 4 min · 09:15–15:30 IST.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn">↓ Export</button>
+            <button class="btn btn-primary">↻ Refresh</button>
+          </div>
+        </div>
+
+        <div class="n-hero">
+          <div class="kpi hero-bull big">
+            <div class="kpi-label">Composite direction</div>
+            <div class="kpi-num big bull">BULLISH</div>
+            <div class="conf-pill high">HIGH CONFIDENCE</div>
+            <div class="kpi-sub" style="margin-top: 14px;">Bull 47 · Bear 24 · Net <b class="up">+23</b></div>
+          </div>
+          <div class="kpi big">
+            <div class="kpi-label">NIFTY 50 spot</div>
+            <div class="kpi-num big">24,225.10</div>
+            <div class="kpi-sub"><span class="up">+101.45 · +0.42%</span> · today 24,180–24,242</div>
+            <div class="kpi-sub" style="margin-top: 6px;">Generated 09:47 IST</div>
+          </div>
+          <div class="kpi big" style="border-color: var(--elite);">
+            <div class="kpi-label">Smart-money level</div>
+            <div class="kpi-num big" style="color: var(--elite);">24,000</div>
+            <div class="kpi-sub">Book direction · <b class="up">BULLISH</b></div>
+            <div class="kpi-sub" style="margin-top: 6px;">Far expiry · 25-Sep-2026</div>
+          </div>
+        </div>
+
+        <div class="section-label">Trade plan · every leg dated</div>
+        <div class="plan-bar">
+          <div class="plan-slot"><div class="plan-slot-label">Instrument</div><div class="plan-slot-val" style="font-size:13px;">NIFTY 31-Jul FUT / 24200 CE</div></div>
+          <div class="plan-slot"><div class="plan-slot-label">Entry · 2026-07-18</div><div class="plan-slot-val">24,225</div></div>
+          <div class="plan-slot"><div class="plan-slot-label">Stop Loss</div><div class="plan-slot-val bear">23,820</div><div class="plan-slot-note">−1.67%</div></div>
+          <div class="plan-slot"><div class="plan-slot-label">T1 · 21-Jul</div><div class="plan-slot-val bull">24,500</div><div class="plan-slot-note">+1.13%</div></div>
+          <div class="plan-slot"><div class="plan-slot-label">T2 · 24-Jul</div><div class="plan-slot-val bull">24,735</div><div class="plan-slot-note">+2.10%</div></div>
+          <div class="plan-slot"><div class="plan-slot-label">T3 · 30-Jul</div><div class="plan-slot-val bull">25,150</div><div class="plan-slot-note">+3.82%</div></div>
+        </div>
+
+        <div class="section-label">Reasoning · what every lens is saying</div>
+        <div class="reason-grid">
+          <div class="reason-card"><h4>🏦 Multi-expiry OI stance</h4><ul>
+            <li>Current PCR 0.95–1.05 · balanced</li>
+            <li>Monthly (31-Jul) PCR 1.12 · put-writer accumulation at 23,800–24,000</li>
+            <li>Quarterly (25-Sep) PCR 1.25 · smart-money bullish 25,000–25,400</li>
+            <li>24,500 CE largest current OI · immediate resistance</li>
+          </ul></div>
+          <div class="reason-card"><h4>📊 Volume Profile · 8 TFs</h4><ul>
+            <li>VAH-rejection on 5m + 15m (agreement 3/8 TFs)</li>
+            <li>POC anchor at 24,080 · rotation target when spot drifts</li>
+            <li>LVN slice at 24,180 → vacuum zone above</li>
+            <li>Strongest setup · <b>VA_ROTATION_FROM_VAH</b> · strength 78</li>
+          </ul></div>
+          <div class="reason-card"><h4>📈 Max-pain drift + PCR trend</h4><ul>
+            <li>Max-pain 23,900 → 24,100 in 3 sessions · +67pt/day drift</li>
+            <li>PCR rose 0.98 → 1.12 in 5 days · put writers stepping in</li>
+            <li>India VIX 12.4 · complacent · writer confidence</li>
+          </ul></div>
+          <div class="reason-card"><h4>🕰️ Time cycle · daily since 2020</h4><ul>
+            <li>April-2026 low ~78 sessions ago · mean bot-to-bot 118d</li>
+            <li>~40 sessions runway before next cyclical low</li>
+            <li>Gann 90-day cycle · window 24-28 Jul (minor turn)</li>
+            <li>Next major LOW · 5-10 Oct 2026</li>
+          </ul></div>
+          <div class="reason-card"><h4>🔯 Astro overlay (KP + Bradley)</h4><ul>
+            <li>KP sub-lord favours financials (Jupiter → Cancer)</li>
+            <li>Bradley · mild bullish through 14-Jul · negative 18-20 Jul</li>
+            <li>Mercury retrograde starts 18-Jul · intraday reversals ↑</li>
+            <li>Larger bearish turn window · 26-30 Aug</li>
+          </ul></div>
+          <div class="reason-card"><h4>🎯 Operator playbook</h4><ul>
+            <li>INSTITUTIONAL_LONG_BUILD</li>
+            <li>OI_MAGNET_DRIFT</li>
+            <li>VOLATILITY_CRUSH</li>
+            <li>Retail under-invested · operators squeeze shorts above 24,500 · distribute near 25,000–25,150</li>
+          </ul></div>
+        </div>
+      </div>
+
+      <!-- ─── VIEW · SMART MONEY ───────────────────────────────────── -->
+      <div class="view" id="v-smart">
+        <div class="page-head">
+          <div>
+            <h1 class="page-title">⛰ Smart Money</h1>
+            <p class="page-desc">Institutional footprint under one tab. Every source of "who's actually buying" — SEBI PIT insider filings, superstar holdings, NSE bulk deals, volume accumulation (our own criterion), pedigree accumulation (FII/DII/Promoter delta), OBV divergence.</p>
+          </div>
+          <div class="btn-row">
+            <button class="btn">↓ CSV</button>
+            <button class="btn btn-primary">↻ Refresh</button>
+          </div>
+        </div>
+
+        <div class="hero">
+          <div class="kpi hero-accent"><div class="kpi-label">Total footprints</div><div class="kpi-num accent">57</div><div class="kpi-sub">across 6 sources · 30d rolling</div></div>
+          <div class="kpi"><div class="kpi-label">🔥 STRONG</div><div class="kpi-num elite">6</div><div class="kpi-sub">promoter ≥ ₹5 Cr or SAST ≥ ₹10 Cr</div></div>
+          <div class="kpi"><div class="kpi-label">Superstar-backed</div><div class="kpi-num">14</div><div class="kpi-sub">held by 3+ marquee investors</div></div>
+          <div class="kpi hero-bull"><div class="kpi-label">Followed by move</div><div class="kpi-num bull">73%</div><div class="kpi-sub">n=214 · 30d rolling</div></div>
+        </div>
+
+        <div class="toolbar">
+          <div class="filter-group">
+            <button class="filter-chip on">ALL <span class="fc-n">57</span></button>
+            <button class="filter-chip">🔥 STRONG <span class="fc-n">6</span></button>
+            <button class="filter-chip">Insider <span class="fc-n">21</span></button>
+            <button class="filter-chip">Superstar <span class="fc-n">14</span></button>
+            <button class="filter-chip">Bulk Deals <span class="fc-n">18</span></button>
+            <button class="filter-chip">Vol. Accumulation <span class="fc-n">28</span></button>
+            <button class="filter-chip">Pedigree <span class="fc-n">12</span></button>
+          </div>
+          <div class="toolbar-right">Sort <b>Score ↓</b></div>
+        </div>
+
+        <div class="table-card">
+          <div class="table-x">
+            <table class="grid">
+              <colgroup>
+                <col class="w-symbol">
+                <col class="w-status">
+                <col class="w-conv">
+                <col class="w-ltp">
+                <col class="w-sm-share">
+                <col class="w-sm-ctx">
+                <col class="w-why">
+              </colgroup>
+              <thead>
+                <tr>
+                  <th>Symbol · Source</th>
+                  <th>Status</th>
+                  <th class="r-right">Score</th>
+                  <th class="r-right">LTP</th>
+                  <th>Buy breakdown (₹Cr)</th>
+                  <th>Context</th>
+                  <th>Why · Actors</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr class="elite">
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">RELIANCE <span class="double-badge">STRONG</span></div>
+                      <div class="src-line"><span class="src-mini pro">INSIDER</span></div>
+                    </div>
+                  </td>
+                  <td><div class="status-stack"><span class="status-tag new">🆕 NEW</span></div></td>
+                  <td class="r-right"><span class="conv-badge">92</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹1,318.40</span><span class="l2 bull">+0.6%</span></div></td>
+                  <td>
+                    <div class="cr-mini">
+                      <span class="cr-lbl">Promoter</span><span class="cr-lbl">KMP</span><span class="cr-lbl">SAST</span><span class="cr-lbl">Total</span>
+                      <span class="cr-val bull">+8.2</span><span class="cr-val bull">+1.4</span><span class="cr-val">0.0</span><span class="cr-val bull">+9.6</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="stack-2">
+                      <span class="l1">RSI 54</span>
+                      <span class="l2 bear">−6.9% off 52w-hi</span>
+                      <span class="l2">17-Jul-2026</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Promoter (RIL Holdings) net-bought ₹8.2 Cr yesterday · 2 KMPs opened ₹1.4 Cr positions · First meaningful insider buy since March-2026 correction · Pledge 0.4%</div></td>
+                </tr>
+                <tr class="elite">
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">LT <span class="double-badge">STRONG</span></div>
+                      <div class="src-line"><span class="src-mini pro">INSIDER</span><span class="src-mini smart">PEDIGREE</span></div>
+                    </div>
+                  </td>
+                  <td><div class="status-stack"><span class="status-tag live">🔴 LIVE</span></div></td>
+                  <td class="r-right"><span class="conv-badge">88</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹3,798.20</span><span class="l2 bull">+0.9%</span></div></td>
+                  <td>
+                    <div class="cr-mini">
+                      <span class="cr-lbl">Promoter</span><span class="cr-lbl">KMP</span><span class="cr-lbl">SAST</span><span class="cr-lbl">Total</span>
+                      <span class="cr-val">0.0</span><span class="cr-val bull">+1.4</span><span class="cr-val">0.0</span><span class="cr-val bull">+1.4</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="stack-2">
+                      <span class="l1">RSI 51</span>
+                      <span class="l2 bear">−22% off 52w-hi</span>
+                      <span class="l2">16-Jul-2026</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">2 KMPs opened positions worth ₹1.4 Cr · S.N. Subrahmanyan (CEO) added ₹92L · Down 22% from Sep-2025 top · Big-hands accumulating from retail · FII+DII delta positive QoQ</div></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">ICICIBANK</div>
+                      <div class="src-line"><span class="src-mini">BULK</span><span class="src-mini smart">PEDIGREE</span></div>
+                    </div>
+                  </td>
+                  <td><div class="status-stack"><span class="status-tag t1-hit">🎯 T1 HIT</span></div></td>
+                  <td class="r-right"><span class="conv-badge">84</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹1,349.80</span><span class="l2 bull">+4.7%</span></div></td>
+                  <td>
+                    <div class="cr-mini">
+                      <span class="cr-lbl">Promoter</span><span class="cr-lbl">KMP</span><span class="cr-lbl">SAST</span><span class="cr-lbl">Total</span>
+                      <span class="cr-val">0.0</span><span class="cr-val">0.0</span><span class="cr-val">0.0</span><span class="cr-val bull">+540</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="stack-2">
+                      <span class="l1">RSI 62</span>
+                      <span class="l2 bear">−4.2% off 52w-hi</span>
+                      <span class="l2">17-Jul-2026</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">SBI Mutual Fund bought 42L shares yesterday @ ₹1,285 · FII holding +40 bps QoQ · Banks sector STRONG · T1 target reached in 5 sessions</div></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">GODREJIND <span class="double-badge">STRONG</span></div>
+                      <div class="src-line"><span class="src-mini pro">INSIDER</span><span class="src-mini">VOL-ACC</span></div>
+                    </div>
+                  </td>
+                  <td><div class="status-stack"><span class="status-tag live">🔴 LIVE</span></div></td>
+                  <td class="r-right"><span class="conv-badge">82</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹1,412.20</span><span class="l2 bull">+0.4%</span></div></td>
+                  <td>
+                    <div class="cr-mini">
+                      <span class="cr-lbl">Promoter</span><span class="cr-lbl">KMP</span><span class="cr-lbl">SAST</span><span class="cr-lbl">Total</span>
+                      <span class="cr-val bull">+5.4</span><span class="cr-val">0.0</span><span class="cr-val">0.0</span><span class="cr-val bull">+5.4</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="stack-2">
+                      <span class="l1">RSI 62</span>
+                      <span class="l2 bear">−8.6% off 52w-hi</span>
+                      <span class="l2">15-Jul-2026</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Godrej Industries Holdings promoter net-bought ₹5.4 Cr · Volume Accumulation criterion: 4/5 bars &gt; 1.2× 20-bar avg volume · Coiled-spring base 1,380-1,420</div></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">DIXON</div>
+                      <div class="src-line"><span class="src-mini pro">INSIDER</span><span class="src-mini">SUPERSTAR</span></div>
+                    </div>
+                  </td>
+                  <td><div class="status-stack"><span class="status-tag waiting">⏸ WAITING</span></div></td>
+                  <td class="r-right"><span class="conv-badge mid">72</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹13,850.00</span><span class="l2">+0.2%</span></div></td>
+                  <td>
+                    <div class="cr-mini">
+                      <span class="cr-lbl">Promoter</span><span class="cr-lbl">KMP</span><span class="cr-lbl">SAST</span><span class="cr-lbl">Total</span>
+                      <span class="cr-val bull">+2.8</span><span class="cr-val bull">+0.6</span><span class="cr-val">0.0</span><span class="cr-val bull">+3.4</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="stack-2">
+                      <span class="l1">RSI 58</span>
+                      <span class="l2 bear">−14% off 52w-hi</span>
+                      <span class="l2">15-Jul-2026</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">Sunil Vachani (Chairman) added ₹2.8 Cr · CFO added ₹60L · Held by Mukul Agrawal + Dolly Khanna (2 superstars) · EMS sector STRONG · Pledge 0.0%</div></td>
+                </tr>
+                <tr>
+                  <td>
+                    <div class="sym-stack">
+                      <div class="sym-line">CDSL</div>
+                      <div class="src-line"><span class="src-mini">BULK</span></div>
+                    </div>
+                  </td>
+                  <td><div class="status-stack"><span class="status-tag new">🆕 NEW</span></div></td>
+                  <td class="r-right"><span class="conv-badge mid">68</span></td>
+                  <td class="r-right"><div class="stack-2"><span class="l1">₹1,485.30</span><span class="l2 bull">+1.4%</span></div></td>
+                  <td>
+                    <div class="cr-mini">
+                      <span class="cr-lbl">Promoter</span><span class="cr-lbl">KMP</span><span class="cr-lbl">SAST</span><span class="cr-lbl">Total</span>
+                      <span class="cr-val">0.0</span><span class="cr-val">0.0</span><span class="cr-val bull">+12.5</span><span class="cr-val bull">+12.5</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div class="stack-2">
+                      <span class="l1">RSI 44</span>
+                      <span class="l2 bear">−18.5% off 52w-hi</span>
+                      <span class="l2">14-Jul-2026</span>
+                    </div>
+                  </td>
+                  <td><div class="why-cell">SAST Reg 29 · Motilal Oswal Financial Services crossed 5% threshold · ₹12.5 Cr acquisition · External strategic investor accumulation · RSI oversold bounce zone</div></td>
+                </tr>
+              </tbody>
+            </table>
+          </div>
+
+          <!-- LOAD MORE STRIP · 2026-07-18 -->
+          <div class="load-more-strip">
+            <div class="showing-count">
+              Showing <b>6</b> of <b class="accent">57</b> footprints · sorted by <b>Score ↓</b>
+            </div>
+            <div class="load-more-actions">
+              <button class="page-btn on">1</button>
+              <button class="page-btn">2</button>
+              <button class="page-btn">3</button>
+              <button class="page-btn">›</button>
+              <span class="page-info">or</span>
+              <button class="load-more-btn">Load next 20 ↓</button>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- ─── VIEW · placeholder text for other tabs ─────────────────── -->
+      <div class="view" id="v-patterns"><div class="page-head"><div><h1 class="page-title">📐 Chart Patterns</h1><p class="page-desc">All classical TA patterns · left rail filters by family (H&amp;S, Triangles, Flags, etc). Same table columns as today's Chart Patterns tab.</p></div></div><div class="proposal-note"><span class="proposal-note-icon">→</span><div>Same shape as your existing Chart Patterns tab. Use the left rail to filter by pattern family or timeframe.</div></div></div>
+      <div class="view" id="v-harmonic"><div class="page-head"><div><h1 class="page-title">∿ Harmonic</h1><p class="page-desc">Fibonacci-based harmonic patterns · Gartley · Bat · Butterfly · Crab · Shark · Cypher with PRZ + invalidation.</p></div></div><div class="proposal-note"><span class="proposal-note-icon">→</span><div>New dedicated engine (extension of the existing harmonic-scanner). Left rail filters by pattern.</div></div></div>
+      <div class="view" id="v-elliott"><div class="page-head"><div><h1 class="page-title">⋀ Elliott Wave</h1><p class="page-desc">Impulsive (1-2-3-4-5) and corrective (A-B-C) wave counts on NIFTY-500 · Neo Wave (Neely) rules for time and price.</p></div></div><div class="proposal-note"><span class="proposal-note-icon">→</span><div>New dedicated Elliott engine · surfaces Wave-3 setups (best-R) and end-of-wave-5 shorts.</div></div></div>
+      <div class="view" id="v-technicals"><div class="page-head"><div><h1 class="page-title">📊 Technicals</h1><p class="page-desc">Stock Volume Profile (multi-TF) + Fibonacci retracements and extensions. Everything the current Volume Profile + Stock F&amp;O VP tabs contained, plus fresh Fibonacci scans.</p></div></div><div class="proposal-note"><span class="proposal-note-icon">→</span><div>Same columns as today's Stock F&amp;O VP + a Fibonacci scanner joins it. Left rail switches tool.</div></div></div>
+      <div class="view" id="v-swings"><div class="page-head"><div><h1 class="page-title">🌱 Swings</h1><p class="page-desc">Weekly Pick + Pre-Move + Daily Pick + Positional + Multibagger unified. Left rail switches horizon.</p></div></div><div class="proposal-note"><span class="proposal-note-icon">→</span><div>All horizon-based tabs from today land here. Same columns preserved. Filter by horizon in the rail.</div></div></div>
+
+    </div>
+  </div>
+</div>
+
+<script>
+  const KEY = "twv-refined-theme";
+  const root = document.documentElement;
+  const btn = document.getElementById("themeBtn");
+  const label = document.getElementById("themeLabel");
+  const icon = document.getElementById("themeIcon");
+  const initial = localStorage.getItem(KEY);
+  if (initial === "light" || initial === "dark") root.setAttribute("data-theme", initial);
+  function reflect() {
+    const t = root.getAttribute("data-theme") || "dark";
+    label.textContent = t.toUpperCase();
+    icon.textContent = t === "dark" ? "◐" : "◑";
+  }
+  reflect();
+  btn.addEventListener("click", () => {
+    const curr = root.getAttribute("data-theme") || "dark";
+    const next = curr === "dark" ? "light" : "dark";
+    root.setAttribute("data-theme", next);
+    localStorage.setItem(KEY, next);
+    reflect();
+  });
+
+  function switchView(name, ev) {
+    if (ev) ev.preventDefault();
+    document.querySelectorAll(".view").forEach(v => v.classList.remove("on"));
+    const view = document.getElementById("v-" + name);
+    if (view) view.classList.add("on");
+    document.querySelectorAll(".h-tab").forEach(t => t.classList.remove("active"));
+    if (ev && ev.currentTarget) ev.currentTarget.classList.add("active");
+    document.querySelectorAll(".rail-set").forEach(r => r.style.display = "none");
+    const rail = document.getElementById("rail-" + name);
+    if (rail) rail.style.display = "block";
+  }
+</script>
+
+</body>
+</html>
