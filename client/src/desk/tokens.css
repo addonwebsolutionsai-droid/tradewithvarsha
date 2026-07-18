@@ -64,11 +64,13 @@
   height: 60px;
   background: var(--desk-surface);
   border-bottom: 1px solid var(--desk-border);
-  padding: 0 32px;
-  display: grid; grid-template-columns: auto 1fr auto;
-  gap: 32px; align-items: center;
+  padding: 0 24px;
+  display: grid; grid-template-columns: auto minmax(0, 1fr) auto;
+  gap: 20px; align-items: center;
   position: sticky; top: 0; z-index: 20;
 }
+/* Nav takes middle · shrinks to fit; horizontal-scrolls on very narrow */
+[data-desk] .desk-nav::-webkit-scrollbar { height: 0px; }
 [data-desk] .desk-brand { display: flex; align-items: center; gap: 12px; }
 [data-desk] .desk-brand-mark {
   width: 32px; height: 32px;
@@ -81,14 +83,16 @@
 [data-desk] .desk-brand-2 { font-size: 10.5px; color: var(--desk-text-3); letter-spacing: 0.06em; text-transform: uppercase; margin-top: 1px; display: block; }
 
 [data-desk] .desk-nav {
-  display: flex; gap: 2px; align-items: center;
-  overflow: hidden; min-width: 0;
+  display: flex; gap: 1px; align-items: center;
+  overflow-x: auto; min-width: 0;
+  scrollbar-width: none;
 }
 [data-desk] .desk-tab {
-  display: inline-flex; align-items: center; gap: 6px;
-  padding: 7px 13px;
+  display: inline-flex; align-items: center; gap: 5px;
+  padding: 6px 10px;
   color: var(--desk-text-2);
-  font-size: 13px; font-weight: 500;
+  font-size: 12.5px; font-weight: 500;
+  flex-shrink: 0;
   border-radius: 7px;
   cursor: pointer; white-space: nowrap;
   background: transparent; border: none; font-family: inherit;

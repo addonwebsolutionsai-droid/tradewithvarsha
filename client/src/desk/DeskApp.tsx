@@ -34,15 +34,15 @@ type TabKey = 'master' | 'nifty' | 'chart' | 'harmonic' | 'elliott' | 'tech' | '
 type Theme = 'dark' | 'light'
 
 const TABS: Array<{ key: TabKey; label: string; icon: string; count?: number }> = [
-  { key: 'master',   label: 'Master',         icon: '✦' },
-  { key: 'nifty',    label: 'NIFTY',          icon: '🧭' },
-  { key: 'chart',    label: 'Chart Patterns', icon: '📐' },
-  { key: 'harmonic', label: 'Harmonic',       icon: '∿' },
-  { key: 'elliott',  label: 'Elliott',        icon: '⋀' },
-  { key: 'tech',     label: 'Technicals',     icon: '📊' },
-  { key: 'swings',   label: 'Swings',         icon: '🌱' },
-  { key: 'smart',    label: 'Smart Money',    icon: '⛰' },
-  { key: 'scan',     label: 'Scan',           icon: '🔎' },
+  { key: 'master',   label: 'Master',    icon: '✦' },
+  { key: 'nifty',    label: 'NIFTY',     icon: '🧭' },
+  { key: 'chart',    label: 'Patterns',  icon: '📐' },
+  { key: 'harmonic', label: 'Harmonic',  icon: '∿' },
+  { key: 'elliott',  label: 'Elliott',   icon: '⋀' },
+  { key: 'tech',     label: 'Tech',      icon: '📊' },
+  { key: 'swings',   label: 'Swings',    icon: '🌱' },
+  { key: 'smart',    label: 'Smart $',   icon: '⛰' },
+  { key: 'scan',     label: 'Ask',       icon: '💬' },
 ]
 
 const THEME_KEY = 'desk-theme'
@@ -233,29 +233,31 @@ export default function DeskApp(): JSX.Element {
               </button>
             ))}
           </nav>
-          <div className="desk-header-right">
-            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--desk-surface-2)', border: '1px solid var(--desk-border)', borderRadius: 8, padding: '4px 10px', minWidth: 220 }}>
-              <span style={{ color: 'var(--desk-text-3)' }}>🔎</span>
+          <div className="desk-header-right" style={{ gap: 6 }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, background: 'var(--desk-surface-2)', border: '1px solid var(--desk-border)', borderRadius: 8, padding: '4px 8px', width: 200 }}>
+              <span style={{ color: 'var(--desk-text-3)', fontSize: 12 }}>🔎</span>
               <input
                 type="text"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Search symbol · e.g. RELIANCE, TCS"
+                onKeyDown={(e) => {
+                  if (e.key === 'Enter' && search.trim().length > 0) {
+                    setTab('scan')
+                  }
+                }}
+                placeholder="Search · Enter to ask"
                 style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--desk-text)', fontSize: 12, fontFamily: 'inherit', flex: 1, minWidth: 0 }}
               />
               {search && (
                 <button
                   onClick={() => setSearch('')}
-                  style={{ background: 'transparent', border: 'none', color: 'var(--desk-text-3)', cursor: 'pointer', fontSize: 14, padding: 0 }}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--desk-text-3)', cursor: 'pointer', fontSize: 14, padding: 0, lineHeight: 1 }}
                   title="Clear"
                 >×</button>
               )}
             </div>
-            <button className="desk-util" title="Track Record">📈</button>
-            <button className="desk-util" title="Archive">🗄</button>
-            <button className="desk-theme-btn" onClick={toggleTheme}>
+            <button className="desk-theme-btn" onClick={toggleTheme} style={{ padding: '0 10px' }}>
               <span>{theme === 'dark' ? '◐' : '◑'}</span>
-              <span>Theme</span>
               <span className="desk-th-mode">{theme}</span>
             </button>
           </div>
@@ -1167,34 +1169,183 @@ function SwingsView(): JSX.Element {
   )
 }
 
-// ─── SCAN VIEW · on-demand real-time scan ────────────────────────────
-function ScanView(): JSX.Element {
-  const [input, setInput] = useState('RELIANCE, TCS, INFY, HDFCBANK, TITAN')
-  const [rows, setRows] = useState<any[]>([])
-  const [busy, setBusy] = useState(false)
-  const [error, setError] = useState<string | null>(null)
-  const [generatedAt, setGeneratedAt] = useState<string>('')
+// ─── ASK / SCAN VIEW · natural-language real-time scan ───────────────
+//
+// User types free-form: "check KHADIM in live market" · "gold" · "how is
+// XAUUSD" · "RELIANCE TCS INFY" — we extract symbols and run the on-
+// demand scan. Works during and outside market hours.
+//
+// Alias map lets us handle common instrument nicknames.
+const ALIAS_MAP: Record<string, string> = {
+  'GOLD':     'GOLD',
+  'XAU':      'XAUUSD',
+  'XAUUSD':   'XAUUSD',
+  'CRUDE':    'CRUDE',
+  'OIL':      'CRUDE',
+  'DXY':      'DXY',
+  'USDINR':   'USDINR',
+  'USD':      'USDINR',
+  'INR':      'USDINR',
+  'NIFTY':    'NIFTY',
+  'NIFTY50':  'NIFTY',
+  'BANK':     'BANKNIFTY',
+  'BANKNIFTY':'BANKNIFTY',
+  'SENSEX':   'SENSEX',
+  'VIX':      'INDIAVIX',
+  'INDIAVIX': 'INDIAVIX',
+}
+// Words that appear in "check X in live market" style queries — strip these.
+const STOP_WORDS = new Set([
+  'CHECK', 'SCAN', 'LOOK', 'SHOW', 'ME', 'AT', 'IN', 'ON', 'THE', 'IS',
+  'HOW', 'WHAT', 'WHY', 'PLEASE', 'REAL', 'TIME', 'LIVE', 'MARKET',
+  'PLATFORM', 'RIGHT', 'NOW', 'TODAY', 'FOR', 'ABOUT', 'WITH', 'ANY',
+  'OR', 'AND', 'A', 'AN', 'MY', 'YOU', 'CAN', 'DO', 'DOES', 'WANT',
+  'STOCK', 'SHARE', 'SYMBOL',
+])
+function parseSymbolsFromQuery(q: string): string[] {
+  const tokens = q.toUpperCase().replace(/[^A-Z0-9\s&-]/g, ' ').split(/\s+/).filter(Boolean)
+  const out: string[] = []
+  const seen = new Set<string>()
+  for (const t of tokens) {
+    if (STOP_WORDS.has(t)) continue
+    const mapped = ALIAS_MAP[t] ?? t
+    if (mapped.length < 2 || mapped.length > 15) continue
+    if (!/^[A-Z][A-Z0-9&-]+$/.test(mapped)) continue
+    if (seen.has(mapped)) continue
+    seen.add(mapped)
+    out.push(mapped)
+  }
+  return out
+}
 
-  const runScan = async () => {
-    setBusy(true); setError(null)
+interface AskExchange {
+  q: string
+  parsed: string[]
+  rows: any[]
+  ts: string
+  busy?: boolean
+  error?: string
+}
+
+function ScanView(): JSX.Element {
+  const globalSearch = useSearchQuery()
+  const [input, setInput] = useState('')
+  const [history, setHistory] = useState<AskExchange[]>([])
+  const [busy, setBusy] = useState(false)
+
+  // If the top-nav search bar contains something, prefill it here.
+  useEffect(() => {
+    if (globalSearch && !input) setInput(globalSearch)
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalSearch])
+
+  const runAsk = async (raw?: string) => {
+    const q = (raw ?? input).trim()
+    if (!q) return
+    const parsed = parseSymbolsFromQuery(q)
+    if (parsed.length === 0) {
+      setHistory(h => [{ q, parsed: [], rows: [], ts: new Date().toISOString(), error: 'No recognisable symbol in that query. Try: "check KHADIM" · "gold" · "RELIANCE TCS INFY" · "XAUUSD".' }, ...h])
+      setInput('')
+      return
+    }
+    setBusy(true)
+    const exchangeIdx = 0
+    setHistory(h => [{ q, parsed, rows: [], ts: new Date().toISOString(), busy: true }, ...h])
+    setInput('')
     try {
-      const symbols = input.split(/[\s,]+/).map(s => s.trim().toUpperCase()).filter(Boolean)
-      if (symbols.length === 0) { setError('enter at least one symbol'); setBusy(false); return }
       const res = await fetch('/api/scan/on-demand', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ symbols }),
+        body: JSON.stringify({ symbols: parsed }),
       })
       if (!res.ok) throw new Error(`HTTP ${res.status}`)
       const data = await res.json()
-      setRows(data.results ?? [])
-      setGeneratedAt(data.generatedAt)
+      setHistory(h => h.map((ex, i) => i === exchangeIdx ? { ...ex, rows: data.results ?? [], busy: false } : ex))
     } catch (e) {
-      setError((e as Error).message)
+      setHistory(h => h.map((ex, i) => i === exchangeIdx ? { ...ex, error: (e as Error).message, busy: false } : ex))
     } finally {
       setBusy(false)
     }
   }
 
+  // Auto-run if we arrived here from the top search Enter key.
+  useEffect(() => {
+    if (globalSearch && globalSearch.length >= 2 && history.length === 0) {
+      runAsk(globalSearch)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [globalSearch])
+
+  const suggestions = [
+    'check KHADIM in live market',
+    'gold',
+    'XAUUSD',
+    'CRUDE',
+    'RELIANCE TCS INFY',
+    'NIFTY BANK',
+  ]
+
+  return (
+    <>
+      <div className="desk-page-head">
+        <div>
+          <h1 className="desk-page-title">💬 Ask · Live Research</h1>
+          <p className="desk-page-desc">Ask about any stock, commodity, index, or currency — anytime. Types like <b>"check KHADIM"</b> · <b>"gold"</b> · <b>"XAUUSD"</b> · <b>"RELIANCE TCS INFY"</b> · <b>"NIFTY BANK"</b>. Every response runs the same core engine (LTP · EMA stack · RSI · volume ratio · 20-day-high proximity · composite bias + score · trade plan) using live quote when the market's open, last close otherwise.</p>
+        </div>
+      </div>
+
+      <div style={{ background: 'var(--desk-surface)', border: '1px solid var(--desk-border)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter' && !busy) runAsk() }}
+            placeholder="Ask anything · e.g. check KHADIM · gold · RELIANCE TCS INFY"
+            disabled={busy}
+            style={{ flex: 1, background: 'var(--desk-bg)', border: '1px solid var(--desk-border)', borderRadius: 8, padding: '10px 14px', color: 'var(--desk-text)', fontFamily: 'inherit', fontSize: 13.5, outline: 'none' }}
+          />
+          <button className="desk-btn primary" onClick={() => runAsk()} disabled={busy || !input.trim()}>
+            {busy ? 'Scanning…' : '⚡ Scan'}
+          </button>
+        </div>
+        {history.length === 0 && (
+          <div style={{ marginTop: 12, display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 11, color: 'var(--desk-text-3)', letterSpacing: '0.06em', textTransform: 'uppercase', marginRight: 6 }}>Try:</span>
+            {suggestions.map(s => (
+              <button
+                key={s}
+                onClick={() => runAsk(s)}
+                style={{ padding: '4px 10px', background: 'var(--desk-surface-2)', border: '1px solid var(--desk-border)', borderRadius: 14, color: 'var(--desk-text-2)', fontSize: 11.5, cursor: 'pointer', fontFamily: 'inherit' }}
+              >{s}</button>
+            ))}
+          </div>
+        )}
+      </div>
+
+      {history.map((ex, exIdx) => (
+        <AskExchangeCard key={exIdx} ex={ex} />
+      ))}
+
+      {history.length === 0 && (
+        <div className="proposal-note">
+          <span>💡</span>
+          <div>
+            <b>Supported instruments:</b>
+            <div style={{ marginTop: 6, fontSize: 12, color: 'var(--desk-text-2)' }}>
+              Any NSE-listed stock (RELIANCE, KHADIM, TCS, MRPL, …) · index (NIFTY, BANKNIFTY, SENSEX, INDIAVIX) · commodity (GOLD, CRUDE, XAUUSD) · currency (USDINR, DXY).
+              <br />
+              <b>The engine reads live quote when the cash market is open (09:15-15:30 IST); falls back to last close otherwise.</b>
+              <br />
+              <b>Every answer is real-time</b> — nothing cached, nothing pre-computed.
+            </div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+function AskExchangeCard({ ex }: { ex: AskExchange }): JSX.Element {
   const columns: SortableColumn<any>[] = [
     { key: 'symbol', accessor: r => r.symbol },
     { key: 'bias', accessor: r => r.compositeBias ?? '' },
@@ -1206,42 +1357,27 @@ function ScanView(): JSX.Element {
     { key: 'vol', accessor: r => r.volRatio5_20 ?? 0 },
     { key: 'distHigh', accessor: r => r.distFromHigh20Pct ?? 0 },
   ]
-  const { sortedRows, sort, onSort } = useSortable(rows, { key: 'score', dir: 'desc' }, columns)
+  const { sortedRows, sort, onSort } = useSortable(ex.rows, { key: 'score', dir: 'desc' }, columns)
 
   return (
-    <>
-      <div className="desk-page-head">
-        <div>
-          <h1 className="desk-page-title">🔎 On-demand Scan</h1>
-          <p className="desk-page-desc">Paste 1-25 tickers (comma or space separated). Runs core criteria in real time: LTP · change · 5-day return · RSI · EMA stack · volume ratio · distance from 20-day high · composite bias + score · trade plan (entry/SL/T1/T2/T3 with dated targets) when composite ≥ 60.</p>
-        </div>
+    <div style={{ background: 'var(--desk-surface)', border: '1px solid var(--desk-border)', borderRadius: 12, padding: 16, marginBottom: 16 }}>
+      <div style={{ display: 'flex', alignItems: 'baseline', gap: 8, marginBottom: 12, flexWrap: 'wrap' }}>
+        <span style={{ fontSize: 10.5, letterSpacing: '0.1em', textTransform: 'uppercase', color: 'var(--desk-accent)', fontWeight: 600 }}>You asked</span>
+        <span style={{ fontSize: 13, color: 'var(--desk-text)', fontStyle: 'italic' }}>"{ex.q}"</span>
+        <span style={{ marginLeft: 'auto', fontFamily: 'ui-monospace, monospace', fontSize: 10.5, color: 'var(--desk-text-3)' }}>{new Date(ex.ts).toLocaleTimeString('en-IN')}</span>
       </div>
-
-      <div style={{ background: 'var(--desk-surface)', border: '1px solid var(--desk-border)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
-        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
-          <input
-            type="text"
-            value={input}
-            onChange={(e) => setInput(e.target.value)}
-            onKeyDown={(e) => { if (e.key === 'Enter') runScan() }}
-            placeholder="e.g. RELIANCE, TCS, INFY, HDFCBANK"
-            disabled={busy}
-            style={{ flex: 1, background: 'var(--desk-bg)', border: '1px solid var(--desk-border)', borderRadius: 8, padding: '10px 14px', color: 'var(--desk-text)', fontFamily: 'ui-monospace, monospace', fontSize: 13, outline: 'none' }}
-          />
-          <button className="desk-btn primary" onClick={runScan} disabled={busy}>
-            {busy ? 'Scanning…' : '⚡ Run Scan'}
-          </button>
+      {ex.parsed.length > 0 && (
+        <div style={{ marginBottom: 12, fontSize: 11.5, color: 'var(--desk-text-2)' }}>
+          Parsed <b>{ex.parsed.length}</b> symbol{ex.parsed.length !== 1 ? 's' : ''}:
+          {ex.parsed.map(s => (
+            <span key={s} style={{ marginLeft: 6, padding: '2px 8px', background: 'var(--desk-accent-bg)', color: 'var(--desk-accent)', borderRadius: 3, fontFamily: 'ui-monospace, monospace', fontSize: 11, fontWeight: 600 }}>{s}</span>
+          ))}
         </div>
-        {error && <div style={{ marginTop: 10, color: 'var(--desk-bear)', fontSize: 12 }}>Error: {error}</div>}
-        {generatedAt && (
-          <div style={{ marginTop: 10, color: 'var(--desk-text-3)', fontSize: 11.5, fontFamily: 'ui-monospace, monospace' }}>
-            Last scan: {new Date(generatedAt).toLocaleString('en-IN')} · {rows.length} results · sorted by {sort.key} {sort.dir}
-          </div>
-        )}
-      </div>
-
-      {rows.length > 0 && (
-        <div className="desk-table-card">
+      )}
+      {ex.busy && <div style={{ color: 'var(--desk-text-3)', fontSize: 12 }}>⚡ Scanning live…</div>}
+      {ex.error && <div style={{ color: 'var(--desk-bear)', fontSize: 12 }}>{ex.error}</div>}
+      {ex.rows.length > 0 && (
+        <div className="desk-table-card" style={{ borderColor: 'var(--desk-border)' }}>
           <div className="desk-table-x">
             <table className="desk-grid">
               <thead>
@@ -1268,11 +1404,7 @@ function ScanView(): JSX.Element {
           </div>
         </div>
       )}
-
-      {rows.length === 0 && !busy && (
-        <div className="proposal-note"><span>💡</span><div>Enter symbols above and hit Run Scan. Composite bias is BULLISH when the model reads ≥ 20 net-bull vs bear points across EMA stack, RSI zone, volume, 20-day-high position, momentum.</div></div>
-      )}
-    </>
+    </div>
   )
 }
 
