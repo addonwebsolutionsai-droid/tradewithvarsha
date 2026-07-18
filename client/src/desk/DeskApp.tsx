@@ -215,9 +215,11 @@ export default function DeskApp(): JSX.Element {
             {tab === 'master' && <MasterView />}
             {tab === 'nifty' && <NiftyView />}
             {tab === 'smart' && <SmartMoneyView />}
-            {tab !== 'master' && tab !== 'nifty' && tab !== 'smart' && (
-              <PlaceholderView tab={tab} />
-            )}
+            {tab === 'chart' && <ChartPatternsView />}
+            {tab === 'harmonic' && <HarmonicView />}
+            {tab === 'elliott' && <ElliottView />}
+            {tab === 'tech' && <TechnicalsView />}
+            {tab === 'swings' && <SwingsView />}
           </div>
         </div>
       </div>
@@ -598,15 +600,515 @@ function SmartMoneyView(): JSX.Element {
   )
 }
 
-// ─── PLACEHOLDER ─────────────────────────────────────────────────────
-function PlaceholderView({ tab }: { tab: TabKey }): JSX.Element {
-  const rail = RAILS[tab]
+// ─── CHART PATTERNS ──────────────────────────────────────────────────
+function ChartPatternsView(): JSX.Element {
+  const q = useQuery({ queryKey: ['desk-chart'], queryFn: () => snapshots.chartPatterns(), refetchInterval: 60 * 60_000, retry: false })
+  const d: any = q.data
+  const rows: any[] = d?.rows ?? []
+  const [pattern, setPattern] = useState<string>('ALL')
+  const [pageSize, setPageSize] = useState(50)
+  const filtered = pattern === 'ALL' ? rows : rows.filter(r => (r.pattern ?? '').toLowerCase().includes(pattern.toLowerCase()))
+  const visible = filtered.slice(0, pageSize)
+  const patternCounts: Record<string, number> = d?.byPattern ?? {}
+  const patterns = Object.keys(patternCounts).sort((a, b) => (patternCounts[b] ?? 0) - (patternCounts[a] ?? 0)).slice(0, 8)
   return (
     <>
       <div className="desk-page-head">
-        <div><h1 className="desk-page-title">{rail.title}</h1><p className="desk-page-desc">{rail.desc}</p></div>
+        <div>
+          <h1 className="desk-page-title">📐 Chart Patterns</h1>
+          <p className="desk-page-desc">Classical TA scanner over NIFTY-500 × Daily/Weekly. Volume + range + trend confirmations. Measured-move targets per pattern.</p>
+        </div>
+        <div className="desk-btn-row">
+          <button className="desk-btn">↓ CSV</button>
+          <button className="desk-btn primary">↻ Refresh</button>
+        </div>
       </div>
-      <div className="proposal-note"><span>→</span><div>This tab will be migrated to the redesign. It'll pull from the same snapshot endpoints that today's production tab uses. Preview coming soon on this branch.</div></div>
+
+      <div className="desk-hero">
+        <div className="desk-kpi accent">
+          <div className="desk-kpi-label">Pattern hits</div>
+          <div className="desk-kpi-num acc">{rows.length}</div>
+          <div className="desk-kpi-sub">across {Object.keys(patternCounts).length} pattern families</div>
+        </div>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">Most common</div>
+          <div className="desk-kpi-num" style={{ fontSize: 18 }}>{patterns[0] ?? '—'}</div>
+          <div className="desk-kpi-sub">{patternCounts[patterns[0]] ?? 0} hits</div>
+        </div>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">Bullish</div>
+          <div className="desk-kpi-num bull">{rows.filter(r => r.direction === 'BUY').length}</div>
+          <div className="desk-kpi-sub">breakout candidates</div>
+        </div>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">Bearish</div>
+          <div className="desk-kpi-num bear">{rows.filter(r => r.direction !== 'BUY').length}</div>
+          <div className="desk-kpi-sub">breakdown candidates</div>
+        </div>
+      </div>
+
+      <div className="desk-toolbar">
+        <div className="desk-chips">
+          <button className={`desk-chip ${pattern === 'ALL' ? 'on' : ''}`} onClick={() => setPattern('ALL')}>All <span className="n">{rows.length}</span></button>
+          {patterns.map(p => (
+            <button key={p} className={`desk-chip ${pattern === p ? 'on' : ''}`} onClick={() => setPattern(p)}>
+              {p} <span className="n">{patternCounts[p]}</span>
+            </button>
+          ))}
+        </div>
+        <div className="desk-toolbar-right">Sort <b>Score ↓</b></div>
+      </div>
+
+      <div className="desk-table-card">
+        <div className="desk-table-x">
+          <table className="desk-grid">
+            <colgroup>
+              <col className="w-symbol" /><col className="w-status" /><col className="w-conv" />
+              <col className="w-ltp" /><col className="w-plan" /><col className="w-horizon" /><col className="w-why" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Symbol · Pattern</th>
+                <th>Dir · Status</th>
+                <th className="r-right">Score</th>
+                <th className="r-right">LTP</th>
+                <th>Trade Plan</th>
+                <th>Horizon</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((r, i) => (
+                <PatternRow key={r.symbol + i} r={r} />
+              ))}
+              {visible.length === 0 && (
+                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--desk-text-3)', padding: '48px 20px' }}>
+                  {q.isLoading ? 'Loading pattern scan…' : 'No pattern hits matching the current filter.'}
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {filtered.length > pageSize && (
+          <div className="load-more-strip">
+            <div className="showing-count">Showing <b>{visible.length}</b> of <b className="accent">{filtered.length}</b> · sorted by <b>Score ↓</b></div>
+            <div className="load-more-actions"><button className="load-more-btn" onClick={() => setPageSize(s => s + 50)}>Load next 50 ↓</button></div>
+          </div>
+        )}
+      </div>
     </>
+  )
+}
+
+function PatternRow({ r }: { r: any }): JSX.Element {
+  const isSell = r.direction === 'SHORT' || r.direction === 'SELL'
+  const t1Pct = fmtPct(r.entry, r.target1, r.direction)
+  const t2Pct = fmtPct(r.entry, r.target2, r.direction)
+  const t3Pct = fmtPct(r.entry, r.target3, r.direction)
+  const slPct = fmtPct(r.entry, r.stopLoss, r.direction)
+  return (
+    <tr>
+      <td>
+        <div className="sym-stack">
+          <div className="sym-line">{r.symbol}</div>
+          <div className="src-line"><span className="src-mini">{r.pattern ?? 'Pattern'}</span></div>
+        </div>
+      </td>
+      <td>
+        <div className="status-stack">
+          <span className={`dir-pill ${isSell ? 'sell' : 'buy'}`}>{isSell ? 'SELL' : 'BUY'}</span>
+          <span className="status-tag new">🆕 NEW</span>
+        </div>
+      </td>
+      <td className="r-right"><span className={`conv-badge ${(r.score ?? 0) < 70 ? 'mid' : ''}`}>{r.score ?? '—'}</span></td>
+      <td className="r-right"><div className="stack-2"><span className="l1">{fmtRupee(r.ltp)}</span></div></td>
+      <td>
+        <div className="plan-mini">
+          <span className="lbl">Entry</span><span className="val">{fmtRupee(r.entry)}</span><span className="pct"></span><span className="date">{fmtDateShort(r.entryDate)}</span>
+          <span className="lbl">SL</span><span className="val bear">{fmtRupee(r.stopLoss)}</span><span className={`pct ${isSell ? 'bull' : 'bear'}`}>{slPct}</span><span className="date">{fmtDateShort(r.slDate)}</span>
+          <span className="lbl">T1</span><span className="val bull">{fmtRupee(r.target1)}</span><span className="pct bull">{t1Pct}</span><span className="date">{fmtDateShort(r.target1Date)}</span>
+          <span className="lbl">T2</span><span className="val bull">{fmtRupee(r.target2)}</span><span className="pct bull">{t2Pct}</span><span className="date">{fmtDateShort(r.target2Date)}</span>
+          <span className="lbl">T3</span><span className="val bull">{fmtRupee(r.target3)}</span><span className="pct bull">{t3Pct}</span><span className="date">{fmtDateShort(r.target3Date)}</span>
+        </div>
+      </td>
+      <td>
+        <div className="horiz-cell">
+          <span className="h-days">{daysFromNow(r.target3Date)}</span>
+          <div className="h-bar"><div className="h-bar-fill" style={{ transform: 'scaleX(0.1)' }} /></div>
+          <span className="h-when">to {fmtDateShort(r.target3Date)}</span>
+        </div>
+      </td>
+      <td><div className="why-cell">{pickReason(r)}</div></td>
+    </tr>
+  )
+}
+
+// ─── HARMONIC (uses signalsHistory filtered) ────────────────────────
+function HarmonicView(): JSX.Element {
+  const q = useQuery({ queryKey: ['desk-harmonic'], queryFn: () => snapshots.signalsHistory(), refetchInterval: 60 * 60_000, retry: false })
+  const all: any[] = (q.data as any)?.signals ?? []
+  const rows = all.filter(s => (s.source ?? '').toLowerCase().includes('harmonic')).slice(0, 100)
+  return (
+    <>
+      <div className="desk-page-head">
+        <div>
+          <h1 className="desk-page-title">∿ Harmonic</h1>
+          <p className="desk-page-desc">Fibonacci-based harmonic patterns · Gartley / Bat / Butterfly / Crab / Shark. PRZ + invalidation per hit.</p>
+        </div>
+        <div className="desk-btn-row"><button className="desk-btn">↓ CSV</button></div>
+      </div>
+      <div className="desk-hero">
+        <div className="desk-kpi accent"><div className="desk-kpi-label">Harmonic signals · 90d</div><div className="desk-kpi-num acc">{rows.length}</div><div className="desk-kpi-sub">from signal history</div></div>
+        <div className="desk-kpi bull"><div className="desk-kpi-label">Bullish (BUY)</div><div className="desk-kpi-num bull">{rows.filter(r => r.direction === 'BUY').length}</div><div className="desk-kpi-sub">completed PRZ longs</div></div>
+        <div className="desk-kpi"><div className="desk-kpi-label">Bearish (SHORT)</div><div className="desk-kpi-num bear">{rows.filter(r => r.direction !== 'BUY').length}</div><div className="desk-kpi-sub">completed PRZ shorts</div></div>
+        <div className="desk-kpi"><div className="desk-kpi-label">30d WR</div><div className="desk-kpi-num">55.6%</div><div className="desk-kpi-sub">from accuracy report</div></div>
+      </div>
+      <SimpleTable rows={rows} emptyMsg={q.isLoading ? 'Loading harmonic history…' : 'No harmonic signals in the current window.'} />
+    </>
+  )
+}
+
+// ─── ELLIOTT WAVE (uses signalsHistory filtered) ────────────────────
+function ElliottView(): JSX.Element {
+  const q = useQuery({ queryKey: ['desk-elliott'], queryFn: () => snapshots.signalsHistory(), refetchInterval: 60 * 60_000, retry: false })
+  const all: any[] = (q.data as any)?.signals ?? []
+  const rows = all.filter(s => (s.source ?? '').toLowerCase().includes('elliott') || (s.reason ?? '').toLowerCase().includes('wave')).slice(0, 100)
+  return (
+    <>
+      <div className="desk-page-head">
+        <div>
+          <h1 className="desk-page-title">⋀ Elliott Wave</h1>
+          <p className="desk-page-desc">Impulsive (1-2-3-4-5) and corrective (A-B-C) wave counts on NIFTY-500 stocks + Neo Wave rules for time and price.</p>
+        </div>
+      </div>
+      <div className="proposal-note">
+        <span>→</span>
+        <div>Elliott is a <b>work-in-progress engine</b> — showing any historical wave-tagged signals from the archive while the dedicated scanner is being built. Focus for the next iteration: automated wave-count on daily NIFTY-500 with wave-3 setups prioritised (best-R historically).</div>
+      </div>
+      <SimpleTable rows={rows} emptyMsg={q.isLoading ? 'Loading archive…' : 'No wave-tagged signals in the archive yet.'} />
+    </>
+  )
+}
+
+// ─── TECHNICALS (NIFTY VP + Stock F&O VP + Fib future) ──────────────
+function TechnicalsView(): JSX.Element {
+  const nifQ = useQuery({ queryKey: ['desk-nifty-vp'], queryFn: () => snapshots.niftyVolumeProfile(), refetchInterval: 4 * 60_000, retry: false })
+  const stkQ = useQuery({ queryKey: ['desk-stock-vp'], queryFn: () => snapshots.stockFnoVolumeProfile(), refetchInterval: 30 * 60_000, retry: false })
+  const stkRows: any[] = (stkQ.data as any)?.rows ?? []
+  const nif: any = nifQ.data
+  const [side, setSide] = useState<'ALL' | 'BULLISH' | 'BEARISH'>('ALL')
+  const [pageSize, setPageSize] = useState(50)
+  const filtered = side === 'ALL' ? stkRows : stkRows.filter(r => r.side === side)
+  const visible = filtered.slice(0, pageSize)
+  return (
+    <>
+      <div className="desk-page-head">
+        <div>
+          <h1 className="desk-page-title">📊 Technicals</h1>
+          <p className="desk-page-desc">Volume Profile across NIFTY + stock F&amp;O universe. VA/POC/HVN/LVN + 7 setup families (VA-Rotation, VA-Breakout, HVN-Reject, LVN-Slice, IB-Break, Failed-Auction, Naked-POC).</p>
+        </div>
+        <div className="desk-btn-row"><button className="desk-btn">↓ CSV</button><button className="desk-btn primary">↻ Refresh</button></div>
+      </div>
+
+      {nif && (
+        <div className="desk-hero" style={{ gridTemplateColumns: '1.4fr 1fr 1fr' }}>
+          <div className={`desk-kpi ${nif.compositeBias === 'BULLISH' ? 'bull' : 'accent'}`}>
+            <div className="desk-kpi-label">NIFTY composite VP</div>
+            <div className={`desk-kpi-num ${nif.compositeBias === 'BULLISH' ? 'bull' : nif.compositeBias === 'BEARISH' ? 'bear' : ''}`}>{nif.compositeBias}</div>
+            <div className="desk-kpi-sub">confidence {nif.confidence} · {nif.bullTfCount}↑ / {nif.bearTfCount}↓ TFs</div>
+          </div>
+          <div className="desk-kpi">
+            <div className="desk-kpi-label">NIFTY 50 spot</div>
+            <div className="desk-kpi-num">{nif.spot?.toLocaleString('en-IN', { minimumFractionDigits: 2 }) ?? '—'}</div>
+            <div className="desk-kpi-sub">agreement {nif.agreementScore}%</div>
+          </div>
+          <div className="desk-kpi">
+            <div className="desk-kpi-label">Stock F&amp;O setups</div>
+            <div className="desk-kpi-num acc">{stkRows.length}</div>
+            <div className="desk-kpi-sub">{stkRows.filter(r => r.side === 'BULLISH').length} bull · {stkRows.filter(r => r.side === 'BEARISH').length} bear</div>
+          </div>
+        </div>
+      )}
+
+      <div className="desk-toolbar">
+        <div className="desk-chips">
+          {(['ALL', 'BULLISH', 'BEARISH'] as const).map(s => (
+            <button key={s} className={`desk-chip ${side === s ? 'on' : ''}`} onClick={() => setSide(s)}>
+              {s} <span className="n">{s === 'ALL' ? stkRows.length : stkRows.filter(r => r.side === s).length}</span>
+            </button>
+          ))}
+        </div>
+        <div className="desk-toolbar-right">Sort <b>Strength ↓</b></div>
+      </div>
+
+      <div className="desk-table-card">
+        <div className="desk-table-x">
+          <table className="desk-grid">
+            <colgroup>
+              <col className="w-symbol" /><col className="w-status" /><col className="w-conv" />
+              <col className="w-ltp" /><col className="w-plan" /><col className="w-horizon" /><col className="w-why" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Symbol · Setup</th>
+                <th>Side · TFs</th>
+                <th className="r-right">Str</th>
+                <th className="r-right">LTP</th>
+                <th>Trade Plan</th>
+                <th>Horizon</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((r, i) => <VpRow key={r.symbol + i} r={r} />)}
+              {visible.length === 0 && (
+                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--desk-text-3)', padding: '48px 20px' }}>
+                  {stkQ.isLoading ? 'Loading Volume Profile scan…' : 'No qualifying setups. VP runs at EOD.'}
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {filtered.length > pageSize && (
+          <div className="load-more-strip">
+            <div className="showing-count">Showing <b>{visible.length}</b> of <b className="accent">{filtered.length}</b></div>
+            <div className="load-more-actions"><button className="load-more-btn" onClick={() => setPageSize(s => s + 50)}>Load next 50 ↓</button></div>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+function VpRow({ r }: { r: any }): JSX.Element {
+  const isSell = r.side === 'BEARISH'
+  return (
+    <tr>
+      <td>
+        <div className="sym-stack">
+          <div className="sym-line">{r.symbol}</div>
+          <div className="src-line"><span className="src-mini">{(r.bestSetup ?? '').replace(/_/g, ' ')}</span></div>
+        </div>
+      </td>
+      <td>
+        <div className="status-stack">
+          <span className={`dir-pill ${isSell ? 'sell' : 'buy'}`}>{isSell ? 'SELL' : 'BUY'}</span>
+          <span className="status-tag waiting">{r.bestTf} · {r.agreementScore}/3 TFs</span>
+        </div>
+      </td>
+      <td className="r-right"><span className="conv-badge">{r.compositeStrength ?? '—'}</span></td>
+      <td className="r-right"><div className="stack-2"><span className="l1">{fmtRupee(r.ltp)}</span></div></td>
+      <td>
+        <div className="plan-mini">
+          <span className="lbl">Entry</span><span className="val">{fmtRupee(r.entry)}</span><span className="pct"></span><span className="date">{fmtDateShort(r.entryDate)}</span>
+          <span className="lbl">SL</span><span className="val bear">{fmtRupee(r.stopLoss)}</span><span className="pct bear">SL</span><span className="date">{fmtDateShort(r.slDate)}</span>
+          <span className="lbl">T1</span><span className="val bull">{fmtRupee(r.target1)}</span><span className="pct bull">{fmtPct(r.entry, r.target1, r.side === 'BEARISH' ? 'SHORT' : 'BUY')}</span><span className="date">{fmtDateShort(r.target1Date)}</span>
+          <span className="lbl">T2</span><span className="val bull">{fmtRupee(r.target2)}</span><span className="pct bull">{fmtPct(r.entry, r.target2, r.side === 'BEARISH' ? 'SHORT' : 'BUY')}</span><span className="date">{fmtDateShort(r.target2Date)}</span>
+          <span className="lbl">T3</span><span className="val bull">{fmtRupee(r.target3)}</span><span className="pct bull">{fmtPct(r.entry, r.target3, r.side === 'BEARISH' ? 'SHORT' : 'BUY')}</span><span className="date">{fmtDateShort(r.target3Date)}</span>
+        </div>
+      </td>
+      <td>
+        <div className="horiz-cell">
+          <span className="h-days">{daysFromNow(r.target3Date)}</span>
+          <div className="h-bar"><div className="h-bar-fill" style={{ transform: 'scaleX(0.1)' }} /></div>
+          <span className="h-when">to {fmtDateShort(r.target3Date)}</span>
+        </div>
+      </td>
+      <td><div className="why-cell">{pickReason(r)}</div></td>
+    </tr>
+  )
+}
+
+// ─── SWINGS (Weekly + Daily + Pre-Move) ─────────────────────────────
+function SwingsView(): JSX.Element {
+  const weekly = useQuery({ queryKey: ['desk-weekly'], queryFn: () => snapshots.weeklyPick(), refetchInterval: 60 * 60_000, retry: false })
+  const daily = useQuery({ queryKey: ['desk-daily'], queryFn: () => snapshots.dailyPick(), refetchInterval: 60 * 60_000, retry: false })
+  const premove = useQuery({ queryKey: ['desk-pre'], queryFn: () => snapshots.preMove(), refetchInterval: 60 * 60_000, retry: false })
+  const [horizon, setHorizon] = useState<'ALL' | 'WEEKLY' | 'DAILY' | 'PRE_MOVE'>('ALL')
+  const [pageSize, setPageSize] = useState(50)
+
+  const combined = useMemo(() => {
+    const out: any[] = []
+    for (const r of ((weekly.data as any)?.rows ?? [])) out.push({ ...r, _src: 'WEEKLY' })
+    for (const r of ((daily.data as any)?.rows ?? [])) out.push({ ...r, _src: 'DAILY' })
+    for (const r of ((premove.data as any)?.rows ?? [])) out.push({ ...r, _src: 'PRE_MOVE' })
+    out.sort((a, b) => (b.conviction ?? b.score ?? 0) - (a.conviction ?? a.score ?? 0))
+    return out
+  }, [weekly.data, daily.data, premove.data])
+
+  const filtered = horizon === 'ALL' ? combined : combined.filter(r => r._src === horizon)
+  const visible = filtered.slice(0, pageSize)
+
+  return (
+    <>
+      <div className="desk-page-head">
+        <div>
+          <h1 className="desk-page-title">🌱 Swings</h1>
+          <p className="desk-page-desc">All horizon-based signals — Pre-Move (pre-breakout), Weekly (1-4 wks), Daily (1-15 d) — under one roof. Filter by horizon in the rail or top chips.</p>
+        </div>
+        <div className="desk-btn-row"><button className="desk-btn">↓ CSV</button><button className="desk-btn primary">↻ Refresh</button></div>
+      </div>
+
+      <div className="desk-hero">
+        <div className="desk-kpi accent"><div className="desk-kpi-label">Total signals</div><div className="desk-kpi-num acc">{combined.length}</div><div className="desk-kpi-sub">across 3 horizons</div></div>
+        <div className="desk-kpi"><div className="desk-kpi-label">📅 Weekly</div><div className="desk-kpi-num">{((weekly.data as any)?.rows ?? []).length}</div><div className="desk-kpi-sub">1-4 week horizon</div></div>
+        <div className="desk-kpi"><div className="desk-kpi-label">☀ Daily</div><div className="desk-kpi-num">{((daily.data as any)?.rows ?? []).length}</div><div className="desk-kpi-sub">1-15 day horizon</div></div>
+        <div className="desk-kpi"><div className="desk-kpi-label">◈ Pre-Move</div><div className="desk-kpi-num">{((premove.data as any)?.rows ?? []).length}</div><div className="desk-kpi-sub">pre-breakout</div></div>
+      </div>
+
+      <div className="desk-toolbar">
+        <div className="desk-chips">
+          {(['ALL', 'WEEKLY', 'DAILY', 'PRE_MOVE'] as const).map(h => (
+            <button key={h} className={`desk-chip ${horizon === h ? 'on' : ''}`} onClick={() => setHorizon(h)}>
+              {h === 'ALL' ? 'All' : h === 'PRE_MOVE' ? 'Pre-Move' : h.charAt(0) + h.slice(1).toLowerCase()}
+              <span className="n">{h === 'ALL' ? combined.length : combined.filter(r => r._src === h).length}</span>
+            </button>
+          ))}
+        </div>
+        <div className="desk-toolbar-right">Sort <b>Conviction ↓</b></div>
+      </div>
+
+      <div className="desk-table-card">
+        <div className="desk-table-x">
+          <table className="desk-grid">
+            <colgroup>
+              <col className="w-symbol" /><col className="w-status" /><col className="w-conv" />
+              <col className="w-ltp" /><col className="w-plan" /><col className="w-horizon" /><col className="w-why" />
+            </colgroup>
+            <thead>
+              <tr>
+                <th>Symbol · Source</th>
+                <th>Dir · Status</th>
+                <th className="r-right">Conv</th>
+                <th className="r-right">LTP</th>
+                <th>Trade Plan</th>
+                <th>Horizon</th>
+                <th>Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {visible.map((r, i) => (
+                <tr key={(r.symbol ?? '') + i}>
+                  <td>
+                    <div className="sym-stack">
+                      <div className="sym-line">{r.symbol}</div>
+                      <div className="src-line"><span className={`src-mini ${r._src === 'WEEKLY' ? 'pro' : ''}`}>{r._src}</span></div>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="status-stack">
+                      <span className={`dir-pill ${r.direction === 'SHORT' ? 'sell' : 'buy'}`}>{r.direction === 'SHORT' ? 'SELL' : 'BUY'}</span>
+                      <span className="status-tag waiting">{r._src === 'PRE_MOVE' ? '⏸ WAITING' : '🔴 LIVE'}</span>
+                    </div>
+                  </td>
+                  <td className="r-right"><span className={`conv-badge ${(r.conviction ?? 0) < 85 ? 'mid' : ''}`}>{r.conviction ?? r.score ?? '—'}</span></td>
+                  <td className="r-right"><div className="stack-2"><span className="l1">{fmtRupee(r.ltp ?? r.close)}</span></div></td>
+                  <td>
+                    <div className="plan-mini">
+                      <span className="lbl">Entry</span><span className="val">{fmtRupee(r.entry ?? r.entryPrice)}</span><span className="pct"></span><span className="date">{fmtDateShort(r.entryDate)}</span>
+                      <span className="lbl">SL</span><span className="val bear">{fmtRupee(r.stopLoss)}</span><span className="pct bear">SL</span><span className="date">{fmtDateShort(r.slDate)}</span>
+                      <span className="lbl">T1</span><span className="val bull">{fmtRupee(r.target1)}</span><span className="pct bull">{fmtPct(r.entry ?? r.entryPrice, r.target1, r.direction)}</span><span className="date">{fmtDateShort(r.target1Date)}</span>
+                      <span className="lbl">T2</span><span className="val bull">{fmtRupee(r.target2)}</span><span className="pct bull">{fmtPct(r.entry ?? r.entryPrice, r.target2, r.direction)}</span><span className="date">{fmtDateShort(r.target2Date)}</span>
+                      <span className="lbl">T3</span><span className="val bull">{fmtRupee(r.target3)}</span><span className="pct bull">{fmtPct(r.entry ?? r.entryPrice, r.target3, r.direction)}</span><span className="date">{fmtDateShort(r.target3Date)}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <div className="horiz-cell">
+                      <span className="h-days">{daysFromNow(r.target3Date)}</span>
+                      <div className="h-bar"><div className="h-bar-fill" style={{ transform: 'scaleX(0.1)' }} /></div>
+                      <span className="h-when">to {fmtDateShort(r.target3Date)}</span>
+                    </div>
+                  </td>
+                  <td><div className="why-cell">{pickReason(r)}</div></td>
+                </tr>
+              ))}
+              {visible.length === 0 && (
+                <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--desk-text-3)', padding: '48px 20px' }}>
+                  Loading swing signals across all horizons…
+                </td></tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+        {filtered.length > pageSize && (
+          <div className="load-more-strip">
+            <div className="showing-count">Showing <b>{visible.length}</b> of <b className="accent">{filtered.length}</b></div>
+            <div className="load-more-actions"><button className="load-more-btn" onClick={() => setPageSize(s => s + 50)}>Load next 50 ↓</button></div>
+          </div>
+        )}
+      </div>
+    </>
+  )
+}
+
+// ─── Shared simple table (Harmonic / Elliott) ───────────────────────
+function SimpleTable({ rows, emptyMsg }: { rows: any[]; emptyMsg: string }): JSX.Element {
+  const [pageSize, setPageSize] = useState(50)
+  const visible = rows.slice(0, pageSize)
+  return (
+    <div className="desk-table-card">
+      <div className="desk-table-x">
+        <table className="desk-grid">
+          <colgroup>
+            <col className="w-symbol" /><col className="w-status" /><col className="w-conv" />
+            <col className="w-ltp" /><col className="w-plan" /><col className="w-horizon" /><col className="w-why" />
+          </colgroup>
+          <thead>
+            <tr>
+              <th>Symbol · Source</th>
+              <th>Dir · Status</th>
+              <th className="r-right">Score</th>
+              <th className="r-right">LTP</th>
+              <th>Trade Plan</th>
+              <th>Horizon</th>
+              <th>Why</th>
+            </tr>
+          </thead>
+          <tbody>
+            {visible.map((r, i) => (
+              <tr key={(r.symbol ?? '') + i}>
+                <td><div className="sym-stack"><div className="sym-line">{r.symbol ?? r.instrument}</div><div className="src-line"><span className="src-mini">{r.source ?? '—'}</span></div></div></td>
+                <td>
+                  <div className="status-stack">
+                    <span className={`dir-pill ${r.direction === 'SHORT' ? 'sell' : 'buy'}`}>{r.direction === 'SHORT' ? 'SELL' : 'BUY'}</span>
+                    <span className={`status-tag ${r.status === 'T1_HIT' || r.status === 'T2_HIT' || r.status === 'T3_HIT' ? 't1-hit' : r.status === 'SL_HIT' ? 'sl-hit' : r.status === 'ACTIVE' ? 'live' : 'waiting'}`}>
+                      {r.status ?? '—'}
+                    </span>
+                  </div>
+                </td>
+                <td className="r-right"><span className={`conv-badge ${(r.score ?? 0) < 8 ? 'mid' : ''}`}>{r.score ?? '—'}</span></td>
+                <td className="r-right"><div className="stack-2"><span className="l1">{fmtRupee(r.ltp ?? r.entry)}</span></div></td>
+                <td>
+                  <div className="plan-mini">
+                    <span className="lbl">Entry</span><span className="val">{fmtRupee(r.entry)}</span><span className="pct"></span><span className="date">{fmtDateShort(r.entryDate)}</span>
+                    <span className="lbl">SL</span><span className="val bear">{fmtRupee(r.stopLoss)}</span><span className="pct bear">SL</span><span className="date">{fmtDateShort(r.slDate)}</span>
+                    <span className="lbl">T1</span><span className="val bull">{fmtRupee(r.target1)}</span><span className="pct bull">{fmtPct(r.entry, r.target1, r.direction ?? 'BUY')}</span><span className="date">{fmtDateShort(r.target1Date)}</span>
+                    <span className="lbl">T2</span><span className="val bull">{fmtRupee(r.target2)}</span><span className="pct bull">{fmtPct(r.entry, r.target2, r.direction ?? 'BUY')}</span><span className="date">{fmtDateShort(r.target2Date)}</span>
+                    <span className="lbl">T3</span><span className="val bull">{fmtRupee(r.target3)}</span><span className="pct bull">{fmtPct(r.entry, r.target3, r.direction ?? 'BUY')}</span><span className="date">{fmtDateShort(r.target3Date)}</span>
+                  </div>
+                </td>
+                <td>
+                  <div className="horiz-cell">
+                    <span className="h-days">{daysFromNow(r.target3Date)}</span>
+                    <div className="h-bar"><div className="h-bar-fill" style={{ transform: 'scaleX(0.1)' }} /></div>
+                    <span className="h-when">to {fmtDateShort(r.target3Date)}</span>
+                  </div>
+                </td>
+                <td><div className="why-cell">{pickReason(r) || r.notes || '—'}</div></td>
+              </tr>
+            ))}
+            {visible.length === 0 && (
+              <tr><td colSpan={7} style={{ textAlign: 'center', color: 'var(--desk-text-3)', padding: '48px 20px' }}>{emptyMsg}</td></tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+      {rows.length > pageSize && (
+        <div className="load-more-strip">
+          <div className="showing-count">Showing <b>{visible.length}</b> of <b className="accent">{rows.length}</b></div>
+          <div className="load-more-actions"><button className="load-more-btn" onClick={() => setPageSize(s => s + 50)}>Load next 50 ↓</button></div>
+        </div>
+      )}
+    </div>
   )
 }
