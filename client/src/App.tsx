@@ -42,6 +42,8 @@ import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from 
 import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub, PublicEliteHub, PublicOIBuildupPage, PublicFnoFuturesPage, PublicOldWeeklyPickPage, PublicSectorRotationPage, PublicCrossConfluencePage, PublicAdDivergencePage, PublicProEdgePage, PublicSlTrapPage, PublicChatPage, PublicArchivePage, PublicSuperstarPicksPage, PublicBulkDealsPage, PublicEarlyMomentumPage, PublicPedigreeAccumulationPage, PublicXRecsPage, PublicChartPatternsPage, PublicInsiderBuysPage, PublicNiftyForesightPage, PublicVolumeProfilePage, PublicElitePicksPage, PublicStockFnoVolumeProfilePage } from './pages/PublicPages'
 import { AudioTour, ChangelogPopup } from './components/AudioTour'
 import { ChatFloatingButton } from './components/ChatFloatingButton'
+// 2026-07-18 · redesign preview shell — full-viewport, isolated from main chrome
+import DeskApp from './desk/DeskApp'
 
 const queryClient = new QueryClient({
   defaultOptions: { queries: { refetchOnWindowFocus: false, retry: 1 } },
@@ -234,8 +236,23 @@ export default function App() {
   return (
     <QueryClientProvider client={queryClient}>
       <BrowserRouter>
-        <Shell />
+        <RootRouter />
       </BrowserRouter>
     </QueryClientProvider>
+  )
+}
+
+/**
+ * 2026-07-18 · RootRouter switches BEFORE the main Shell renders, so /desk/*
+ * bypasses the header + sidebar + padding and takes the full viewport. This
+ * keeps the redesign preview completely isolated — no chrome from the
+ * existing app leaks into it and vice versa.
+ */
+function RootRouter() {
+  return (
+    <Routes>
+      <Route path="/desk/*" element={<DeskApp />} />
+      <Route path="*" element={<Shell />} />
+    </Routes>
   )
 }
