@@ -266,7 +266,11 @@ export async function aggregateConfluence(): Promise<UltraConfluence> {
   }
 
   const { enrichRows } = await import('../lib/reasonEnrichment')
-  const enrichedRows = enrichRows(finalRows as unknown as Array<Record<string, unknown>>, 'elite')
+  const { enrichRowsDates } = await import('../lib/targetDateEnrichment')
+  const enrichedRows = enrichRowsDates(
+    enrichRows(finalRows as unknown as Array<Record<string, unknown>>, 'elite'),
+    'elite',
+  )
 
   return {
     generatedAt: ts,

@@ -237,7 +237,11 @@ export async function runAndPublishPedigree(): Promise<{ generatedAt: string; to
   const deepCount = rows.filter(r => r.pullbackTier === 'DEEP').length
   const moderateCount = rows.length - deepCount
   const { enrichRows } = await import('../lib/reasonEnrichment')
-  const enriched = enrichRows(rows as unknown as Array<Record<string, unknown>>, 'pedigree') as unknown as PedigreeRow[]
+  const { enrichRowsDates } = await import('../lib/targetDateEnrichment')
+  const enriched = enrichRowsDates(
+    enrichRows(rows as unknown as Array<Record<string, unknown>>, 'pedigree') as unknown as Array<Record<string, unknown>>,
+    'pedigree',
+  ) as unknown as PedigreeRow[]
   const out = {
     generatedAt: new Date().toISOString(),
     criterion: '≥40% off 52w-high · NIFTY-500 OR mcap ≥₹1KCr · turnover ≥₹2Cr · FII OR DII OR Promoter ↑ QoQ · pledge <25%',

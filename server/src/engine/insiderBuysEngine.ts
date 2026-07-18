@@ -192,7 +192,11 @@ export async function runAndPublishInsiderBuys(): Promise<{ generatedAt: string;
   const strongCount = rows.filter(r => r.signal === 'STRONG_INSIDER_BUY').length
   // 2026-07-18 · unified reason enrichment — no-op when flag is off
   const { enrichRows } = await import('../lib/reasonEnrichment')
-  const enriched = enrichRows(rows as unknown as Array<Record<string, unknown>>, 'insider') as unknown as InsiderBuyRow[]
+  const { enrichRowsDates } = await import('../lib/targetDateEnrichment')
+  const enriched = enrichRowsDates(
+    enrichRows(rows as unknown as Array<Record<string, unknown>>, 'insider') as unknown as Array<Record<string, unknown>>,
+    'insider',
+  ) as unknown as InsiderBuyRow[]
   const out = {
     generatedAt: new Date().toISOString(),
     criterion: 'SEBI PIT (Reg 7) + SAST (Reg 29) filings · last 30d · classified by actor type (promoter / KMP / external) and direction',

@@ -167,7 +167,11 @@ export async function aggregateProEdge(opts?: { minConviction?: number }): Promi
   log.ok('PRO-EDGE', `${finalRows.length} signals · filters: ultra=${fUltra} smart=${fSmart} sector=${fSector} conv=${fConv}`)
 
   const { enrichRows } = await import('../lib/reasonEnrichment')
-  const enrichedRows = enrichRows(finalRows as unknown as Array<Record<string, unknown>>, 'proEdge')
+  const { enrichRowsDates } = await import('../lib/targetDateEnrichment')
+  const enrichedRows = enrichRowsDates(
+    enrichRows(finalRows as unknown as Array<Record<string, unknown>>, 'proEdge'),
+    'proEdge',
+  )
 
   return {
     generatedAt: ts,

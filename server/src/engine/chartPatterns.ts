@@ -890,7 +890,11 @@ export async function runAndPublishChartPatterns(): Promise<{ generatedAt: strin
   const byPattern: Record<string, number> = {}
   for (const r of rows) byPattern[r.pattern] = (byPattern[r.pattern] ?? 0) + 1
   const { enrichRows } = await import('../lib/reasonEnrichment')
-  const enriched = enrichRows(rows as unknown as Array<Record<string, unknown>>, 'chartPattern') as unknown as PatternHit[]
+  const { enrichRowsDates } = await import('../lib/targetDateEnrichment')
+  const enriched = enrichRowsDates(
+    enrichRows(rows as unknown as Array<Record<string, unknown>>, 'chartPattern') as unknown as Array<Record<string, unknown>>,
+    'chartPattern',
+  ) as unknown as PatternHit[]
   const out = {
     generatedAt: new Date().toISOString(),
     criterion: 'Chart-pattern scan over NIFTY-500 universe × DAILY + WEEKLY timeframes',

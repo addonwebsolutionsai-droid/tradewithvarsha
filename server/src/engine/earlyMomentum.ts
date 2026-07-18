@@ -466,7 +466,11 @@ export async function runAndPublishEarlyMomentum(): Promise<{ generatedAt: strin
   const tierCounts: Record<string, number> = { EARLY: 0, WAVE_2: 0, CONFIRMED: 0 }
   for (const r of rows) tierCounts[r.tier]++
   const { enrichRows } = await import('../lib/reasonEnrichment')
-  const enriched = enrichRows(rows as unknown as Array<Record<string, unknown>>, 'earlyMomentum') as unknown as EarlyMomentumRow[]
+  const { enrichRowsDates } = await import('../lib/targetDateEnrichment')
+  const enriched = enrichRowsDates(
+    enrichRows(rows as unknown as Array<Record<string, unknown>>, 'earlyMomentum') as unknown as Array<Record<string, unknown>>,
+    'earlyMomentum',
+  ) as unknown as EarlyMomentumRow[]
   const out = {
     generatedAt: new Date().toISOString(),
     criterion: '₹50-500 close · score ≥ 25 · ranked by composite momentum + institutional-footprint signature',

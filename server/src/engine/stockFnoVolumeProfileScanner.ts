@@ -222,6 +222,8 @@ export async function runAndPublishStockFnoVolumeProfile(): Promise<{
   bearCount: number
 }> {
   const r = await scanStockFnoVolumeProfile()
+  const { enrichRowsDates } = await import('../lib/targetDateEnrichment')
+  r.rows = enrichRowsDates(r.rows as unknown as Array<Record<string, unknown>>, 'stockFnoVp') as unknown as typeof r.rows
   const snapPath = path.resolve(__dirname, '../../data/public-snapshots/stock-fno-volume-profile.json')
   fs.mkdirSync(path.dirname(snapPath), { recursive: true })
   fs.writeFileSync(snapPath, JSON.stringify(r, null, 2))

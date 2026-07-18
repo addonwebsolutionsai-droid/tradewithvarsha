@@ -78,6 +78,12 @@ export const config = {
   features: {
     /** Attach unifiedReason.{s1..s5, collapsed, expanded} to snapshot rows. */
     unifiedReasonEnabled: bool(process.env.UNIFIED_REASON_ENABLED, true),
+    /**
+     * Attach computed T1/T2/T3/SL dates to snapshot rows via
+     * targetDateEstimator (ATR × pattern-speed × momentum model).
+     * Rollback = TARGET_DATES_ENABLED=false in env, no code change.
+     */
+    targetDatesEnabled: bool(process.env.TARGET_DATES_ENABLED, true),
   },
 }
 
