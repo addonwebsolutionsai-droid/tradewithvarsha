@@ -12,10 +12,25 @@
 import { useEffect, useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { snapshots } from '../api'
+import { useSortable, matchesQuery, type SortableColumn } from './hooks'
 import './tokens.css'
 
+// ─── Sortable table header helper ────────────────────────────────────
+function SortableTh({
+  label, sortKey, currentKey, dir, onSort, className,
+}: { label: React.ReactNode; sortKey: string; currentKey: string; dir: 'asc' | 'desc'; onSort: (k: string) => void; className?: string }) {
+  const active = currentKey === sortKey
+  return (
+    <th className={className} onClick={() => onSort(sortKey)}
+        style={{ cursor: 'pointer', userSelect: 'none' }}>
+      {label}
+      {active && <span style={{ marginLeft: 4, color: 'var(--desk-accent)' }}>{dir === 'desc' ? '↓' : '↑'}</span>}
+    </th>
+  )
+}
+
 // ─── Types ───────────────────────────────────────────────────────────
-type TabKey = 'master' | 'nifty' | 'chart' | 'harmonic' | 'elliott' | 'tech' | 'swings' | 'smart'
+type TabKey = 'master' | 'nifty' | 'chart' | 'harmonic' | 'elliott' | 'tech' | 'swings' | 'smart' | 'scan'
 type Theme = 'dark' | 'light'
 
 const TABS: Array<{ key: TabKey; label: string; icon: string; count?: number }> = [
@@ -27,10 +42,16 @@ const TABS: Array<{ key: TabKey; label: string; icon: string; count?: number }> 
   { key: 'tech',     label: 'Technicals',     icon: '📊' },
   { key: 'swings',   label: 'Swings',         icon: '🌱' },
   { key: 'smart',    label: 'Smart Money',    icon: '⛰' },
+  { key: 'scan',     label: 'Scan',           icon: '🔎' },
 ]
 
 const THEME_KEY = 'desk-theme'
 const TAB_KEY = 'desk-tab'
+
+// Global search context — child views read it and filter their rows.
+import { createContext, useContext } from 'react'
+const SearchCtx = createContext<string>('')
+const useSearchQuery = () => useContext(SearchCtx)
 
 // ─── Helpers ─────────────────────────────────────────────────────────
 function pickReason(r: any): string {
@@ -148,6 +169,20 @@ const RAILS: Record<TabKey, { title: string; desc: string; groups: RailGroup[] }
       { icon: '🗓', label: 'Positional' },
     ]},
   ]},
+  scan: { title: '🔎 Scan', desc: 'On-demand real-time scan · paste 1-25 symbols and see composite bias, feature snapshot, and trade plan.', groups: [
+    { title: 'Common baskets', items: [
+      { icon: '◉', label: 'Custom (enter above)', on: true },
+      { icon: '·', label: 'Nifty 50 heavyweights' },
+      { icon: '·', label: 'Bank Nifty basket' },
+      { icon: '·', label: 'IT top-5' },
+      { icon: '·', label: 'FMCG top-5' },
+    ]},
+    { title: 'How it works', items: [
+      { icon: '⚡', label: 'Uses live quote intraday' },
+      { icon: '📊', label: 'Falls back to last close after hours' },
+      { icon: '🎯', label: 'Trade plan when composite ≥ 60' },
+    ]},
+  ]},
   smart: { title: '⛰ Smart Money', desc: 'Institutional footprint — Insider, Superstar, Bulk Deals, Vol Accum.', groups: [
     { title: 'Source', items: [
       { icon: '◉', label: 'All footprints', on: true },
@@ -171,6 +206,7 @@ export default function DeskApp(): JSX.Element {
     if (stored && TABS.some(t => t.key === stored)) return stored as TabKey
     return 'master'
   })
+  const [search, setSearch] = useState<string>('')
   useEffect(() => { localStorage.setItem(THEME_KEY, theme) }, [theme])
   useEffect(() => { localStorage.setItem(TAB_KEY, tab) }, [tab])
   const toggleTheme = () => setTheme(t => t === 'dark' ? 'light' : 'dark')
@@ -198,9 +234,25 @@ export default function DeskApp(): JSX.Element {
             ))}
           </nav>
           <div className="desk-header-right">
+            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: 'var(--desk-surface-2)', border: '1px solid var(--desk-border)', borderRadius: 8, padding: '4px 10px', minWidth: 220 }}>
+              <span style={{ color: 'var(--desk-text-3)' }}>🔎</span>
+              <input
+                type="text"
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Search symbol · e.g. RELIANCE, TCS"
+                style={{ background: 'transparent', border: 'none', outline: 'none', color: 'var(--desk-text)', fontSize: 12, fontFamily: 'inherit', flex: 1, minWidth: 0 }}
+              />
+              {search && (
+                <button
+                  onClick={() => setSearch('')}
+                  style={{ background: 'transparent', border: 'none', color: 'var(--desk-text-3)', cursor: 'pointer', fontSize: 14, padding: 0 }}
+                  title="Clear"
+                >×</button>
+              )}
+            </div>
             <button className="desk-util" title="Track Record">📈</button>
             <button className="desk-util" title="Archive">🗄</button>
-            <button className="desk-util" title="Ask AI">💬</button>
             <button className="desk-theme-btn" onClick={toggleTheme}>
               <span>{theme === 'dark' ? '◐' : '◑'}</span>
               <span>Theme</span>
@@ -209,6 +261,7 @@ export default function DeskApp(): JSX.Element {
           </div>
         </header>
 
+        <SearchCtx.Provider value={search}>
         <div className="desk-body">
           <RailPane tab={tab} />
           <div className="desk-canvas">
@@ -220,8 +273,10 @@ export default function DeskApp(): JSX.Element {
             {tab === 'elliott' && <ElliottView />}
             {tab === 'tech' && <TechnicalsView />}
             {tab === 'swings' && <SwingsView />}
+            {tab === 'scan' && <ScanView />}
           </div>
         </div>
+        </SearchCtx.Provider>
       </div>
     </div>
   )
@@ -352,10 +407,23 @@ function MasterView(): JSX.Element {
     return arr
   }, [proEdge.data, conf.data, ped.data])
 
+  const q = useSearchQuery()
+  const searched = useMemo(() => rows.filter(r => matchesQuery(r, q)), [rows, q])
+  const columns: SortableColumn<MergedRow>[] = [
+    { key: 'symbol', accessor: r => r.symbol },
+    { key: 'direction', accessor: r => r.direction },
+    { key: 'conviction', accessor: r => r.conviction },
+    { key: 'ltp', accessor: r => r.ltp },
+    { key: 'entry', accessor: r => r.entry },
+    { key: 'target1', accessor: r => r.target1 },
+    { key: 'target3', accessor: r => r.target3 },
+    { key: 'sources', accessor: r => r.sources.length },
+  ]
+  const { sortedRows, sort, onSort } = useSortable(searched, { key: 'conviction', dir: 'desc' }, columns)
   const [pageSize, setPageSize] = useState(50)
-  const visible = rows.slice(0, pageSize)
-  const eliteCount = rows.filter(r => r.sources.length >= 2).length
-  const avgConv = rows.length ? Math.round(rows.reduce((s, r) => s + r.conviction, 0) / rows.length) : 0
+  const visible = sortedRows.slice(0, pageSize)
+  const eliteCount = searched.filter(r => r.sources.length >= 2).length
+  const avgConv = searched.length ? Math.round(searched.reduce((s, r) => s + r.conviction, 0) / searched.length) : 0
 
   return (
     <>
@@ -416,10 +484,10 @@ function MasterView(): JSX.Element {
             </colgroup>
             <thead>
               <tr>
-                <th>Symbol · Sources</th>
-                <th>Dir · Status</th>
-                <th className="r-right">Conv</th>
-                <th className="r-right">LTP</th>
+                <SortableTh label="Symbol · Sources" sortKey="symbol" currentKey={sort.key} dir={sort.dir} onSort={onSort} />
+                <SortableTh label="Dir · Status" sortKey="direction" currentKey={sort.key} dir={sort.dir} onSort={onSort} />
+                <SortableTh label="Conv" sortKey="conviction" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
+                <SortableTh label="LTP" sortKey="ltp" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
                 <th>Trade Plan</th>
                 <th>Horizon</th>
                 <th>Why · combined</th>
@@ -627,8 +695,19 @@ function ChartPatternsView(): JSX.Element {
   const rows: any[] = d?.rows ?? []
   const [pattern, setPattern] = useState<string>('ALL')
   const [pageSize, setPageSize] = useState(50)
-  const filtered = pattern === 'ALL' ? rows : rows.filter(r => (r.pattern ?? '').toLowerCase().includes(pattern.toLowerCase()))
-  const visible = filtered.slice(0, pageSize)
+  const searchQ = useSearchQuery()
+  const searched = useMemo(() => rows.filter(r => matchesQuery(r, searchQ)), [rows, searchQ])
+  const filtered = pattern === 'ALL' ? searched : searched.filter(r => (r.pattern ?? '').toLowerCase().includes(pattern.toLowerCase()))
+  const cpColumns: SortableColumn<any>[] = [
+    { key: 'symbol', accessor: r => r.symbol ?? '' },
+    { key: 'pattern', accessor: r => r.pattern ?? '' },
+    { key: 'direction', accessor: r => r.direction ?? '' },
+    { key: 'score', accessor: r => r.score ?? 0 },
+    { key: 'ltp', accessor: r => r.ltp ?? 0 },
+    { key: 'target1', accessor: r => r.target1 ?? 0 },
+  ]
+  const cpSort = useSortable(filtered, { key: 'score', dir: 'desc' }, cpColumns)
+  const visible = cpSort.sortedRows.slice(0, pageSize)
   const patternCounts: Record<string, number> = d?.byPattern ?? {}
   const patterns = Object.keys(patternCounts).sort((a, b) => (patternCounts[b] ?? 0) - (patternCounts[a] ?? 0)).slice(0, 8)
   return (
@@ -688,10 +767,10 @@ function ChartPatternsView(): JSX.Element {
             </colgroup>
             <thead>
               <tr>
-                <th>Symbol · Pattern</th>
-                <th>Dir · Status</th>
-                <th className="r-right">Score</th>
-                <th className="r-right">LTP</th>
+                <SortableTh label="Symbol · Pattern" sortKey="symbol" currentKey={cpSort.sort.key} dir={cpSort.sort.dir} onSort={cpSort.onSort} />
+                <SortableTh label="Dir · Status" sortKey="direction" currentKey={cpSort.sort.key} dir={cpSort.sort.dir} onSort={cpSort.onSort} />
+                <SortableTh label="Score" sortKey="score" currentKey={cpSort.sort.key} dir={cpSort.sort.dir} onSort={cpSort.onSort} className="r-right" />
+                <SortableTh label="LTP" sortKey="ltp" currentKey={cpSort.sort.key} dir={cpSort.sort.dir} onSort={cpSort.onSort} className="r-right" />
                 <th>Trade Plan</th>
                 <th>Horizon</th>
                 <th>Why</th>
@@ -1088,10 +1167,167 @@ function SwingsView(): JSX.Element {
   )
 }
 
+// ─── SCAN VIEW · on-demand real-time scan ────────────────────────────
+function ScanView(): JSX.Element {
+  const [input, setInput] = useState('RELIANCE, TCS, INFY, HDFCBANK, TITAN')
+  const [rows, setRows] = useState<any[]>([])
+  const [busy, setBusy] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [generatedAt, setGeneratedAt] = useState<string>('')
+
+  const runScan = async () => {
+    setBusy(true); setError(null)
+    try {
+      const symbols = input.split(/[\s,]+/).map(s => s.trim().toUpperCase()).filter(Boolean)
+      if (symbols.length === 0) { setError('enter at least one symbol'); setBusy(false); return }
+      const res = await fetch('/api/scan/on-demand', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ symbols }),
+      })
+      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      const data = await res.json()
+      setRows(data.results ?? [])
+      setGeneratedAt(data.generatedAt)
+    } catch (e) {
+      setError((e as Error).message)
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  const columns: SortableColumn<any>[] = [
+    { key: 'symbol', accessor: r => r.symbol },
+    { key: 'bias', accessor: r => r.compositeBias ?? '' },
+    { key: 'score', accessor: r => r.compositeScore ?? 0 },
+    { key: 'ltp', accessor: r => r.ltp ?? 0 },
+    { key: 'change', accessor: r => r.changePct ?? 0 },
+    { key: 'ret5d', accessor: r => r.ret5dPct ?? 0 },
+    { key: 'rsi', accessor: r => r.rsi14 ?? 0 },
+    { key: 'vol', accessor: r => r.volRatio5_20 ?? 0 },
+    { key: 'distHigh', accessor: r => r.distFromHigh20Pct ?? 0 },
+  ]
+  const { sortedRows, sort, onSort } = useSortable(rows, { key: 'score', dir: 'desc' }, columns)
+
+  return (
+    <>
+      <div className="desk-page-head">
+        <div>
+          <h1 className="desk-page-title">🔎 On-demand Scan</h1>
+          <p className="desk-page-desc">Paste 1-25 tickers (comma or space separated). Runs core criteria in real time: LTP · change · 5-day return · RSI · EMA stack · volume ratio · distance from 20-day high · composite bias + score · trade plan (entry/SL/T1/T2/T3 with dated targets) when composite ≥ 60.</p>
+        </div>
+      </div>
+
+      <div style={{ background: 'var(--desk-surface)', border: '1px solid var(--desk-border)', borderRadius: 12, padding: 16, marginBottom: 20 }}>
+        <div style={{ display: 'flex', gap: 12, alignItems: 'center' }}>
+          <input
+            type="text"
+            value={input}
+            onChange={(e) => setInput(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') runScan() }}
+            placeholder="e.g. RELIANCE, TCS, INFY, HDFCBANK"
+            disabled={busy}
+            style={{ flex: 1, background: 'var(--desk-bg)', border: '1px solid var(--desk-border)', borderRadius: 8, padding: '10px 14px', color: 'var(--desk-text)', fontFamily: 'ui-monospace, monospace', fontSize: 13, outline: 'none' }}
+          />
+          <button className="desk-btn primary" onClick={runScan} disabled={busy}>
+            {busy ? 'Scanning…' : '⚡ Run Scan'}
+          </button>
+        </div>
+        {error && <div style={{ marginTop: 10, color: 'var(--desk-bear)', fontSize: 12 }}>Error: {error}</div>}
+        {generatedAt && (
+          <div style={{ marginTop: 10, color: 'var(--desk-text-3)', fontSize: 11.5, fontFamily: 'ui-monospace, monospace' }}>
+            Last scan: {new Date(generatedAt).toLocaleString('en-IN')} · {rows.length} results · sorted by {sort.key} {sort.dir}
+          </div>
+        )}
+      </div>
+
+      {rows.length > 0 && (
+        <div className="desk-table-card">
+          <div className="desk-table-x">
+            <table className="desk-grid">
+              <thead>
+                <tr>
+                  <SortableTh label="Symbol" sortKey="symbol" currentKey={sort.key} dir={sort.dir} onSort={onSort} />
+                  <SortableTh label="Bias" sortKey="bias" currentKey={sort.key} dir={sort.dir} onSort={onSort} />
+                  <SortableTh label="Score" sortKey="score" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
+                  <SortableTh label="LTP" sortKey="ltp" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
+                  <SortableTh label="Chg%" sortKey="change" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
+                  <SortableTh label="5d %" sortKey="ret5d" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
+                  <SortableTh label="RSI" sortKey="rsi" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
+                  <SortableTh label="Vol×" sortKey="vol" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
+                  <SortableTh label="Off Hi" sortKey="distHigh" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
+                  <th>Trade Plan</th>
+                  <th>Why</th>
+                </tr>
+              </thead>
+              <tbody>
+                {sortedRows.map((r: any, i: number) => (
+                  <ScanRow key={r.symbol + i} r={r} />
+                ))}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      )}
+
+      {rows.length === 0 && !busy && (
+        <div className="proposal-note"><span>💡</span><div>Enter symbols above and hit Run Scan. Composite bias is BULLISH when the model reads ≥ 20 net-bull vs bear points across EMA stack, RSI zone, volume, 20-day-high position, momentum.</div></div>
+      )}
+    </>
+  )
+}
+
+function ScanRow({ r }: { r: any }): JSX.Element {
+  if (!r.ok) {
+    return (
+      <tr>
+        <td><div className="sym-stack"><div className="sym-line">{r.symbol}</div></div></td>
+        <td colSpan={10} style={{ color: 'var(--desk-text-3)', fontSize: 11.5 }}>error: {r.error ?? 'unknown'}</td>
+      </tr>
+    )
+  }
+  const biasColor = r.compositeBias === 'BULLISH' ? 'var(--desk-bull)' : r.compositeBias === 'BEARISH' ? 'var(--desk-bear)' : 'var(--desk-text-2)'
+  return (
+    <tr>
+      <td><div className="sym-stack"><div className="sym-line">{r.symbol}</div><div className="src-line"><span className="src-mini">{r.emaStack}</span></div></div></td>
+      <td><span style={{ color: biasColor, fontFamily: 'ui-monospace, monospace', fontSize: 11, fontWeight: 700, letterSpacing: '0.06em' }}>{r.compositeBias}</span></td>
+      <td className="r-right"><span className={`conv-badge ${r.compositeScore < 60 ? 'mid' : ''}`}>{r.compositeScore}</span></td>
+      <td className="r-right mono" style={{ fontSize: 12.5 }}>{r.ltp?.toLocaleString('en-IN', { minimumFractionDigits: 2 })}</td>
+      <td className="r-right mono" style={{ fontSize: 11.5, color: r.changePct >= 0 ? 'var(--desk-bull)' : 'var(--desk-bear)' }}>{r.changePct >= 0 ? '+' : ''}{r.changePct?.toFixed(2)}%</td>
+      <td className="r-right mono" style={{ fontSize: 11.5, color: r.ret5dPct >= 0 ? 'var(--desk-bull)' : 'var(--desk-bear)' }}>{r.ret5dPct >= 0 ? '+' : ''}{r.ret5dPct?.toFixed(1)}%</td>
+      <td className="r-right mono" style={{ fontSize: 11.5 }}>{r.rsi14?.toFixed(0)}</td>
+      <td className="r-right mono" style={{ fontSize: 11.5 }}>{r.volRatio5_20?.toFixed(1)}×</td>
+      <td className="r-right mono" style={{ fontSize: 11.5 }}>−{r.distFromHigh20Pct?.toFixed(1)}%</td>
+      <td>
+        {r.entry ? (
+          <div className="plan-mini" style={{ gridTemplateColumns: 'auto auto auto' }}>
+            <span className="lbl">Entry</span><span className="val">{fmtRupee(r.entry)}</span><span className="date">{fmtDateShort(r.entryDate)}</span>
+            <span className="lbl">SL</span><span className="val bear">{fmtRupee(r.stopLoss)}</span><span className="date">{fmtDateShort(r.slDate)}</span>
+            <span className="lbl">T1</span><span className="val bull">{fmtRupee(r.target1)}</span><span className="date">{fmtDateShort(r.target1Date)}</span>
+            <span className="lbl">T2</span><span className="val bull">{fmtRupee(r.target2)}</span><span className="date">{fmtDateShort(r.target2Date)}</span>
+            <span className="lbl">T3</span><span className="val bull">{fmtRupee(r.target3)}</span><span className="date">{fmtDateShort(r.target3Date)}</span>
+          </div>
+        ) : <span style={{ color: 'var(--desk-text-3)', fontSize: 11 }}>—</span>}
+      </td>
+      <td><div className="why-cell">{r.unifiedReason || (r.reasoning || []).join(' · ')}</div></td>
+    </tr>
+  )
+}
+
 // ─── Shared simple table (Harmonic / Elliott) ───────────────────────
-function SimpleTable({ rows, emptyMsg }: { rows: any[]; emptyMsg: string }): JSX.Element {
+function SimpleTable({ rows: rawRows, emptyMsg }: { rows: any[]; emptyMsg: string }): JSX.Element {
+  const q = useSearchQuery()
+  const searched = useMemo(() => rawRows.filter(r => matchesQuery(r, q)), [rawRows, q])
+  const columns: SortableColumn<any>[] = [
+    { key: 'symbol', accessor: r => r.symbol ?? r.instrument ?? '' },
+    { key: 'direction', accessor: r => r.direction ?? '' },
+    { key: 'score', accessor: r => r.score ?? r.conviction ?? 0 },
+    { key: 'ltp', accessor: r => r.ltp ?? r.entry ?? 0 },
+    { key: 'target1', accessor: r => r.target1 ?? 0 },
+    { key: 'entry', accessor: r => r.entry ?? 0 },
+  ]
+  const { sortedRows, sort, onSort } = useSortable(searched, { key: 'score', dir: 'desc' }, columns)
   const [pageSize, setPageSize] = useState(50)
-  const visible = rows.slice(0, pageSize)
+  const visible = sortedRows.slice(0, pageSize)
   return (
     <div className="desk-table-card">
       <div className="desk-table-x">
@@ -1102,10 +1338,10 @@ function SimpleTable({ rows, emptyMsg }: { rows: any[]; emptyMsg: string }): JSX
           </colgroup>
           <thead>
             <tr>
-              <th>Symbol · Source</th>
-              <th>Dir · Status</th>
-              <th className="r-right">Score</th>
-              <th className="r-right">LTP</th>
+              <SortableTh label="Symbol · Source" sortKey="symbol" currentKey={sort.key} dir={sort.dir} onSort={onSort} />
+              <SortableTh label="Dir · Status" sortKey="direction" currentKey={sort.key} dir={sort.dir} onSort={onSort} />
+              <SortableTh label="Score" sortKey="score" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
+              <SortableTh label="LTP" sortKey="ltp" currentKey={sort.key} dir={sort.dir} onSort={onSort} className="r-right" />
               <th>Trade Plan</th>
               <th>Horizon</th>
               <th>Why</th>

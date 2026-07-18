@@ -2512,6 +2512,25 @@ app.post('/api/stock-fno-volume-profile/run', async (_req, res) => {
 // 2026-07-15 — lifecycle backfill. Resolves stale OPEN trades by walking
 // full candle history. Fixes user-reported "4.3% hit rate" caused by
 // signals being stuck in ACTIVE for months without T*/SL resolution.
+// 2026-07-18 · On-demand real-time scan. The /desk Scan view POSTs one or
+// more symbols and receives a normalised feature snapshot per symbol —
+// LTP + change · EMA stack · RSI · vol ratio · 20d high/low position ·
+// composite bias + score · trade plan (entry/SL/T1/T2/T3 dated) · unified
+// reason. Works during and outside market hours.
+app.post('/api/scan/on-demand', async (req, res) => {
+  try {
+    const body = req.body as { symbols?: unknown } | undefined
+    const raw = Array.isArray(body?.symbols) ? body.symbols : []
+    const symbols = raw.filter((x): x is string => typeof x === 'string')
+    if (symbols.length === 0) {
+      res.status(400).json({ error: 'symbols must be a non-empty string array' })
+      return
+    }
+    const { runOnDemandScan } = await import('./engine/onDemandScan')
+    res.json(await runOnDemandScan(symbols))
+  } catch (e) { res.status(500).json({ error: (e as Error).message }) }
+})
+
 app.post('/api/lifecycle/backfill', async (req, res) => {
   try {
     const { backfillAllOpenLifecycle } = await import('./engine/lifecycleBackfill')
