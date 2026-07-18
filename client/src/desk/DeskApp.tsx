@@ -271,13 +271,33 @@ interface MergedRow {
   horizonLabel: string
 }
 
+/**
+ * Resolve a signal's status.
+ *
+ * Priority order:
+ *   1. Explicit lifecycle status from the ledger (T1/T2/T3 HIT, SL HIT,
+ *      ACTIVE→LIVE, PENDING→WAITING)
+ *   2. If entryDate is today (IST) OR the snapshot was generated today
+ *      AND the row lacks lifecycle info → NEW (signal fired today)
+ *   3. Otherwise → WAITING (in the ledger but not yet triggered)
+ *
+ * "Sees NEW tag on brand-new signals" — this fixes the earlier logic
+ * that marked every unresolved row as NEW forever.
+ */
+function todayIst(): string {
+  const d = new Date(Date.now() + 5.5 * 3600_000)
+  return `${d.getUTCFullYear()}-${String(d.getUTCMonth() + 1).padStart(2, '0')}-${String(d.getUTCDate()).padStart(2, '0')}`
+}
 function statusOf(r: any): MergedRow['status'] {
   const s = String(r?.status ?? r?.lifecycleStatus ?? '')
-  if (s === 'T1_HIT' || s === 'T2_HIT' || s === 'T3_HIT' || s === 'SL_HIT') return s
+  if (s === 'T1_HIT' || s === 'T2_HIT' || s === 'T3_HIT' || s === 'SL_HIT') return s as MergedRow['status']
   if (s === 'ACTIVE') return 'LIVE'
   if (s === 'PENDING') return 'WAITING'
-  // Fresh row without a lifecycle status → mark NEW
-  return 'NEW'
+  const t = todayIst()
+  const entryToday = typeof r?.entryDate === 'string' && r.entryDate.startsWith(t)
+  const firstSeenToday = typeof r?.firstSeenAt === 'string' && r.firstSeenAt.slice(0, 10) === t
+  if (entryToday || firstSeenToday) return 'NEW'
+  return 'WAITING'
 }
 
 function MasterView(): JSX.Element {
@@ -717,7 +737,7 @@ function PatternRow({ r }: { r: any }): JSX.Element {
       <td>
         <div className="status-stack">
           <span className={`dir-pill ${isSell ? 'sell' : 'buy'}`}>{isSell ? 'SELL' : 'BUY'}</span>
-          <span className="status-tag new">🆕 NEW</span>
+          <StatusTag s={statusOf(r)} />
         </div>
       </td>
       <td className="r-right"><span className={`conv-badge ${(r.score ?? 0) < 70 ? 'mid' : ''}`}>{r.score ?? '—'}</span></td>

@@ -89,6 +89,47 @@ async function main() {
       const r = await m.runAndPublishElliottWave()
       return `${r.total} wave setups`
     }],
+    ['nifty-outlook', async () => {
+      const m = await import('../src/engine/niftyForesight')
+      const r = await m.runAndPublishNiftyForesight()
+      return `${r.direction} ${r.confidence} @${r.spot}`
+    }],
+    ['nifty-volume-profile', async () => {
+      const m = await import('../src/engine/niftyVolumeProfileEngine')
+      const r = await m.runAndPublishNiftyVolumeProfile()
+      return `${r.bias} ${r.confidence} @${r.spot}`
+    }],
+    ['harmonic', async () => {
+      const m = await import('../src/engine/harmonicScanner')
+      const run = await m.runHarmonicScan({ tier: 'POSITIONAL' })
+      // Also publish snapshot directly since the cron path uses index.ts state.
+      const fs = await import('fs')
+      const path = await import('path')
+      const enrichM = await import('../src/lib/reasonEnrichment')
+      const mapped = run.hits.slice(0, 200).map(h => ({
+        symbol: h.symbol, direction: h.trade, conviction: h.confidence, score: h.confidence,
+        ltp: h.ltp, entry: h.entry, stopLoss: h.stopLoss,
+        target1: h.target1, target2: h.target2, target3: h.target3,
+        entryDate: h.entryDate, target1Date: h.target1Date, target2Date: h.target2Date, target3Date: h.target3Date,
+        pattern: `${h.patternName} · ${h.direction}`, source: 'HARMONIC',
+        reasons: h.reasons, reasoning: h.reasons,
+        riskReward: h.riskReward, prz: [h.przLow, h.przHigh],
+        invalidationPrice: h.invalidationPrice, invalidationRule: h.invalidationRule,
+        tier: h.tier, timeframe: h.timeframe,
+      }))
+      const rows = enrichM.enrichRows(mapped as unknown as Array<Record<string, unknown>>, 'chartPattern')
+      const outPath = path.resolve(__dirname, '../data/public-snapshots/harmonic.json')
+      fs.mkdirSync(path.dirname(outPath), { recursive: true })
+      fs.writeFileSync(outPath, JSON.stringify({
+        generatedAt: new Date().toISOString(),
+        criterion: 'Harmonic scanner · Gartley / Bat / Butterfly / Crab / Shark / Cypher with PRZ + invalidation',
+        total: rows.length,
+        byPattern: rows.reduce((a: Record<string, number>, r: Record<string, unknown>) => { const p = String(r.pattern ?? ''); a[p] = (a[p] ?? 0) + 1; return a }, {}),
+        byTier: { POSITIONAL: rows.length },
+        rows,
+      }, null, 2))
+      return `${run.hits.length} harmonic hits (positional)`
+    }],
     ['stock-fno-volume-profile', async () => {
       const m = await import('../src/engine/stockFnoVolumeProfileScanner')
       const r = await m.runAndPublishStockFnoVolumeProfile()
