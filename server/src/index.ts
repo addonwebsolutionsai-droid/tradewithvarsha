@@ -1636,7 +1636,80 @@ async function runHarmonicTier(tier: 'POSITIONAL' | 'HOURLY' | 'INTRADAY'): Prom
     const run = await runHarmonicScan({ tier })
     broadcast({ type: 'HARMONIC_SCAN_UPDATE', run })
     void dispatchHarmonicAlerts(run.hits).catch(() => {})
+    // 2026-07-18 · publish snapshot so /desk Harmonic tab has live data
+    void publishHarmonicSnapshot(run).catch(e => log.warn('HARMONIC-SNAP', `${(e as Error).message}`))
   } catch (e) { log.err('CRON', `harmonic ${tier}: ${(e as Error).message}`) }
+}
+
+/**
+ * Publish harmonic hits as a public snapshot the /desk redesign reads.
+ * We combine the last positional + hourly runs, apply target-date + unified-
+ * reason enrichment for consistency with the rest of the platform, then
+ * write to public-snapshots/harmonic.json.
+ */
+async function publishHarmonicSnapshot(latestRun: import('./engine/harmonicScanner').HarmonicScanRun): Promise<void> {
+  const positional = getLastHarmonicScan('POSITIONAL')
+  const hourly = getLastHarmonicScan('HOURLY')
+  const combined: import('./engine/harmonicScanner').HarmonicHit[] = []
+  const seen = new Set<string>()
+  const collect = (r: import('./engine/harmonicScanner').HarmonicScanRun | null) => {
+    if (!r) return
+    for (const h of r.hits) {
+      if (seen.has(h.sigKey)) continue
+      seen.add(h.sigKey)
+      combined.push(h)
+    }
+  }
+  collect(latestRun)
+  collect(positional)
+  collect(hourly)
+  combined.sort((a, b) => b.confidence - a.confidence)
+
+  // Map harmonic hits into a shape the /desk row helpers understand.
+  const mapped = combined.slice(0, 200).map(h => ({
+    symbol: h.symbol,
+    direction: h.trade,
+    conviction: h.confidence,
+    score: h.confidence,
+    ltp: h.ltp,
+    entry: h.entry,
+    stopLoss: h.stopLoss,
+    target1: h.target1,
+    target2: h.target2,
+    target3: h.target3,
+    entryDate: h.entryDate,
+    target1Date: h.target1Date,
+    target2Date: h.target2Date,
+    target3Date: h.target3Date,
+    pattern: `${h.patternName} · ${h.direction}`,
+    source: 'HARMONIC',
+    reasons: h.reasons,
+    reasoning: h.reasons,
+    riskReward: h.riskReward,
+    prz: [h.przLow, h.przHigh],
+    invalidationPrice: h.invalidationPrice,
+    invalidationRule: h.invalidationRule,
+    tier: h.tier,
+    timeframe: h.timeframe,
+  }))
+  const { enrichRows } = await import('./lib/reasonEnrichment')
+  const withReason = enrichRows(mapped as unknown as Array<Record<string, unknown>>, 'chartPattern')
+  const outPath = path.resolve(__dirname, '../data/public-snapshots/harmonic.json')
+  await fsAsync.mkdir(path.dirname(outPath), { recursive: true })
+  await fsAsync.writeFile(outPath, JSON.stringify({
+    generatedAt: new Date().toISOString(),
+    criterion: 'Harmonic scanner · Gartley / Bat / Butterfly / Crab / Shark / Cypher with PRZ + invalidation',
+    total: withReason.length,
+    byPattern: countBy(combined.map(h => h.patternName)),
+    byTier: countBy(combined.map(h => h.tier)),
+    rows: withReason,
+  }, null, 2))
+  log.ok('HARMONIC-SNAP', `published ${withReason.length} hits`)
+}
+function countBy(arr: string[]): Record<string, number> {
+  const out: Record<string, number> = {}
+  for (const x of arr) out[x] = (out[x] ?? 0) + 1
+  return out
 }
 // INTRADAY tier — every 30 min during NSE session
 cron.schedule('*/30 9-15 * * 1-5', () => runHarmonicTier('INTRADAY'), { timezone: 'Asia/Kolkata' })

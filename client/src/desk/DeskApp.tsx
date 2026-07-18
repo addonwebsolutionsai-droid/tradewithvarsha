@@ -743,49 +743,76 @@ function PatternRow({ r }: { r: any }): JSX.Element {
   )
 }
 
-// ─── HARMONIC (uses signalsHistory filtered) ────────────────────────
+// ─── HARMONIC (reads dedicated snapshot) ────────────────────────────
 function HarmonicView(): JSX.Element {
-  const q = useQuery({ queryKey: ['desk-harmonic'], queryFn: () => snapshots.signalsHistory(), refetchInterval: 60 * 60_000, retry: false })
-  const all: any[] = (q.data as any)?.signals ?? []
-  const rows = all.filter(s => (s.source ?? '').toLowerCase().includes('harmonic')).slice(0, 100)
+  const q = useQuery({ queryKey: ['desk-harmonic'], queryFn: () => snapshots.harmonic(), refetchInterval: 30 * 60_000, retry: false })
+  const d: any = q.data
+  const rows: any[] = d?.rows ?? []
+  const patternCounts: Record<string, number> = d?.byPattern ?? {}
+  const patterns = Object.keys(patternCounts).sort((a, b) => (patternCounts[b] ?? 0) - (patternCounts[a] ?? 0))
+  const [pattern, setPattern] = useState('ALL')
+  const filtered = pattern === 'ALL' ? rows : rows.filter(r => (r.pattern ?? '').includes(pattern))
   return (
     <>
       <div className="desk-page-head">
         <div>
           <h1 className="desk-page-title">∿ Harmonic</h1>
-          <p className="desk-page-desc">Fibonacci-based harmonic patterns · Gartley / Bat / Butterfly / Crab / Shark. PRZ + invalidation per hit.</p>
+          <p className="desk-page-desc">Live PRZ scanner across Gartley / Bat / Butterfly / Crab / Shark / Cypher. XABCD Fib ratios verified · invalidation levels per hit · POSITIONAL + HOURLY + INTRADAY tiers.</p>
         </div>
         <div className="desk-btn-row"><button className="desk-btn">↓ CSV</button></div>
       </div>
       <div className="desk-hero">
-        <div className="desk-kpi accent"><div className="desk-kpi-label">Harmonic signals · 90d</div><div className="desk-kpi-num acc">{rows.length}</div><div className="desk-kpi-sub">from signal history</div></div>
+        <div className="desk-kpi accent"><div className="desk-kpi-label">Active harmonic hits</div><div className="desk-kpi-num acc">{rows.length}</div><div className="desk-kpi-sub">across {Object.keys(patternCounts).length} pattern families</div></div>
         <div className="desk-kpi bull"><div className="desk-kpi-label">Bullish (BUY)</div><div className="desk-kpi-num bull">{rows.filter(r => r.direction === 'BUY').length}</div><div className="desk-kpi-sub">completed PRZ longs</div></div>
-        <div className="desk-kpi"><div className="desk-kpi-label">Bearish (SHORT)</div><div className="desk-kpi-num bear">{rows.filter(r => r.direction !== 'BUY').length}</div><div className="desk-kpi-sub">completed PRZ shorts</div></div>
-        <div className="desk-kpi"><div className="desk-kpi-label">30d WR</div><div className="desk-kpi-num">55.6%</div><div className="desk-kpi-sub">from accuracy report</div></div>
+        <div className="desk-kpi"><div className="desk-kpi-label">Bearish (SELL)</div><div className="desk-kpi-num bear">{rows.filter(r => r.direction === 'SELL' || r.direction === 'SHORT').length}</div><div className="desk-kpi-sub">completed PRZ shorts</div></div>
+        <div className="desk-kpi"><div className="desk-kpi-label">Avg confidence</div><div className="desk-kpi-num">{rows.length ? Math.round(rows.reduce((s, r) => s + (r.conviction ?? r.score ?? 0), 0) / rows.length) : '—'}</div><div className="desk-kpi-sub">from XABCD ratio match</div></div>
       </div>
-      <SimpleTable rows={rows} emptyMsg={q.isLoading ? 'Loading harmonic history…' : 'No harmonic signals in the current window.'} />
+      <div className="desk-toolbar">
+        <div className="desk-chips">
+          <button className={`desk-chip ${pattern === 'ALL' ? 'on' : ''}`} onClick={() => setPattern('ALL')}>All <span className="n">{rows.length}</span></button>
+          {patterns.slice(0, 6).map(p => (
+            <button key={p} className={`desk-chip ${pattern === p ? 'on' : ''}`} onClick={() => setPattern(p)}>{p} <span className="n">{patternCounts[p]}</span></button>
+          ))}
+        </div>
+      </div>
+      <SimpleTable rows={filtered} emptyMsg={q.isLoading ? 'Loading harmonic scan…' : 'No harmonic patterns detected right now. Scanner re-runs every 30 min during market hours.'} />
     </>
   )
 }
 
-// ─── ELLIOTT WAVE (uses signalsHistory filtered) ────────────────────
+// ─── ELLIOTT WAVE (reads dedicated snapshot) ────────────────────────
 function ElliottView(): JSX.Element {
-  const q = useQuery({ queryKey: ['desk-elliott'], queryFn: () => snapshots.signalsHistory(), refetchInterval: 60 * 60_000, retry: false })
-  const all: any[] = (q.data as any)?.signals ?? []
-  const rows = all.filter(s => (s.source ?? '').toLowerCase().includes('elliott') || (s.reason ?? '').toLowerCase().includes('wave')).slice(0, 100)
+  const q = useQuery({ queryKey: ['desk-elliott'], queryFn: () => snapshots.elliottWave(), refetchInterval: 60 * 60_000, retry: false })
+  const d: any = q.data
+  const rows: any[] = d?.rows ?? []
+  const byType: Record<string, number> = d?.byType ?? {}
+  const setups = Object.keys(byType).sort((a, b) => (byType[b] ?? 0) - (byType[a] ?? 0))
+  const [setup, setSetup] = useState('ALL')
+  const filtered = setup === 'ALL' ? rows : rows.filter(r => r.setup === setup)
   return (
     <>
       <div className="desk-page-head">
         <div>
           <h1 className="desk-page-title">⋀ Elliott Wave</h1>
-          <p className="desk-page-desc">Impulsive (1-2-3-4-5) and corrective (A-B-C) wave counts on NIFTY-500 stocks + Neo Wave rules for time and price.</p>
+          <p className="desk-page-desc">Pivot-based wave scanner · <b>Wave-2 Pullback</b> (Fib 50-61.8% retrace) · <b>Wave-3 Underway</b> (breakout + volume expansion) · <b>ABC Completion</b> (equal-leg corrective). Fib-extension targets.</p>
+        </div>
+        <div className="desk-btn-row"><button className="desk-btn">↓ CSV</button></div>
+      </div>
+      <div className="desk-hero">
+        <div className="desk-kpi accent"><div className="desk-kpi-label">Wave setups</div><div className="desk-kpi-num acc">{rows.length}</div><div className="desk-kpi-sub">across NSE F&O universe</div></div>
+        <div className="desk-kpi"><div className="desk-kpi-label">Wave-2 Pullback</div><div className="desk-kpi-num">{byType.WAVE_2_PULLBACK ?? 0}</div><div className="desk-kpi-sub">buy the pullback</div></div>
+        <div className="desk-kpi bull"><div className="desk-kpi-label">Wave-3 Underway</div><div className="desk-kpi-num bull">{byType.WAVE_3_UNDERWAY ?? 0}</div><div className="desk-kpi-sub">strongest impulse leg</div></div>
+        <div className="desk-kpi"><div className="desk-kpi-label">ABC Completion</div><div className="desk-kpi-num">{byType.ABC_COMPLETION ?? 0}</div><div className="desk-kpi-sub">trend resumption</div></div>
+      </div>
+      <div className="desk-toolbar">
+        <div className="desk-chips">
+          <button className={`desk-chip ${setup === 'ALL' ? 'on' : ''}`} onClick={() => setSetup('ALL')}>All <span className="n">{rows.length}</span></button>
+          {setups.map(s => (
+            <button key={s} className={`desk-chip ${setup === s ? 'on' : ''}`} onClick={() => setSetup(s)}>{s.replace(/_/g, ' ')} <span className="n">{byType[s]}</span></button>
+          ))}
         </div>
       </div>
-      <div className="proposal-note">
-        <span>→</span>
-        <div>Elliott is a <b>work-in-progress engine</b> — showing any historical wave-tagged signals from the archive while the dedicated scanner is being built. Focus for the next iteration: automated wave-count on daily NIFTY-500 with wave-3 setups prioritised (best-R historically).</div>
-      </div>
-      <SimpleTable rows={rows} emptyMsg={q.isLoading ? 'Loading archive…' : 'No wave-tagged signals in the archive yet.'} />
+      <SimpleTable rows={filtered} emptyMsg={q.isLoading ? 'Loading wave scan…' : 'No qualifying wave setups. Scanner runs each EOD.'} />
     </>
   )
 }

@@ -79,6 +79,16 @@ async function main() {
       const rowsLen = Array.isArray((pe as { rows?: unknown[] }).rows) ? (pe as { rows: unknown[] }).rows.length : 0
       return `${rowsLen} signals`
     }],
+    ['daily-summary', async () => {
+      const m = await import('../src/engine/dailyPerformanceSummary')
+      const r = await m.sendDailyPerformanceSummary()
+      return `sent to ${r.sent} chats`
+    }],
+    ['elliott-wave', async () => {
+      const m = await import('../src/engine/elliottWaveEngine')
+      const r = await m.runAndPublishElliottWave()
+      return `${r.total} wave setups`
+    }],
     ['stock-fno-volume-profile', async () => {
       const m = await import('../src/engine/stockFnoVolumeProfileScanner')
       const r = await m.runAndPublishStockFnoVolumeProfile()
