@@ -1253,11 +1253,19 @@ function ScanView(): JSX.Element {
     setHistory(h => [{ q, parsed, rows: [], ts: new Date().toISOString(), busy: true }, ...h])
     setInput('')
     try {
-      const res = await fetch('/api/scan/on-demand', {
-        method: 'POST', headers: { 'Content-Type': 'application/json' },
+      // Cache-buster: any prior 405 from a stale deploy could otherwise be
+      // held by the browser/CDN. `?t=` guarantees a fresh miss.
+      const res = await fetch(`/api/scan/on-demand?t=${Date.now()}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'Cache-Control': 'no-cache' },
         body: JSON.stringify({ symbols: parsed }),
       })
-      if (!res.ok) throw new Error(`HTTP ${res.status}`)
+      if (!res.ok) {
+        const msg = res.status === 405
+          ? 'Scan endpoint deploying — please retry in ~60s (Vercel is still registering the function).'
+          : `HTTP ${res.status}`
+        throw new Error(msg)
+      }
       const data = await res.json()
       setHistory(h => h.map((ex, i) => i === exchangeIdx ? { ...ex, rows: data.results ?? [], busy: false } : ex))
     } catch (e) {
