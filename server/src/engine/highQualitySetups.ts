@@ -89,9 +89,60 @@ async function getFnoUniverse(): Promise<Set<string>> {
 
 // ─── Signal normalisers ─────────────────────────────────────────────
 
+/**
+ * Compose the "real" human-readable reason for a row. Priority:
+ *   1. reasoning[]  — bullets from the source engine
+ *   2. flowNote     — smart-money one-liner (Weekly Pick / Cross-Confluence)
+ *   3. shareholdingNote — FII/DII/promoter deltas
+ *   4. sources[]    — engines that fired ("Weekly Pick + F&O Futures")
+ *   5. sector/smartMoney bullets
+ * Falls back to unifiedReason.collapsed ONLY if everything above is empty
+ * (that string is just the tier + engine label — useless as a "reason").
+ */
+function composeReason(row: any): { reasoning: string[]; unifiedReason: string } {
+  const bullets: string[] = []
+  if (Array.isArray(row.reasoning) && row.reasoning.length > 0) {
+    for (const r of row.reasoning) if (typeof r === 'string' && r.trim()) bullets.push(r.trim())
+  }
+  if (typeof row.flowNote === 'string' && row.flowNote.trim()) bullets.push(row.flowNote.trim())
+  if (typeof row.shareholdingNote === 'string' && row.shareholdingNote.trim()) bullets.push(row.shareholdingNote.trim())
+  if (typeof row.sectorLabel === 'string' && row.sectorLabel.trim() && !bullets.some(b => b.includes(row.sectorLabel))) {
+    const dir = typeof row.sectorTrend === 'string' ? ` ${row.sectorTrend}` : ''
+    bullets.push(`Sector: ${row.sectorLabel}${dir}`)
+  }
+  if (typeof row.smartMoneySide === 'string' && row.smartMoneySide && row.smartMoneySide !== 'neutral' &&
+      !bullets.some(b => b.toLowerCase().includes('smart'))) {
+    bullets.push(`Smart-money: ${row.smartMoneySide}`)
+  }
+  if (row.noBrainerBet && !bullets.some(b => b.includes('NO-BRAINER'))) {
+    bullets.push('⭐ NO-BRAINER (FII↑ + promoter stable + pledge<5%)')
+  }
+  if (typeof row.bucket === 'string' && row.bucket && !bullets.some(b => b.includes(row.bucket))) {
+    bullets.push(`Bucket: ${row.bucket}`)
+  }
+  if (Array.isArray(row.sources) && row.sources.length > 0 && !bullets.some(b => b.toLowerCase().includes('confluence'))) {
+    bullets.push(`Engines: ${row.sources.join(' + ')}`)
+  }
+  // Dedupe similar bullets
+  const seen = new Set<string>()
+  const clean = bullets.filter(b => {
+    const key = b.toLowerCase().replace(/[^a-z0-9]+/g, ' ').trim().slice(0, 40)
+    if (seen.has(key)) return false
+    seen.add(key); return true
+  })
+  // Last-resort fallback to unifiedReason.collapsed / expanded
+  if (clean.length === 0) {
+    if (typeof row.unifiedReason === 'string' && row.unifiedReason.trim()) clean.push(row.unifiedReason.trim())
+    else if (row.unifiedReason?.expanded) clean.push(String(row.unifiedReason.expanded).replace(/[\n]+/g, ' · ').trim())
+    else if (row.unifiedReason?.collapsed) clean.push(String(row.unifiedReason.collapsed).trim())
+  }
+  return { reasoning: clean, unifiedReason: clean.join(' · ') }
+}
+
 function fromVpFib(row: any): UnifiedSetup | null {
   if (!row || !row.symbol || !row.entry) return null
   if (row.tier !== 'ELITE' && row.tier !== 'STRONG') return null
+  const { reasoning, unifiedReason } = composeReason(row)
   return {
     symbol: String(row.symbol).toUpperCase(),
     segment: 'CASH',        // reassigned later after F&O eligibility check
@@ -107,8 +158,8 @@ function fromVpFib(row: any): UnifiedSetup | null {
     rrT1: row.rrT1, rrT2: row.rrT2, rrT3: row.rrT3,
     entryDate: row.entryDate, target1Date: row.target1Date, target2Date: row.target2Date, target3Date: row.target3Date, slDate: row.slDate,
     keyLevels: row.keyLevels,
-    reasoning: Array.isArray(row.reasoning) ? row.reasoning : [],
-    unifiedReason: row.unifiedReason ?? '',
+    reasoning,
+    unifiedReason,
     confluences: row.confluences,
   }
 }
@@ -131,8 +182,8 @@ function fromProEdge(row: any): UnifiedSetup | null {
     riskPct: row.entry > 0 ? Math.round(Math.abs((row.stopLoss - row.entry) / row.entry) * 10000) / 100 : 0,
     entryDate: row.entryDate ?? new Date().toISOString().slice(0, 10),
     target1Date: row.target1Date, target2Date: row.target2Date, target3Date: row.target3Date, slDate: row.slDate,
-    reasoning: Array.isArray(row.reasoning) ? row.reasoning : (typeof row.unifiedReason?.collapsed === 'string' ? [row.unifiedReason.collapsed] : []),
-    unifiedReason: typeof row.unifiedReason === 'string' ? row.unifiedReason : (row.unifiedReason?.collapsed ?? ''),
+    reasoning: composeReason(row).reasoning,
+    unifiedReason: composeReason(row).unifiedReason,
   }
 }
 
@@ -154,8 +205,8 @@ function fromCrossConfluence(row: any): UnifiedSetup | null {
     riskPct: row.entry > 0 ? Math.round(Math.abs((row.stopLoss - row.entry) / row.entry) * 10000) / 100 : 0,
     entryDate: row.entryDate ?? new Date().toISOString().slice(0, 10),
     target1Date: row.target1Date, target2Date: row.target2Date, target3Date: row.target3Date, slDate: row.slDate,
-    reasoning: Array.isArray(row.reasoning) ? row.reasoning : [],
-    unifiedReason: typeof row.unifiedReason === 'string' ? row.unifiedReason : (row.unifiedReason?.collapsed ?? ''),
+    reasoning: composeReason(row).reasoning,
+    unifiedReason: composeReason(row).unifiedReason,
   }
 }
 
@@ -176,8 +227,8 @@ function fromWeeklyPick(row: any): UnifiedSetup | null {
     riskPct: row.entry > 0 ? Math.round(Math.abs((row.stopLoss - row.entry) / row.entry) * 10000) / 100 : 0,
     entryDate: row.entryDate ?? new Date().toISOString().slice(0, 10),
     target1Date: row.target1Date, target2Date: row.target2Date, target3Date: row.target3Date, slDate: row.slDate,
-    reasoning: Array.isArray(row.reasoning) ? row.reasoning : [],
-    unifiedReason: typeof row.unifiedReason === 'string' ? row.unifiedReason : (row.unifiedReason?.collapsed ?? ''),
+    reasoning: composeReason(row).reasoning,
+    unifiedReason: composeReason(row).unifiedReason,
   }
 }
 
@@ -257,6 +308,37 @@ export async function buildHighQualitySetups(): Promise<{
 
   // Dedupe — same symbol from multiple engines → keep the strongest
   const unique = dedupeBySymbol(raw)
+
+  // Enrich: even after dedup, look up the same symbol in EVERY source snapshot
+  // and merge their reasoning bullets. A PRO-Edge row winning by conviction
+  // might have a generic reason ("Confluence: WEEKLY + FNO_FUTURES"), but the
+  // Cross-Confluence snapshot for the same symbol has "EMA stack + At 20d high
+  // + Tight coil + Vol expansion" — pull those in.
+  const enrichPool: Array<{ name: string; snap: any }> = [
+    { name: 'cross-confluence', snap: cross },
+    { name: 'vp-fib', snap: vpFib },
+    { name: 'pro-edge', snap: proEdge },
+    { name: 'weekly-pick', snap: weekly },
+    { name: 'daily-pick', snap: daily },
+  ]
+  for (const setup of unique) {
+    const extraBullets: string[] = []
+    for (const { snap } of enrichPool) {
+      const rows = snap && Array.isArray(snap.rows) ? snap.rows : []
+      const match = rows.find((r: any) => String(r?.symbol || '').toUpperCase() === setup.symbol)
+      if (!match) continue
+      const composed = composeReason(match)
+      for (const b of composed.reasoning) {
+        if (!setup.reasoning.some(existing => existing.toLowerCase().slice(0, 30) === b.toLowerCase().slice(0, 30))) {
+          extraBullets.push(b)
+        }
+      }
+    }
+    if (extraBullets.length > 0) {
+      setup.reasoning = [...setup.reasoning, ...extraBullets].slice(0, 8)   // cap at 8 bullets
+      setup.unifiedReason = setup.reasoning.join(' · ')
+    }
+  }
 
   // Classify each row by F&O eligibility
   const fnoUniverse = await getFnoUniverse()
