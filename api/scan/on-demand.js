@@ -26,10 +26,26 @@ function toYahooTicker(sym) {
   return up + '.NS'
 }
 
+function isNseMarketOpen() {
+  // 9:15-15:30 IST, Mon-Fri
+  const nowMs = Date.now() + 5.5 * 3600000
+  const d = new Date(nowMs)
+  const dow = d.getUTCDay()
+  if (dow === 0 || dow === 6) return false
+  const mins = d.getUTCHours() * 60 + d.getUTCMinutes()
+  return mins >= 555 && mins <= 930
+}
+
 async function fetchYahoo(ticker, timeoutMs) {
-  timeoutMs = timeoutMs || 8000
+  timeoutMs = timeoutMs || 6000
+  // During IST market hours pull 5-min candles for live accuracy;
+  // outside market hours pull daily for stable EMA/RSI calc.
+  const intraday = isNseMarketOpen()
+  const params = intraday
+    ? 'interval=5m&range=5d&includePrePost=false'
+    : 'interval=1d&range=3mo&includePrePost=false'
   try {
-    const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?interval=1d&range=3mo&includePrePost=false'
+    const url = 'https://query1.finance.yahoo.com/v8/finance/chart/' + encodeURIComponent(ticker) + '?' + params
     const ctrl = new AbortController()
     const to = setTimeout(function () { ctrl.abort() }, timeoutMs)
     const res = await fetch(url, {
@@ -58,11 +74,48 @@ async function fetchYahoo(ticker, timeoutMs) {
       if (o == null || h == null || l == null || c == null) continue
       ohlc.push({ time: ts[i] * 1000, open: o, high: h, low: l, close: c, volume: v || 0 })
     }
+    // Intraday needs at least 25 bars (2+ hours of 5-min); daily needs 25 sessions.
     if (ohlc.length < 25) return null
     const ltp = (meta && meta.regularMarketPrice) || ohlc[ohlc.length - 1].close
     const prev = (meta && meta.chartPreviousClose) || ohlc[ohlc.length - 2].close
     const changePct = prev > 0 ? ((ltp - prev) / prev) * 100 : 0
-    return { ohlc: ohlc, ltp: ltp, changePct: changePct }
+    return { ohlc: ohlc, ltp: ltp, changePct: changePct, resolution: intraday ? '5m' : '1d' }
+  } catch (e) {
+    return null
+  }
+}
+
+async function fetchStooq(sym, timeoutMs) {
+  // Stooq CSV fallback: works for major NSE stocks (add .in suffix), commodities,
+  // indices, FX. Free, no auth, no rate limit. EOD only.
+  timeoutMs = timeoutMs || 5000
+  const stooqSym = sym.toLowerCase() + '.in'
+  try {
+    const url = 'https://stooq.com/q/d/l/?s=' + encodeURIComponent(stooqSym) + '&i=d'
+    const ctrl = new AbortController()
+    const to = setTimeout(function () { ctrl.abort() }, timeoutMs)
+    const res = await fetch(url, {
+      headers: { 'User-Agent': 'Mozilla/5.0 (compatible; TWV-Scan/1.0)' },
+      signal: ctrl.signal,
+    })
+    clearTimeout(to)
+    if (!res.ok) return null
+    const csv = await res.text()
+    const lines = csv.trim().split('\n')
+    if (lines.length < 30) return null
+    const ohlc = []
+    for (let i = 1; i < lines.length; i++) {
+      const parts = lines[i].split(',')
+      if (parts.length < 6) continue
+      const o = parseFloat(parts[1]), h = parseFloat(parts[2]), l = parseFloat(parts[3]), c = parseFloat(parts[4]), v = parseFloat(parts[5])
+      if (!isFinite(o) || !isFinite(h) || !isFinite(l) || !isFinite(c)) continue
+      ohlc.push({ time: Date.parse(parts[0]), open: o, high: h, low: l, close: c, volume: isFinite(v) ? v : 0 })
+    }
+    if (ohlc.length < 25) return null
+    const last = ohlc[ohlc.length - 1]
+    const prev = ohlc[ohlc.length - 2]
+    const changePct = prev.close > 0 ? ((last.close - prev.close) / prev.close) * 100 : 0
+    return { ohlc: ohlc, ltp: last.close, changePct: changePct, resolution: '1d' }
   } catch (e) {
     return null
   }
@@ -146,11 +199,18 @@ async function scanOne(sym) {
   const upSym = sym.trim().toUpperCase()
   const yahoo = toYahooTicker(upSym)
   let data = await fetchYahoo(yahoo)
+  let source = 'yahoo:' + yahoo
   if (!data && !YAHOO_ALIAS[upSym]) {
     data = await fetchYahoo(upSym + '.BO')
+    if (data) source = 'yahoo:' + upSym + '.BO'
+  }
+  if (!data && !YAHOO_ALIAS[upSym]) {
+    // Last resort: Stooq CSV. Only for plain equity tickers (Stooq covers NSE via .in).
+    data = await fetchStooq(upSym)
+    if (data) source = 'stooq:' + upSym.toLowerCase() + '.in'
   }
   if (!data) {
-    return { symbol: upSym, ok: false, error: 'no market data (tried ' + yahoo + (!YAHOO_ALIAS[upSym] ? ' + ' + upSym + '.BO' : '') + ')' }
+    return { symbol: upSym, ok: false, error: 'no market data (tried yahoo + stooq fallbacks)' }
   }
   const ohlc = data.ohlc, ltp = data.ltp, changePct = data.changePct
   const closes = ohlc.map(function (c) { return c.close })
@@ -236,6 +296,8 @@ async function scanOne(sym) {
     reasoning: comp.reasons,
     unifiedReason: unifiedReason,
     yahooTicker: yahoo,
+    dataSource: source,
+    resolution: data.resolution,
   }
   return Object.assign(out, plan)
 }
@@ -266,8 +328,11 @@ module.exports = async function handler(req, res) {
     })
   }))
   results.sort(function (a, b) { return (b.compositeScore || 0) - (a.compositeScore || 0) })
+  // 60s CDN cache · 5min stale-while-revalidate — repeat queries hit edge, not Yahoo.
+  res.setHeader('Cache-Control', 'public, s-maxage=60, stale-while-revalidate=300')
   res.status(200).json({
     generatedAt: new Date().toISOString(),
+    marketOpen: isNseMarketOpen(),
     requested: uniq,
     results: results,
   })
