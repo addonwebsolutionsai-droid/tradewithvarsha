@@ -239,18 +239,48 @@ async function scanOne(sym) {
   const comp = composite(f)
   const setups = detectSetups(f)
 
+  // ─── Tier-aware SL + guaranteed R:R ≥ 1:1 at T1 ───
+  // Indices/futures need tight SL (0.8-1.2% typical daily range).
+  // Large caps: 2.5-4%. Small: 4-6%. Micro: absolute 8% cap.
+  // T1 distance = max(1.2×SL_dist, 1.5×ATR) so R:R at T1 is always ≥ 1:1.
+  function slDistanceFor(entry, atr, sym) {
+    const isIndex = /^\^/.test(YAHOO_ALIAS[sym] || '') || /NIFTY|SENSEX|BANKNIFTY|FINNIFTY|MIDCP|VIX/.test(sym)
+    const isCommodityFx = /=[FX]$|-USD|=X/.test(YAHOO_ALIAS[sym] || '') || /GOLD|SILVER|CRUDE|OIL|COPPER|NATGAS|XAU|XAG|BTC|ETH|USDINR|EUR|GBP|JPY|DXY/.test(sym)
+    if (isIndex) {
+      // NIFTY-like: cap SL at 1.5% or 1.2× ATR, whichever is larger — but never > 2%
+      return Math.min(entry * 0.02, Math.max(atr * 1.2, entry * 0.008))
+    }
+    if (isCommodityFx) {
+      // Gold/crude/FX/crypto: 2-4% typical
+      return Math.min(entry * 0.05, Math.max(atr * 1.5, entry * 0.02))
+    }
+    // Equities: tier by price as proxy for market-cap (rough but reasonable
+    // without a symbol master). Large > ₹500, mid ₹100-500, small ₹20-100, micro <₹20.
+    const cap = entry >= 500 ? 0.05 : entry >= 100 ? 0.055 : entry >= 20 ? 0.065 : 0.08
+    return Math.min(entry * cap, Math.max(atr * 1.5, entry * 0.025))
+  }
   let plan = {}
   const now = new Date()
   const entryDate = toIstDateOnly(now)
   if (comp.bias === 'BULLISH' && comp.score >= 60 && atr > 0) {
     const entry = ltp
-    const sl = entry - Math.max(atr * 1.5, entry * 0.04)
+    const slDist = slDistanceFor(entry, atr, upSym)
+    // Guarantee R:R ≥ 1:1 at T1, ≥ 2:1 at T2, ≥ 3:1 at T3.
+    const t1Dist = Math.max(atr * 1.5, slDist * 1.2)
+    const t2Dist = Math.max(atr * 3.0, slDist * 2.2)
+    const t3Dist = Math.max(atr * 5.0, slDist * 3.2)
     plan = {
+      direction: 'LONG',
       entry: Math.round(entry * 100) / 100,
-      stopLoss: Math.round(sl * 100) / 100,
-      target1: Math.round((entry + atr * 1.5) * 100) / 100,
-      target2: Math.round((entry + atr * 3) * 100) / 100,
-      target3: Math.round((entry + atr * 5) * 100) / 100,
+      stopLoss: Math.round((entry - slDist) * 100) / 100,
+      target1: Math.round((entry + t1Dist) * 100) / 100,
+      target2: Math.round((entry + t2Dist) * 100) / 100,
+      target3: Math.round((entry + t3Dist) * 100) / 100,
+      riskPct: Math.round((slDist / entry) * 10000) / 100,
+      rewardT1Pct: Math.round((t1Dist / entry) * 10000) / 100,
+      rrT1: Math.round((t1Dist / slDist) * 100) / 100,
+      rrT2: Math.round((t2Dist / slDist) * 100) / 100,
+      rrT3: Math.round((t3Dist / slDist) * 100) / 100,
       entryDate: entryDate,
       target1Date: toIstDateOnly(addBusinessDays(now, 3)),
       target2Date: toIstDateOnly(addBusinessDays(now, 6)),
@@ -259,13 +289,22 @@ async function scanOne(sym) {
     }
   } else if (comp.bias === 'BEARISH' && comp.score <= 40 && atr > 0) {
     const entry = ltp
-    const sl = entry + Math.max(atr * 1.5, entry * 0.04)
+    const slDist = slDistanceFor(entry, atr, upSym)
+    const t1Dist = Math.max(atr * 1.5, slDist * 1.2)
+    const t2Dist = Math.max(atr * 3.0, slDist * 2.2)
+    const t3Dist = Math.max(atr * 5.0, slDist * 3.2)
     plan = {
+      direction: 'SHORT',
       entry: Math.round(entry * 100) / 100,
-      stopLoss: Math.round(sl * 100) / 100,
-      target1: Math.round((entry - atr * 1.5) * 100) / 100,
-      target2: Math.round((entry - atr * 3) * 100) / 100,
-      target3: Math.round((entry - atr * 5) * 100) / 100,
+      stopLoss: Math.round((entry + slDist) * 100) / 100,
+      target1: Math.round((entry - t1Dist) * 100) / 100,
+      target2: Math.round((entry - t2Dist) * 100) / 100,
+      target3: Math.round((entry - t3Dist) * 100) / 100,
+      riskPct: Math.round((slDist / entry) * 10000) / 100,
+      rewardT1Pct: Math.round((t1Dist / entry) * 10000) / 100,
+      rrT1: Math.round((t1Dist / slDist) * 100) / 100,
+      rrT2: Math.round((t2Dist / slDist) * 100) / 100,
+      rrT3: Math.round((t3Dist / slDist) * 100) / 100,
       entryDate: entryDate,
       target1Date: toIstDateOnly(addBusinessDays(now, 3)),
       target2Date: toIstDateOnly(addBusinessDays(now, 6)),

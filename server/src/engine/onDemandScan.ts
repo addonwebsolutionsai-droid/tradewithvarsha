@@ -171,13 +171,29 @@ async function scanOne(symbol: string): Promise<OnDemandRow> {
     const comp = composite(f)
     const setups = detectSetups(f)
 
+    // Tier-aware SL + guaranteed R:R ≥ 1:1 at T1 (matches api/scan/on-demand.js).
+    // Indices ≤ 2%, commodities/FX 2-5%, equities tier by price (mid/large 5%,
+    // small 6.5%, micro 8%). T1 distance = max(1.2×SL_dist, 1.5×ATR) so
+    // R:R ≥ 1:1 at T1, ≥ 2:1 at T2, ≥ 3:1 at T3 — always.
+    const slDistanceFor = (entry: number, atrX: number, symbol: string): number => {
+      const isIndex = /^\^/.test(symbol) || /NIFTY|SENSEX|BANKNIFTY|FINNIFTY|MIDCP|VIX/i.test(symbol)
+      const isCommodityFx = /=[FX]$|-USD|=X/.test(symbol) || /GOLD|SILVER|CRUDE|OIL|COPPER|NATGAS|XAU|XAG|BTC|ETH|USDINR|EURUSD|DXY/i.test(symbol)
+      if (isIndex) return Math.min(entry * 0.02, Math.max(atrX * 1.2, entry * 0.008))
+      if (isCommodityFx) return Math.min(entry * 0.05, Math.max(atrX * 1.5, entry * 0.02))
+      const cap = entry >= 500 ? 0.05 : entry >= 100 ? 0.055 : entry >= 20 ? 0.065 : 0.08
+      return Math.min(entry * cap, Math.max(atrX * 1.5, entry * 0.025))
+    }
     let plan: Partial<OnDemandRow> = {}
     if (comp.bias === 'BULLISH' && comp.score >= 60) {
       const entry = ltp
-      const stopLoss = entry - Math.max(atr * 1.5, entry * 0.04)
-      const target1 = entry + atr * 1.5
-      const target2 = entry + atr * 3
-      const target3 = entry + atr * 5
+      const slDist = slDistanceFor(entry, atr, sym)
+      const t1Dist = Math.max(atr * 1.5, slDist * 1.2)
+      const t2Dist = Math.max(atr * 3.0, slDist * 2.2)
+      const t3Dist = Math.max(atr * 5.0, slDist * 3.2)
+      const stopLoss = entry - slDist
+      const target1 = entry + t1Dist
+      const target2 = entry + t2Dist
+      const target3 = entry + t3Dist
       const dates = estimateTargetDates({
         entry, stopLoss, target1, target2, target3,
         direction: 'BUY', atr14: atr, ret5dPct: ret5d, ret20dPct: ret20d,
@@ -197,10 +213,14 @@ async function scanOne(symbol: string): Promise<OnDemandRow> {
       }
     } else if (comp.bias === 'BEARISH' && comp.score <= 40) {
       const entry = ltp
-      const stopLoss = entry + Math.max(atr * 1.5, entry * 0.04)
-      const target1 = entry - atr * 1.5
-      const target2 = entry - atr * 3
-      const target3 = entry - atr * 5
+      const slDist = slDistanceFor(entry, atr, sym)
+      const t1Dist = Math.max(atr * 1.5, slDist * 1.2)
+      const t2Dist = Math.max(atr * 3.0, slDist * 2.2)
+      const t3Dist = Math.max(atr * 5.0, slDist * 3.2)
+      const stopLoss = entry + slDist
+      const target1 = entry - t1Dist
+      const target2 = entry - t2Dist
+      const target3 = entry - t3Dist
       const dates = estimateTargetDates({
         entry, stopLoss, target1, target2, target3,
         direction: 'SHORT', atr14: atr, ret5dPct: ret5d, ret20dPct: ret20d,
