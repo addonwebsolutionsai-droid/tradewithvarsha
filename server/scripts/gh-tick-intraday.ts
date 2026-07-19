@@ -121,6 +121,22 @@ async function main() {
     log.err('TICK', `cross-confluence: ${(e as Error).message}`)
   }
 
+  // ─── 1b. VP + FIB Confluence — the 7-lens PRO trader master scanner.
+  //          Combines Volume Profile · Fib · Order Block · Liquidity Grab ·
+  //          Elliott · Harmonic · Volume Engine into one confluence score.
+  //          Reads elliott-wave.json + harmonic.json on disk, so must run
+  //          AFTER those snapshots are refreshed (see gh-tick-eod).
+  try {
+    const t = Date.now()
+    const { scanVpFibConfluence, writeVpFibSnapshot } = await import('../src/engine/vpFibScanner')
+    const out = await scanVpFibConfluence({ limit: 150, concurrency: 5 })
+    await writeVpFibSnapshot(out)
+    results['vp-fib'] = `${out.rows.length} setups (${out.eliteCount} elite · ${out.strongCount} strong · ${out.decentCount} decent) · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['vp-fib'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `vp-fib: ${(e as Error).message}`)
+  }
+
   // ─── 2. PRO Edge (downstream of confluence)
   try {
     const { aggregateProEdge } = await import('../src/engine/proEdge')

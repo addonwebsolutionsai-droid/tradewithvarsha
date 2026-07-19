@@ -25,7 +25,7 @@
 import type { Candle } from '../types'
 import type { CriterionResult } from './fnoFutures12Criteria'
 
-interface PrimitiveHit {
+export interface PrimitiveHit {
   name: 'FVG' | 'OB' | 'BoS' | 'LiquiditySweep'
   bullish: boolean
   detail: string
@@ -35,7 +35,7 @@ interface PrimitiveHit {
 // On three consecutive bars (i-2, i-1, i), if candle i-1 is a strong
 // impulse and the high of i-2 is BELOW the low of i (or vice versa), the
 // gap between high[i-2] and low[i] is an unfilled imbalance.
-function detectFVG(candles: Candle[]): PrimitiveHit | null {
+export function detectFVG(candles: Candle[]): PrimitiveHit | null {
   if (candles.length < 4) return null
   // Look at the last 10 bars for the most recent unfilled FVG
   for (let i = candles.length - 2; i >= Math.max(3, candles.length - 10); i--) {
@@ -71,7 +71,7 @@ function detectFVG(candles: Candle[]): PrimitiveHit | null {
 // Last bearish candle before a bullish impulse that breaks the prior
 // swing high = bullish OB (institutional buying zone).
 // Mirror for bearish.
-function detectOrderBlock(candles: Candle[]): PrimitiveHit | null {
+export function detectOrderBlock(candles: Candle[]): PrimitiveHit | null {
   if (candles.length < 15) return null
   const last20 = candles.slice(-20)
   // Find the most recent strong impulse (≥1.5× ATR)
@@ -111,7 +111,7 @@ function detectOrderBlock(candles: Candle[]): PrimitiveHit | null {
 // — Break of Structure (BoS) —
 // Most recent close clears the highest swing high of the last 20 bars
 // (bullish BoS) or breaks the lowest swing low (bearish BoS).
-function detectBoS(candles: Candle[]): PrimitiveHit | null {
+export function detectBoS(candles: Candle[]): PrimitiveHit | null {
   if (candles.length < 22) return null
   const window = candles.slice(-22, -1)        // exclude the latest bar's high/low itself
   const swingHigh = Math.max(...window.map(c => c.high))
@@ -129,7 +129,7 @@ function detectBoS(candles: Candle[]): PrimitiveHit | null {
 // — Liquidity Sweep (stop-hunt) —
 // Recent bar's wick pierced a prior swing low/high but the close reclaimed
 // inside the prior range. The textbook "fake-out" before a reversal.
-function detectLiquiditySweep(candles: Candle[]): PrimitiveHit | null {
+export function detectLiquiditySweep(candles: Candle[]): PrimitiveHit | null {
   if (candles.length < 22) return null
   const lookback = candles.slice(-22, -3)
   const swingHigh = Math.max(...lookback.map(c => c.high))

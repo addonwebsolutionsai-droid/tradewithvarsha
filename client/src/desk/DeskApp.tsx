@@ -30,7 +30,7 @@ function SortableTh({
 }
 
 // ─── Types ───────────────────────────────────────────────────────────
-type TabKey = 'master' | 'nifty' | 'chart' | 'harmonic' | 'elliott' | 'tech' | 'swings' | 'smart' | 'scan'
+type TabKey = 'master' | 'nifty' | 'chart' | 'harmonic' | 'elliott' | 'tech' | 'swings' | 'vpfib' | 'scan'
 type Theme = 'dark' | 'light'
 
 const TABS: Array<{ key: TabKey; label: string; icon: string; count?: number }> = [
@@ -41,7 +41,7 @@ const TABS: Array<{ key: TabKey; label: string; icon: string; count?: number }> 
   { key: 'elliott',  label: 'Elliott',   icon: '⋀' },
   { key: 'tech',     label: 'Tech',      icon: '📊' },
   { key: 'swings',   label: 'Swings',    icon: '🌱' },
-  { key: 'smart',    label: 'Smart $',   icon: '⛰' },
+  { key: 'vpfib',    label: 'VP + FIB',  icon: '⛯' },
   { key: 'scan',     label: 'Ask',       icon: '💬' },
 ]
 
@@ -183,14 +183,21 @@ const RAILS: Record<TabKey, { title: string; desc: string; groups: RailGroup[] }
       { icon: '🎯', label: 'Trade plan when composite ≥ 60' },
     ]},
   ]},
-  smart: { title: '⛰ Smart Money', desc: 'Institutional footprint — Insider, Superstar, Bulk Deals, Vol Accum.', groups: [
-    { title: 'Source', items: [
-      { icon: '◉', label: 'All footprints', on: true },
-      { icon: '🕵', label: 'Insider Buys' },
-      { icon: '🌟', label: 'Superstar' },
-      { icon: '📡', label: 'Bulk Deals' },
-      { icon: '📈', label: 'Volume Accumulation' },
-      { icon: '💎', label: 'Pedigree' },
+  vpfib: { title: '⛯ VP + FIB Confluence', desc: '7-lens PRO Trader setup — Volume Profile · Fib · Order Block · Liquidity Grab · Elliott · Harmonic · Volume.', groups: [
+    { title: 'Confluences', items: [
+      { icon: '◉', label: 'All 7 lenses', on: true },
+      { icon: '📊', label: 'Volume Profile (POC/VAH/VAL)' },
+      { icon: '🌀', label: 'Fibonacci golden-zone' },
+      { icon: '⬛', label: 'Order Block (SMC)' },
+      { icon: '💧', label: 'Liquidity Grab / Stop-sweep' },
+      { icon: '⋀', label: 'Elliott Wave count' },
+      { icon: '∿', label: 'Harmonic PRZ' },
+      { icon: '📈', label: 'Volume Engine spike' },
+    ]},
+    { title: 'Tier filter', items: [
+      { icon: '⭐', label: '5★ ELITE ≥ 80', on: true },
+      { icon: '🔥', label: '3★ STRONG 60-79' },
+      { icon: '👀', label: '2★ DECENT 40-59' },
     ]},
   ]},
 }
@@ -269,7 +276,7 @@ export default function DeskApp(): JSX.Element {
           <div className="desk-canvas">
             {tab === 'master' && <MasterView />}
             {tab === 'nifty' && <NiftyView />}
-            {tab === 'smart' && <SmartMoneyView />}
+            {tab === 'vpfib' && <VpFibView />}
             {tab === 'chart' && <ChartPatternsView />}
             {tab === 'harmonic' && <HarmonicView />}
             {tab === 'elliott' && <ElliottView />}
@@ -618,6 +625,197 @@ function NiftyView(): JSX.Element {
             <div className="desk-kpi-num el">{d.smartMoneyLevel ?? '—'}</div>
             <div className="desk-kpi-sub">Book · {d.smartMoneyDirection}</div>
           </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ─── VP + FIB CONFLUENCE VIEW ────────────────────────────────────────
+// 7-lens PRO trader master scanner: Volume Profile + Fibonacci + Order
+// Block + Liquidity Grab + Elliott Wave + Harmonic + Volume Engine.
+// Reads /vp-fib.json snapshot published by the localhost cron.
+function VpFibView(): JSX.Element {
+  const q = useQuery({ queryKey: ['desk-vpfib'], queryFn: () => snapshots.vpFib(), refetchInterval: 30 * 60_000, retry: false })
+  const searchQ = useSearchQuery()
+  const [tierFilter, setTierFilter] = useState<'ALL' | 'ELITE' | 'STRONG' | 'DECENT'>('ELITE')
+  const [pageSize, setPageSize] = useState(30)
+
+  const rows: any[] = (q.data as any)?.rows ?? []
+  const stats = {
+    scanned: (q.data as any)?.scanned ?? 0,
+    elite: (q.data as any)?.eliteCount ?? 0,
+    strong: (q.data as any)?.strongCount ?? 0,
+    decent: (q.data as any)?.decentCount ?? 0,
+  }
+  const filtered = rows
+    .filter(r => tierFilter === 'ALL' || r.tier === tierFilter)
+    .filter(r => matchesQuery({ symbol: r.symbol }, searchQ))
+  const visible = filtered.slice(0, pageSize)
+
+  const CONFLUENCE_ICON: Record<string, string> = {
+    vp: '📊', fib: '🌀', ob: '⬛', liq: '💧', elliott: '⋀', harmonic: '∿', volume: '📈',
+  }
+  const CONFLUENCE_LABEL: Record<string, string> = {
+    vp: 'VP', fib: 'FIB', ob: 'OB', liq: 'LIQ', elliott: 'EW', harmonic: 'HRM', volume: 'VOL',
+  }
+
+  return (
+    <>
+      <div className="proposal-note">
+        <span>⛯</span>
+        <div>
+          <b>VP + FIB Confluence — PRO Trader Master.</b> Every candidate must clear multiple institutional-grade lenses: Volume Profile (POC/VAH/VAL) · Fibonacci golden-zone · Order Block · Liquidity Grab · Elliott Wave · Harmonic PRZ · Volume spike. Tier-aware SL + guaranteed R:R ≥ 1:1 at T1. Snapshot regenerates every 30 minutes during market hours.
+        </div>
+      </div>
+      <div className="desk-page-head">
+        <div>
+          <h1 className="desk-page-title">⛯ VP + FIB Confluence</h1>
+          <p className="desk-page-desc">
+            Hedge-fund confluence stack. A trade needs 3+ lenses to fire — the same edge institutional desks require before pulling the trigger.
+          </p>
+        </div>
+      </div>
+
+      {/* KPI strip */}
+      <div className="desk-kpi-row" style={{ marginBottom: 16 }}>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">Scanned</div>
+          <div className="desk-kpi-num">{stats.scanned}</div>
+          <div className="desk-kpi-sub">Symbols evaluated</div>
+        </div>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">⭐ ELITE ≥ 80</div>
+          <div className="desk-kpi-num el">{stats.elite}</div>
+          <div className="desk-kpi-sub">4+ confluences · 5★</div>
+        </div>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">🔥 STRONG 60-79</div>
+          <div className="desk-kpi-num">{stats.strong}</div>
+          <div className="desk-kpi-sub">3+ confluences · 3★</div>
+        </div>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">👀 DECENT 40-59</div>
+          <div className="desk-kpi-num" style={{ color: 'var(--desk-text-3)' }}>{stats.decent}</div>
+          <div className="desk-kpi-sub">2+ confluences · 2★ watch</div>
+        </div>
+      </div>
+
+      {/* Tier tabs */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+        {(['ELITE','STRONG','DECENT','ALL'] as const).map(t => (
+          <button
+            key={t}
+            onClick={() => setTierFilter(t)}
+            className={`desk-btn ${tierFilter === t ? 'primary' : ''}`}
+            style={{ fontSize: 11.5, padding: '5px 12px' }}
+          >{t}</button>
+        ))}
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--desk-text-3)', alignSelf: 'center' }}>
+          Showing <b style={{ color: 'var(--desk-text-2)' }}>{visible.length}</b> of {filtered.length}
+        </span>
+      </div>
+
+      {rows.length === 0 && !q.isLoading && (
+        <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--desk-text-3)', background: 'var(--desk-surface)', border: '1px solid var(--desk-border)', borderRadius: 12 }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>⛯</div>
+          <div style={{ fontSize: 14, marginBottom: 6 }}><b>VP + FIB scan hasn't run yet.</b></div>
+          <div style={{ fontSize: 12 }}>The 30-min cron will populate this on the next tick, or run <code>npm run scan:vpfib</code> on localhost.</div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 12 }}>
+        {visible.map((r: any, i: number) => {
+          const isLong = r.side === 'LONG'
+          const tierColor = r.tier === 'ELITE' ? '#ffb547' : r.tier === 'STRONG' ? '#4dc0ff' : 'var(--desk-text-3)'
+          return (
+            <div key={r.symbol + i} style={{
+              background: 'var(--desk-surface)',
+              border: `1px solid ${r.tier === 'ELITE' ? 'rgba(255,181,71,0.35)' : 'var(--desk-border)'}`,
+              borderRadius: 12,
+              padding: 14,
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 10,
+            }}>
+              {/* Head row: symbol + tier + score */}
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <div style={{ fontSize: 15, fontWeight: 600, letterSpacing: '0.02em' }}>{r.symbol}</div>
+                <span style={{
+                  fontSize: 10, padding: '2px 6px', borderRadius: 4,
+                  background: isLong ? 'rgba(66,190,101,0.15)' : 'rgba(240,84,84,0.15)',
+                  color: isLong ? '#42be65' : '#f05454',
+                  fontWeight: 700, letterSpacing: '0.06em',
+                }}>{r.side}</span>
+                <span style={{ marginLeft: 'auto', fontSize: 11, color: tierColor, fontWeight: 700, letterSpacing: '0.06em' }}>
+                  {'★'.repeat(r.stars || 2)} {r.tier} · {r.confluenceScore}
+                </span>
+              </div>
+
+              {/* Confluence chips row */}
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+                {['vp','fib','ob','liq','elliott','harmonic','volume'].map(k => {
+                  const c = r.confluences?.[k]
+                  const hit = c?.hit
+                  return (
+                    <span key={k} title={c?.detail || ''} style={{
+                      fontSize: 9.5, padding: '3px 6px', borderRadius: 4,
+                      background: hit ? 'rgba(77,192,255,0.15)' : 'rgba(255,255,255,0.03)',
+                      color: hit ? '#4dc0ff' : 'var(--desk-text-3)',
+                      fontWeight: 600, letterSpacing: '0.04em',
+                      border: hit ? '1px solid rgba(77,192,255,0.35)' : '1px solid var(--desk-border)',
+                    }}>
+                      {CONFLUENCE_ICON[k]}{CONFLUENCE_LABEL[k]}{hit ? '✓' : '·'}
+                    </span>
+                  )
+                })}
+              </div>
+
+              {/* LTP + Entry + SL + Targets grid */}
+              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(5, 1fr)', gap: 8, fontSize: 11 }}>
+                <div>
+                  <div style={{ color: 'var(--desk-text-3)', fontSize: 10, marginBottom: 2 }}>LTP</div>
+                  <div className="mono">{fmtRupee(r.ltp)}</div>
+                </div>
+                <div>
+                  <div style={{ color: 'var(--desk-text-3)', fontSize: 10, marginBottom: 2 }}>Entry</div>
+                  <div className="mono" style={{ fontWeight: 600 }}>{fmtRupee(r.entry)}</div>
+                </div>
+                <div>
+                  <div style={{ color: '#f05454', fontSize: 10, marginBottom: 2 }}>SL · {r.riskPct}%</div>
+                  <div className="mono">{fmtRupee(r.stopLoss)}</div>
+                </div>
+                <div>
+                  <div style={{ color: '#42be65', fontSize: 10, marginBottom: 2 }}>T1 · R:R {r.rrT1}</div>
+                  <div className="mono">{fmtRupee(r.target1)}</div>
+                </div>
+                <div>
+                  <div style={{ color: '#42be65', fontSize: 10, marginBottom: 2 }}>T3 · R:R {r.rrT3}</div>
+                  <div className="mono">{fmtRupee(r.target3)}</div>
+                </div>
+              </div>
+
+              {/* Dates row */}
+              <div style={{ fontSize: 10, color: 'var(--desk-text-3)', display: 'flex', gap: 12 }}>
+                <span>Entry: {fmtDateShort(r.entryDate)}</span>
+                <span>T1: {fmtDateShort(r.target1Date)}</span>
+                <span>T2: {fmtDateShort(r.target2Date)}</span>
+                <span>T3: {fmtDateShort(r.target3Date)}</span>
+              </div>
+
+              {/* Why */}
+              <div style={{ fontSize: 11, color: 'var(--desk-text-2)', lineHeight: 1.4, borderTop: '1px solid var(--desk-border)', paddingTop: 8 }}>
+                {r.unifiedReason || (Array.isArray(r.reasoning) ? r.reasoning.join(' · ') : '')}
+              </div>
+            </div>
+          )
+        })}
+      </div>
+
+      {filtered.length > pageSize && (
+        <div className="load-more-strip" style={{ marginTop: 12 }}>
+          <div className="showing-count">Showing <b>{visible.length}</b> of <b className="accent">{filtered.length}</b></div>
+          <div className="load-more-actions"><button className="load-more-btn" onClick={() => setPageSize(s => s + 30)}>Load next 30 ↓</button></div>
         </div>
       )}
     </>
@@ -1526,9 +1724,9 @@ function SimpleTable({ rows: rawRows, emptyMsg }: { rows: any[]; emptyMsg: strin
           </tbody>
         </table>
       </div>
-      {rows.length > pageSize && (
+      {sortedRows.length > pageSize && (
         <div className="load-more-strip">
-          <div className="showing-count">Showing <b>{visible.length}</b> of <b className="accent">{rows.length}</b></div>
+          <div className="showing-count">Showing <b>{visible.length}</b> of <b className="accent">{sortedRows.length}</b></div>
           <div className="load-more-actions"><button className="load-more-btn" onClick={() => setPageSize(s => s + 50)}>Load next 50 ↓</button></div>
         </div>
       )}
