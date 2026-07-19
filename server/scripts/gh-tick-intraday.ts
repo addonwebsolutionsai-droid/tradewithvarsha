@@ -144,6 +144,22 @@ async function main() {
     log.err('TICK', `vp-fib: ${(e as Error).message}`)
   }
 
+  // ─── 1c. High-Quality Setups snapshot for external Vercel projects
+  //          (addon-products-home /v2/). Composes VP+FIB + PRO-Edge +
+  //          Cross-Confluence + Weekly + Daily picks, filters ELITE +
+  //          STRONG only, splits by F&O eligibility, publishes.
+  //          Must run AFTER vp-fib + pro-edge + cross-confluence so it
+  //          sees the freshest source data.
+  try {
+    const t = Date.now()
+    const { writeHighQualitySetups } = await import('../src/engine/highQualitySetups')
+    await writeHighQualitySetups()
+    results['high-quality-setups'] = `written · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['high-quality-setups'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `high-quality-setups: ${(e as Error).message}`)
+  }
+
   // ─── 2. PRO Edge (downstream of confluence)
   try {
     const { aggregateProEdge } = await import('../src/engine/proEdge')

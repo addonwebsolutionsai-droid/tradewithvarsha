@@ -1,0 +1,313 @@
+/**
+ * High-Quality Setups snapshot — the "best of the desk" feed consumed by
+ * external Vercel projects (addon-products-home /v2/).
+ *
+ * Pulls every actionable snapshot on disk, keeps only ELITE + STRONG tier
+ * signals (score ≥ 60 · confluence ≥ 3 lenses · conviction ≥ 85 where
+ * applicable), dedupes by symbol keeping the strongest, then splits by
+ * F&O eligibility (Angel ScripMaster NFO list is the source of truth).
+ *
+ *   Output → server/data/public-snapshots/high-quality-setups.json
+ *   Consumed by → addon-products-home/v2 via raw.githubusercontent.com
+ *
+ * Publish cadence: piggybacks on the intraday-tick cron (every 5 min
+ * during 09:15-15:30 IST Mon-Fri) via the existing pushSnapshotsToGitHub
+ * cascade. No separate infra, no Vercel functions, no cost.
+ */
+
+import fs from 'fs'
+import path from 'path'
+import * as angel from '../data/angel'
+import { log } from '../util/logger'
+
+type Segment = 'FNO' | 'CASH'
+
+export interface UnifiedSetup {
+  symbol: string
+  segment: Segment           // FNO if the symbol has active NFO listing
+  side: 'LONG' | 'SHORT'
+  source: string             // which engine produced this signal
+  tier: 'ELITE' | 'STRONG'
+  stars: 5 | 3
+  score: number              // 0-100, engine-normalised
+  confluencesHit?: number
+  ltp: number
+  entry: number
+  stopLoss: number
+  target1: number
+  target2: number
+  target3: number
+  riskPct: number
+  rewardT1Pct?: number
+  rrT1?: number
+  rrT2?: number
+  rrT3?: number
+  entryDate: string
+  target1Date?: string
+  target2Date?: string
+  target3Date?: string
+  slDate?: string
+  keyLevels?: Record<string, number | undefined>
+  reasoning: string[]
+  unifiedReason: string
+  confluences?: Record<string, { key: string; hit: boolean; points: number; detail: string; level?: number }>
+  fnoPlan?: {                // populated for FNO rows only
+    direction: 'BUY_CE' | 'BUY_PE' | 'LONG_FUT' | 'SHORT_FUT'
+    note: string             // human-readable option-leg guidance
+  }
+}
+
+// ─── Snapshot readers ───────────────────────────────────────────────
+
+function readSnapshot(name: string): any | null {
+  try {
+    const p = path.resolve(process.cwd(), 'data', 'public-snapshots', name)
+    if (!fs.existsSync(p)) return null
+    return JSON.parse(fs.readFileSync(p, 'utf-8'))
+  } catch { return null }
+}
+
+// ─── F&O eligibility ────────────────────────────────────────────────
+
+/**
+ * Pull the F&O underlying list from ScripMaster (Angel's official mapping).
+ * Falls back to a hand-curated list if ScripMaster hasn't loaded.
+ */
+async function getFnoUniverse(): Promise<Set<string>> {
+  const known = new Set<string>(FALLBACK_FNO_LEADERS)
+  try {
+    const sm = await angel.loadScripMaster()
+    if (sm) {
+      const futs = sm.filter(s => s.exch_seg === 'NFO' && s.instrumenttype === 'FUTSTK')
+      for (const s of futs) if (s.name) known.add(s.name.toUpperCase())
+      // Indices too
+      known.add('NIFTY').add('BANKNIFTY').add('FINNIFTY').add('MIDCPNIFTY').add('SENSEX')
+    }
+  } catch { /* use fallback */ }
+  return known
+}
+
+// ─── Signal normalisers ─────────────────────────────────────────────
+
+function fromVpFib(row: any): UnifiedSetup | null {
+  if (!row || !row.symbol || !row.entry) return null
+  if (row.tier !== 'ELITE' && row.tier !== 'STRONG') return null
+  return {
+    symbol: String(row.symbol).toUpperCase(),
+    segment: 'CASH',        // reassigned later after F&O eligibility check
+    side: row.side === 'SHORT' ? 'SHORT' : 'LONG',
+    source: 'VP+FIB',
+    tier: row.tier,
+    stars: row.tier === 'ELITE' ? 5 : 3,
+    score: row.confluenceScore ?? 0,
+    confluencesHit: row.confluencesHit,
+    ltp: row.ltp, entry: row.entry, stopLoss: row.stopLoss,
+    target1: row.target1, target2: row.target2, target3: row.target3,
+    riskPct: row.riskPct, rewardT1Pct: row.rewardT1Pct,
+    rrT1: row.rrT1, rrT2: row.rrT2, rrT3: row.rrT3,
+    entryDate: row.entryDate, target1Date: row.target1Date, target2Date: row.target2Date, target3Date: row.target3Date, slDate: row.slDate,
+    keyLevels: row.keyLevels,
+    reasoning: Array.isArray(row.reasoning) ? row.reasoning : [],
+    unifiedReason: row.unifiedReason ?? '',
+    confluences: row.confluences,
+  }
+}
+
+function fromProEdge(row: any): UnifiedSetup | null {
+  if (!row || !row.symbol || !row.entry) return null
+  const conv = row.conviction ?? row.score ?? 0
+  if (conv < 80) return null
+  const tier: 'ELITE' | 'STRONG' = conv >= 90 ? 'ELITE' : 'STRONG'
+  const dir = String(row.direction ?? 'BUY').toUpperCase()
+  return {
+    symbol: String(row.symbol).toUpperCase(),
+    segment: 'CASH',
+    side: dir === 'SHORT' || dir === 'SELL' ? 'SHORT' : 'LONG',
+    source: 'PRO-EDGE',
+    tier, stars: tier === 'ELITE' ? 5 : 3,
+    score: conv,
+    ltp: row.ltp ?? row.entry, entry: row.entry, stopLoss: row.stopLoss,
+    target1: row.target1, target2: row.target2, target3: row.target3,
+    riskPct: row.entry > 0 ? Math.round(Math.abs((row.stopLoss - row.entry) / row.entry) * 10000) / 100 : 0,
+    entryDate: row.entryDate ?? new Date().toISOString().slice(0, 10),
+    target1Date: row.target1Date, target2Date: row.target2Date, target3Date: row.target3Date, slDate: row.slDate,
+    reasoning: Array.isArray(row.reasoning) ? row.reasoning : (typeof row.unifiedReason?.collapsed === 'string' ? [row.unifiedReason.collapsed] : []),
+    unifiedReason: typeof row.unifiedReason === 'string' ? row.unifiedReason : (row.unifiedReason?.collapsed ?? ''),
+  }
+}
+
+function fromCrossConfluence(row: any): UnifiedSetup | null {
+  if (!row || !row.symbol || !row.entry) return null
+  const conv = row.compositeScore ?? row.conviction ?? row.score ?? 0
+  if (conv < 80) return null
+  const tier: 'ELITE' | 'STRONG' = conv >= 90 ? 'ELITE' : 'STRONG'
+  const dir = String(row.direction ?? row.side ?? 'BUY').toUpperCase()
+  return {
+    symbol: String(row.symbol).toUpperCase(),
+    segment: 'CASH',
+    side: dir === 'SHORT' || dir === 'SELL' ? 'SHORT' : 'LONG',
+    source: 'CROSS-CONFLUENCE',
+    tier, stars: tier === 'ELITE' ? 5 : 3,
+    score: conv,
+    ltp: row.ltp ?? row.entry, entry: row.entry, stopLoss: row.stopLoss,
+    target1: row.target1, target2: row.target2, target3: row.target3,
+    riskPct: row.entry > 0 ? Math.round(Math.abs((row.stopLoss - row.entry) / row.entry) * 10000) / 100 : 0,
+    entryDate: row.entryDate ?? new Date().toISOString().slice(0, 10),
+    target1Date: row.target1Date, target2Date: row.target2Date, target3Date: row.target3Date, slDate: row.slDate,
+    reasoning: Array.isArray(row.reasoning) ? row.reasoning : [],
+    unifiedReason: typeof row.unifiedReason === 'string' ? row.unifiedReason : (row.unifiedReason?.collapsed ?? ''),
+  }
+}
+
+function fromWeeklyPick(row: any): UnifiedSetup | null {
+  if (!row || !row.symbol || !row.entry) return null
+  const conv = row.conviction ?? row.score ?? 0
+  if (conv < 85) return null
+  return {
+    symbol: String(row.symbol).toUpperCase(),
+    segment: 'CASH',
+    side: 'LONG',              // Weekly Pick is long-only by construction
+    source: 'WEEKLY-PICK',
+    tier: conv >= 92 ? 'ELITE' : 'STRONG',
+    stars: conv >= 92 ? 5 : 3,
+    score: conv,
+    ltp: row.ltp ?? row.entry, entry: row.entry, stopLoss: row.stopLoss,
+    target1: row.target1, target2: row.target2, target3: row.target3,
+    riskPct: row.entry > 0 ? Math.round(Math.abs((row.stopLoss - row.entry) / row.entry) * 10000) / 100 : 0,
+    entryDate: row.entryDate ?? new Date().toISOString().slice(0, 10),
+    target1Date: row.target1Date, target2Date: row.target2Date, target3Date: row.target3Date, slDate: row.slDate,
+    reasoning: Array.isArray(row.reasoning) ? row.reasoning : [],
+    unifiedReason: typeof row.unifiedReason === 'string' ? row.unifiedReason : (row.unifiedReason?.collapsed ?? ''),
+  }
+}
+
+// ─── Dedup: strongest signal per symbol wins ────────────────────────
+
+function dedupeBySymbol(setups: UnifiedSetup[]): UnifiedSetup[] {
+  const best = new Map<string, UnifiedSetup>()
+  for (const s of setups) {
+    const key = s.symbol
+    const prev = best.get(key)
+    if (!prev || s.score > prev.score) best.set(key, s)
+  }
+  return Array.from(best.values())
+}
+
+// ─── F&O leg suggestion ─────────────────────────────────────────────
+
+function suggestFnoPlan(setup: UnifiedSetup): UnifiedSetup['fnoPlan'] {
+  // Simple, safe default: buy the option in the direction of the trade.
+  // A proper strike/expiry mapping needs a live option-chain read; we keep
+  // the guidance descriptive so retail traders can look up the ATM strike
+  // on their broker without us picking an expired one.
+  const dir = setup.side === 'LONG' ? 'BUY_CE' : 'BUY_PE'
+  const spot = setup.entry.toFixed(0)
+  const opt = dir === 'BUY_CE' ? 'CE' : 'PE'
+  return {
+    direction: dir,
+    note: `Buy ATM ${opt} (nearest strike to spot ₹${spot}) of the CURRENT-week expiry. Cap risk at 3% of capital, exit if underlying breaks SL ₹${setup.stopLoss}.`,
+  }
+}
+
+// ─── Main build ─────────────────────────────────────────────────────
+
+export async function buildHighQualitySetups(): Promise<{
+  generatedAt: string
+  fno: UnifiedSetup[]
+  cash: UnifiedSetup[]
+  totals: { fno: number; cash: number; elite: number; strong: number }
+  sources: Record<string, number>
+}> {
+  const raw: UnifiedSetup[] = []
+  const sources: Record<string, number> = {}
+  const track = (arr: UnifiedSetup[], name: string) => {
+    sources[name] = arr.length
+    raw.push(...arr)
+  }
+
+  // 1. VP + FIB Confluence (our newest lens — the "PRO Trader" scanner)
+  const vpFib = readSnapshot('vp-fib.json')
+  if (vpFib && Array.isArray(vpFib.rows)) {
+    track(vpFib.rows.map(fromVpFib).filter(Boolean) as UnifiedSetup[], 'VP+FIB')
+  }
+
+  // 2. PRO Edge cascade
+  const proEdge = readSnapshot('pro-edge.json')
+  if (proEdge && Array.isArray(proEdge.rows)) {
+    track(proEdge.rows.map(fromProEdge).filter(Boolean) as UnifiedSetup[], 'PRO-EDGE')
+  }
+
+  // 3. Cross-engine confluence
+  const cross = readSnapshot('cross-confluence.json')
+  if (cross && Array.isArray(cross.rows)) {
+    track(cross.rows.map(fromCrossConfluence).filter(Boolean) as UnifiedSetup[], 'CROSS-CONFLUENCE')
+  }
+
+  // 4. Weekly Pick — swing/positional biassed
+  const weekly = readSnapshot('weekly-pick.json')
+  if (weekly && Array.isArray(weekly.rows)) {
+    track(weekly.rows.map(fromWeeklyPick).filter(Boolean) as UnifiedSetup[], 'WEEKLY-PICK')
+  }
+
+  // Daily Pick (same shape as weekly)
+  const daily = readSnapshot('daily-pick.json')
+  if (daily && Array.isArray(daily.rows)) {
+    track(daily.rows.map(fromWeeklyPick).filter(Boolean) as UnifiedSetup[], 'DAILY-PICK')
+  }
+
+  // Dedupe — same symbol from multiple engines → keep the strongest
+  const unique = dedupeBySymbol(raw)
+
+  // Classify each row by F&O eligibility
+  const fnoUniverse = await getFnoUniverse()
+  for (const s of unique) {
+    if (fnoUniverse.has(s.symbol)) {
+      s.segment = 'FNO'
+      s.fnoPlan = suggestFnoPlan(s)
+    } else {
+      s.segment = 'CASH'
+    }
+  }
+
+  const fno = unique.filter(s => s.segment === 'FNO').sort((a, b) => b.score - a.score)
+  const cash = unique.filter(s => s.segment === 'CASH').sort((a, b) => b.score - a.score)
+
+  // Cap Cash tab at top 100 (there are always more decent small-caps than
+  // retail traders can act on; top-100 by score is plenty)
+  const cashCapped = cash.slice(0, 100)
+
+  const totals = {
+    fno: fno.length,
+    cash: cashCapped.length,
+    elite: unique.filter(s => s.tier === 'ELITE').length,
+    strong: unique.filter(s => s.tier === 'STRONG').length,
+  }
+
+  log.info('HQS', `built · FNO ${totals.fno} · CASH ${totals.cash} · elite ${totals.elite} · strong ${totals.strong} · sources ${JSON.stringify(sources)}`)
+
+  return {
+    generatedAt: new Date().toISOString(),
+    fno,
+    cash: cashCapped,
+    totals,
+    sources,
+  }
+}
+
+export async function writeHighQualitySetups(): Promise<void> {
+  const out = await buildHighQualitySetups()
+  const p = path.resolve(process.cwd(), 'data', 'public-snapshots', 'high-quality-setups.json')
+  fs.writeFileSync(p, JSON.stringify(out, null, 2), 'utf-8')
+  log.info('HQS', `wrote ${p} · ${out.fno.length} FNO · ${out.cash.length} CASH`)
+}
+
+// ─── Fallback F&O list (used only if ScripMaster hasn't loaded yet) ─
+
+const FALLBACK_FNO_LEADERS = [
+  'RELIANCE','TCS','HDFCBANK','INFY','ICICIBANK','SBIN','AXISBANK','ITC','LT','BHARTIARTL',
+  'BAJFINANCE','KOTAKBANK','MARUTI','ASIANPAINT','TATAMOTORS','TATASTEEL','ONGC','HCLTECH','WIPRO','ULTRACEMCO',
+  'NTPC','POWERGRID','ADANIENT','ADANIPORTS','BAJAJFINSV','JSWSTEEL','HINDUNILVR','NESTLEIND','COALINDIA','INDUSINDBK',
+  'SUNPHARMA','EICHERMOT','HEROMOTOCO','BRITANNIA','DRREDDY','GRASIM','TITAN','DIVISLAB','BPCL','CIPLA',
+  'TECHM','HDFCLIFE','SBILIFE','ADANIGREEN','TATAPOWER','HAL','BEL','CANBK','BANKBARODA','JIOFIN',
+  'MOTHERSON','TRENT','APOLLOHOSP','PIDILITIND','GODREJCP','BAJAJ-AUTO','DABUR','MARICO','HAVELLS','SHREECEM',
+]
