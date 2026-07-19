@@ -643,7 +643,8 @@ function VpFibView(): JSX.Element {
 
   const rows: any[] = (q.data as any)?.rows ?? []
   const stats = {
-    scanned: (q.data as any)?.scanned ?? 0,
+    scanned: (q.data as any)?.attempted ?? (q.data as any)?.scanned ?? 0,
+    universe: (q.data as any)?.universe ?? '—',
     elite: (q.data as any)?.eliteCount ?? 0,
     strong: (q.data as any)?.strongCount ?? 0,
     decent: (q.data as any)?.decentCount ?? 0,
@@ -681,8 +682,8 @@ function VpFibView(): JSX.Element {
       <div className="desk-kpi-row" style={{ marginBottom: 16 }}>
         <div className="desk-kpi">
           <div className="desk-kpi-label">Scanned</div>
-          <div className="desk-kpi-num">{stats.scanned}</div>
-          <div className="desk-kpi-sub">Symbols evaluated</div>
+          <div className="desk-kpi-num">{stats.scanned.toLocaleString('en-IN')}</div>
+          <div className="desk-kpi-sub">{stats.universe} · NSE + BSE full universe</div>
         </div>
         <div className="desk-kpi">
           <div className="desk-kpi-label">⭐ ELITE ≥ 80</div>

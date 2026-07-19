@@ -40,6 +40,7 @@ import path from 'path'
 import { getCandles } from '../data/index'
 import { buildVolumeProfile, detectSetups } from './volumeProfile'
 import { detectOrderBlock, detectLiquiditySweep } from './smcPatterns'
+import { resolveUniverse } from '../screeners/universe'
 import type { Candle } from '../types'
 import { log } from '../util/logger'
 
@@ -396,38 +397,73 @@ async function scanOneSymbol(
 }
 
 /**
- * Run the scanner over a universe. Universe is small by default (top-liquid
- * F&O + intraday snapshot names) — keeps compute cheap while covering the
- * stocks that actually trade with institutional flow.
+ * Run the scanner over a universe.
+ *
+ * Default coverage is FULL Indian market (MARKET_ALL — NSE + BSE, ~11.5k
+ * equities from ScripMaster). Intraday-tick cron uses a smaller universe
+ * (existing signal snapshots) for speed; EOD tick covers the whole thing.
+ *
+ * `maxRuntimeMs` gates the scan — as soon as budget is exceeded we stop
+ * spawning new symbols and return what we have. This lets the 5-min
+ * intraday cron scan MARKET_ALL without ever blowing its budget.
  */
 export async function scanVpFibConfluence(opts?: {
-  universe?: string[]
+  universe?: string[] | 'MARKET_ALL' | 'NSE_ALL' | 'BSE_ALL' | 'CNX500' | 'DEFAULT'
   concurrency?: number
   limit?: number
+  maxRuntimeMs?: number
 }): Promise<{
   generatedAt: string
+  universe: string
   scanned: number
+  attempted: number
   eliteCount: number
   strongCount: number
   decentCount: number
+  runtimeMs: number
   rows: VpFibRow[]
 }> {
   const elliottMap = buildElliottMap()
   const harmonicMap = buildHarmonicMap()
 
-  // Build a universe from existing high-signal snapshots + known F&O leaders.
-  const seed: string[] = opts?.universe ?? buildDefaultUniverse()
+  // Resolve universe. Symbols → use verbatim. Universe key → look up.
+  let seed: string[] = []
+  let universeLabel = 'DEFAULT'
+  if (Array.isArray(opts?.universe)) {
+    seed = opts!.universe as string[]
+    universeLabel = 'CUSTOM'
+  } else {
+    const key = (opts?.universe as string) ?? 'DEFAULT'
+    universeLabel = key
+    if (key === 'DEFAULT') {
+      seed = await buildDefaultUniverse()
+    } else {
+      try {
+        seed = await resolveUniverse(key)
+      } catch (e) {
+        log.warn('VP-FIB', `resolveUniverse(${key}) failed, falling back to DEFAULT: ${(e as Error).message}`)
+        seed = await buildDefaultUniverse()
+        universeLabel = 'DEFAULT_FALLBACK'
+      }
+    }
+  }
+
   const uniq = Array.from(new Set(seed.map(s => s.toUpperCase()))).filter(Boolean)
-  const targets = uniq.slice(0, opts?.limit ?? 200)
-  const concurrency = opts?.concurrency ?? 5
+  const targets = opts?.limit ? uniq.slice(0, opts.limit) : uniq
+  const concurrency = opts?.concurrency ?? 20
+  const maxRuntimeMs = opts?.maxRuntimeMs ?? 8 * 60_000   // 8 min default
 
-  log.info('VP-FIB', `scanning ${targets.length} candidates · elliott ${elliottMap.size} · harmonic ${harmonicMap.size}`)
+  log.info('VP-FIB', `scanning ${targets.length} candidates · universe=${universeLabel} · concurrency=${concurrency} · budget=${(maxRuntimeMs / 1000).toFixed(0)}s · elliott ${elliottMap.size} · harmonic ${harmonicMap.size}`)
 
+  const t0 = Date.now()
   const results: VpFibRow[] = []
   let i = 0
+  let attempted = 0
   const runners = Array.from({ length: concurrency }, async () => {
     while (i < targets.length) {
+      if (Date.now() - t0 > maxRuntimeMs) break   // time-budget gate
       const sym = targets[i++]
+      attempted++
       try {
         const row = await scanOneSymbol(sym, elliottMap, harmonicMap)
         if (row) results.push(row)
@@ -443,33 +479,66 @@ export async function scanVpFibConfluence(opts?: {
   const eliteCount = results.filter(r => r.tier === 'ELITE').length
   const strongCount = results.filter(r => r.tier === 'STRONG').length
   const decentCount = results.filter(r => r.tier === 'DECENT').length
+  const runtimeMs = Date.now() - t0
 
-  log.info('VP-FIB', `done · ${results.length} setups (${eliteCount} elite · ${strongCount} strong · ${decentCount} decent)`)
+  // Cap output to keep snapshot small enough for the browser to fetch quickly.
+  // Elite + Strong are ALWAYS kept in full — those are the actionable tier.
+  // Decent is capped so the whole snapshot stays roughly under ~600KB.
+  const elites = results.filter(r => r.tier === 'ELITE')
+  const strongs = results.filter(r => r.tier === 'STRONG')
+  const decents = results.filter(r => r.tier === 'DECENT')
+  const DECENT_KEEP = 150
+  const capped = [...elites, ...strongs, ...decents.slice(0, DECENT_KEEP)]
+
+  // Trim non-hit confluence detail strings — they're always the same "no
+  // touch" boilerplate and bloat the payload. Hit confluences keep their
+  // full detail (that's the interesting narrative the UI shows).
+  for (const r of capped) {
+    for (const key of Object.keys(r.confluences)) {
+      const c = r.confluences[key]
+      if (!c.hit) c.detail = ''      // client's tooltip skips empty strings
+    }
+  }
+
+  log.info('VP-FIB', `done · attempted ${attempted}/${targets.length} · ${results.length} setups (${eliteCount} elite · ${strongCount} strong · ${decentCount} decent · kept ${capped.length}) · ${(runtimeMs / 1000).toFixed(1)}s`)
 
   return {
     generatedAt: new Date().toISOString(),
-    scanned: targets.length,
+    universe: universeLabel,
+    scanned: attempted,
+    attempted,
     eliteCount, strongCount, decentCount,
-    rows: results,
+    runtimeMs,
+    rows: capped,
   }
 }
 
 /**
- * Default scanner universe: read high-signal snapshots + fall back to a
- * hand-curated F&O leaders list if nothing is on disk yet.
+ * Default scanner universe: read every existing high-signal snapshot on
+ * disk + the full F&O leader list. This is intentionally BIG — the
+ * confluence gate (2+ lenses · score ≥ 40) does the filtering. On the
+ * dev box with ScripMaster loaded, this typically yields 2-4k candidates
+ * (the top-of-market that other scanners have already flagged).
  */
-function buildDefaultUniverse(): string[] {
+async function buildDefaultUniverse(): Promise<string[]> {
   const seed = new Set<string>()
-  // Seed from other scanner outputs (they've already qualified the symbol as
-  // "worth looking at" — VP+FIB adds the confluence check).
-  const feeds = ['elliott-wave.json', 'harmonic.json', 'stock-fno-volume-profile.json', 'chart-patterns.json', 'weekly-pick.json', 'daily-pick.json']
+  const feeds = [
+    'elliott-wave.json', 'harmonic.json', 'stock-fno-volume-profile.json',
+    'chart-patterns.json', 'weekly-pick.json', 'daily-pick.json',
+    'pro-edge.json', 'cross-confluence.json', 'ad-divergence.json',
+    'early-momentum.json', 'pedigree-accumulation.json', 'bulk-deals.json',
+    'insider-buys.json', 'oi-buildup.json',
+  ]
   for (const name of feeds) {
     const snap = readSnapshot(name)
     if (snap && Array.isArray(snap.rows)) {
       for (const r of snap.rows) if (r?.symbol) seed.add(String(r.symbol).toUpperCase())
     }
+    // Some snapshots use `signals` instead of `rows`
+    if (snap && Array.isArray(snap.signals)) {
+      for (const s of snap.signals) if (s?.symbol) seed.add(String(s.symbol).toUpperCase())
+    }
   }
-  // Guarantee coverage of top F&O leaders even if snapshots are empty.
   for (const s of TOP_FNO_LEADERS) seed.add(s)
   return Array.from(seed)
 }

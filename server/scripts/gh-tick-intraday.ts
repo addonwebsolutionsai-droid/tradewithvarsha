@@ -126,12 +126,19 @@ async function main() {
   //          Elliott · Harmonic · Volume Engine into one confluence score.
   //          Reads elliott-wave.json + harmonic.json on disk, so must run
   //          AFTER those snapshots are refreshed (see gh-tick-eod).
+  //          Full MARKET_ALL universe (NSE + BSE, ~11.5k) with a 4-min
+  //          wall-clock budget — as many symbols as fit in the window get
+  //          scanned; leftovers roll into the next tick.
   try {
     const t = Date.now()
     const { scanVpFibConfluence, writeVpFibSnapshot } = await import('../src/engine/vpFibScanner')
-    const out = await scanVpFibConfluence({ limit: 150, concurrency: 5 })
+    const out = await scanVpFibConfluence({
+      universe: 'MARKET_ALL',
+      concurrency: 25,
+      maxRuntimeMs: 4 * 60_000,
+    })
     await writeVpFibSnapshot(out)
-    results['vp-fib'] = `${out.rows.length} setups (${out.eliteCount} elite · ${out.strongCount} strong · ${out.decentCount} decent) · ${((Date.now() - t) / 1000).toFixed(1)}s`
+    results['vp-fib'] = `attempted ${out.attempted} · ${out.rows.length} setups (${out.eliteCount} elite · ${out.strongCount} strong · ${out.decentCount} decent) · ${((Date.now() - t) / 1000).toFixed(1)}s`
   } catch (e) {
     results['vp-fib'] = `ERR ${(e as Error).message}`
     log.err('TICK', `vp-fib: ${(e as Error).message}`)

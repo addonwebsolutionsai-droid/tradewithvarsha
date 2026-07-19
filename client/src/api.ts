@@ -70,7 +70,7 @@ export const snapshots = {
   stockFnoVolumeProfile: () => snapshot<{ generatedAt: string; scanned: number; rows: any[] }>('stock-fno-volume-profile.json'),
   harmonic: () => snapshot<{ generatedAt: string; criterion: string; total: number; byPattern: Record<string, number>; byTier: Record<string, number>; rows: any[] }>('harmonic.json'),
   elliottWave: () => snapshot<{ generatedAt: string; criterion: string; total: number; byType: Record<string, number>; rows: any[] }>('elliott-wave.json'),
-  vpFib: () => snapshot<{ generatedAt: string; scanned: number; eliteCount: number; strongCount: number; decentCount: number; rows: any[] }>('vp-fib.json'),
+  vpFib: () => snapshot<{ generatedAt: string; universe?: string; scanned: number; attempted?: number; eliteCount: number; strongCount: number; decentCount: number; runtimeMs?: number; rows: any[] }>('vp-fib.json'),
 }
 
 // Chat assistant — talks directly to Gemini from the browser.

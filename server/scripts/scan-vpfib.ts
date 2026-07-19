@@ -20,10 +20,17 @@ async function main() {
   const t0 = Date.now()
   log.info('SCAN-VPFIB', 'starting one-shot VP + FIB scan')
 
-  const limit = Number(process.env.VPFIB_LIMIT ?? 150)
-  const concurrency = Number(process.env.VPFIB_CONCURRENCY ?? 5)
+  const limit = process.env.VPFIB_LIMIT ? Number(process.env.VPFIB_LIMIT) : undefined
+  const concurrency = Number(process.env.VPFIB_CONCURRENCY ?? 25)
+  const universe = (process.env.VPFIB_UNIVERSE ?? 'MARKET_ALL') as any
+  const budgetMinutes = Number(process.env.VPFIB_BUDGET_MIN ?? 10)
 
-  const out = await scanVpFibConfluence({ limit, concurrency })
+  const out = await scanVpFibConfluence({
+    universe,
+    limit,
+    concurrency,
+    maxRuntimeMs: budgetMinutes * 60_000,
+  })
   await writeVpFibSnapshot(out)
 
   const secs = ((Date.now() - t0) / 1000).toFixed(1)
