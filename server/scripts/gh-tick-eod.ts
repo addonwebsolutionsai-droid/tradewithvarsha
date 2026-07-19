@@ -175,6 +175,38 @@ async function main() {
       }
       return 'no runner export'
     }],
+    // ─── VP + FIB confluence — belt-and-braces so EOD refreshes the
+    //     snapshot even if all intraday ticks missed (Actions delays /
+    //     rate limits / network). Full MARKET_ALL universe, 6-min budget
+    //     (EOD has more headroom than intraday).
+    ['vp-fib', async () => {
+      const m = await import('../src/engine/vpFibScanner')
+      const r = await m.scanVpFibConfluence({
+        universe: 'MARKET_ALL',
+        concurrency: 25,
+        maxRuntimeMs: 6 * 60_000,
+      })
+      await m.writeVpFibSnapshot(r)
+      return `${r.rows.length} setups (${r.eliteCount} elite · ${r.strongCount} strong · ${r.decentCount} decent)`
+    }],
+    // ─── High-Quality Setups feed for addon-products-home /v2/.
+    //     Composes VP+FIB + PRO-Edge + Cross-Confluence + Weekly/Daily
+    //     Picks after they've all been refreshed above.
+    ['high-quality-setups', async () => {
+      const m = await import('../src/engine/highQualitySetups')
+      await m.writeHighQualitySetups()
+      return 'written'
+    }],
+    // ─── Daily self-improvement loop (mirrors the localhost 18:30 IST
+    //     cron in server/src/index.ts). Runs on GH Actions as backup so
+    //     auto-tune fires even if the local server is off.
+    ['self-improve', async () => {
+      const m = await import('../src/engine/selfImprove')
+      const tune = await m.runSelfImprove()
+      const overrides = Object.keys(tune?.overrides ?? {}).length
+      const newAdj = (tune?.adjustments ?? []).filter(a => a.ts >= new Date(Date.now() - 24 * 3600_000).toISOString()).length
+      return `${overrides} strategy overrides · +${newAdj} new adjustments`
+    }],
   ]
 
   for (const [name, fn] of steps) {

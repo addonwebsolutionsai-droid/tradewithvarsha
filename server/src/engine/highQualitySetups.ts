@@ -211,24 +211,29 @@ function fromCrossConfluence(row: any): UnifiedSetup | null {
 }
 
 function fromWeeklyPick(row: any): UnifiedSetup | null {
-  if (!row || !row.symbol || !row.entry) return null
+  // Weekly Pick uses `entryPrice` (not `entry`) and `direction: LONG/SHORT`.
+  if (!row || !row.symbol) return null
+  const entry = row.entry ?? row.entryPrice ?? row.entryPriceLow
+  if (!entry) return null
   const conv = row.conviction ?? row.score ?? 0
   if (conv < 85) return null
+  const side: 'LONG' | 'SHORT' = String(row.direction ?? 'LONG').toUpperCase() === 'SHORT' ? 'SHORT' : 'LONG'
+  const { reasoning, unifiedReason } = composeReason(row)
   return {
     symbol: String(row.symbol).toUpperCase(),
     segment: 'CASH',
-    side: 'LONG',              // Weekly Pick is long-only by construction
+    side,
     source: 'WEEKLY-PICK',
     tier: conv >= 92 ? 'ELITE' : 'STRONG',
     stars: conv >= 92 ? 5 : 3,
     score: conv,
-    ltp: row.ltp ?? row.entry, entry: row.entry, stopLoss: row.stopLoss,
+    ltp: row.ltp ?? entry, entry, stopLoss: row.stopLoss,
     target1: row.target1, target2: row.target2, target3: row.target3,
-    riskPct: row.entry > 0 ? Math.round(Math.abs((row.stopLoss - row.entry) / row.entry) * 10000) / 100 : 0,
+    riskPct: entry > 0 ? Math.round(Math.abs((row.stopLoss - entry) / entry) * 10000) / 100 : 0,
     entryDate: row.entryDate ?? new Date().toISOString().slice(0, 10),
     target1Date: row.target1Date, target2Date: row.target2Date, target3Date: row.target3Date, slDate: row.slDate,
-    reasoning: composeReason(row).reasoning,
-    unifiedReason: composeReason(row).unifiedReason,
+    reasoning,
+    unifiedReason,
   }
 }
 
