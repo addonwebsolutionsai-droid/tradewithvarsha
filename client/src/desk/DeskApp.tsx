@@ -54,6 +54,21 @@ const SearchCtx = createContext<string>('')
 const useSearchQuery = () => useContext(SearchCtx)
 
 // ─── Helpers ─────────────────────────────────────────────────────────
+// Different engines label direction differently — harmonic uses BUY/SELL,
+// signal engine uses BUY/SELL/SHORT, weekly/daily uses LONG/SHORT,
+// vp+fib uses `side: LONG/SHORT`. Normalise so every check works
+// regardless of source.
+function isSellRow(r: any): boolean {
+  const d = String(r?.direction ?? r?.side ?? '').toUpperCase()
+  return d === 'SHORT' || d === 'SELL' || d === 'BEARISH'
+}
+function isBuyRow(r: any): boolean {
+  const d = String(r?.direction ?? r?.side ?? '').toUpperCase()
+  return d === 'BUY' || d === 'LONG' || d === 'BULLISH'
+}
+function normalisedDir(r: any): 'BUY' | 'SELL' {
+  return isSellRow(r) ? 'SELL' : 'BUY'
+}
 function pickReason(r: any): string {
   const u = r?.unifiedReason
   if (u && typeof u.collapsed === 'string' && u.collapsed.length > 0) return u.collapsed
@@ -478,8 +493,8 @@ function MasterView(): JSX.Element {
         <div className="desk-chips">
           <button className="desk-chip on">All <span className="n">{rows.length}</span></button>
           <button className="desk-chip">🔥 DOUBLE+ <span className="n">{eliteCount}</span></button>
-          <button className="desk-chip">BUY <span className="n">{rows.filter(r => r.direction === 'BUY').length}</span></button>
-          <button className="desk-chip">SELL <span className="n">{rows.filter(r => r.direction === 'SHORT' || r.direction === 'SELL').length}</span></button>
+          <button className="desk-chip">BUY <span className="n">{rows.filter(isBuyRow).length}</span></button>
+          <button className="desk-chip">SELL <span className="n">{rows.filter(isSellRow).length}</span></button>
         </div>
         <div className="desk-toolbar-right">Sort <b>Confluence × Conv ↓</b></div>
       </div>
@@ -529,7 +544,7 @@ function MasterView(): JSX.Element {
 
 function MasterRow({ r }: { r: MergedRow }): JSX.Element {
   const isDouble = r.sources.length >= 2
-  const isSell = r.direction === 'SHORT' || r.direction === 'SELL'
+  const isSell = isSellRow(r)
   const t1Pct = fmtPct(r.entry, r.target1, r.direction as any)
   const t2Pct = fmtPct(r.entry, r.target2, r.direction as any)
   const t3Pct = fmtPct(r.entry, r.target3, r.direction as any)
@@ -937,7 +952,7 @@ function ChartPatternsView(): JSX.Element {
         </div>
         <div className="desk-kpi">
           <div className="desk-kpi-label">Bullish</div>
-          <div className="desk-kpi-num bull">{rows.filter(r => r.direction === 'BUY').length}</div>
+          <div className="desk-kpi-num bull">{rows.filter(isBuyRow).length}</div>
           <div className="desk-kpi-sub">breakout candidates</div>
         </div>
         <div className="desk-kpi">
@@ -1001,7 +1016,7 @@ function ChartPatternsView(): JSX.Element {
 }
 
 function PatternRow({ r }: { r: any }): JSX.Element {
-  const isSell = r.direction === 'SHORT' || r.direction === 'SELL'
+  const isSell = isSellRow(r)
   const t1Pct = fmtPct(r.entry, r.target1, r.direction)
   const t2Pct = fmtPct(r.entry, r.target2, r.direction)
   const t3Pct = fmtPct(r.entry, r.target3, r.direction)
@@ -1063,8 +1078,8 @@ function HarmonicView(): JSX.Element {
       </div>
       <div className="desk-hero">
         <div className="desk-kpi accent"><div className="desk-kpi-label">Active harmonic hits</div><div className="desk-kpi-num acc">{rows.length}</div><div className="desk-kpi-sub">across {Object.keys(patternCounts).length} pattern families</div></div>
-        <div className="desk-kpi bull"><div className="desk-kpi-label">Bullish (BUY)</div><div className="desk-kpi-num bull">{rows.filter(r => r.direction === 'BUY').length}</div><div className="desk-kpi-sub">completed PRZ longs</div></div>
-        <div className="desk-kpi"><div className="desk-kpi-label">Bearish (SELL)</div><div className="desk-kpi-num bear">{rows.filter(r => r.direction === 'SELL' || r.direction === 'SHORT').length}</div><div className="desk-kpi-sub">completed PRZ shorts</div></div>
+        <div className="desk-kpi bull"><div className="desk-kpi-label">Bullish (BUY)</div><div className="desk-kpi-num bull">{rows.filter(isBuyRow).length}</div><div className="desk-kpi-sub">completed PRZ longs</div></div>
+        <div className="desk-kpi"><div className="desk-kpi-label">Bearish (SELL)</div><div className="desk-kpi-num bear">{rows.filter(isSellRow).length}</div><div className="desk-kpi-sub">completed PRZ shorts</div></div>
         <div className="desk-kpi"><div className="desk-kpi-label">Avg confidence</div><div className="desk-kpi-num">{rows.length ? Math.round(rows.reduce((s, r) => s + (r.conviction ?? r.score ?? 0), 0) / rows.length) : '—'}</div><div className="desk-kpi-sub">from XABCD ratio match</div></div>
       </div>
       <div className="desk-toolbar">
@@ -1324,7 +1339,7 @@ function SwingsView(): JSX.Element {
                   </td>
                   <td>
                     <div className="status-stack">
-                      <span className={`dir-pill ${r.direction === 'SHORT' ? 'sell' : 'buy'}`}>{r.direction === 'SHORT' ? 'SELL' : 'BUY'}</span>
+                      <span className={`dir-pill ${isSellRow(r) ? 'sell' : 'buy'}`}>{isSellRow(r) ? 'SELL' : 'BUY'}</span>
                       <span className="status-tag waiting">{r._src === 'PRE_MOVE' ? '⏸ WAITING' : '🔴 LIVE'}</span>
                     </div>
                   </td>
@@ -1692,7 +1707,7 @@ function SimpleTable({ rows: rawRows, emptyMsg }: { rows: any[]; emptyMsg: strin
                 <td><div className="sym-stack"><div className="sym-line">{r.symbol ?? r.instrument}</div><div className="src-line"><span className="src-mini">{r.source ?? '—'}</span></div></div></td>
                 <td>
                   <div className="status-stack">
-                    <span className={`dir-pill ${r.direction === 'SHORT' ? 'sell' : 'buy'}`}>{r.direction === 'SHORT' ? 'SELL' : 'BUY'}</span>
+                    <span className={`dir-pill ${isSellRow(r) ? 'sell' : 'buy'}`}>{isSellRow(r) ? 'SELL' : 'BUY'}</span>
                     <span className={`status-tag ${r.status === 'T1_HIT' || r.status === 'T2_HIT' || r.status === 'T3_HIT' ? 't1-hit' : r.status === 'SL_HIT' ? 'sl-hit' : r.status === 'ACTIVE' ? 'live' : 'waiting'}`}>
                       {r.status ?? '—'}
                     </span>
@@ -1704,9 +1719,9 @@ function SimpleTable({ rows: rawRows, emptyMsg }: { rows: any[]; emptyMsg: strin
                   <div className="plan-mini">
                     <span className="lbl">Entry</span><span className="val">{fmtRupee(r.entry)}</span><span className="pct"></span><span className="date">{fmtDateShort(r.entryDate)}</span>
                     <span className="lbl">SL</span><span className="val bear">{fmtRupee(r.stopLoss)}</span><span className="pct bear">SL</span><span className="date">{fmtDateShort(r.slDate)}</span>
-                    <span className="lbl">T1</span><span className="val bull">{fmtRupee(r.target1)}</span><span className="pct bull">{fmtPct(r.entry, r.target1, r.direction ?? 'BUY')}</span><span className="date">{fmtDateShort(r.target1Date)}</span>
-                    <span className="lbl">T2</span><span className="val bull">{fmtRupee(r.target2)}</span><span className="pct bull">{fmtPct(r.entry, r.target2, r.direction ?? 'BUY')}</span><span className="date">{fmtDateShort(r.target2Date)}</span>
-                    <span className="lbl">T3</span><span className="val bull">{fmtRupee(r.target3)}</span><span className="pct bull">{fmtPct(r.entry, r.target3, r.direction ?? 'BUY')}</span><span className="date">{fmtDateShort(r.target3Date)}</span>
+                    <span className="lbl">T1</span><span className="val bull">{fmtRupee(r.target1)}</span><span className="pct bull">{fmtPct(r.entry, r.target1, normalisedDir(r))}</span><span className="date">{fmtDateShort(r.target1Date)}</span>
+                    <span className="lbl">T2</span><span className="val bull">{fmtRupee(r.target2)}</span><span className="pct bull">{fmtPct(r.entry, r.target2, normalisedDir(r))}</span><span className="date">{fmtDateShort(r.target2Date)}</span>
+                    <span className="lbl">T3</span><span className="val bull">{fmtRupee(r.target3)}</span><span className="pct bull">{fmtPct(r.entry, r.target3, normalisedDir(r))}</span><span className="date">{fmtDateShort(r.target3Date)}</span>
                   </div>
                 </td>
                 <td>
