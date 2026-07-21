@@ -41,6 +41,7 @@ import { getCandles } from '../data/index'
 import { buildVolumeProfile, detectSetups } from './volumeProfile'
 import { detectOrderBlock, detectLiquiditySweep } from './smcPatterns'
 import { resolveUniverse } from '../screeners/universe'
+import { isEtfSymbol } from '../util/etfDetect'
 import type { Candle } from '../types'
 import { log } from '../util/logger'
 
@@ -448,7 +449,13 @@ export async function scanVpFibConfluence(opts?: {
     }
   }
 
-  const uniq = Array.from(new Set(seed.map(s => s.toUpperCase()))).filter(Boolean)
+  // Drop ETFs / index basket products from the universe — they're slow-moving,
+  // no earnings/catalyst, and mixing them into a stock-trade feed distorts
+  // the top-of-list. Kept as a separate scan surface if we ever need it.
+  const preFilter = Array.from(new Set(seed.map(s => s.toUpperCase()))).filter(Boolean)
+  const uniq = preFilter.filter(s => !isEtfSymbol(s))
+  const droppedEtfs = preFilter.length - uniq.length
+  if (droppedEtfs > 0) log.info('VP-FIB', `dropped ${droppedEtfs} ETF/basket symbols from universe`)
   const targets = opts?.limit ? uniq.slice(0, opts.limit) : uniq
   const concurrency = opts?.concurrency ?? 20
   const maxRuntimeMs = opts?.maxRuntimeMs ?? 8 * 60_000   // 8 min default

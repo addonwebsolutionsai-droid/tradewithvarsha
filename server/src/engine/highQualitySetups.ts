@@ -18,6 +18,7 @@
 import fs from 'fs'
 import path from 'path'
 import * as angel from '../data/angel'
+import { isEtfSymbol } from '../util/etfDetect'
 import { log } from '../util/logger'
 
 type Segment = 'FNO' | 'CASH'
@@ -311,8 +312,17 @@ export async function buildHighQualitySetups(): Promise<{
     track(daily.rows.map(fromWeeklyPick).filter(Boolean) as UnifiedSetup[], 'DAILY-PICK')
   }
 
+  // ETF filter — drop basket/index products BEFORE dedup so we don't waste
+  // a "strongest signal" slot on a slow-moving BEES/ETF row. ETFs are a
+  // structurally different instrument (no earnings, no catalyst, tracks a
+  // basket) and mixing them into a stock-signal feed distorts the top of
+  // list. If users want ETF signals later, add a dedicated ETF tab.
+  const filteredRaw = raw.filter(s => !isEtfSymbol(s.symbol))
+  const droppedEtfs = raw.length - filteredRaw.length
+  if (droppedEtfs > 0) log.info('HQS', `filtered out ${droppedEtfs} ETF/basket rows`)
+
   // Dedupe — same symbol from multiple engines → keep the strongest
-  const unique = dedupeBySymbol(raw)
+  const unique = dedupeBySymbol(filteredRaw)
 
   // Enrich: even after dedup, look up the same symbol in EVERY source snapshot
   // and merge their reasoning bullets. A PRO-Edge row winning by conviction
