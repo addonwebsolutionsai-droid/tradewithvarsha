@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-21T17:19:20.199Z",
+  "generatedAt": "2026-07-21T18:03:01.382Z",
   "fno": [
     {
       "symbol": "TITAN",
@@ -251,6 +251,41 @@
       "fnoPlan": {
         "direction": "BUY_PE",
         "note": "Buy ATM PE (nearest strike to spot ₹1621) of the CURRENT-week expiry. Cap risk at 3% of capital, exit if underlying breaks SL ₹1688.29."
+      }
+    },
+    {
+      "symbol": "HDFCBANK",
+      "segment": "FNO",
+      "side": "LONG",
+      "source": "CROSS-CONFLUENCE",
+      "tier": "ELITE",
+      "stars": 5,
+      "score": 90,
+      "ltp": 824.9500122070312,
+      "entry": 806,
+      "stopLoss": 781.15,
+      "target1": 866.59,
+      "target2": 866.59,
+      "target3": 989.94,
+      "riskPct": 3.08,
+      "entryDate": "2026-07-21",
+      "target1Date": "2026-07-27",
+      "target2Date": "2026-07-28",
+      "target3Date": "2026-08-07",
+      "slDate": "2026-08-03",
+      "reasoning": [
+        "5x box top",
+        "R 804",
+        "RSI 64",
+        "Range 6.3%",
+        "+4.1%",
+        "EMA 9>21>50 stack: 9=812.6 21=798.8 50=789.5",
+        "Engines: PRE_MOVE + FNO_FUTURES"
+      ],
+      "unifiedReason": "5x box top · R 804 · RSI 64 · Range 6.3% · +4.1% · EMA 9>21>50 stack: 9=812.6 21=798.8 50=789.5 · Engines: PRE_MOVE + FNO_FUTURES",
+      "fnoPlan": {
+        "direction": "BUY_CE",
+        "note": "Buy ATM CE (nearest strike to spot ₹806) of the CURRENT-week expiry. Cap risk at 3% of capital, exit if underlying breaks SL ₹781.15."
       }
     },
     {
@@ -5714,17 +5749,381 @@
       }
     }
   ],
+  "etf": [
+    {
+      "symbol": "BANKETF",
+      "segment": "ETF",
+      "side": "LONG",
+      "source": "WEEKLY-PICK",
+      "tier": "ELITE",
+      "stars": 5,
+      "score": 100,
+      "ltp": 590.36,
+      "entry": 582.91,
+      "stopLoss": 567.03,
+      "target1": 641.2,
+      "target2": 699.49,
+      "target3": 769.44,
+      "riskPct": 2.72,
+      "entryDate": "2026-07-21",
+      "target1Date": "2026-07-17",
+      "target2Date": "2026-07-28",
+      "target3Date": "2026-08-07",
+      "reasoning": [],
+      "unifiedReason": "",
+      "horizonNote": "Long-term horizon · SIP monthly or accumulate on VAL touch. Not for same-week trades."
+    },
+    {
+      "symbol": "ALPHAETF",
+      "segment": "ETF",
+      "side": "LONG",
+      "source": "VP+FIB",
+      "tier": "STRONG",
+      "stars": 3,
+      "score": 68,
+      "confluencesHit": 4,
+      "ltp": 26.14,
+      "entry": 26.14,
+      "stopLoss": 25.32,
+      "target1": 27.12,
+      "target2": 27.94,
+      "target3": 28.86,
+      "riskPct": 3.13,
+      "rewardT1Pct": 3.75,
+      "rrT1": 1.2,
+      "rrT2": 2.2,
+      "rrT3": 3.33,
+      "entryDate": "2026-07-21",
+      "target1Date": "2026-07-24",
+      "target2Date": "2026-07-29",
+      "target3Date": "2026-08-04",
+      "slDate": "2026-07-31",
+      "keyLevels": {
+        "poc": 26.024999856948853,
+        "vah": 26.60999994277954,
+        "val": 23.879999542236327
+      },
+      "reasoning": [
+        "[VP] LTP at POC ₹26.02 — auction fair-value magnet",
+        "[FIB] LTP at 50% retracement (₹25.93)",
+        "[OB] bullish OB zone ₹25.6–25.8",
+        "[LIQ] bullish sweep — wick 0.1% below 25.4 then reclaimed"
+      ],
+      "unifiedReason": "[VP] LTP at POC ₹26.02 — auction fair-value magnet · [FIB] LTP at 50% retracement (₹25.93) · [OB] bullish OB zone ₹25.6–25.8 · [LIQ] bullish sweep — wick 0.1% below 25.4 then reclaimed",
+      "confluences": {
+        "vp": {
+          "key": "vp",
+          "hit": true,
+          "points": 18,
+          "level": 26.024999856948853,
+          "detail": "LTP at POC ₹26.02 — auction fair-value magnet"
+        },
+        "fib": {
+          "key": "fib",
+          "hit": true,
+          "points": 10,
+          "level": 25.925000190734863,
+          "detail": "LTP at 50% retracement (₹25.93)"
+        },
+        "ob": {
+          "key": "ob",
+          "hit": true,
+          "points": 20,
+          "detail": "bullish OB zone ₹25.6–25.8"
+        },
+        "liq": {
+          "key": "liq",
+          "hit": true,
+          "points": 20,
+          "detail": "bullish sweep — wick 0.1% below 25.4 then reclaimed"
+        },
+        "volume": {
+          "key": "volume",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        },
+        "elliott": {
+          "key": "elliott",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        },
+        "harmonic": {
+          "key": "harmonic",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        }
+      },
+      "horizonNote": "Long-term horizon · SIP monthly or accumulate on VAL touch. Not for same-week trades."
+    },
+    {
+      "symbol": "HDFCPVTBAN",
+      "segment": "ETF",
+      "side": "LONG",
+      "source": "VP+FIB",
+      "tier": "STRONG",
+      "stars": 3,
+      "score": 66,
+      "confluencesHit": 4,
+      "ltp": 28.43,
+      "entry": 28.43,
+      "stopLoss": 27.44,
+      "target1": 29.62,
+      "target2": 30.6,
+      "target3": 31.72,
+      "riskPct": 3.47,
+      "rewardT1Pct": 4.17,
+      "rrT1": 1.2,
+      "rrT2": 2.2,
+      "rrT3": 3.33,
+      "entryDate": "2026-07-21",
+      "target1Date": "2026-07-24",
+      "target2Date": "2026-07-29",
+      "target3Date": "2026-08-04",
+      "slDate": "2026-07-31",
+      "keyLevels": {
+        "poc": 28.57237458229065,
+        "vah": 29.201249599456787,
+        "val": 26.825499534606934
+      },
+      "reasoning": [
+        "[VP] LTP at POC ₹28.57 — auction fair-value magnet",
+        "[FIB] LTP at 38.2% shallow retracement (₹28.40)",
+        "[OB] bullish OB zone ₹28.4–28.8",
+        "[LIQ] bullish sweep — wick 0.5% below 28.0 then reclaimed"
+      ],
+      "unifiedReason": "[VP] LTP at POC ₹28.57 — auction fair-value magnet · [FIB] LTP at 38.2% shallow retracement (₹28.40) · [OB] bullish OB zone ₹28.4–28.8 · [LIQ] bullish sweep — wick 0.5% below 28.0 then reclaimed",
+      "confluences": {
+        "vp": {
+          "key": "vp",
+          "hit": true,
+          "points": 18,
+          "level": 28.57237458229065,
+          "detail": "LTP at POC ₹28.57 — auction fair-value magnet"
+        },
+        "fib": {
+          "key": "fib",
+          "hit": true,
+          "points": 8,
+          "level": 28.3986203994751,
+          "detail": "LTP at 38.2% shallow retracement (₹28.40)"
+        },
+        "ob": {
+          "key": "ob",
+          "hit": true,
+          "points": 20,
+          "detail": "bullish OB zone ₹28.4–28.8"
+        },
+        "liq": {
+          "key": "liq",
+          "hit": true,
+          "points": 20,
+          "detail": "bullish sweep — wick 0.5% below 28.0 then reclaimed"
+        },
+        "volume": {
+          "key": "volume",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        },
+        "elliott": {
+          "key": "elliott",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        },
+        "harmonic": {
+          "key": "harmonic",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        }
+      },
+      "horizonNote": "Long-term horizon · SIP monthly or accumulate on VAL touch. Not for same-week trades."
+    },
+    {
+      "symbol": "NIFTYETF",
+      "segment": "ETF",
+      "side": "SHORT",
+      "source": "VP+FIB",
+      "tier": "STRONG",
+      "stars": 3,
+      "score": 66,
+      "confluencesHit": 4,
+      "ltp": 263.16,
+      "entry": 263.16,
+      "stopLoss": 266.97,
+      "target1": 258.4,
+      "target2": 253.63,
+      "target3": 247.28,
+      "riskPct": 1.45,
+      "rewardT1Pct": 1.81,
+      "rrT1": 1.25,
+      "rrT2": 2.5,
+      "rrT3": 4.17,
+      "entryDate": "2026-07-21",
+      "target1Date": "2026-07-24",
+      "target2Date": "2026-07-29",
+      "target3Date": "2026-08-04",
+      "slDate": "2026-07-31",
+      "keyLevels": {
+        "poc": 262.5032482147217,
+        "vah": 265.1419982910156,
+        "val": 249.30949783325195
+      },
+      "reasoning": [
+        "[VP] LTP at POC ₹262.50 — auction fair-value magnet",
+        "[OB] bearish OB zone ₹263.6–265.0",
+        "[LIQ] bearish sweep — wick 2.4% above 266.2 then rejected",
+        "[VOLUME] 5-day vol 1.5× the 20-day avg — institutional footprint"
+      ],
+      "unifiedReason": "[VP] LTP at POC ₹262.50 — auction fair-value magnet · [OB] bearish OB zone ₹263.6–265.0 · [LIQ] bearish sweep — wick 2.4% above 266.2 then rejected · [VOLUME] 5-day vol 1.5× the 20-day avg — institutional footprint",
+      "confluences": {
+        "vp": {
+          "key": "vp",
+          "hit": true,
+          "points": 18,
+          "level": 262.5032482147217,
+          "detail": "LTP at POC ₹262.50 — auction fair-value magnet"
+        },
+        "fib": {
+          "key": "fib",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        },
+        "ob": {
+          "key": "ob",
+          "hit": true,
+          "points": 20,
+          "detail": "bearish OB zone ₹263.6–265.0"
+        },
+        "liq": {
+          "key": "liq",
+          "hit": true,
+          "points": 20,
+          "detail": "bearish sweep — wick 2.4% above 266.2 then rejected"
+        },
+        "volume": {
+          "key": "volume",
+          "hit": true,
+          "points": 8,
+          "detail": "5-day vol 1.5× the 20-day avg — institutional footprint"
+        },
+        "elliott": {
+          "key": "elliott",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        },
+        "harmonic": {
+          "key": "harmonic",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        }
+      },
+      "horizonNote": "Long-term horizon · SIP monthly or accumulate on VAL touch. Not for same-week trades."
+    },
+    {
+      "symbol": "HDFCLOWVOL",
+      "segment": "ETF",
+      "side": "SHORT",
+      "source": "VP+FIB",
+      "tier": "STRONG",
+      "stars": 3,
+      "score": 60,
+      "confluencesHit": 3,
+      "ltp": 20.76,
+      "entry": 20.76,
+      "stopLoss": 21.28,
+      "target1": 20.14,
+      "target2": 19.62,
+      "target3": 19.1,
+      "riskPct": 2.5,
+      "rewardT1Pct": 3,
+      "rrT1": 1.2,
+      "rrT2": 2.2,
+      "rrT3": 3.2,
+      "entryDate": "2026-07-21",
+      "target1Date": "2026-07-24",
+      "target2Date": "2026-07-29",
+      "target3Date": "2026-08-04",
+      "slDate": "2026-07-31",
+      "keyLevels": {
+        "poc": 19.85150012969971,
+        "vah": 20.806999969482423,
+        "val": 19.44200019836426
+      },
+      "reasoning": [
+        "[VP] LTP at VAH ₹20.81 — value-area ceiling short zone",
+        "[OB] bearish OB zone ₹20.8–20.8",
+        "[LIQ] bearish sweep — wick 0.5% above 20.9 then rejected"
+      ],
+      "unifiedReason": "[VP] LTP at VAH ₹20.81 — value-area ceiling short zone · [OB] bearish OB zone ₹20.8–20.8 · [LIQ] bearish sweep — wick 0.5% above 20.9 then rejected",
+      "confluences": {
+        "vp": {
+          "key": "vp",
+          "hit": true,
+          "points": 20,
+          "level": 20.806999969482423,
+          "detail": "LTP at VAH ₹20.81 — value-area ceiling short zone"
+        },
+        "fib": {
+          "key": "fib",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        },
+        "ob": {
+          "key": "ob",
+          "hit": true,
+          "points": 20,
+          "detail": "bearish OB zone ₹20.8–20.8"
+        },
+        "liq": {
+          "key": "liq",
+          "hit": true,
+          "points": 20,
+          "detail": "bearish sweep — wick 0.5% above 20.9 then rejected"
+        },
+        "volume": {
+          "key": "volume",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        },
+        "elliott": {
+          "key": "elliott",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        },
+        "harmonic": {
+          "key": "harmonic",
+          "hit": false,
+          "points": 0,
+          "detail": ""
+        }
+      },
+      "horizonNote": "Long-term horizon · SIP monthly or accumulate on VAL touch. Not for same-week trades."
+    }
+  ],
   "totals": {
-    "fno": 18,
+    "fno": 19,
     "cash": 100,
-    "elite": 30,
-    "strong": 137
+    "etf": 5,
+    "elite": 32,
+    "strong": 140
   },
   "sources": {
     "VP+FIB": 88,
     "PRO-EDGE": 30,
     "CROSS-CONFLUENCE": 51,
     "WEEKLY-PICK": 54,
-    "DAILY-PICK": 2
+    "DAILY-PICK": 2,
+    "VP+FIB-ETF": 29
   }
 }

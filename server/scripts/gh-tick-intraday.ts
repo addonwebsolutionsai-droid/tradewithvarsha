@@ -328,6 +328,34 @@ async function main() {
     log.err('TICK', `lifecycle: ${(e as Error).message}`)
   }
 
+  // ─── Snapshot enrichment pass ────────────────────────────────────
+  // Every snapshot writer above completed; now walk the public-snapshots
+  // dir and enrich each JSON's rows with shareholding data (FII/DII/
+  // Promoter/Pledge/MC + smartMoneyUp flag). Rows that already have
+  // shareholdingNote are skipped, so this is idempotent + cheap on
+  // subsequent ticks.
+  try {
+    const t = Date.now()
+    const { enrichSnapshotFile } = await import('../src/util/enrichShareholding')
+    const targets = [
+      'early-momentum.json', 'pre-move-identifier.json', 'elite-picks.json',
+      'chart-patterns.json', 'harmonic.json', 'elliott-wave.json',
+      'insider-buys.json', 'pedigree-accumulation.json', 'bulk-deals.json',
+      'superstar-picks.json', 'pro-edge.json', 'cross-confluence.json',
+      'ad-divergence.json', 'options.json', 'multi-strike-oi.json',
+      'oi-buildup.json', 'stock-fno-volume-profile.json', 'vp-fib.json',
+      'high-quality-setups.json',
+    ]
+    for (const name of targets) {
+      const p = path.join(SNAPSHOT_DIR, name)
+      await enrichSnapshotFile(p, { withVolume: false })
+    }
+    results['shareholding-enrich'] = `${targets.length} files · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['shareholding-enrich'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `shareholding-enrich: ${(e as Error).message}`)
+  }
+
   // Give any in-flight Telegram messages ~2s to flush before we exit.
   await new Promise(r => setTimeout(r, 2000))
 

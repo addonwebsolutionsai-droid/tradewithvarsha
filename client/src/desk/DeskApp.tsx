@@ -69,12 +69,27 @@ function isBuyRow(r: any): boolean {
 function normalisedDir(r: any): 'BUY' | 'SELL' {
   return isSellRow(r) ? 'SELL' : 'BUY'
 }
+// Order matters: unifiedReason.collapsed on old snapshots is just the
+// tier + source label ("ELITE · Weekly Pick, OLD_WEEKLY") which is useless
+// as a "reason". Prefer the actual reasoning[] / reasons[] arrays first,
+// then flowNote + shareholdingNote (Weekly Pick puts substance there),
+// then fall back to unifiedReason.expanded / collapsed as last resort.
 function pickReason(r: any): string {
+  const parts: string[] = []
+  if (Array.isArray(r?.reasoning) && r.reasoning.length > 0) parts.push(...r.reasoning.filter((x: any) => typeof x === 'string' && x.trim()))
+  if (Array.isArray(r?.reasons) && r.reasons.length > 0) parts.push(...r.reasons.filter((x: any) => typeof x === 'string' && x.trim()))
+  if (typeof r?.reasoning === 'string' && r.reasoning.trim()) parts.push(r.reasoning.trim())
+  if (typeof r?.flowNote === 'string' && r.flowNote.trim() && !parts.some(p => p.includes(r.flowNote))) parts.push(r.flowNote.trim())
+  if (typeof r?.shareholdingNote === 'string' && r.shareholdingNote.trim() && !parts.some(p => p.includes(r.shareholdingNote))) parts.push(r.shareholdingNote.trim())
+  // Dedupe similar bullets by first ~30 chars
+  const seen = new Set<string>()
+  const uniq = parts.filter(p => { const k = p.toLowerCase().slice(0, 30); if (seen.has(k)) return false; seen.add(k); return true })
+  if (uniq.length > 0) return uniq.join(' · ')
+  // Last-resort fallback: unifiedReason
   const u = r?.unifiedReason
+  if (u && typeof u.expanded === 'string' && u.expanded.length > 0) return u.expanded.replace(/\n+/g, ' · ').trim()
   if (u && typeof u.collapsed === 'string' && u.collapsed.length > 0) return u.collapsed
-  if (Array.isArray(r?.reasoning) && r.reasoning.length > 0) return r.reasoning.join(' · ')
-  if (Array.isArray(r?.reasons) && r.reasons.length > 0) return r.reasons.join(' · ')
-  if (typeof r?.reasoning === 'string' && r.reasoning) return r.reasoning
+  if (typeof u === 'string' && u.trim()) return u.trim()
   return ''
 }
 function fmtRupee(n: number | null | undefined): string {

@@ -21,8 +21,17 @@
 
 // Explicit overrides — stocks whose names LOOK like an ETF but aren't.
 const OVERRIDE_NOT_ETF = new Set<string>([
-  // Add exceptions here when the pattern misfires. Empty for now — the
-  // patterns below are tight enough to avoid known false positives.
+  'HDFCBANK',   // HDFC Bank Ltd (stock, not an ETF)
+  'ICICIBANK',  // ICICI Bank Ltd
+  'AXISBANK',   // Axis Bank Ltd
+  'KOTAKBANK',  // Kotak Mahindra Bank Ltd
+  'SBIN',       // State Bank of India
+  'HDFCLIFE',   // HDFC Life Insurance
+  'ICICIPRULI', // ICICI Pru Life
+  'SBILIFE',    // SBI Life Insurance
+  'SBICARD',    // SBI Cards
+  'HDFCAMC',    // HDFC AMC
+  'KOTAKMAH',   // Kotak Mahindra Investments
 ])
 
 // Explicit overrides — force these to be treated as ETFs even if pattern misses.
@@ -35,12 +44,15 @@ const ETF_PATTERNS: RegExp[] = [
   /ETF$/,                                                              // BANKETF, NIFTYETF, GOLDETF, LIQUIDETF, MIDCAPETF
   /IETF/,                                                              // ICICI: IETFB, IETFN, IETFP
   /^ICICIB22$/,                                                        // ICICI Bharat 22 ETF
-  /^KOTAK(GOLD|LIQ|NIFTY|BANK|IT|PSU|WORLD|EMERG|EQTY|LOVOL|MNC|MOM|NV20)/,
-  /^ICICI(GOLD|LIQ|SILV|NIFTY|BANK|SEN|MID|BSE|LOVOL|ALPHA|VALUE|MNC|DIVOPP)/,
-  /^SBI(GOLD|LIQ|SILVER|NIFTY|BANK|SENSEX|ETFCPSE|ETFBANK|ETFCONS|ETFIT|ETFPB|ETFPSU|ETFQLTY)/,
-  /^HDFC(GOLD|MID|LIQ|NIFTY|BANK|SEN|IT|VALUE|MOMEN|LOVOL|SILVER|NEXT50|MFGETF|PVTBAN)/,
-  /^UTI(GOLD|LIQ|NIFTY|SEN|BANK|NEXT50|SILVER)/,
-  /^AXIS(GOLD|SILVER|NIFTY|BANK|MID|SMALL|TECH|BSE|CONSUM|PSUBK)/,
+  // Issuer-prefix rules — must clearly identify an ETF/index-fund suffix.
+  // Bank of the issuer itself (e.g. HDFCBANK, ICICIBANK) is a REGULAR STOCK
+  // and is protected by OVERRIDE_NOT_ETF above.
+  /^KOTAK(GOLD|LIQ|LOVOLETF|MNCETF|MOMENTUM|NV20|PSUBK|EMRG|WORLD|EQTY|BANKETF|NIFTY|IT|IND25)/,
+  /^ICICI(GOLD|LIQ|SILVER|LOVOL|ALPHA|VALUE|MNCETF|DIVOPP|NIFTY[A-Z0-9]{2,}|BANKETF|BSE|SENSEX|MIDCAPETF)/,
+  /^SBI(GOLD|SILVER|LIQ|NIFTYETF|BANKETF|SENSEXETF|ETFCPSE|ETFBANK|ETFCONS|ETFIT|ETFPB|ETFPSU|ETFQLTY|ETFNIF50|ETFNIFTYSDL|ETFNXT50)/,
+  /^HDFC(GOLD|SILVER|LIQUID|NIFTYETF|SENSEX|PVTBAN|MFGETF|NEXT50|NIF100|NIF50VAL|IT|VALUE|MOMEN|LOVOL|LOWVOL|MIDCAP|SMLCAP)/,
+  /^UTI(GOLD|LIQ|NIFTYETF|SENSEXETF|BANKETF|NEXT50|SILVER)/,
+  /^AXIS(GOLD|SILVER|NIFTYETF|BANKETF|MIDCAP|SMALLCAP|TECHETF|BSE|CONSUM|PSUBK|EQTY|MOMENTUM|VALUE)/,
   /^EDELWEISS(NIFTY|BANK|GOLD)/,
   /^MIRAE(NIFTY|BANK|GOLD|SILVER)/,
   /^MOTILALO?(SL|OFS|N100|NASDAQ)/,

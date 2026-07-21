@@ -218,6 +218,31 @@ async function main() {
     }
   }
 
+  // ─── Post-pass: enrich every snapshot with shareholding data ───────
+  // Idempotent — rows that already have shareholdingNote (e.g. weekly-pick)
+  // are skipped. Adds FII/DII/Promoter/Pledge/MC text + smartMoneyUp flag
+  // + fiiDelta/diiDelta/promoterDelta so old-version SPA pages and desk
+  // views all show the same institutional footprint.
+  try {
+    const t = Date.now()
+    const { enrichSnapshotFile } = await import('../src/util/enrichShareholding')
+    const path = await import('path')
+    const SNAP_DIR = path.resolve(__dirname, '../data/public-snapshots')
+    const targets = [
+      'early-momentum.json', 'pre-move-identifier.json', 'elite-picks.json',
+      'chart-patterns.json', 'harmonic.json', 'elliott-wave.json',
+      'insider-buys.json', 'pedigree-accumulation.json', 'bulk-deals.json',
+      'superstar-picks.json', 'pro-edge.json', 'cross-confluence.json',
+      'ad-divergence.json', 'options.json', 'multi-strike-oi.json',
+      'oi-buildup.json', 'stock-fno-volume-profile.json', 'vp-fib.json',
+      'high-quality-setups.json', 'weekly-pick.json', 'daily-pick.json',
+    ]
+    for (const name of targets) await enrichSnapshotFile(path.join(SNAP_DIR, name), { withVolume: false })
+    log.ok('EOD', `✓ shareholding-enrich: ${targets.length} files · ${((Date.now() - t) / 1000).toFixed(1)}s`)
+  } catch (e) {
+    log.warn('EOD', `✗ shareholding-enrich: ${(e as Error).message}`)
+  }
+
   await new Promise(r => setTimeout(r, 2000))
   console.log(`\n[EOD COMPLETE] in ${((Date.now() - t0) / 1000).toFixed(1)}s`)
 }

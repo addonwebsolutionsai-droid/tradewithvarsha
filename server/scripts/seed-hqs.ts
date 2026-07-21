@@ -16,6 +16,7 @@ async function main() {
   console.log(`\n✔ high-quality-setups.json written in ${((Date.now() - t0) / 1000).toFixed(1)}s`)
   console.log(`  F&O:     ${out.totals.fno}`)
   console.log(`  CASH:    ${out.totals.cash}`)
+  console.log(`  ETF:     ${out.totals.etf}`)
   console.log(`  ELITE:   ${out.totals.elite}`)
   console.log(`  STRONG:  ${out.totals.strong}`)
   console.log(`  Sources: ${JSON.stringify(out.sources)}`)
@@ -25,6 +26,10 @@ async function main() {
   }
   console.log('\nTop 5 CASH:')
   for (const s of out.cash.slice(0, 5)) {
+    console.log(`  ${s.symbol.padEnd(14)} ${s.side.padEnd(5)} · ${s.tier.padEnd(6)} · score ${String(s.score).padStart(3)} · ${s.source}`)
+  }
+  console.log('\nTop 5 ETF:')
+  for (const s of out.etf.slice(0, 5)) {
     console.log(`  ${s.symbol.padEnd(14)} ${s.side.padEnd(5)} · ${s.tier.padEnd(6)} · score ${String(s.score).padStart(3)} · ${s.source}`)
   }
 }

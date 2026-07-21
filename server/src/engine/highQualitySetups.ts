@@ -21,7 +21,7 @@ import * as angel from '../data/angel'
 import { isEtfSymbol } from '../util/etfDetect'
 import { log } from '../util/logger'
 
-type Segment = 'FNO' | 'CASH'
+type Segment = 'FNO' | 'CASH' | 'ETF'
 
 export interface UnifiedSetup {
   symbol: string
@@ -272,7 +272,8 @@ export async function buildHighQualitySetups(): Promise<{
   generatedAt: string
   fno: UnifiedSetup[]
   cash: UnifiedSetup[]
-  totals: { fno: number; cash: number; elite: number; strong: number }
+  etf: UnifiedSetup[]
+  totals: { fno: number; cash: number; etf: number; elite: number; strong: number }
   sources: Record<string, number>
 }> {
   const raw: UnifiedSetup[] = []
@@ -312,17 +313,40 @@ export async function buildHighQualitySetups(): Promise<{
     track(daily.rows.map(fromWeeklyPick).filter(Boolean) as UnifiedSetup[], 'DAILY-PICK')
   }
 
-  // ETF filter — drop basket/index products BEFORE dedup so we don't waste
-  // a "strongest signal" slot on a slow-moving BEES/ETF row. ETFs are a
-  // structurally different instrument (no earnings, no catalyst, tracks a
-  // basket) and mixing them into a stock-signal feed distorts the top of
-  // list. If users want ETF signals later, add a dedicated ETF tab.
-  const filteredRaw = raw.filter(s => !isEtfSymbol(s.symbol))
-  const droppedEtfs = raw.length - filteredRaw.length
-  if (droppedEtfs > 0) log.info('HQS', `filtered out ${droppedEtfs} ETF/basket rows`)
+  // Split ETFs into their own bucket BEFORE dedup — ETFs are structurally
+  // different (basket products, no earnings, long-term horizon) and
+  // shouldn't compete with individual stocks for the "strongest signal"
+  // slot. They render as a separate tab in addon-products-home /v2/.
+  const etfRaw = raw.filter(s => isEtfSymbol(s.symbol))
+  const stockRaw = raw.filter(s => !isEtfSymbol(s.symbol))
+
+  // Most upstream engines drop ETFs from their universe, so etfRaw is
+  // usually thin (0-5 rows). Run a dedicated VP+FIB pass on the ETF-only
+  // universe to give the ETF tab real coverage. Small universe (~200
+  // symbols), ~30-60s runtime, worth the wait for a proper feed.
+  try {
+    const { scanVpFibConfluence } = await import('./vpFibScanner')
+    const etfScan = await scanVpFibConfluence({
+      universe: 'MARKET_ALL',
+      onlyEtfs: true,
+      concurrency: 15,
+      maxRuntimeMs: 60_000,
+    })
+    for (const row of etfScan.rows) {
+      const setup = fromVpFib(row)
+      if (setup) etfRaw.push(setup)
+    }
+    sources['VP+FIB-ETF'] = etfScan.rows.length
+    log.info('HQS', `ETF-only scan: ${etfScan.rows.length} setups from ${etfScan.attempted} ETFs`)
+  } catch (e) {
+    log.warn('HQS', `ETF-only scan failed: ${(e as Error).message}`)
+  }
+
+  log.info('HQS', `split · ${stockRaw.length} stocks · ${etfRaw.length} ETFs`)
 
   // Dedupe — same symbol from multiple engines → keep the strongest
-  const unique = dedupeBySymbol(filteredRaw)
+  const unique = dedupeBySymbol(stockRaw)
+  const uniqueEtfs = dedupeBySymbol(etfRaw)
 
   // Enrich: even after dedup, look up the same symbol in EVERY source snapshot
   // and merge their reasoning bullets. A PRO-Edge row winning by conviction
@@ -355,7 +379,7 @@ export async function buildHighQualitySetups(): Promise<{
     }
   }
 
-  // Classify each row by F&O eligibility
+  // Classify each stock row by F&O eligibility
   const fnoUniverse = await getFnoUniverse()
   for (const s of unique) {
     if (fnoUniverse.has(s.symbol)) {
@@ -365,27 +389,36 @@ export async function buildHighQualitySetups(): Promise<{
       s.segment = 'CASH'
     }
   }
+  for (const s of uniqueEtfs) {
+    s.segment = 'ETF'
+    // ETFs are long-term instruments — SIP / accumulate at value-area low,
+    // not a same-week option leg. Add a plain-language horizon note.
+    ;(s as any).horizonNote = 'Long-term horizon · SIP monthly or accumulate on VAL touch. Not for same-week trades.'
+  }
 
   const fno = unique.filter(s => s.segment === 'FNO').sort((a, b) => b.score - a.score)
   const cash = unique.filter(s => s.segment === 'CASH').sort((a, b) => b.score - a.score)
+  const etf = uniqueEtfs.sort((a, b) => b.score - a.score)
 
-  // Cap Cash tab at top 100 (there are always more decent small-caps than
-  // retail traders can act on; top-100 by score is plenty)
+  // Cap Cash tab at top 100, ETF at top 40 (ETF universe is small anyway).
   const cashCapped = cash.slice(0, 100)
+  const etfCapped = etf.slice(0, 40)
 
   const totals = {
     fno: fno.length,
     cash: cashCapped.length,
-    elite: unique.filter(s => s.tier === 'ELITE').length,
-    strong: unique.filter(s => s.tier === 'STRONG').length,
+    etf: etfCapped.length,
+    elite: [...unique, ...uniqueEtfs].filter(s => s.tier === 'ELITE').length,
+    strong: [...unique, ...uniqueEtfs].filter(s => s.tier === 'STRONG').length,
   }
 
-  log.info('HQS', `built · FNO ${totals.fno} · CASH ${totals.cash} · elite ${totals.elite} · strong ${totals.strong} · sources ${JSON.stringify(sources)}`)
+  log.info('HQS', `built · FNO ${totals.fno} · CASH ${totals.cash} · ETF ${totals.etf} · elite ${totals.elite} · strong ${totals.strong} · sources ${JSON.stringify(sources)}`)
 
   return {
     generatedAt: new Date().toISOString(),
     fno,
     cash: cashCapped,
+    etf: etfCapped,
     totals,
     sources,
   }
