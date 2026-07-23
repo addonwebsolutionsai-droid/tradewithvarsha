@@ -207,6 +207,16 @@ async function main() {
       const newAdj = (tune?.adjustments ?? []).filter(a => a.ts >= new Date(Date.now() - 24 * 3600_000).toISOString()).length
       return `${overrides} strategy overrides · +${newAdj} new adjustments`
     }],
+    // ─── Paper Trading Book — the ₹10L test account. Runs AFTER
+    //     high-quality-setups is fresh so it reads today's picks. Marks
+    //     all open positions to market via Yahoo daily candles, processes
+    //     T1/T2/T3/SL exits, opens new positions per tier + quality gates,
+    //     writes trading-journal.json for stocksbyvarsha to consume.
+    ['paper-trading', async () => {
+      const m = await import('../src/engine/paperTradingBook')
+      const book = await m.runPaperTradingDailyTick()
+      return `book ₹${book.ledger.bookValue.toLocaleString('en-IN')} · return ${book.ledger.totalReturnPct.toFixed(2)}% · open ${book.performance.openTrades} · closed ${book.performance.closedTrades} · WR ${book.performance.winRatePct}%`
+    }],
   ]
 
   for (const [name, fn] of steps) {

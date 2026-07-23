@@ -10,7 +10,9 @@
     "tick:intraday": "ts-node-dev --transpile-only scripts/gh-tick-intraday.ts",
     "tick:preopen": "ts-node-dev --transpile-only scripts/gh-tick-preopen.ts",
     "tick:eod": "ts-node-dev --transpile-only scripts/gh-tick-eod.ts",
-    "scan:vpfib": "ts-node --transpile-only scripts/scan-vpfib.ts"
+    "scan:vpfib": "ts-node --transpile-only scripts/scan-vpfib.ts",
+    "paper:tick": "ts-node --transpile-only scripts/paper-trading-tick.ts",
+    "paper:reset": "RESET=1 ts-node --transpile-only scripts/paper-trading-tick.ts"
   },
   "dependencies": {
     "axios": "^1.6.7",
