@@ -138,9 +138,14 @@ export interface Book {
 }
 
 // ─── File paths ─────────────────────────────────────────────────────
+// Both the persistent state AND the public feed live in the same file
+// under public-snapshots/. Why: GitHub Actions runners are ephemeral;
+// the only way to preserve state across nightly runs is to commit it
+// to git, and the existing snapshot-publisher cron only commits files
+// under public-snapshots/. Keeping state there means the book runs
+// with zero manual intervention forever.
 
-const BOOK_STATE_FILE = path.resolve(process.cwd(), 'data', 'paper-trading-book.json')
-const JOURNAL_SNAPSHOT_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'trading-journal.json')
+const JOURNAL_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'trading-journal.json')
 const HQS_SNAPSHOT_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'high-quality-setups.json')
 
 // ─── Constants ──────────────────────────────────────────────────────
@@ -195,59 +200,73 @@ function parseShareholdingPledge(note?: string): number | undefined {
 // ─── State I/O ──────────────────────────────────────────────────────
 
 function loadBook(): Book {
-  if (!fs.existsSync(BOOK_STATE_FILE)) {
-    return {
-      version: 1,
-      startedAt: todayIST(),
-      lastUpdatedAt: todayIST(),
-      startingCapital: STARTING_CAPITAL,
-      trades: [],
-      ledger: {
-        startingCapital: STARTING_CAPITAL,
-        currentCash: STARTING_CAPITAL,
-        openPositionsValue: 0,
-        totalRealisedPnl: 0,
-        totalUnrealisedPnl: 0,
-        bookValue: STARTING_CAPITAL,
-        totalReturnPct: 0,
-      },
-      performance: {
-        totalTrades: 0, openTrades: 0, closedTrades: 0,
-        wins: 0, losses: 0, winRatePct: 0,
-        avgWinPct: 0, avgLossPct: 0,
-        biggestWinInr: 0, biggestLossInr: 0,
-        avgDaysHeld: 0,
-      },
-      rules: { ...RULES },
+  if (fs.existsSync(JOURNAL_FILE)) {
+    try {
+      const parsed = JSON.parse(fs.readFileSync(JOURNAL_FILE, 'utf-8')) as any
+      // Backward-compat: earlier version split trades into openTrades[] +
+      // closedTrades[]. Merge them back so we have a single trades[] source
+      // of truth. New writes go through saveBook() with the merged shape.
+      if (Array.isArray(parsed.trades)) return parsed as Book
+      if (Array.isArray(parsed.openTrades) || Array.isArray(parsed.closedTrades)) {
+        const trades = [...(parsed.openTrades ?? []), ...(parsed.closedTrades ?? [])]
+        return {
+          version: 1,
+          startedAt: parsed.startedAt ?? todayIST(),
+          lastUpdatedAt: parsed.lastUpdatedAt ?? todayIST(),
+          startingCapital: parsed.startingCapital ?? STARTING_CAPITAL,
+          trades,
+          ledger: parsed.ledger,
+          performance: parsed.performance,
+          rules: parsed.rules ?? { ...RULES },
+        }
+      }
+    } catch (e) {
+      log.warn('PAPER', `journal file unreadable, starting fresh: ${(e as Error).message}`)
     }
   }
-  return JSON.parse(fs.readFileSync(BOOK_STATE_FILE, 'utf-8')) as Book
-}
-
-function saveBook(book: Book): void {
-  fs.mkdirSync(path.dirname(BOOK_STATE_FILE), { recursive: true })
-  fs.writeFileSync(BOOK_STATE_FILE, JSON.stringify(book, null, 2), 'utf-8')
-}
-
-function publishJournal(book: Book): void {
-  fs.mkdirSync(path.dirname(JOURNAL_SNAPSHOT_FILE), { recursive: true })
-  // Public snapshot with pretty presentation fields for stocksbyvarsha /v2/
-  const open = book.trades.filter(t => t.status === 'OPEN' || /^T[12]_HIT$/.test(t.status))
-  const closed = book.trades.filter(t => t.status === 'SL_HIT' || t.status === 'T3_HIT' || t.status === 'TIME_STOP' || t.status === 'CLOSED')
-  const out = {
-    generatedAt: new Date().toISOString(),
-    startedAt: book.startedAt,
-    lastUpdatedAt: book.lastUpdatedAt,
-    daysRunning: isoDaysDiff(book.startedAt, todayIST()),
-    startingCapital: book.startingCapital,
-    ledger: book.ledger,
-    performance: book.performance,
-    rules: book.rules,
-    openTrades: open,
-    closedTrades: closed.slice(-100),  // last 100 closed trades
-    allTradesCount: book.trades.length,
+  return {
+    version: 1,
+    startedAt: todayIST(),
+    lastUpdatedAt: todayIST(),
+    startingCapital: STARTING_CAPITAL,
+    trades: [],
+    ledger: {
+      startingCapital: STARTING_CAPITAL,
+      currentCash: STARTING_CAPITAL,
+      openPositionsValue: 0,
+      totalRealisedPnl: 0,
+      totalUnrealisedPnl: 0,
+      bookValue: STARTING_CAPITAL,
+      totalReturnPct: 0,
+    },
+    performance: {
+      totalTrades: 0, openTrades: 0, closedTrades: 0,
+      wins: 0, losses: 0, winRatePct: 0,
+      avgWinPct: 0, avgLossPct: 0,
+      biggestWinInr: 0, biggestLossInr: 0,
+      avgDaysHeld: 0,
+    },
+    rules: { ...RULES },
   }
-  fs.writeFileSync(JOURNAL_SNAPSHOT_FILE, JSON.stringify(out, null, 2), 'utf-8')
+}
+
+/**
+ * Write the book to disk. Same file serves as both the persistent state
+ * (survives GH Actions ephemeral runners via git commit) AND the public
+ * feed stocksbyvarsha consumes.
+ */
+function saveBook(book: Book): void {
+  fs.mkdirSync(path.dirname(JOURNAL_FILE), { recursive: true })
+  const out = {
+    ...book,
+    generatedAt: new Date().toISOString(),
+    daysRunning: isoDaysDiff(book.startedAt, todayIST()),
+    allTradesCount: book.trades.length,
+    // Also expose split views for consumers that prefer them
+    openTrades: book.trades.filter(t => t.status === 'OPEN' || /^T[12]_HIT$/.test(t.status)),
+    closedTrades: book.trades.filter(t => t.status === 'SL_HIT' || t.status === 'T3_HIT' || t.status === 'TIME_STOP' || t.status === 'CLOSED').slice(-100),
+  }
+  fs.writeFileSync(JOURNAL_FILE, JSON.stringify(out, null, 2), 'utf-8')
 }
 
 // ─── Position sizing ────────────────────────────────────────────────
@@ -358,17 +377,24 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
 // ─── Exit management ────────────────────────────────────────────────
 
 async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
-  // Pull yesterday's daily candle to detect T/SL touches. Use last few
-  // bars since we may be running once a day and want to catch any hit
-  // that occurred since the last book update.
-  const candles: Candle[] = await getCandles(trade.symbol, '1D', 10).catch(() => [])
+  // Pull recent daily candles to detect T/SL touches since entry.
+  const candles: Candle[] = await getCandles(trade.symbol, '1D', 30).catch(() => [])
   if (candles.length === 0) return
-  const cutoffMs = new Date(trade.entryDate).getTime()
-  const barsSinceEntry = candles.filter(c => c.time > cutoffMs)
+
+  // Only consider bars STRICTLY AFTER the entry date. Same-day exits are
+  // ambiguous with EOD-only data (we can't know the intraday sequence, and
+  // in reality, if you buy on the open, you wouldn't be stopped out by the
+  // same day's low unless you got very unlucky at market open). Blocking
+  // same-day exits avoids that noise + prevents false SL hits on gap-down
+  // opens where our engine chose entry from a stale HQS snapshot.
+  const entryEndMs = new Date(trade.entryDate + 'T23:59:59+05:30').getTime()
+  const barsSinceEntry = candles.filter(c => c.time > entryEndMs)
   if (barsSinceEntry.length === 0) {
-    // Same-day open — mark to last close, no exit check
-    trade.unrealisedPnl = 0
-    trade.totalPnl = trade.totalRealisedPnl
+    // No post-entry data yet — mark to the last available close (which
+    // may be the entry day's close), no exit check
+    const lastAvailable = candles[candles.length - 1]
+    trade.unrealisedPnl = trade.remainingQty * (lastAvailable.close - trade.entryPrice)
+    trade.totalPnl = trade.totalRealisedPnl + trade.unrealisedPnl
     trade.returnPct = trade.positionValue > 0 ? (trade.totalPnl / trade.positionValue) * 100 : 0
     return
   }
@@ -536,11 +562,10 @@ export async function runPaperTradingDailyTick(): Promise<Book> {
     log.info('PAPER', `already opened positions today, skipping entry scan`)
   }
 
-  // 3. Final recompute + persist
+  // 3. Final recompute + persist (same file serves as state + public feed)
   recomputeLedgerAndPerf(book)
   book.lastUpdatedAt = todayIST()
   saveBook(book)
-  publishJournal(book)
 
   log.ok('PAPER', `book done in ${((Date.now() - dayStart) / 1000).toFixed(1)}s · value ₹${book.ledger.bookValue.toLocaleString('en-IN')} · return ${book.ledger.totalReturnPct.toFixed(2)}% · open ${book.performance.openTrades} · WR ${book.performance.winRatePct}%`)
   return book
@@ -551,6 +576,6 @@ export async function runPaperTradingDailyTick(): Promise<Book> {
  * when you want to restart the 30-day test cleanly.
  */
 export function resetBook(): void {
-  if (fs.existsSync(BOOK_STATE_FILE)) fs.unlinkSync(BOOK_STATE_FILE)
+  if (fs.existsSync(JOURNAL_FILE)) fs.unlinkSync(JOURNAL_FILE)
   log.info('PAPER', 'book reset — next tick will start fresh with ₹10L')
 }
