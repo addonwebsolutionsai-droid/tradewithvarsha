@@ -71,6 +71,19 @@ export const snapshots = {
   harmonic: () => snapshot<{ generatedAt: string; criterion: string; total: number; byPattern: Record<string, number>; byTier: Record<string, number>; rows: any[] }>('harmonic.json'),
   elliottWave: () => snapshot<{ generatedAt: string; criterion: string; total: number; byType: Record<string, number>; rows: any[] }>('elliott-wave.json'),
   vpFib: () => snapshot<{ generatedAt: string; universe?: string; scanned: number; attempted?: number; eliteCount: number; strongCount: number; decentCount: number; runtimeMs?: number; rows: any[] }>('vp-fib.json'),
+  tradingJournal: () => snapshot<{
+    generatedAt: string
+    startedAt: string
+    lastUpdatedAt: string
+    daysRunning: number
+    startingCapital: number
+    ledger: { startingCapital: number; currentCash: number; openPositionsValue: number; totalRealisedPnl: number; totalUnrealisedPnl: number; bookValue: number; totalReturnPct: number }
+    performance: { totalTrades: number; openTrades: number; closedTrades: number; wins: number; losses: number; winRatePct: number; avgWinPct: number; avgLossPct: number; biggestWinInr: number; biggestLossInr: number; avgDaysHeld: number }
+    rules: any
+    openTrades: any[]
+    closedTrades: any[]
+    allTradesCount: number
+  }>('trading-journal.json'),
 }
 
 // Chat assistant — talks directly to Gemini from the browser.

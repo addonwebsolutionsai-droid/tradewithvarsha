@@ -30,7 +30,7 @@ function SortableTh({
 }
 
 // ─── Types ───────────────────────────────────────────────────────────
-type TabKey = 'master' | 'nifty' | 'chart' | 'harmonic' | 'elliott' | 'tech' | 'swings' | 'vpfib' | 'scan'
+type TabKey = 'master' | 'nifty' | 'chart' | 'harmonic' | 'elliott' | 'tech' | 'swings' | 'vpfib' | 'journal' | 'scan'
 type Theme = 'dark' | 'light'
 
 const TABS: Array<{ key: TabKey; label: string; icon: string; count?: number }> = [
@@ -42,6 +42,7 @@ const TABS: Array<{ key: TabKey; label: string; icon: string; count?: number }> 
   { key: 'tech',     label: 'Tech',      icon: '📊' },
   { key: 'swings',   label: 'Swings',    icon: '🌱' },
   { key: 'vpfib',    label: 'VP + FIB',  icon: '⛯' },
+  { key: 'journal',  label: 'Journal',   icon: '📓' },
   { key: 'scan',     label: 'Ask',       icon: '💬' },
 ]
 
@@ -213,6 +214,22 @@ const RAILS: Record<TabKey, { title: string; desc: string; groups: RailGroup[] }
       { icon: '🎯', label: 'Trade plan when composite ≥ 60' },
     ]},
   ]},
+  journal: { title: '📓 Paper Trading Book', desc: '₹10L test account — auto-managed by GH Actions every EOD. High-quality setups only.', groups: [
+    { title: 'Rules', items: [
+      { icon: '⭐', label: 'ELITE = 15% weight' },
+      { icon: '🔥', label: 'STRONG = 8% weight' },
+      { icon: '🚫', label: 'DECENT skipped' },
+      { icon: '🎯', label: '1% risk cap per trade' },
+      { icon: '💰', label: 'MC ≥ ₹500 Cr' },
+      { icon: '🛡️', label: 'Pledge < 20%' },
+      { icon: '🔻', label: '40 / 30 / 30 exits' },
+      { icon: '⏱', label: '15-day time stop' },
+    ]},
+    { title: 'View', items: [
+      { icon: '📊', label: 'KPI + open positions', on: true },
+      { icon: '📜', label: 'Closed trade history' },
+    ]},
+  ]},
   vpfib: { title: '⛯ VP + FIB Confluence', desc: '7-lens PRO Trader setup — Volume Profile · Fib · Order Block · Liquidity Grab · Elliott · Harmonic · Volume.', groups: [
     { title: 'Confluences', items: [
       { icon: '◉', label: 'All 7 lenses', on: true },
@@ -307,6 +324,7 @@ export default function DeskApp(): JSX.Element {
             {tab === 'master' && <MasterView />}
             {tab === 'nifty' && <NiftyView />}
             {tab === 'vpfib' && <VpFibView />}
+            {tab === 'journal' && <JournalView />}
             {tab === 'chart' && <ChartPatternsView />}
             {tab === 'harmonic' && <HarmonicView />}
             {tab === 'elliott' && <ElliottView />}
@@ -654,6 +672,203 @@ function NiftyView(): JSX.Element {
             <div className="desk-kpi-label">Smart-money level</div>
             <div className="desk-kpi-num el">{d.smartMoneyLevel ?? '—'}</div>
             <div className="desk-kpi-sub">Book · {d.smartMoneyDirection}</div>
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
+// ─── PAPER TRADING JOURNAL VIEW ──────────────────────────────────────
+// Reads trading-journal.json (published by the paper trading engine on
+// every EOD cron). Shows the live ₹10L test book: ledger, KPIs, open
+// positions with mark-to-market P&L, and closed trade history.
+function JournalView(): JSX.Element {
+  const q = useQuery({ queryKey: ['desk-journal'], queryFn: () => snapshots.tradingJournal(), refetchInterval: 15 * 60_000, retry: false })
+  const d: any = q.data
+  const [tab, setTab] = useState<'open' | 'closed'>('open')
+
+  if (q.isLoading && !d) return <div style={{ padding: 48, textAlign: 'center', color: 'var(--desk-text-3)' }}>Loading paper trading book…</div>
+  if (!d) return <div style={{ padding: 48, textAlign: 'center', color: 'var(--desk-text-3)' }}>Book not yet initialised — next EOD tick will seed it.</div>
+
+  const ledger = d.ledger ?? {}
+  const perf = d.performance ?? {}
+  const open: any[] = d.openTrades ?? []
+  const closed: any[] = d.closedTrades ?? []
+  const bookValue = ledger.bookValue ?? 0
+  const retPct = ledger.totalReturnPct ?? 0
+  const pnlColor = (v: number) => v > 0 ? '#42be65' : v < 0 ? '#f05454' : 'var(--desk-text-2)'
+  const fmtInr0 = (n?: number) => n == null ? '—' : `₹${Math.round(n).toLocaleString('en-IN')}`
+  const fmtInrExact = (n?: number) => n == null ? '—' : `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+  return (
+    <>
+      <div className="proposal-note">
+        <span>📓</span>
+        <div>
+          <b>Paper Trading Book — ₹10L Test Account.</b> Started <b>{d.startedAt}</b>, day <b>{d.daysRunning}</b> of test. Auto-managed by the EOD cron every weekday at 18:30 IST — reads the day's high-quality-setups, opens tier-sized positions (ELITE 15% · STRONG 8%), marks to market, executes 40/30/30 partial exits at T1/T2/T3 or full exit on SL. Quality gates: MC ≥ ₹500 Cr, pledge {'<'} 20%, no ETFs, no pump-and-dumps.
+        </div>
+      </div>
+      <div className="desk-page-head">
+        <div>
+          <h1 className="desk-page-title">📓 Paper Trading Book</h1>
+          <p className="desk-page-desc">Live ₹10L autonomous test. No manual intervention — GH Actions runs it nightly. Last update: {d.lastUpdatedAt}.</p>
+        </div>
+      </div>
+
+      {/* KPI strip */}
+      <div className="desk-kpi-row" style={{ marginBottom: 16 }}>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">Book value</div>
+          <div className="desk-kpi-num" style={{ color: retPct >= 0 ? '#42be65' : '#f05454' }}>{fmtInr0(bookValue)}</div>
+          <div className="desk-kpi-sub" style={{ color: pnlColor(retPct) }}>{retPct >= 0 ? '+' : ''}{retPct.toFixed(2)}% since day 0</div>
+        </div>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">Cash / Deployed</div>
+          <div className="desk-kpi-num">{fmtInr0(ledger.currentCash)}</div>
+          <div className="desk-kpi-sub">deployed {fmtInr0(ledger.openPositionsValue)}</div>
+        </div>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">Realised P&L</div>
+          <div className="desk-kpi-num" style={{ color: pnlColor(ledger.totalRealisedPnl) }}>{ledger.totalRealisedPnl >= 0 ? '+' : ''}{fmtInr0(ledger.totalRealisedPnl)}</div>
+          <div className="desk-kpi-sub">unrealised {ledger.totalUnrealisedPnl >= 0 ? '+' : ''}{fmtInr0(ledger.totalUnrealisedPnl)}</div>
+        </div>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">Win rate</div>
+          <div className="desk-kpi-num">{perf.winRatePct?.toFixed(0) ?? 0}%</div>
+          <div className="desk-kpi-sub">{perf.wins} wins · {perf.losses} losses · {perf.closedTrades} closed</div>
+        </div>
+        <div className="desk-kpi">
+          <div className="desk-kpi-label">Open positions</div>
+          <div className="desk-kpi-num">{perf.openTrades ?? 0}</div>
+          <div className="desk-kpi-sub">avg held {perf.avgDaysHeld}d · biggest win {fmtInr0(perf.biggestWinInr)}</div>
+        </div>
+      </div>
+
+      {/* View tabs */}
+      <div style={{ display: 'flex', gap: 6, marginBottom: 12 }}>
+        {(['open', 'closed'] as const).map(t => (
+          <button key={t} onClick={() => setTab(t)} className={`desk-btn ${tab === t ? 'primary' : ''}`} style={{ fontSize: 11.5, padding: '5px 12px' }}>
+            {t === 'open' ? `📊 Open (${open.length})` : `📜 Closed (${closed.length})`}
+          </button>
+        ))}
+      </div>
+
+      {/* Open positions grid */}
+      {tab === 'open' && (
+        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 12 }}>
+          {open.length === 0 && (
+            <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--desk-text-3)', background: 'var(--desk-surface)', border: '1px solid var(--desk-border)', borderRadius: 12, gridColumn: '1 / -1' }}>
+              No open positions.
+            </div>
+          )}
+          {open.map((t: any) => {
+            const tierColor = t.tier === 'ELITE' ? '#ffb547' : '#4dc0ff'
+            return (
+              <div key={t.id} style={{
+                background: 'var(--desk-surface)',
+                border: `1px solid ${t.tier === 'ELITE' ? 'rgba(255,181,71,0.35)' : 'var(--desk-border)'}`,
+                borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 8,
+              }}>
+                <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                  <div style={{ fontSize: 15, fontWeight: 600 }}>{t.symbol}</div>
+                  <span style={{ fontSize: 9.5, padding: '2px 6px', borderRadius: 4, background: 'rgba(66,190,101,0.15)', color: '#42be65', fontWeight: 700, letterSpacing: '0.06em' }}>LONG</span>
+                  <span style={{ marginLeft: 'auto', fontSize: 11, color: tierColor, fontWeight: 700, letterSpacing: '0.06em' }}>
+                    {t.tier} · {typeof t.score === 'number' ? t.score.toFixed(0) : t.score}
+                  </span>
+                </div>
+                <div style={{ display: 'flex', gap: 4, fontSize: 10 }}>
+                  <span style={{ padding: '2px 6px', background: 'rgba(77,192,255,0.15)', color: '#4dc0ff', borderRadius: 4, fontWeight: 600, letterSpacing: '0.04em' }}>{t.source}</span>
+                  <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.05)', color: 'var(--desk-text-3)', borderRadius: 4 }}>{t.segment}</span>
+                  <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.05)', color: 'var(--desk-text-3)', borderRadius: 4 }}>{t.status.replace('_', ' ')}</span>
+                  {t.daysHeld > 0 && <span style={{ padding: '2px 6px', background: 'rgba(255,255,255,0.05)', color: 'var(--desk-text-3)', borderRadius: 4 }}>{t.daysHeld}d held</span>}
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, fontSize: 11 }}>
+                  <div>
+                    <div style={{ color: 'var(--desk-text-3)', fontSize: 10 }}>Qty</div>
+                    <div className="mono">{t.qty}{t.remainingQty !== t.qty && <span style={{ color: 'var(--desk-text-3)' }}> / {t.remainingQty}</span>}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: 'var(--desk-text-3)', fontSize: 10 }}>Entry</div>
+                    <div className="mono">{fmtInrExact(t.entryPrice)}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: 'var(--desk-text-3)', fontSize: 10 }}>Position</div>
+                    <div className="mono">{fmtInr0(t.positionValue)}</div>
+                  </div>
+                  <div>
+                    <div style={{ color: 'var(--desk-text-3)', fontSize: 10 }}>P&L</div>
+                    <div className="mono" style={{ color: pnlColor(t.totalPnl), fontWeight: 600 }}>{t.totalPnl >= 0 ? '+' : ''}{fmtInr0(t.totalPnl)}</div>
+                  </div>
+                </div>
+
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(4, 1fr)', gap: 8, fontSize: 10, borderTop: '1px solid var(--desk-border)', paddingTop: 8 }}>
+                  <div><div style={{ color: '#f05454' }}>SL</div><div className="mono">{fmtInrExact(t.stopLoss)}</div></div>
+                  <div><div style={{ color: '#42be65' }}>T1</div><div className="mono">{fmtInrExact(t.target1)}</div></div>
+                  <div><div style={{ color: '#42be65' }}>T2</div><div className="mono">{fmtInrExact(t.target2)}</div></div>
+                  <div><div style={{ color: '#42be65' }}>T3</div><div className="mono">{fmtInrExact(t.target3)}</div></div>
+                </div>
+
+                <div style={{ fontSize: 10, color: 'var(--desk-text-3)' }}>Entered {t.entryDate} {t.entryTime}</div>
+
+                {t.exits && t.exits.length > 0 && (
+                  <div style={{ fontSize: 10, color: 'var(--desk-text-2)', background: 'rgba(66,190,101,0.06)', padding: 6, borderRadius: 4 }}>
+                    Partials booked:
+                    {t.exits.map((e: any, i: number) => (
+                      <span key={i} style={{ marginLeft: 6 }}>
+                        {e.reason.replace('_HIT', '')} · {e.qty} @ {fmtInrExact(e.price)} · {e.pnl >= 0 ? '+' : ''}{fmtInr0(e.pnl)}
+                      </span>
+                    ))}
+                  </div>
+                )}
+
+                {t.entryReason && (
+                  <div style={{ fontSize: 11, color: 'var(--desk-text-2)', lineHeight: 1.4, borderTop: '1px solid var(--desk-border)', paddingTop: 8 }}>{t.entryReason}</div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      )}
+
+      {/* Closed trades table */}
+      {tab === 'closed' && (
+        <div className="desk-table-card">
+          <div className="desk-table-x">
+            <table className="desk-grid">
+              <thead>
+                <tr>
+                  <th>Symbol · Tier</th>
+                  <th>Entry</th>
+                  <th>Exit</th>
+                  <th className="r-right">Qty</th>
+                  <th className="r-right">Entry ₹</th>
+                  <th className="r-right">Result</th>
+                  <th className="r-right">P&L</th>
+                  <th className="r-right">Return</th>
+                  <th className="r-right">Days</th>
+                </tr>
+              </thead>
+              <tbody>
+                {closed.length === 0 && (
+                  <tr><td colSpan={9} style={{ textAlign: 'center', color: 'var(--desk-text-3)', padding: '48px 20px' }}>No closed trades yet. Book has been running {d.daysRunning} day(s).</td></tr>
+                )}
+                {closed.slice().reverse().map((t: any) => (
+                  <tr key={t.id}>
+                    <td><div className="sym-stack"><div className="sym-line">{t.symbol}</div><div className="src-line"><span className="src-mini">{t.tier}</span></div></div></td>
+                    <td className="mono" style={{ fontSize: 11 }}>{t.entryDate}</td>
+                    <td className="mono" style={{ fontSize: 11 }}>{t.exits?.[t.exits.length - 1]?.date ?? '—'}</td>
+                    <td className="r-right mono">{t.qty}</td>
+                    <td className="r-right mono">{fmtInrExact(t.entryPrice)}</td>
+                    <td className="r-right"><span style={{ fontSize: 10.5, padding: '2px 6px', borderRadius: 4, background: t.status === 'SL_HIT' ? 'rgba(240,84,84,0.15)' : 'rgba(66,190,101,0.15)', color: t.status === 'SL_HIT' ? '#f05454' : '#42be65', fontWeight: 700, letterSpacing: '0.04em' }}>{t.status.replace('_', ' ')}</span></td>
+                    <td className="r-right mono" style={{ color: pnlColor(t.totalPnl), fontWeight: 600 }}>{t.totalPnl >= 0 ? '+' : ''}{fmtInr0(t.totalPnl)}</td>
+                    <td className="r-right mono" style={{ color: pnlColor(t.returnPct) }}>{t.returnPct >= 0 ? '+' : ''}{t.returnPct.toFixed(2)}%</td>
+                    <td className="r-right mono">{t.daysHeld}d</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </div>
       )}
