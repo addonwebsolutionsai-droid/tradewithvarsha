@@ -44,9 +44,18 @@ export const SYMBOLS: Record<string, SymbolMap> = {
   // Drop yh/av fallbacks — they returned USD/oz spot (~4644) which mismatches
   // the GOLDBEES ₹ scale (~123) and corrupted candle math. Stay on GOLDBEES
   // alone via Angel for consistent units across quote + candles.
-  GOLD: { key: 'GOLD', nse: 'GOLDBEES' },
-  XAUUSD: { key: 'XAUUSD', nse: 'GOLDBEES' },
-  CRUDE: { key: 'CRUDE', yh: YH_SYMBOLS.CRUDE, av: 'USO', commodity: true },
+  // Commodities — primary is Yahoo ETF (GLD/SLV/USO/UNG/CPER) since these
+  // never rate-limit; Angel-via-GOLDBEES/SILVERBEES stays as an INR-scale
+  // proxy path when Angel is available (GH Actions runs). Alpha Vantage
+  // (USO/GLD/SLV) is the third fallback for cold starts / IP throttling.
+  GOLD:   { key: 'GOLD',   nse: 'GOLDBEES',   yh: YH_SYMBOLS.GOLD,   av: 'GLD', commodity: true },
+  XAUUSD: { key: 'XAUUSD', nse: 'GOLDBEES',   yh: YH_SYMBOLS.XAUUSD, av: 'GLD', commodity: true },
+  SILVER: { key: 'SILVER', nse: 'SILVERBEES', yh: YH_SYMBOLS.SILVER, av: 'SLV', commodity: true },
+  XAGUSD: { key: 'XAGUSD', nse: 'SILVERBEES', yh: YH_SYMBOLS.SILVER, av: 'SLV', commodity: true },
+  CRUDE:  { key: 'CRUDE',  yh: YH_SYMBOLS.CRUDE, av: 'USO', commodity: true },
+  BRENT:  { key: 'BRENT',  yh: YH_SYMBOLS.BRENT, av: 'BNO', commodity: true },
+  NATGAS: { key: 'NATGAS', yh: YH_SYMBOLS.NATGAS, av: 'UNG', commodity: true },
+  COPPER: { key: 'COPPER', yh: YH_SYMBOLS.COPPER, av: 'CPER', commodity: true },
   DXY: { key: 'DXY', yh: YH_SYMBOLS.DXY, av: 'DX-Y.NYB' },
   USDINR: { key: 'USDINR', yh: YH_SYMBOLS.USDINR },
   RELIANCE: { key: 'RELIANCE', nse: 'RELIANCE', yh: YH_SYMBOLS.RELIANCE, av: 'RELIANCE.BSE' },

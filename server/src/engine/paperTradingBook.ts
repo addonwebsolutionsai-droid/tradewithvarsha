@@ -313,6 +313,7 @@ function computeQty(entry: number, stopLoss: number, tier: 'ELITE' | 'STRONG', b
 // ─── Trade opening ──────────────────────────────────────────────────
 
 const COMMODITY_SNAPSHOT_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'commodity-signals.json')
+const NIFTY_OUTLOOK_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'nifty-outlook.json')
 
 /**
  * Gather candidate signals across all three segments, tag them with the
@@ -328,12 +329,50 @@ function gatherCandidates(): Array<any & { _segment: 'CASH' | 'FNO' | 'MCX' }> {
       for (const c of (hqs.fno ?? [])) out.push({ ...c, _segment: 'FNO' })
     } catch (e) { log.warn('PAPER', `HQS read failed: ${(e as Error).message}`) }
   }
-  // MCX — commodity signals from dedicated scanner (Gold/Silver/Crude/NatGas/Copper)
+  // MCX — commodity signals from dedicated scanner (Gold/XAUUSD/Silver/Crude/NatGas/Copper)
   if (fs.existsSync(COMMODITY_SNAPSHOT_FILE)) {
     try {
       const mcx = JSON.parse(fs.readFileSync(COMMODITY_SNAPSHOT_FILE, 'utf-8'))
       for (const c of (mcx.rows ?? [])) out.push({ ...c, _segment: 'MCX' })
     } catch (e) { log.warn('PAPER', `commodity-signals read failed: ${(e as Error).message}`) }
+  }
+  // NIFTY Index Options — routed to FNO segment. NIFTY foresight emits a
+  // single directional trade plan per tick (side + entry + SL + T1/T2/T3).
+  // We take it only when confidence is HIGH or MEDIUM; conviction < that
+  // is the engine explicitly saying "wait — I don't have a strong read."
+  if (fs.existsSync(NIFTY_OUTLOOK_FILE)) {
+    try {
+      const nout = JSON.parse(fs.readFileSync(NIFTY_OUTLOOK_FILE, 'utf-8'))
+      const tp = nout?.tradePlan
+      if (tp && (nout.confidence === 'HIGH' || nout.confidence === 'MEDIUM')) {
+        const side = String(tp.side ?? '').toUpperCase()
+        out.push({
+          symbol: `NIFTY-${(tp.instrument || '').replace(/\s+/g, '-').slice(0, 40)}`,
+          underlying: 'NIFTY',
+          _segment: 'FNO',
+          segment: 'FNO',
+          side: side === 'SELL' || side === 'SHORT' ? 'SHORT' : 'LONG',
+          direction: side,
+          source: 'NIFTY-FORESIGHT',
+          tier: nout.confidence === 'HIGH' ? 'ELITE' : 'STRONG',
+          stars: nout.confidence === 'HIGH' ? 5 : 3,
+          score: nout.confidence === 'HIGH' ? 90 : 75,
+          ltp: tp.entry,
+          entry: tp.entry,
+          stopLoss: tp.stopLoss,
+          target1: tp.target1,
+          target2: tp.target2,
+          target3: tp.target3,
+          entryDate: tp.entryDate,
+          target1Date: tp.target1Date,
+          target2Date: tp.target2Date,
+          target3Date: tp.target3Date,
+          slDate: tp.slDate,
+          reasoning: Array.isArray(nout.reasoning) ? nout.reasoning.slice(0, 6) : [],
+          unifiedReason: `NIFTY Foresight · ${nout.direction} · ${nout.confidence} · ${tp.instrument}`,
+        })
+      }
+    } catch (e) { log.warn('PAPER', `nifty-outlook read failed: ${(e as Error).message}`) }
   }
   return out
 }

@@ -35,8 +35,11 @@ export const MCX_CONTRACTS: Record<string, {
   usdToInr: number      // approx conversion (bootstrapped; updates on next tick from data)
 }> = {
   GOLD:   { underlying: 'GOLD',   onDemandKey: 'GOLD',   displayName: 'GOLD-MCX',   lotSize: 100,   quoteCcy: 'USD', usdToInr: 84 },  // 100 gm
+  XAUUSD: { underlying: 'XAUUSD', onDemandKey: 'XAUUSD', displayName: 'XAU/USD',    lotSize: 1,     quoteCcy: 'USD', usdToInr: 84 },  // 1 oz spot
   SILVER: { underlying: 'SILVER', onDemandKey: 'SILVER', displayName: 'SILVER-MCX', lotSize: 30_000, quoteCcy: 'USD', usdToInr: 84 }, // 30 kg = 30_000 gm (approx)
+  XAGUSD: { underlying: 'XAGUSD', onDemandKey: 'XAGUSD', displayName: 'XAG/USD',    lotSize: 1,     quoteCcy: 'USD', usdToInr: 84 },  // 1 oz spot
   CRUDE:  { underlying: 'CRUDE',  onDemandKey: 'CRUDE',  displayName: 'CRUDE-MCX',  lotSize: 100,   quoteCcy: 'USD', usdToInr: 84 },  // 100 barrels
+  BRENT:  { underlying: 'BRENT',  onDemandKey: 'BRENT',  displayName: 'BRENT-Oil',  lotSize: 100,   quoteCcy: 'USD', usdToInr: 84 },
   NATGAS: { underlying: 'NATGAS', onDemandKey: 'NATGAS', displayName: 'NATGAS-MCX', lotSize: 1250,  quoteCcy: 'USD', usdToInr: 84 },  // 1250 mmBtu
   COPPER: { underlying: 'COPPER', onDemandKey: 'COPPER', displayName: 'COPPER-MCX', lotSize: 2500,  quoteCcy: 'USD', usdToInr: 84 },  // 2500 kg
 }
