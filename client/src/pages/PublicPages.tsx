@@ -4505,3 +4505,179 @@ function FnoFuturesCard({ row: r }: { row: any }): JSX.Element {
     </div>
   )
 }
+
+// ─── PUBLIC PAPER TRADING JOURNAL PAGE ──────────────────────────────────
+// Renders the ₹10L auto-managed test book on the old-platform public UI.
+// Same data source (trading-journal.json) as the /desk Journal tab, but
+// styled to match the public dashboard's dark theme + table treatment.
+export function PublicJournalPage(): JSX.Element {
+  const { data, isLoading } = useQuery({ queryKey: ['public-journal'], queryFn: () => snapshots.tradingJournal(), refetchInterval: 15 * 60_000, retry: false })
+  const [tab, setTab] = useState<'open' | 'closed'>('open')
+  const d: any = data
+  if (isLoading && !d) return <div className="p-12 text-center text-neutral-500">Loading paper trading book…</div>
+  if (!d) return <div className="p-12 text-center text-neutral-500">Book not yet initialised — next EOD tick will seed it (18:30 IST Mon-Fri).</div>
+
+  const ledger = d.ledger ?? {}
+  const perf = d.performance ?? {}
+  const open: any[] = d.openTrades ?? []
+  const closed: any[] = d.closedTrades ?? []
+  const retPct = ledger.totalReturnPct ?? 0
+  const pnlColor = (v: number) => v > 0 ? '#00c853' : v < 0 ? '#ff5e7c' : '#d0d0d0'
+  const fmtInr0 = (n?: number) => n == null ? '—' : `₹${Math.round(n).toLocaleString('en-IN')}`
+  const fmtInrExact = (n?: number) => n == null ? '—' : `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-cyan/15 to-accent-green/5 border border-accent-cyan/50 rounded-lg">
+        <div className="text-3xl">📓</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-cyan">Paper Trading Book — ₹10 L Test Account</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Started <b>{d.startedAt}</b>, day <b>{d.daysRunning}</b> of the 30-day test. Auto-managed by the EOD cron every weekday at 18:30 IST — no manual trading. Reads high-quality-setups, sizes positions per tier (ELITE 15% / STRONG 8%), marks to market, executes 40/30/30 partial exits at T1/T2/T3 or full SL. Quality gates: MC ≥ ₹500 Cr, pledge {'<'} 20%, no ETFs, no pump-and-dumps.
+          </div>
+          <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+            Last update: {d.lastUpdatedAt} · {perf.openTrades ?? 0} open · {perf.closedTrades ?? 0} closed · WR {perf.winRatePct?.toFixed(0) ?? 0}%
+          </div>
+        </div>
+      </div>
+
+      {/* KPI strip */}
+      <div className="grid grid-cols-2 md:grid-cols-5 gap-3">
+        <div className="p-3 bg-ink-800 border border-ink-500 rounded-lg">
+          <div className="text-[10px] uppercase text-neutral-500 tracking-wider">Book value</div>
+          <div className="text-lg font-bold mt-1" style={{ color: pnlColor(retPct) }}>{fmtInr0(ledger.bookValue)}</div>
+          <div className="text-[10px] mt-0.5" style={{ color: pnlColor(retPct) }}>{retPct >= 0 ? '+' : ''}{retPct.toFixed(2)}% since day 0</div>
+        </div>
+        <div className="p-3 bg-ink-800 border border-ink-500 rounded-lg">
+          <div className="text-[10px] uppercase text-neutral-500 tracking-wider">Cash / Deployed</div>
+          <div className="text-lg font-bold text-neutral-100 mt-1">{fmtInr0(ledger.currentCash)}</div>
+          <div className="text-[10px] text-neutral-400 mt-0.5">deployed {fmtInr0(ledger.openPositionsValue)}</div>
+        </div>
+        <div className="p-3 bg-ink-800 border border-ink-500 rounded-lg">
+          <div className="text-[10px] uppercase text-neutral-500 tracking-wider">Realised P&amp;L</div>
+          <div className="text-lg font-bold mt-1" style={{ color: pnlColor(ledger.totalRealisedPnl) }}>{ledger.totalRealisedPnl >= 0 ? '+' : ''}{fmtInr0(ledger.totalRealisedPnl)}</div>
+          <div className="text-[10px] mt-0.5" style={{ color: pnlColor(ledger.totalUnrealisedPnl) }}>unrealised {ledger.totalUnrealisedPnl >= 0 ? '+' : ''}{fmtInr0(ledger.totalUnrealisedPnl)}</div>
+        </div>
+        <div className="p-3 bg-ink-800 border border-ink-500 rounded-lg">
+          <div className="text-[10px] uppercase text-neutral-500 tracking-wider">Win rate</div>
+          <div className="text-lg font-bold text-neutral-100 mt-1">{perf.winRatePct?.toFixed(0) ?? 0}%</div>
+          <div className="text-[10px] text-neutral-400 mt-0.5">{perf.wins} wins · {perf.losses} losses</div>
+        </div>
+        <div className="p-3 bg-ink-800 border border-ink-500 rounded-lg">
+          <div className="text-[10px] uppercase text-neutral-500 tracking-wider">Open positions</div>
+          <div className="text-lg font-bold text-neutral-100 mt-1">{perf.openTrades ?? 0}</div>
+          <div className="text-[10px] text-neutral-400 mt-0.5">avg held {perf.avgDaysHeld ?? 0}d · biggest win {fmtInr0(perf.biggestWinInr)}</div>
+        </div>
+      </div>
+
+      {/* View sub-tabs */}
+      <div className="flex gap-2 text-[11px]">
+        <button onClick={() => setTab('open')} className={`px-3 py-1.5 rounded border ${tab === 'open' ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}>📊 Open ({open.length})</button>
+        <button onClick={() => setTab('closed')} className={`px-3 py-1.5 rounded border ${tab === 'closed' ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}>📜 Closed ({closed.length})</button>
+      </div>
+
+      {tab === 'open' && (
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '75vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1100 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
+                <th className="text-center px-2 py-3">Tier</th>
+                <th className="text-left px-2 py-3">Source</th>
+                <th className="text-right px-2 py-3">Qty</th>
+                <th className="text-right px-2 py-3">Entry ₹</th>
+                <th className="text-right px-2 py-3">Position ₹</th>
+                <th className="text-right px-2 py-3 text-accent-red">SL</th>
+                <th className="text-right px-2 py-3 text-accent-green">T1 / T2 / T3</th>
+                <th className="text-right px-2 py-3">Days</th>
+                <th className="text-right px-2 py-3">P&amp;L</th>
+                <th className="text-right px-2 py-3">Return</th>
+                <th className="text-left px-3 py-3">Why</th>
+              </tr>
+            </thead>
+            <tbody>
+              {open.length === 0 && (
+                <tr><td colSpan={12} className="text-center text-neutral-500 py-12">No open positions right now.</td></tr>
+              )}
+              {open.map((t: any, i: number) => {
+                const tierColor = t.tier === 'ELITE' ? '#ffb454' : '#5fd4ff'
+                const tdb = 'px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]'
+                return (
+                  <tr key={t.id + i} className="group border-t border-ink-500">
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{t.symbol}</td>
+                    <td className={`${tdb} text-center`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${tierColor}22`, color: tierColor }}>{t.tier}</span></td>
+                    <td className={`${tdb} text-left`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet">{t.source}</span></td>
+                    <td className={`${tdb} text-right text-neutral-200`}>{t.qty}{t.remainingQty !== t.qty && <span className="text-neutral-500"> / {t.remainingQty}</span>}</td>
+                    <td className={`${tdb} text-right text-neutral-200`}>{fmtInrExact(t.entryPrice)}</td>
+                    <td className={`${tdb} text-right text-neutral-200`}>{fmtInr0(t.positionValue)}</td>
+                    <td className={`${tdb} text-right text-accent-red`}>{fmtInrExact(t.stopLoss)}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>{fmtInrExact(t.target1)} / {fmtInrExact(t.target2)} / {fmtInrExact(t.target3)}</td>
+                    <td className={`${tdb} text-right text-neutral-400`}>{t.daysHeld}d</td>
+                    <td className={`${tdb} text-right font-bold`} style={{ color: pnlColor(t.totalPnl) }}>{t.totalPnl >= 0 ? '+' : ''}{fmtInr0(t.totalPnl)}</td>
+                    <td className={`${tdb} text-right`} style={{ color: pnlColor(t.returnPct) }}>{t.returnPct >= 0 ? '+' : ''}{t.returnPct.toFixed(2)}%</td>
+                    <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 280, maxWidth: 400 }} title={t.entryReason}>
+                      <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.entryReason || '—'}</div>
+                    </td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      {tab === 'closed' && (
+        <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '75vh' }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 900 }}>
+            <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
+              <tr>
+                <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
+                <th className="text-center px-2 py-3">Tier</th>
+                <th className="text-left px-2 py-3">Entry</th>
+                <th className="text-left px-2 py-3">Exit</th>
+                <th className="text-right px-2 py-3">Qty</th>
+                <th className="text-right px-2 py-3">Entry ₹</th>
+                <th className="text-center px-2 py-3">Result</th>
+                <th className="text-right px-2 py-3">P&amp;L</th>
+                <th className="text-right px-2 py-3">Return</th>
+                <th className="text-right px-2 py-3">Days</th>
+              </tr>
+            </thead>
+            <tbody>
+              {closed.length === 0 && (
+                <tr><td colSpan={10} className="text-center text-neutral-500 py-12">No closed trades yet — book has been running {d.daysRunning} day(s).</td></tr>
+              )}
+              {closed.slice().reverse().map((t: any, i: number) => {
+                const tierColor = t.tier === 'ELITE' ? '#ffb454' : '#5fd4ff'
+                const isSL = t.status === 'SL_HIT'
+                const tdb = 'px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]'
+                return (
+                  <tr key={t.id + i} className="group border-t border-ink-500">
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{t.symbol}</td>
+                    <td className={`${tdb} text-center`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${tierColor}22`, color: tierColor }}>{t.tier}</span></td>
+                    <td className={`${tdb} text-left text-neutral-400`}>{t.entryDate}</td>
+                    <td className={`${tdb} text-left text-neutral-400`}>{t.exits?.[t.exits.length - 1]?.date ?? '—'}</td>
+                    <td className={`${tdb} text-right text-neutral-200`}>{t.qty}</td>
+                    <td className={`${tdb} text-right text-neutral-200`}>{fmtInrExact(t.entryPrice)}</td>
+                    <td className={`${tdb} text-center`}>
+                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: isSL ? 'rgba(255,94,124,0.2)' : 'rgba(0,200,83,0.2)', color: isSL ? '#ff5e7c' : '#00c853' }}>
+                        {t.status.replace('_', ' ')}
+                      </span>
+                    </td>
+                    <td className={`${tdb} text-right font-bold`} style={{ color: pnlColor(t.totalPnl) }}>{t.totalPnl >= 0 ? '+' : ''}{fmtInr0(t.totalPnl)}</td>
+                    <td className={`${tdb} text-right`} style={{ color: pnlColor(t.returnPct) }}>{t.returnPct >= 0 ? '+' : ''}{t.returnPct.toFixed(2)}%</td>
+                    <td className={`${tdb} text-right text-neutral-400`}>{t.daysHeld}d</td>
+                  </tr>
+                )
+              })}
+            </tbody>
+          </table>
+        </div>
+      )}
+
+      <div className="p-3 bg-ink-800 border border-ink-500 rounded-lg text-[11px] text-neutral-400">
+        <b className="text-neutral-200">Rules:</b> ELITE 15% weight · STRONG 8% weight · DECENT skipped · 1% risk per trade · 20% single-name cap · MC ≥ ₹500 Cr · pledge {'<'} 20% · no ETFs · max 15 concurrent · 40/30/30 partial exits at T1/T2/T3 · full SL exit · 15-day time stop
+      </div>
+    </div>
+  )
+}

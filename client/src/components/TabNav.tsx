@@ -140,6 +140,12 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/elite-picks',  label: '💎🎯 Elite Picks', icon: <Star size={14} />,
       acc: null, highProb: true,
       title: 'Elite Picks — Pedigree Accumulation (institutional FII/DII/Promoter build) + PRO Edge (multi-engine confluence, conv ≥ 85) MERGED. Symbols in both get 🔥 DOUBLE-CONFLUENCE tag. Sorted by combined score.' },
+    // 2026-07-24 — Paper Trading Book ₹10L test. Auto-managed by EOD cron.
+    // Public-facing so users can see how the signals actually perform on
+    // real market prices without any manual trading in the loop.
+    { to: '/journal',      label: '📓 Journal',   icon: <ListChecks size={14} />,
+      acc: null, highProb: true,
+      title: 'Paper Trading Book — ₹10L test account started 23-Jul, auto-managed by the EOD cron every weekday at 18:30 IST. Positions sized per signal tier (ELITE 15% / STRONG 8%), quality-gated (MC ≥ ₹500 Cr, pledge < 20%, no ETFs), exits at 40/30/30 T1/T2/T3 or full SL. No manual intervention — real performance test of our signals.' },
     { to: '/picks',        label: 'Cash / Equity', icon: <Target size={14} />,
       acc: picksAcc,
       title: 'Cash / Equity picks — swing (Weekly · 1-4 weeks) + short-term (Daily · 1-15 days) + early-stage (5-20% Move) + Top Trades curated stream.' },

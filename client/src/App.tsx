@@ -39,7 +39,7 @@ import { LiveFeedSidebar } from './components/LiveFeedSidebar'
 import { TopTradesPage } from './pages/TopTradesPage'
 import { PreMoveIdentifierPage } from './pages/PreMoveIdentifierPage'
 import { LoginPage, SignupPage, ProfilePage, AdminUsersPage, RequireAuth } from './pages/AuthPages'
-import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub, PublicEliteHub, PublicOIBuildupPage, PublicFnoFuturesPage, PublicOldWeeklyPickPage, PublicSectorRotationPage, PublicCrossConfluencePage, PublicAdDivergencePage, PublicProEdgePage, PublicSlTrapPage, PublicChatPage, PublicArchivePage, PublicSuperstarPicksPage, PublicBulkDealsPage, PublicEarlyMomentumPage, PublicPedigreeAccumulationPage, PublicXRecsPage, PublicChartPatternsPage, PublicInsiderBuysPage, PublicNiftyForesightPage, PublicVolumeProfilePage, PublicElitePicksPage, PublicStockFnoVolumeProfilePage } from './pages/PublicPages'
+import { PublicTopTradesPage, PublicWeeklyPickPage, PublicDailyPickPage, PublicPreMovePage, PublicOptionsPage, PublicIntradayPage, PublicSignalsHistoryPage, PublicPreMoveIdentifierPage, PublicPicksHub, PublicEliteHub, PublicOIBuildupPage, PublicFnoFuturesPage, PublicOldWeeklyPickPage, PublicSectorRotationPage, PublicCrossConfluencePage, PublicAdDivergencePage, PublicProEdgePage, PublicSlTrapPage, PublicChatPage, PublicArchivePage, PublicSuperstarPicksPage, PublicBulkDealsPage, PublicEarlyMomentumPage, PublicPedigreeAccumulationPage, PublicXRecsPage, PublicChartPatternsPage, PublicInsiderBuysPage, PublicNiftyForesightPage, PublicVolumeProfilePage, PublicElitePicksPage, PublicStockFnoVolumeProfilePage, PublicJournalPage } from './pages/PublicPages'
 import { AudioTour, ChangelogPopup } from './components/AudioTour'
 import { ChatFloatingButton } from './components/ChatFloatingButton'
 // 2026-07-18 · redesign preview shell — full-viewport, isolated from main chrome
@@ -130,6 +130,7 @@ function Shell() {
             <Route path="/volume-profile" element={<PublicVolumeProfilePage />} />
             <Route path="/stock-fno-vp"   element={<PublicStockFnoVolumeProfilePage />} />
             <Route path="/oi-buildup"   element={<PublicOIBuildupPage />} />
+            <Route path="/journal"      element={<PublicJournalPage />} />
             {/* 2026-05-29: 4-tab nav. /picks = unified hub for Top Trades /
                 5-20% Move / Weekly / Daily (internal segment toggle). Old
                 routes kept as bookmarkable backwards-compat redirects. */}
