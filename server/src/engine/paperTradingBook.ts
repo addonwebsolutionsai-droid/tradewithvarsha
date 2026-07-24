@@ -61,7 +61,7 @@ export interface TradeExit {
 export interface TradeEntry {
   id: string               // stable id, e.g. `RELIANCE-2026-07-23-BUY`
   symbol: string
-  segment: 'FNO' | 'CASH'
+  segment: 'FNO' | 'CASH' | 'MCX'
   direction: 'LONG' | 'SHORT'
   source: string           // VP+FIB · PRO-EDGE · CROSS-CONFLUENCE · WEEKLY-PICK
   tier: 'ELITE' | 'STRONG'
@@ -151,13 +151,29 @@ const HQS_SNAPSHOT_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots'
 // ─── Constants ──────────────────────────────────────────────────────
 
 const STARTING_CAPITAL = 10_00_000
+
+// Segment allocation model — total book value split across three risk buckets.
+//   CASH  60% → high-quality-setups.json (cash tab, LONG only)
+//   FNO   20% → high-quality-setups.json (fno tab, LONG or SHORT)
+//                 F&O stock signals traded as SPOT proxy (delta-1 approx)
+//   MCX   20% → commodity-signals.json (Gold/Silver/Crude/NatGas/Copper)
+// Cap per position within each segment: 20% of that segment's allocation.
+const SEGMENT_TARGET_PCT = {
+  CASH: 0.60,
+  FNO: 0.20,
+  MCX: 0.20,
+} as const
+
 const RULES = {
+  // Per-tier weight within the trade's segment allocation
   tierAlloc: { ELITE: 0.15, STRONG: 0.08 },
-  positionCapPct: 0.20,
-  riskPerTradePct: 0.01,
-  maxConcurrentPositions: 15,
+  positionCapPct: 0.20,           // cap per position: 20% of book
+  riskPerTradePct: 0.01,          // 1% of book per trade
+  maxConcurrentPositions: 20,     // across ALL segments
+  maxPerSegment: { CASH: 12, FNO: 6, MCX: 4 },
   minMarketCapCr: 500,
   maxPledgePct: 20,
+  segmentTargetPct: SEGMENT_TARGET_PCT,
   exitPartials: { T1: 0.4, T2: 0.3, T3: 0.3 },
   timeStopBars: 15,
 } as const
@@ -296,53 +312,117 @@ function computeQty(entry: number, stopLoss: number, tier: 'ELITE' | 'STRONG', b
 
 // ─── Trade opening ──────────────────────────────────────────────────
 
+const COMMODITY_SNAPSHOT_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'commodity-signals.json')
+
+/**
+ * Gather candidate signals across all three segments, tag them with the
+ * segment their allocation comes from, then filter + size per segment budget.
+ */
+function gatherCandidates(): Array<any & { _segment: 'CASH' | 'FNO' | 'MCX' }> {
+  const out: any[] = []
+  // CASH — long only, quality-gated equities
+  if (fs.existsSync(HQS_SNAPSHOT_FILE)) {
+    try {
+      const hqs = JSON.parse(fs.readFileSync(HQS_SNAPSHOT_FILE, 'utf-8'))
+      for (const c of (hqs.cash ?? [])) out.push({ ...c, _segment: 'CASH' })
+      for (const c of (hqs.fno ?? [])) out.push({ ...c, _segment: 'FNO' })
+    } catch (e) { log.warn('PAPER', `HQS read failed: ${(e as Error).message}`) }
+  }
+  // MCX — commodity signals from dedicated scanner (Gold/Silver/Crude/NatGas/Copper)
+  if (fs.existsSync(COMMODITY_SNAPSHOT_FILE)) {
+    try {
+      const mcx = JSON.parse(fs.readFileSync(COMMODITY_SNAPSHOT_FILE, 'utf-8'))
+      for (const c of (mcx.rows ?? [])) out.push({ ...c, _segment: 'MCX' })
+    } catch (e) { log.warn('PAPER', `commodity-signals read failed: ${(e as Error).message}`) }
+  }
+  return out
+}
+
 async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
-  if (!fs.existsSync(HQS_SNAPSHOT_FILE)) {
-    log.warn('PAPER', 'no high-quality-setups.json found — skipping open pass')
+  const candidates = gatherCandidates()
+  if (candidates.length === 0) {
+    log.warn('PAPER', 'no candidates from HQS or commodity-signals — skipping open pass')
     return []
   }
-  const hqs = JSON.parse(fs.readFileSync(HQS_SNAPSHOT_FILE, 'utf-8'))
-  const candidates: any[] = [...(hqs.fno ?? []), ...(hqs.cash ?? [])]
 
-  const openSymbols = new Set(book.trades.filter(t => t.status === 'OPEN' || /^T[12]_HIT$/.test(t.status)).map(t => t.symbol))
-  const openCount = openSymbols.size
+  const openTrades = book.trades.filter(t => t.status === 'OPEN' || /^T[12]_HIT$/.test(t.status))
+  const openSymbols = new Set(openTrades.map(t => t.symbol))
+  const perSegmentOpenCount: Record<'CASH' | 'FNO' | 'MCX', number> = { CASH: 0, FNO: 0, MCX: 0 }
+  const perSegmentDeployed: Record<'CASH' | 'FNO' | 'MCX', number> = { CASH: 0, FNO: 0, MCX: 0 }
+  for (const t of openTrades) {
+    perSegmentOpenCount[t.segment]++
+    perSegmentDeployed[t.segment] += t.remainingQty * t.entryPrice
+  }
+  const totalOpen = openTrades.length
 
   const bookValue = book.ledger.bookValue
   const availableCash = book.ledger.currentCash
-
   const opened: TradeEntry[] = []
   const now = todayIST()
   const time = nowTimeIST()
 
-  for (const c of candidates) {
-    if (opened.length + openCount >= RULES.maxConcurrentPositions) break
+  // Compute per-segment budget remaining
+  const segmentBudget: Record<'CASH' | 'FNO' | 'MCX', number> = {
+    CASH: bookValue * SEGMENT_TARGET_PCT.CASH - perSegmentDeployed.CASH,
+    FNO:  bookValue * SEGMENT_TARGET_PCT.FNO  - perSegmentDeployed.FNO,
+    MCX:  bookValue * SEGMENT_TARGET_PCT.MCX  - perSegmentDeployed.MCX,
+  }
+
+  // Sort candidates highest score first — the best signals fill first
+  const sorted = candidates.slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+
+  for (const c of sorted) {
+    if (opened.length + totalOpen >= RULES.maxConcurrentPositions) break
+    const seg = c._segment as 'CASH' | 'FNO' | 'MCX'
+
+    // Per-segment concurrent-position cap
+    if (perSegmentOpenCount[seg] + opened.filter(t => t.segment === seg).length >= (RULES.maxPerSegment as any)[seg]) continue
 
     // Quality gates
     if (c.tier !== 'ELITE' && c.tier !== 'STRONG') continue
-    if (isEtfSymbol(c.symbol)) continue                        // ETFs excluded
-    if (openSymbols.has(c.symbol)) continue                    // already have position
+    if (isEtfSymbol(c.symbol)) continue
+    if (openSymbols.has(c.symbol)) continue
+    if (!c.entry || !c.stopLoss) continue
 
-    const mc = c.marketCapCr ?? parseShareholdingMc(c.shareholdingNote)
-    if (mc !== undefined && mc < RULES.minMarketCapCr) continue // pump-and-dump risk
-    const pledge = parseShareholdingPledge(c.shareholdingNote)
-    if (pledge !== undefined && pledge >= RULES.maxPledgePct) continue
+    // CASH gates: MC ≥ ₹500 Cr, pledge < 20%, LONG only
+    if (seg === 'CASH') {
+      const mc = c.marketCapCr ?? parseShareholdingMc(c.shareholdingNote)
+      if (mc !== undefined && mc < RULES.minMarketCapCr) continue
+      const pledge = parseShareholdingPledge(c.shareholdingNote)
+      if (pledge !== undefined && pledge >= RULES.maxPledgePct) continue
+      if (c.direction === 'SHORT' || c.side === 'SHORT') continue
+    }
+    // FNO gates: MC ≥ ₹500 Cr, pledge < 20% (but allow SHORT — it's derivatives)
+    if (seg === 'FNO') {
+      const mc = c.marketCapCr ?? parseShareholdingMc(c.shareholdingNote)
+      if (mc !== undefined && mc < RULES.minMarketCapCr) continue
+      const pledge = parseShareholdingPledge(c.shareholdingNote)
+      if (pledge !== undefined && pledge >= RULES.maxPledgePct) continue
+    }
+    // MCX: no shareholding gate (commodities don't have that concept)
 
-    if (!c.entry || !c.stopLoss) continue                      // incomplete trade plan
-    if (c.direction === 'SHORT') continue                      // paper account long-only for cash equities
+    // Segment budget remaining
+    if (segmentBudget[seg] <= 0) continue
 
-    // Sizing
+    // Determine direction — cash is LONG, FNO/MCX honour signal side
+    const dirRaw = String(c.side ?? c.direction ?? 'LONG').toUpperCase()
+    const direction: 'LONG' | 'SHORT' = dirRaw === 'SHORT' || dirRaw === 'SELL' || dirRaw === 'BEARISH' ? 'SHORT' : 'LONG'
+
+    // Sizing capped by segment budget + tier weight
+    const segBudgetLeft = segmentBudget[seg]
+    const tierAllocInr = Math.min(segBudgetLeft, bookValue * RULES.tierAlloc[c.tier as 'ELITE' | 'STRONG'])
     const availableAfter = availableCash - opened.reduce((s, t) => s + t.positionValue, 0)
-    const qty = computeQty(c.entry, c.stopLoss, c.tier, bookValue, availableAfter)
+    const qty = computeQtyWithSegCap(c.entry, c.stopLoss, c.tier as 'ELITE' | 'STRONG', bookValue, availableAfter, tierAllocInr)
     if (qty <= 0) continue
 
     const positionValue = qty * c.entry
     const riskAmount = qty * Math.abs(c.entry - c.stopLoss)
 
     const trade: TradeEntry = {
-      id: `${c.symbol}-${now}-LONG`,
+      id: `${c.symbol}-${now}-${direction}`,
       symbol: c.symbol,
-      segment: c.segment === 'FNO' ? 'FNO' : 'CASH',
-      direction: 'LONG',
+      segment: seg,
+      direction,
       source: c.source,
       tier: c.tier,
       score: c.score,
@@ -359,7 +439,7 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
       target3: c.target3,
       entryReason: c.unifiedReason ?? (Array.isArray(c.reasoning) ? c.reasoning.join(' · ') : ''),
       shareholdingNote: c.shareholdingNote,
-      marketCapCr: mc,
+      marketCapCr: c.marketCapCr,
       status: 'OPEN',
       exits: [],
       daysHeld: 0,
@@ -370,75 +450,97 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     }
     opened.push(trade)
     openSymbols.add(c.symbol)
+    segmentBudget[seg] -= positionValue
   }
+  log.info('PAPER', `opened ${opened.length} · CASH ${opened.filter(t => t.segment === 'CASH').length} · FNO ${opened.filter(t => t.segment === 'FNO').length} · MCX ${opened.filter(t => t.segment === 'MCX').length}`)
   return opened
+}
+
+/**
+ * Sizing variant with an explicit tier/segment cap in ₹ — used when the
+ * segment budget or tier target is smaller than the default 15/8% weights.
+ */
+function computeQtyWithSegCap(entry: number, stopLoss: number, tier: 'ELITE' | 'STRONG', bookValue: number, cash: number, segCapInr: number): number {
+  if (entry <= 0 || stopLoss <= 0) return 0
+  const riskPerShare = Math.abs(entry - stopLoss)
+  if (riskPerShare <= 0) return 0
+  const maxRiskInr = bookValue * RULES.riskPerTradePct
+  const riskBasedQty = Math.floor(maxRiskInr / riskPerShare)
+  const segBasedQty = Math.floor(segCapInr / entry)
+  const capBasedQty = Math.floor((bookValue * RULES.positionCapPct) / entry)
+  const cashBasedQty = Math.floor(cash / entry)
+  // Suppress unused-var warning while keeping the same tier-aware sizing helper API
+  void tier
+  return Math.max(0, Math.min(riskBasedQty, segBasedQty, capBasedQty, cashBasedQty))
 }
 
 // ─── Exit management ────────────────────────────────────────────────
 
 async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
-  // Pull recent daily candles to detect T/SL touches since entry.
-  const candles: Candle[] = await getCandles(trade.symbol, '1D', 30).catch(() => [])
+  // Pull recent daily candles to detect T/SL touches since entry. Use the
+  // underlying symbol for MCX rows (they carry an `underlying` key when
+  // the display symbol has a suffix like "-MCX").
+  const fetchKey = (trade as any).underlying ?? trade.symbol.replace('-MCX', '')
+  const candles: Candle[] = await getCandles(fetchKey, '1D', 30).catch(() => [])
   if (candles.length === 0) return
 
-  // Only consider bars STRICTLY AFTER the entry date. Same-day exits are
-  // ambiguous with EOD-only data (we can't know the intraday sequence, and
-  // in reality, if you buy on the open, you wouldn't be stopped out by the
-  // same day's low unless you got very unlucky at market open). Blocking
-  // same-day exits avoids that noise + prevents false SL hits on gap-down
-  // opens where our engine chose entry from a stale HQS snapshot.
   const entryEndMs = new Date(trade.entryDate + 'T23:59:59+05:30').getTime()
   const barsSinceEntry = candles.filter(c => c.time > entryEndMs)
+  const isShort = trade.direction === 'SHORT'
   if (barsSinceEntry.length === 0) {
-    // No post-entry data yet — mark to the last available close (which
-    // may be the entry day's close), no exit check
     const lastAvailable = candles[candles.length - 1]
-    trade.unrealisedPnl = trade.remainingQty * (lastAvailable.close - trade.entryPrice)
+    const pnlPerUnit = isShort ? (trade.entryPrice - lastAvailable.close) : (lastAvailable.close - trade.entryPrice)
+    trade.unrealisedPnl = trade.remainingQty * pnlPerUnit
     trade.totalPnl = trade.totalRealisedPnl + trade.unrealisedPnl
     trade.returnPct = trade.positionValue > 0 ? (trade.totalPnl / trade.positionValue) * 100 : 0
     return
   }
 
-  // Walk each bar chronologically; check T1 → T2 → T3 → SL in order.
+  // Walk each bar chronologically; for LONG check T1 → T2 → T3 (bar.high) and
+  // SL on bar.low. For SHORT the sign flips: SL is bar.high >= stopLoss (SL
+  // is above entry), targets are bar.low <= target (targets are below entry).
   for (const bar of barsSinceEntry) {
     if (trade.remainingQty <= 0) break
-
     const barDate = new Date(bar.time + 5.5 * 3600_000).toISOString().slice(0, 10)
 
-    // SL check (LONG only for now)
-    if (bar.low <= trade.stopLoss && !trade.exits.some(e => e.reason === 'SL_HIT')) {
+    // SL check (direction-aware)
+    const slHit = isShort ? (bar.high >= trade.stopLoss) : (bar.low <= trade.stopLoss)
+    if (slHit && !trade.exits.some(e => e.reason === 'SL_HIT')) {
       const exitQty = trade.remainingQty
-      const pnl = (trade.stopLoss - trade.entryPrice) * exitQty
+      const pnl = (isShort ? (trade.entryPrice - trade.stopLoss) : (trade.stopLoss - trade.entryPrice)) * exitQty
       trade.exits.push({ date: barDate, price: trade.stopLoss, qty: exitQty, reason: 'SL_HIT', pnl })
       trade.remainingQty = 0
       trade.totalRealisedPnl += pnl
       trade.status = 'SL_HIT'
       break
     }
-    // T1 partial exit
-    if (bar.high >= trade.target1 && !trade.exits.some(e => e.reason === 'T1_HIT')) {
+    // T1 partial (direction-aware)
+    const t1Hit = isShort ? (bar.low <= trade.target1) : (bar.high >= trade.target1)
+    if (t1Hit && !trade.exits.some(e => e.reason === 'T1_HIT')) {
       const t1Qty = Math.floor(trade.qty * RULES.exitPartials.T1)
       const exitQty = Math.min(t1Qty, trade.remainingQty)
-      const pnl = (trade.target1 - trade.entryPrice) * exitQty
+      const pnl = (isShort ? (trade.entryPrice - trade.target1) : (trade.target1 - trade.entryPrice)) * exitQty
       trade.exits.push({ date: barDate, price: trade.target1, qty: exitQty, reason: 'T1_HIT', pnl })
       trade.remainingQty -= exitQty
       trade.totalRealisedPnl += pnl
       trade.status = 'T1_HIT'
     }
-    // T2 partial exit
-    if (bar.high >= trade.target2 && !trade.exits.some(e => e.reason === 'T2_HIT')) {
+    // T2 partial (direction-aware)
+    const t2Hit = isShort ? (bar.low <= trade.target2) : (bar.high >= trade.target2)
+    if (t2Hit && !trade.exits.some(e => e.reason === 'T2_HIT')) {
       const t2Qty = Math.floor(trade.qty * RULES.exitPartials.T2)
       const exitQty = Math.min(t2Qty, trade.remainingQty)
-      const pnl = (trade.target2 - trade.entryPrice) * exitQty
+      const pnl = (isShort ? (trade.entryPrice - trade.target2) : (trade.target2 - trade.entryPrice)) * exitQty
       trade.exits.push({ date: barDate, price: trade.target2, qty: exitQty, reason: 'T2_HIT', pnl })
       trade.remainingQty -= exitQty
       trade.totalRealisedPnl += pnl
       trade.status = 'T2_HIT'
     }
-    // T3 final exit
-    if (bar.high >= trade.target3 && trade.remainingQty > 0) {
+    // T3 final exit (direction-aware)
+    const t3Hit = isShort ? (bar.low <= trade.target3) : (bar.high >= trade.target3)
+    if (t3Hit && trade.remainingQty > 0) {
       const exitQty = trade.remainingQty
-      const pnl = (trade.target3 - trade.entryPrice) * exitQty
+      const pnl = (isShort ? (trade.entryPrice - trade.target3) : (trade.target3 - trade.entryPrice)) * exitQty
       trade.exits.push({ date: barDate, price: trade.target3, qty: exitQty, reason: 'T3_HIT', pnl })
       trade.remainingQty = 0
       trade.totalRealisedPnl += pnl
@@ -452,16 +554,17 @@ async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
     const lastBar = barsSinceEntry[barsSinceEntry.length - 1]
     const lastDate = new Date(lastBar.time + 5.5 * 3600_000).toISOString().slice(0, 10)
     const exitQty = trade.remainingQty
-    const pnl = (lastBar.close - trade.entryPrice) * exitQty
+    const pnl = (isShort ? (trade.entryPrice - lastBar.close) : (lastBar.close - trade.entryPrice)) * exitQty
     trade.exits.push({ date: lastDate, price: lastBar.close, qty: exitQty, reason: 'TIME_STOP', pnl })
     trade.remainingQty = 0
     trade.totalRealisedPnl += pnl
     trade.status = 'TIME_STOP'
   }
 
-  // Mark-to-market on the leftover qty
+  // Mark-to-market on the leftover qty (direction-aware)
   const lastClose = barsSinceEntry[barsSinceEntry.length - 1].close
-  trade.unrealisedPnl = trade.remainingQty * (lastClose - trade.entryPrice)
+  const perUnit = isShort ? (trade.entryPrice - lastClose) : (lastClose - trade.entryPrice)
+  trade.unrealisedPnl = trade.remainingQty * perUnit
   trade.totalPnl = trade.totalRealisedPnl + trade.unrealisedPnl
   trade.returnPct = trade.positionValue > 0 ? (trade.totalPnl / trade.positionValue) * 100 : 0
   trade.daysHeld = barsSinceEntry.length

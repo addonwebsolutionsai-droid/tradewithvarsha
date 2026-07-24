@@ -207,11 +207,20 @@ async function main() {
       const newAdj = (tune?.adjustments ?? []).filter(a => a.ts >= new Date(Date.now() - 24 * 3600_000).toISOString()).length
       return `${overrides} strategy overrides · +${newAdj} new adjustments`
     }],
+    // ─── Commodity signals scan — MCX Gold / Silver / Crude / NatGas /
+    //     Copper via international futures on Yahoo (GC=F / SI=F / CL=F /
+    //     NG=F / HG=F). Writes commodity-signals.json which paper trading
+    //     book reads for its MCX allocation bucket.
+    ['commodity-scan', async () => {
+      const m = await import('../src/engine/commodityScanner')
+      const r = await m.runCommodityScan()
+      return `${r.rows.length} MCX setups (${r.eliteCount} elite · ${r.strongCount} strong)`
+    }],
     // ─── Paper Trading Book — the ₹10L test account. Runs AFTER
-    //     high-quality-setups is fresh so it reads today's picks. Marks
-    //     all open positions to market via Yahoo daily candles, processes
-    //     T1/T2/T3/SL exits, opens new positions per tier + quality gates,
-    //     writes trading-journal.json for stocksbyvarsha to consume.
+    //     high-quality-setups AND commodity-scan are fresh so it can
+    //     source from both. Marks all open positions to market, processes
+    //     T1/T2/T3/SL exits, opens new positions across CASH (60%) / FNO
+    //     (20%) / MCX (20%) segments per tier + quality gates.
     ['paper-trading', async () => {
       const m = await import('../src/engine/paperTradingBook')
       const book = await m.runPaperTradingDailyTick()
