@@ -299,6 +299,19 @@ async function main() {
     log.err('TICK', `oi-monitor: ${(e as Error).message}`)
   }
 
+  // ─── 4a. OI Buildup snapshot writer — extracted from publicSnapshots.ts
+  //         so the /oi-buildup public page gets a real-time refresh on GH
+  //         Actions runners too (previously only localhost cron wrote it,
+  //         so the file went stale for days at a time). Writes 5 min tick.
+  try {
+    const { writeOiBuildupSnapshot } = await import('../src/engine/oiBuildupWriter')
+    const r = await writeOiBuildupSnapshot()
+    results['oi-buildup'] = `${r.rows} rows · ${r.symbols.length} symbols · ${r.dataMode}`
+  } catch (e) {
+    results['oi-buildup'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `oi-buildup: ${(e as Error).message}`)
+  }
+
   // ─── 4b. Lifecycle backfill — small chunk per tick so we chew through
   //         historical stuck-OPEN entries without blowing the 4-min budget.
   try {

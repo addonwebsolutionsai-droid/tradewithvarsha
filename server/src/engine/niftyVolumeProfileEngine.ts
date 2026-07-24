@@ -140,7 +140,10 @@ export async function runNiftyVolumeProfile(): Promise<NiftyVpForecast | null> {
 
   for (const tf of TFS) {
     try {
-      let candles = await getCandles('NIFTY 50', tf.source, 250)
+      // 'NIFTY' is the canonical key in the SYMBOLS map — resolves to
+      // Yahoo ^NSEI. Using the literal string 'NIFTY 50' (previous value)
+      // fell through the map and Yahoo returned 404 for "NIFTY 50.NS".
+      let candles = await getCandles('NIFTY', tf.source, 250)
       if (candles.length < 10) continue
       const srcMin = tf.source === '5m' ? 5 : tf.source === '15m' ? 15 : tf.source === '30m' ? 30 : tf.source === '1h' ? 60 : tf.source === '1D' ? 1440 : 15
       if (tf.resampleTo) candles = resample(candles, tf.resampleTo, srcMin)
@@ -285,10 +288,35 @@ export async function runAndPublishNiftyVolumeProfile(): Promise<{
   spot: number
   setup: string
 }> {
-  const forecast = await runNiftyVolumeProfile()
-  if (!forecast) return { ok: false, bias: 'NEUTRAL', confidence: 'LOW', spot: 0, setup: '-' }
   const snapPath = path.resolve(__dirname, '../../data/public-snapshots/nifty-volume-profile.json')
   fs.mkdirSync(path.dirname(snapPath), { recursive: true })
+  const forecast = await runNiftyVolumeProfile()
+
+  // Always write SOMETHING to the snapshot. Previously, when runNiftyVolumeProfile
+  // returned null (e.g. Angel isn't logged in on the GH Actions runner and Yahoo
+  // 5m/15m NIFTY intraday data isn't available), we skipped the write entirely —
+  // the client then 404'd forever with "Couldn't load NIFTY Volume Profile".
+  // Now we write an explicit "no data" placeholder so the UI can render a clean
+  // "next refresh in ~4 min" message rather than a fetch error.
+  if (!forecast) {
+    const placeholder = {
+      generatedAt: new Date().toISOString(),
+      status: 'NO_DATA',
+      note: 'NIFTY intraday candles unavailable on this tick. Common causes: Angel session not established on the GH Actions runner, or Yahoo intraday feed empty. Next tick (~4 min during market hours) will retry.',
+      spot: 0,
+      compositeBias: 'NEUTRAL',
+      confidence: 'LOW',
+      bullTfCount: 0,
+      bearTfCount: 0,
+      agreementScore: 0,
+      timeframes: [],
+      strongestSetup: null,
+      tradeRecommendation: null,
+    }
+    fs.writeFileSync(snapPath, JSON.stringify(placeholder, null, 2))
+    return { ok: false, bias: 'NEUTRAL', confidence: 'LOW', spot: 0, setup: '-' }
+  }
+
   fs.writeFileSync(snapPath, JSON.stringify(forecast, null, 2))
   return {
     ok: true,
