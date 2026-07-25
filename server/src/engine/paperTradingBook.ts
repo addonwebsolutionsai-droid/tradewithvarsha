@@ -315,20 +315,178 @@ function computeQty(entry: number, stopLoss: number, tier: 'ELITE' | 'STRONG', b
 const COMMODITY_SNAPSHOT_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'commodity-signals.json')
 const NIFTY_OUTLOOK_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'nifty-outlook.json')
 const OPTIONS_RADAR_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'options-radar.json')
+// Additional signal sources — extend the book's universe beyond just HQS
+// so all engines' output can actually make the book money.
+const CHART_PATTERNS_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'chart-patterns.json')
+const HARMONIC_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'harmonic.json')
+const ELLIOTT_WAVE_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'elliott-wave.json')
+const FNO_FUTURES_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'fno-futures.json')
+const STOCK_FNO_VP_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'stock-fno-volume-profile.json')
 
 /**
  * Gather candidate signals across all three segments, tag them with the
  * segment their allocation comes from, then filter + size per segment budget.
  */
-function gatherCandidates(): Array<any & { _segment: 'CASH' | 'FNO' | 'MCX' }> {
+// F&O eligibility check — cached for the tick. NIFTY-Angel scrip master
+// carries the FUTSTK entries; anything appearing there is F&O eligible.
+let _fnoEligibleCache: Set<string> | null = null
+async function isFnoEligible(symbol: string): Promise<boolean> {
+  if (!_fnoEligibleCache) {
+    _fnoEligibleCache = new Set<string>()
+    try {
+      const angel = await import('../data/angel')
+      const sm = await angel.loadScripMaster()
+      if (sm) {
+        for (const s of sm) {
+          if (s.exch_seg === 'NFO' && s.instrumenttype === 'FUTSTK' && s.name) {
+            _fnoEligibleCache.add(s.name.toUpperCase())
+          }
+        }
+      }
+    } catch { /* if Angel fails, treat everything as CASH */ }
+    // Always include indices
+    _fnoEligibleCache.add('NIFTY').add('BANKNIFTY').add('FINNIFTY').add('MIDCPNIFTY').add('SENSEX')
+  }
+  return _fnoEligibleCache.has(symbol.toUpperCase())
+}
+
+/**
+ * Normalise a row from any engine snapshot into the paper-book candidate
+ * shape. Returns null if the row is unusable (missing entry/SL/targets).
+ */
+function normaliseCandidate(row: any, source: string, defaultTier?: 'ELITE' | 'STRONG'): any | null {
+  if (!row || !row.symbol) return null
+  if (!row.entry || !row.stopLoss || !row.target1) return null
+  // Score fallback chain: score → conviction → confidence numeric → compositeStrength
+  const score = row.score ?? row.conviction ?? row.compositeStrength ??
+                (typeof row.confidence === 'number' ? row.confidence : undefined) ?? 0
+  const numericScore = Number(score)
+  if (!Number.isFinite(numericScore) || numericScore <= 0) return null
+  // Tier from score if not present
+  const tier: 'ELITE' | 'STRONG' | 'DECENT' =
+    row.tier ?? (numericScore >= 80 ? 'ELITE' : numericScore >= 60 ? 'STRONG' : 'DECENT')
+  const side = String(row.direction ?? row.side ?? 'BUY').toUpperCase()
+  return {
+    symbol: row.symbol,
+    side, direction: side,
+    source,
+    tier: defaultTier ?? tier,
+    score: numericScore,
+    ltp: row.ltp ?? row.entry,
+    entry: row.entry,
+    stopLoss: row.stopLoss,
+    target1: row.target1,
+    target2: row.target2 ?? row.target1,
+    target3: row.target3 ?? row.target2 ?? row.target1,
+    entryDate: row.entryDate,
+    target1Date: row.target1Date,
+    target2Date: row.target2Date,
+    target3Date: row.target3Date,
+    slDate: row.slDate,
+    shareholdingNote: row.shareholdingNote,
+    marketCapCr: row.marketCapCr,
+    reasoning: Array.isArray(row.reasons) ? row.reasons : Array.isArray(row.reasoning) ? row.reasoning : [],
+    unifiedReason: typeof row.unifiedReason === 'string' ? row.unifiedReason :
+                   (row.unifiedReason?.collapsed ?? row.pattern ?? row.setup ?? ''),
+    pattern: row.pattern,
+  }
+}
+
+async function gatherCandidates(): Promise<Array<any & { _segment: 'CASH' | 'FNO' | 'MCX' }>> {
   const out: any[] = []
-  // CASH — long only, quality-gated equities
+  const seen = new Set<string>()   // dedup by (symbol, source-family) so same signal from HQS + raw engine doesn't double-count
+
+  const push = async (c: any, seg?: 'CASH' | 'FNO' | 'MCX') => {
+    if (!c || !c.symbol) return
+    const key = `${c.symbol}-${c.side}`
+    if (seen.has(key)) return
+    seen.add(key)
+    // Auto-classify segment if not provided (async F&O eligibility check)
+    let _segment = seg
+    if (!_segment) _segment = (await isFnoEligible(c.symbol)) ? 'FNO' : 'CASH'
+    out.push({ ...c, _segment, segment: _segment })
+  }
+
+  // ─── HQS (existing) — vp-fib + pro-edge + cross-confluence + weekly/daily
   if (fs.existsSync(HQS_SNAPSHOT_FILE)) {
     try {
       const hqs = JSON.parse(fs.readFileSync(HQS_SNAPSHOT_FILE, 'utf-8'))
-      for (const c of (hqs.cash ?? [])) out.push({ ...c, _segment: 'CASH' })
-      for (const c of (hqs.fno ?? [])) out.push({ ...c, _segment: 'FNO' })
+      for (const c of (hqs.cash ?? [])) await push({ ...c, _segment: 'CASH' }, 'CASH')
+      for (const c of (hqs.fno ?? [])) await push({ ...c, _segment: 'FNO' }, 'FNO')
     } catch (e) { log.warn('PAPER', `HQS read failed: ${(e as Error).message}`) }
+  }
+
+  // ─── Chart Patterns (193 signals typical) — segment inferred from F&O eligibility
+  if (fs.existsSync(CHART_PATTERNS_FILE)) {
+    try {
+      const cp = JSON.parse(fs.readFileSync(CHART_PATTERNS_FILE, 'utf-8'))
+      let added = 0
+      for (const r of (cp.rows ?? [])) {
+        // Chart-patterns uses `confidence` as a string label sometimes;
+        // treat "HIGH" as 85, "MEDIUM" as 70, "LOW" as 55
+        const conf = typeof r.confidence === 'string'
+          ? (r.confidence === 'HIGH' ? 85 : r.confidence === 'MEDIUM' ? 70 : 55)
+          : (r.confidence ?? r.score ?? 0)
+        const norm = normaliseCandidate({ ...r, score: conf }, 'CHART-PATTERN')
+        if (norm && norm.score >= 70) { await push(norm); added++ }
+      }
+      if (added > 0) log.info('PAPER', `+${added} chart-pattern candidates`)
+    } catch (e) { log.warn('PAPER', `chart-patterns read failed: ${(e as Error).message}`) }
+  }
+
+  // ─── Harmonic (74 signals typical) — CASH/FNO by eligibility
+  if (fs.existsSync(HARMONIC_FILE)) {
+    try {
+      const h = JSON.parse(fs.readFileSync(HARMONIC_FILE, 'utf-8'))
+      let added = 0
+      for (const r of (h.rows ?? [])) {
+        const norm = normaliseCandidate(r, 'HARMONIC')
+        if (norm && norm.score >= 70) { await push(norm); added++ }
+      }
+      if (added > 0) log.info('PAPER', `+${added} harmonic candidates`)
+    } catch (e) { log.warn('PAPER', `harmonic read failed: ${(e as Error).message}`) }
+  }
+
+  // ─── Elliott Wave (25 signals typical)
+  if (fs.existsSync(ELLIOTT_WAVE_FILE)) {
+    try {
+      const ew = JSON.parse(fs.readFileSync(ELLIOTT_WAVE_FILE, 'utf-8'))
+      let added = 0
+      for (const r of (ew.rows ?? [])) {
+        const norm = normaliseCandidate(r, 'ELLIOTT-WAVE')
+        if (norm && norm.score >= 70) { await push(norm); added++ }
+      }
+      if (added > 0) log.info('PAPER', `+${added} elliott-wave candidates`)
+    } catch (e) { log.warn('PAPER', `elliott-wave read failed: ${(e as Error).message}`) }
+  }
+
+  // ─── F&O Futures scanner (25 signals typical) — always FNO segment
+  if (fs.existsSync(FNO_FUTURES_FILE)) {
+    try {
+      const fno = JSON.parse(fs.readFileSync(FNO_FUTURES_FILE, 'utf-8'))
+      let added = 0
+      for (const r of (fno.rows ?? [])) {
+        const conf = typeof r.confidence === 'string'
+          ? (r.confidence === 'HIGH' ? 85 : r.confidence === 'MEDIUM' ? 70 : 55)
+          : (r.confidence ?? r.score ?? 0)
+        const norm = normaliseCandidate({ ...r, score: conf }, 'FNO-FUTURES')
+        if (norm && norm.score >= 70) { await push(norm, 'FNO'); added++ }
+      }
+      if (added > 0) log.info('PAPER', `+${added} fno-futures candidates`)
+    } catch (e) { log.warn('PAPER', `fno-futures read failed: ${(e as Error).message}`) }
+  }
+
+  // ─── Stock F&O Volume Profile scanner (191 signals typical) — FNO segment
+  if (fs.existsSync(STOCK_FNO_VP_FILE)) {
+    try {
+      const svp = JSON.parse(fs.readFileSync(STOCK_FNO_VP_FILE, 'utf-8'))
+      let added = 0
+      for (const r of (svp.rows ?? [])) {
+        const norm = normaliseCandidate({ ...r, score: r.compositeStrength }, 'STOCK-FNO-VP')
+        if (norm && norm.score >= 70) { await push(norm, 'FNO'); added++ }
+      }
+      if (added > 0) log.info('PAPER', `+${added} stock-fno-vp candidates`)
+    } catch (e) { log.warn('PAPER', `stock-fno-vp read failed: ${(e as Error).message}`) }
   }
   // MCX — commodity signals from dedicated scanner (Gold/XAUUSD/Silver/Crude/NatGas/Copper)
   if (fs.existsSync(COMMODITY_SNAPSHOT_FILE)) {
@@ -415,7 +573,7 @@ function gatherCandidates(): Array<any & { _segment: 'CASH' | 'FNO' | 'MCX' }> {
 }
 
 async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
-  const candidates = gatherCandidates()
+  const candidates = await gatherCandidates()
   if (candidates.length === 0) {
     log.warn('PAPER', 'no candidates from HQS or commodity-signals — skipping open pass')
     return []
