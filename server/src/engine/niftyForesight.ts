@@ -723,10 +723,37 @@ export async function runAndPublishNiftyForesight(): Promise<{
 }> {
   const fs2 = await import('fs')
   const path2 = await import('path')
-  const foresight = await runNiftyForesight()
-  if (!foresight) return { ok: false, direction: 'NEUTRAL', confidence: 'LOW', netScore: 0, spot: 0, playbook: [] }
   const snapPath = path2.resolve(__dirname, '../../data/public-snapshots/nifty-outlook.json')
   fs2.mkdirSync(path2.dirname(snapPath), { recursive: true })
+  const foresight = await runNiftyForesight()
+
+  // ALWAYS write the snapshot — even on null. The old code silently kept
+  // the stale file, so users saw a 15-day-old smart-money-level while
+  // spot had moved 800 points. Now every tick either overwrites with
+  // fresh signals OR overwrites with a NO_DATA placeholder that carries
+  // the actual failure reason so on next tick we know what to fix.
+  if (!foresight) {
+    const placeholder = {
+      generatedAt: new Date().toISOString(),
+      status: 'NO_DATA',
+      note: 'NIFTY foresight engine returned null — likely one of: (a) option-chain fetch from NSE returned no expiries (rate-limited or 404), (b) NIFTY daily candles < 60 (Yahoo NIFTY key mismatch or Angel session down). Next tick (~5 min) will retry. See engine logs for the specific line that fired.',
+      spot: 0,
+      direction: 'NEUTRAL',
+      confidence: 'LOW',
+      bullScore: 0,
+      bearScore: 0,
+      netScore: 0,
+      sessionState: 'MARKET_CLOSED',
+      tradePlan: null,
+      reasoning: {},
+      smartMoneyLevel: 0,
+      smartMoneyDirection: 'NEUTRAL',
+      playbookDetected: [],
+    }
+    fs2.writeFileSync(snapPath, JSON.stringify(placeholder, null, 2))
+    log.warn('NIFTY-FORESIGHT', 'wrote NO_DATA placeholder (engine returned null)')
+    return { ok: false, direction: 'NEUTRAL', confidence: 'LOW', netScore: 0, spot: 0, playbook: [] }
+  }
   fs2.writeFileSync(snapPath, JSON.stringify(foresight, null, 2))
   return {
     ok: true,
@@ -741,12 +768,17 @@ export async function runAndPublishNiftyForesight(): Promise<{
 export async function runNiftyForesight(): Promise<NiftyForesight | null> {
   const oc = await fetchNiftyAllExpiries()
   if (!oc || oc.expiries.length === 0) {
-    log.warn('NIFTY-FORESIGHT', 'no OC data — skipping')
+    log.warn('NIFTY-FORESIGHT', 'no OC data — skipping (fetchNiftyAllExpiries returned empty)')
     return null
   }
-  const candles = await getCandles('NIFTY 50', '1D', 250)
+  // 'NIFTY' is the canonical key in the SYMBOLS map (→ ^NSEI on Yahoo,
+  // → index token on Angel). Using literal 'NIFTY 50' bypasses the map
+  // and Yahoo returns 404 for "NIFTY 50.NS". This bug stale-froze the
+  // snapshot on 2026-07-10 for 15 days — same pattern as the
+  // niftyVolumeProfile fix from 2026-07-24.
+  const candles = await getCandles('NIFTY', '1D', 250)
   if (candles.length < 60) {
-    log.warn('NIFTY-FORESIGHT', `only ${candles.length} candles — need 60+`)
+    log.warn('NIFTY-FORESIGHT', `only ${candles.length} candles — need 60+ (data source likely down: Angel session? Yahoo throttle?)`)
     return null
   }
 

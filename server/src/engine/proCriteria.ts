@@ -48,7 +48,8 @@ async function buildMarketContext(): Promise<MarketContext> {
   // NIFTY 50 candles for regime + RS base
   let niftyCloses: number[] = []
   try {
-    const c = await getCandles('NIFTY 50', '1D' as any, 250)
+    // Canonical key — 'NIFTY 50' bypasses SYMBOLS map and 404s on Yahoo.
+    const c = await getCandles('NIFTY', '1D' as any, 250)
     niftyCloses = (c ?? []).map(x => x.close).filter(Number.isFinite)
   } catch { /* fall through */ }
 
