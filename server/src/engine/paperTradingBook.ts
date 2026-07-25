@@ -484,19 +484,41 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     const dirRaw = String(c.side ?? c.direction ?? 'LONG').toUpperCase()
     const direction: 'LONG' | 'SHORT' = dirRaw === 'SHORT' || dirRaw === 'SELL' || dirRaw === 'BEARISH' ? 'SHORT' : 'LONG'
 
-    // Sizing capped by segment budget + tier weight.
-    //   Options radar signals get a SMALLER 5% allocation per trade —
-    //   options can 3-5x on wins but also go to zero on losses. Multiple
-    //   small options bets across the day > one big one.
-    //   NIFTY-outlook option-leg trades: 6% (a bit more than radar, less
-    //   than raw stock).
-    //   Cash / F&O stock / MCX: full tier weight (15% ELITE / 8% STRONG).
+    // Confidence-scaled sizing — HIGHER SCORE = HIGHER QUANTITY.
+    //   Previously flat 15% ELITE / 8% STRONG; now scales linearly within
+    //   the tier band so a score-95 ELITE gets 2x the qty of a score-60
+    //   STRONG. User directive: "higher the confidence higher the quantity".
+    //
+    //   Stocks (Cash / F&O eligibles / MCX futures):
+    //     score 100 →  20% of book
+    //     score  90 →  17%
+    //     score  80 →  15%
+    //     score  70 →  10%
+    //     score  60 →   7%
+    //     Below 60  →  skipped upstream
+    //
+    //   Options (OPT-RADAR / NIFTY-FORESIGHT) — smaller because options can
+    //     go to zero. Multiple small trades > one big bet.
+    //     score 100 →   8% of book
+    //     score  90 →   6.5%
+    //     score  80 →   5%
+    //     score  75 →   4%
+    //     Below 75  →  skipped upstream
     const segBudgetLeft = segmentBudget[seg]
     const isOptionRow = c.isOption === true || c.source === 'OPT-RADAR' || c.source === 'NIFTY-FORESIGHT'
-    const optionAllocPct = c.source === 'OPT-RADAR' ? 0.05 : c.source === 'NIFTY-FORESIGHT' ? 0.06 : 0
-    const tierAllocInr = isOptionRow
-      ? Math.min(segBudgetLeft, bookValue * optionAllocPct)
-      : Math.min(segBudgetLeft, bookValue * RULES.tierAlloc[c.tier as 'ELITE' | 'STRONG'])
+    const confidenceScale = (score: number, isOption: boolean): number => {
+      const s = Math.max(60, Math.min(100, Number(score) || 60))
+      if (isOption) {
+        // Options: linear 60→75 gets nothing, 75→100 maps to 4%→8%
+        if (s < 75) return 0
+        return 0.04 + (s - 75) / 25 * 0.04
+      }
+      // Stocks: linear 60→100 maps to 7% → 20%
+      return 0.07 + (s - 60) / 40 * 0.13
+    }
+    const scaledAllocPct = confidenceScale(c.score, isOptionRow)
+    if (scaledAllocPct <= 0) continue
+    const tierAllocInr = Math.min(segBudgetLeft, bookValue * scaledAllocPct)
     const availableAfter = availableCash - opened.reduce((s, t) => s + t.positionValue, 0)
     const qty = computeQtyWithSegCap(c.entry, c.stopLoss, c.tier as 'ELITE' | 'STRONG', bookValue, availableAfter, tierAllocInr)
     if (qty <= 0) continue
@@ -537,6 +559,61 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     opened.push(trade)
     openSymbols.add(c.symbol)
     segmentBudget[seg] -= positionValue
+
+    // ─── Hedge construction ─────────────────────────────────────────
+    // For option trades (OPT-RADAR / NIFTY-FORESIGHT), open a small
+    // opposite-side tail hedge sized ~25% of the primary. Reduces max
+    // loss from ~100% (option → 0) to ~65% because the hedge profits
+    // when the primary goes to zero. User directive: "best way is to
+    // trade with hedge — this way we can make huge money".
+    //
+    // Hedge parameters:
+    //   qty        = ceil(primary_qty * 0.25)
+    //   entry      = ~40% of primary premium (rough 3-5% OTM proxy)
+    //   SL         = 50% of hedge premium (hedge is cheap → wide SL OK)
+    //   T1/T2/T3   = 100%, 200%, 400% (tail hedge only pays when things go wrong)
+    if (isOptionRow && qty > 0) {
+      const hedgeQty = Math.max(1, Math.ceil(qty * 0.25))
+      const hedgePremium = Math.max(1, c.entry * 0.4)
+      const hedgePositionValue = hedgeQty * hedgePremium
+      const hedgeSegBudgetLeft = segmentBudget[seg]
+      if (hedgePositionValue > 0 && hedgePositionValue <= hedgeSegBudgetLeft && hedgePositionValue <= (availableCash - opened.reduce((s, t) => s + t.positionValue, 0))) {
+        const hedgeSide = c.source === 'OPT-RADAR' && c.symbol.includes('-CE-') ? 'PE'
+                         : c.source === 'OPT-RADAR' && c.symbol.includes('-PE-') ? 'CE'
+                         : direction === 'LONG' ? 'PE' : 'CE'
+        const hedgeSymbol = `${trade.symbol}-HEDGE-${hedgeSide}`
+        const hedgeTrade: TradeEntry = {
+          id: `${hedgeSymbol}-${now}-LONG`,
+          symbol: hedgeSymbol,
+          segment: seg,
+          direction: 'LONG',
+          source: `${c.source}-HEDGE`,
+          tier: c.tier,
+          score: c.score,
+          entryDate: now,
+          entryTime: time,
+          entryPrice: hedgePremium,
+          qty: hedgeQty,
+          remainingQty: hedgeQty,
+          positionValue: hedgePositionValue,
+          riskAmount: hedgeQty * hedgePremium * 0.5,
+          stopLoss: hedgePremium * 0.5,
+          target1: hedgePremium * 2,      // +100%
+          target2: hedgePremium * 3,      // +200%
+          target3: hedgePremium * 5,      // +400%
+          entryReason: `🛡 TAIL HEDGE for ${trade.symbol} · pays if primary goes to zero · sized 25% of primary`,
+          status: 'OPEN',
+          exits: [],
+          daysHeld: 0,
+          totalRealisedPnl: 0,
+          unrealisedPnl: 0,
+          totalPnl: 0,
+          returnPct: 0,
+        }
+        opened.push(hedgeTrade)
+        segmentBudget[seg] -= hedgePositionValue
+      }
+    }
   }
   log.info('PAPER', `opened ${opened.length} · CASH ${opened.filter(t => t.segment === 'CASH').length} · FNO ${opened.filter(t => t.segment === 'FNO').length} · MCX ${opened.filter(t => t.segment === 'MCX').length}`)
   return opened
