@@ -128,6 +128,28 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
             >
               🗄️ Archive
             </Link>
+            {/* 2026-07-25: Journal — the ₹10L paper trading book. Sits
+                next to Archive per user directive; both are meta/audit
+                surfaces (Archive = closed signals, Journal = executed
+                trades with full P&L). Auto-updated every EOD cron. */}
+            <Link
+              to="/journal"
+              className="text-[11px] px-2 py-0.5 rounded border border-accent-cyan/40 bg-accent-cyan/10 text-accent-cyan hover:bg-accent-cyan/20"
+              title="₹10L auto-managed paper trading book — every trade with entry / SL / T1-T2-T3 / target dates / reason / P&L"
+            >
+              📓 Journal
+            </Link>
+            {/* 2026-07-25: NIFTY Outlook moved from primary nav to header
+                (next to Journal) per user directive. Same meta/audit
+                treatment — it's a single directional call, not a
+                per-symbol scan feed. Route /nifty-outlook still works. */}
+            <Link
+              to="/nifty-outlook"
+              className="text-[11px] px-2 py-0.5 rounded border border-accent-amber/40 bg-accent-amber/10 text-accent-amber hover:bg-accent-amber/20"
+              title="NIFTY Directional Foresight — multi-expiry OI + max-pain drift + PCR + cycles + KP+Bradley + playbook. Unified BULLISH/BEARISH call with dated entry/SL/T1-T2-T3."
+            >
+              🧭 NIFTY Outlook
+            </Link>
             <span
               className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green"
               title="Free public mode — picks refreshed every 30 minutes from the live trading engine"

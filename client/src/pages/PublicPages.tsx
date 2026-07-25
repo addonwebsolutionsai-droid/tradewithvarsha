@@ -4584,20 +4584,23 @@ export function PublicJournalPage(): JSX.Element {
                 <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
                 <th className="text-center px-2 py-3">Tier</th>
                 <th className="text-left px-2 py-3">Source</th>
+                <th className="text-left px-2 py-3">Entered</th>
                 <th className="text-right px-2 py-3">Qty</th>
                 <th className="text-right px-2 py-3">Entry ₹</th>
                 <th className="text-right px-2 py-3">Position ₹</th>
-                <th className="text-right px-2 py-3 text-accent-red">SL</th>
-                <th className="text-right px-2 py-3 text-accent-green">T1 / T2 / T3</th>
+                <th className="text-right px-2 py-3 text-accent-red">SL · date</th>
+                <th className="text-right px-2 py-3 text-accent-green">T1 · date</th>
+                <th className="text-right px-2 py-3 text-accent-green">T2 · date</th>
+                <th className="text-right px-2 py-3 text-accent-green">T3 · date</th>
                 <th className="text-right px-2 py-3">Days</th>
                 <th className="text-right px-2 py-3">P&amp;L</th>
                 <th className="text-right px-2 py-3">Return</th>
-                <th className="text-left px-3 py-3">Why</th>
+                <th className="text-left px-3 py-3">Why taken</th>
               </tr>
             </thead>
             <tbody>
               {open.length === 0 && (
-                <tr><td colSpan={12} className="text-center text-neutral-500 py-12">No open positions right now.</td></tr>
+                <tr><td colSpan={14} className="text-center text-neutral-500 py-12">No open positions right now.</td></tr>
               )}
               {open.map((t: any, i: number) => {
                 const tierColor = t.tier === 'ELITE' ? '#ffb454' : '#5fd4ff'
@@ -4607,16 +4610,19 @@ export function PublicJournalPage(): JSX.Element {
                     <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{t.symbol}</td>
                     <td className={`${tdb} text-center`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${tierColor}22`, color: tierColor }}>{t.tier}</span></td>
                     <td className={`${tdb} text-left`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet">{t.source}</span></td>
+                    <td className={`${tdb} text-left text-neutral-400`}>{t.entryDate}{t.entryTime && <div className="text-[9px] text-neutral-600">{t.entryTime} IST</div>}</td>
                     <td className={`${tdb} text-right text-neutral-200`}>{t.qty}{t.remainingQty !== t.qty && <span className="text-neutral-500"> / {t.remainingQty}</span>}</td>
                     <td className={`${tdb} text-right text-neutral-200`}>{fmtInrExact(t.entryPrice)}</td>
                     <td className={`${tdb} text-right text-neutral-200`}>{fmtInr0(t.positionValue)}</td>
-                    <td className={`${tdb} text-right text-accent-red`}>{fmtInrExact(t.stopLoss)}</td>
-                    <td className={`${tdb} text-right text-accent-green`}>{fmtInrExact(t.target1)} / {fmtInrExact(t.target2)} / {fmtInrExact(t.target3)}</td>
+                    <td className={`${tdb} text-right text-accent-red`}>{fmtInrExact(t.stopLoss)}{t.slDate && <div className="text-[9px] text-accent-red/60">📅 {fmtDate(t.slDate)}</div>}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>{fmtInrExact(t.target1)}{t.target1Date && <div className="text-[9px] text-accent-green/60">📅 {fmtDate(t.target1Date)}</div>}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>{fmtInrExact(t.target2)}{t.target2Date && <div className="text-[9px] text-accent-green/60">📅 {fmtDate(t.target2Date)}</div>}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>{fmtInrExact(t.target3)}{t.target3Date && <div className="text-[9px] text-accent-green/60">📅 {fmtDate(t.target3Date)}</div>}</td>
                     <td className={`${tdb} text-right text-neutral-400`}>{t.daysHeld}d</td>
                     <td className={`${tdb} text-right font-bold`} style={{ color: pnlColor(t.totalPnl) }}>{t.totalPnl >= 0 ? '+' : ''}{fmtInr0(t.totalPnl)}</td>
                     <td className={`${tdb} text-right`} style={{ color: pnlColor(t.returnPct) }}>{t.returnPct >= 0 ? '+' : ''}{t.returnPct.toFixed(2)}%</td>
                     <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 280, maxWidth: 400 }} title={t.entryReason}>
-                      <div style={{ display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.entryReason || '—'}</div>
+                      <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.entryReason || '—'}</div>
                     </td>
                   </tr>
                 )
@@ -4633,19 +4639,23 @@ export function PublicJournalPage(): JSX.Element {
               <tr>
                 <th className="text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500">Symbol</th>
                 <th className="text-center px-2 py-3">Tier</th>
-                <th className="text-left px-2 py-3">Entry</th>
+                <th className="text-left px-2 py-3">Source</th>
+                <th className="text-left px-2 py-3">Entered</th>
                 <th className="text-left px-2 py-3">Exit</th>
                 <th className="text-right px-2 py-3">Qty</th>
                 <th className="text-right px-2 py-3">Entry ₹</th>
+                <th className="text-right px-2 py-3 text-accent-red">SL</th>
+                <th className="text-right px-2 py-3 text-accent-green">T1 / T2 / T3</th>
                 <th className="text-center px-2 py-3">Result</th>
                 <th className="text-right px-2 py-3">P&amp;L</th>
                 <th className="text-right px-2 py-3">Return</th>
                 <th className="text-right px-2 py-3">Days</th>
+                <th className="text-left px-3 py-3">Why taken</th>
               </tr>
             </thead>
             <tbody>
               {closed.length === 0 && (
-                <tr><td colSpan={10} className="text-center text-neutral-500 py-12">No closed trades yet — book has been running {d.daysRunning} day(s).</td></tr>
+                <tr><td colSpan={14} className="text-center text-neutral-500 py-12">No closed trades yet — book has been running {d.daysRunning} day(s).</td></tr>
               )}
               {closed.slice().reverse().map((t: any, i: number) => {
                 const tierColor = t.tier === 'ELITE' ? '#ffb454' : '#5fd4ff'
@@ -4655,10 +4665,13 @@ export function PublicJournalPage(): JSX.Element {
                   <tr key={t.id + i} className="group border-t border-ink-500">
                     <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{t.symbol}</td>
                     <td className={`${tdb} text-center`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${tierColor}22`, color: tierColor }}>{t.tier}</span></td>
-                    <td className={`${tdb} text-left text-neutral-400`}>{t.entryDate}</td>
+                    <td className={`${tdb} text-left`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet">{t.source}</span></td>
+                    <td className={`${tdb} text-left text-neutral-400`}>{t.entryDate}{t.entryTime && <div className="text-[9px] text-neutral-600">{t.entryTime} IST</div>}</td>
                     <td className={`${tdb} text-left text-neutral-400`}>{t.exits?.[t.exits.length - 1]?.date ?? '—'}</td>
                     <td className={`${tdb} text-right text-neutral-200`}>{t.qty}</td>
                     <td className={`${tdb} text-right text-neutral-200`}>{fmtInrExact(t.entryPrice)}</td>
+                    <td className={`${tdb} text-right text-accent-red`}>{fmtInrExact(t.stopLoss)}</td>
+                    <td className={`${tdb} text-right text-accent-green`}>{fmtInrExact(t.target1)} / {fmtInrExact(t.target2)} / {fmtInrExact(t.target3)}</td>
                     <td className={`${tdb} text-center`}>
                       <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: isSL ? 'rgba(255,94,124,0.2)' : 'rgba(0,200,83,0.2)', color: isSL ? '#ff5e7c' : '#00c853' }}>
                         {t.status.replace('_', ' ')}
@@ -4667,6 +4680,9 @@ export function PublicJournalPage(): JSX.Element {
                     <td className={`${tdb} text-right font-bold`} style={{ color: pnlColor(t.totalPnl) }}>{t.totalPnl >= 0 ? '+' : ''}{fmtInr0(t.totalPnl)}</td>
                     <td className={`${tdb} text-right`} style={{ color: pnlColor(t.returnPct) }}>{t.returnPct >= 0 ? '+' : ''}{t.returnPct.toFixed(2)}%</td>
                     <td className={`${tdb} text-right text-neutral-400`}>{t.daysHeld}d</td>
+                    <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 260, maxWidth: 400 }} title={t.entryReason}>
+                      <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.entryReason || '—'}</div>
+                    </td>
                   </tr>
                 )
               })}

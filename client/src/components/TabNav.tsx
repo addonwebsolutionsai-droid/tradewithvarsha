@@ -140,12 +140,9 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/elite-picks',  label: '💎🎯 Elite Picks', icon: <Star size={14} />,
       acc: null, highProb: true,
       title: 'Elite Picks — Pedigree Accumulation (institutional FII/DII/Promoter build) + PRO Edge (multi-engine confluence, conv ≥ 85) MERGED. Symbols in both get 🔥 DOUBLE-CONFLUENCE tag. Sorted by combined score.' },
-    // 2026-07-24 — Paper Trading Book ₹10L test. Auto-managed by EOD cron.
-    // Public-facing so users can see how the signals actually perform on
-    // real market prices without any manual trading in the loop.
-    { to: '/journal',      label: '📓 Journal',   icon: <ListChecks size={14} />,
-      acc: null, highProb: true,
-      title: 'Paper Trading Book — ₹10L test account started 23-Jul, auto-managed by the EOD cron every weekday at 18:30 IST. Positions sized per signal tier (ELITE 15% / STRONG 8%), quality-gated (MC ≥ ₹500 Cr, pledge < 20%, no ETFs), exits at 40/30/30 T1/T2/T3 or full SL. No manual intervention — real performance test of our signals.' },
+    // 2026-07-25: Journal moved from primary nav to header (next to
+    // Archive) per user directive. Both are meta/audit surfaces.
+    // Route /journal still resolves — only nav rendering location changed.
     { to: '/picks',        label: 'Cash / Equity', icon: <Target size={14} />,
       acc: picksAcc,
       title: 'Cash / Equity picks — swing (Weekly · 1-4 weeks) + short-term (Daily · 1-15 days) + early-stage (5-20% Move) + Top Trades curated stream.' },
@@ -163,9 +160,10 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // 1-10 missed moves (700↑/700↓/360↑). Multi-expiry OI + max-pain drift +
     // time cycles + astro + operator playbook detection. Refreshes every 4
     // min during 9:15-15:30 IST.
-    { to: '/nifty-outlook', label: '🧭 NIFTY Outlook', icon: <Target size={14} />,
-      acc: null, highProb: true,
-      title: 'NIFTY Directional Foresight — multi-expiry OI (current+monthly+quarterly), max-pain drift, PCR trend, time cycles from 2020 daily, momentum, KP+Bradley astro, operator playbook detection. Unified BULLISH/BEARISH call with entry/SL/T1/T2/T3 dated trade plan. Refreshes every 4 min live.' },
+    // 2026-07-25: NIFTY Outlook moved from primary nav to header (next
+    // to Journal + Archive) per user directive. It's a single directional
+    // call, not a per-symbol scan — belongs with the other meta/audit
+    // surfaces. Route /nifty-outlook still resolves.
     // 2026-07-15 — Volume Profile setup detector — the framework used by
     // institutions, hedge funds, market-makers. Caught user's 15-Jul 24200
     // PE @165→300+ manual trade. Multi-TF (5m/15m/30m/45m/1h/2h/4h/1D)
