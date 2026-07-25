@@ -299,6 +299,19 @@ async function main() {
     log.err('TICK', `oi-monitor: ${(e as Error).message}`)
   }
 
+  // ─── 4a-1. OI history logger — appends per-tick option chain snapshot
+  //           to data/oi-history/ so options radar can compute velocity.
+  //           MUST run BEFORE the OI buildup writer + radar so radar sees
+  //           the freshest tick.
+  try {
+    const { logCurrentOiTick } = await import('../src/engine/oiHistoryLogger')
+    const r = logCurrentOiTick()
+    results['oi-history-log'] = `${r.ticksLogged} ticks across ${r.files.length} expiry files`
+  } catch (e) {
+    results['oi-history-log'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `oi-history-log: ${(e as Error).message}`)
+  }
+
   // ─── 4a. OI Buildup snapshot writer — extracted from publicSnapshots.ts
   //         so the /oi-buildup public page gets a real-time refresh on GH
   //         Actions runners too (previously only localhost cron wrote it,
@@ -310,6 +323,32 @@ async function main() {
   } catch (e) {
     results['oi-buildup'] = `ERR ${(e as Error).message}`
     log.err('TICK', `oi-buildup: ${(e as Error).message}`)
+  }
+
+  // ─── 4a-2. Options Accumulation Radar — reads the last N ticks of
+  //           OI history per (expiry, strike, side), scores by velocity +
+  //           premium-flow + freshness + IV + multi-expiry stacking, emits
+  //           options-radar.json. Bootstraps after 4+ ticks accumulate.
+  try {
+    const { runOptionsAccumulationRadar } = await import('../src/engine/optionsAccumulationRadar')
+    const r = await runOptionsAccumulationRadar()
+    results['options-radar'] = `${r.signals.length} signals (${r.elites} elite · ${r.strongs} strong) from ${r.totalStrikesScanned} strikes`
+  } catch (e) {
+    results['options-radar'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `options-radar: ${(e as Error).message}`)
+  }
+
+  // ─── 4a-3. Paper trading book intraday tick — moved out of EOD so
+  //           the book can act on the Options Radar's fresh signals in
+  //           real time (not 6 hours later). Book state persists in
+  //           trading-journal.json which the snapshot publisher pushes.
+  try {
+    const { runPaperTradingDailyTick } = await import('../src/engine/paperTradingBook')
+    const book = await runPaperTradingDailyTick()
+    results['paper-book'] = `₹${book.ledger.bookValue.toLocaleString('en-IN')} · ${book.ledger.totalReturnPct.toFixed(2)}% · open ${book.performance.openTrades} · closed ${book.performance.closedTrades}`
+  } catch (e) {
+    results['paper-book'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `paper-book: ${(e as Error).message}`)
   }
 
   // ─── 4b. Lifecycle backfill — small chunk per tick so we chew through

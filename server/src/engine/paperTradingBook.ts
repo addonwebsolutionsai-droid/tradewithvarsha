@@ -314,6 +314,7 @@ function computeQty(entry: number, stopLoss: number, tier: 'ELITE' | 'STRONG', b
 
 const COMMODITY_SNAPSHOT_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'commodity-signals.json')
 const NIFTY_OUTLOOK_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'nifty-outlook.json')
+const OPTIONS_RADAR_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'options-radar.json')
 
 /**
  * Gather candidate signals across all three segments, tag them with the
@@ -335,6 +336,42 @@ function gatherCandidates(): Array<any & { _segment: 'CASH' | 'FNO' | 'MCX' }> {
       const mcx = JSON.parse(fs.readFileSync(COMMODITY_SNAPSHOT_FILE, 'utf-8'))
       for (const c of (mcx.rows ?? [])) out.push({ ...c, _segment: 'MCX' })
     } catch (e) { log.warn('PAPER', `commodity-signals read failed: ${(e as Error).message}`) }
+  }
+  // Options Accumulation Radar — the "smart-money BEFORE the move" feed.
+  // Every signal is a specific (underlying, expiry, strike, side) with a
+  // premium-based trade plan (entry/SL/T1/T2/T3 all in ₹ premium). Route
+  // to FNO segment. ELITE (score ≥ 75) only; STRONG needs multi-tick
+  // confirmation before we commit real paper capital.
+  if (fs.existsSync(OPTIONS_RADAR_FILE)) {
+    try {
+      const rad = JSON.parse(fs.readFileSync(OPTIONS_RADAR_FILE, 'utf-8'))
+      for (const s of (rad.signals ?? [])) {
+        if (s.strikeScore < 75) continue                      // ELITE only for radar signals
+        const symbol = `${s.underlying}-${s.strike}-${s.side}-${(s.expiry ?? '').replace(/[^A-Z0-9]/gi, '')}`
+        out.push({
+          symbol,
+          underlying: s.underlying,
+          _segment: 'FNO',
+          segment: 'FNO',
+          side: s.side === 'CE' ? 'LONG' : 'LONG',            // Always LONG (buying the option)
+          direction: 'LONG',
+          source: 'OPT-RADAR',
+          tier: 'ELITE',
+          stars: 5,
+          score: s.strikeScore,
+          ltp: s.currentLTP,
+          entry: s.entry,
+          stopLoss: s.stopLoss,
+          target1: s.target1,
+          target2: s.target2,
+          target3: s.target3,
+          entryDate: todayIST(),
+          reasoning: s.reasoning,
+          unifiedReason: `🎯 OPT RADAR · ${s.underlying} ${s.strike} ${s.side} ${s.expiry} · score ${s.strikeScore} · ${s.bias} · ${s.unifiedReason}`,
+          isOption: true,                                     // sizing hint for computeQty
+        })
+      }
+    } catch (e) { log.warn('PAPER', `options-radar read failed: ${(e as Error).message}`) }
   }
   // NIFTY Index Options — routed to FNO segment. NIFTY foresight emits a
   // single directional trade plan per tick (side + entry + SL + T1/T2/T3).
@@ -447,9 +484,19 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     const dirRaw = String(c.side ?? c.direction ?? 'LONG').toUpperCase()
     const direction: 'LONG' | 'SHORT' = dirRaw === 'SHORT' || dirRaw === 'SELL' || dirRaw === 'BEARISH' ? 'SHORT' : 'LONG'
 
-    // Sizing capped by segment budget + tier weight
+    // Sizing capped by segment budget + tier weight.
+    //   Options radar signals get a SMALLER 5% allocation per trade —
+    //   options can 3-5x on wins but also go to zero on losses. Multiple
+    //   small options bets across the day > one big one.
+    //   NIFTY-outlook option-leg trades: 6% (a bit more than radar, less
+    //   than raw stock).
+    //   Cash / F&O stock / MCX: full tier weight (15% ELITE / 8% STRONG).
     const segBudgetLeft = segmentBudget[seg]
-    const tierAllocInr = Math.min(segBudgetLeft, bookValue * RULES.tierAlloc[c.tier as 'ELITE' | 'STRONG'])
+    const isOptionRow = c.isOption === true || c.source === 'OPT-RADAR' || c.source === 'NIFTY-FORESIGHT'
+    const optionAllocPct = c.source === 'OPT-RADAR' ? 0.05 : c.source === 'NIFTY-FORESIGHT' ? 0.06 : 0
+    const tierAllocInr = isOptionRow
+      ? Math.min(segBudgetLeft, bookValue * optionAllocPct)
+      : Math.min(segBudgetLeft, bookValue * RULES.tierAlloc[c.tier as 'ELITE' | 'STRONG'])
     const availableAfter = availableCash - opened.reduce((s, t) => s + t.positionValue, 0)
     const qty = computeQtyWithSegCap(c.entry, c.stopLoss, c.tier as 'ELITE' | 'STRONG', bookValue, availableAfter, tierAllocInr)
     if (qty <= 0) continue
@@ -692,17 +739,14 @@ export async function runPaperTradingDailyTick(): Promise<Book> {
     catch (e) { log.warn('PAPER', `mark-to-market failed for ${t.symbol}: ${(e as Error).message}`) }
   }
 
-  // 2. Scan for new entries only if we've got room + cash + it's the same day
-  //    as today (avoid double-opens if the tick runs twice).
-  const alreadyOpenedToday = book.trades.some(t => t.entryDate === todayIST())
-  if (!alreadyOpenedToday) {
-    recomputeLedgerAndPerf(book)   // fresh cash figure first
-    const newTrades = await scanForNewTrades(book)
-    book.trades.push(...newTrades)
-    log.info('PAPER', `opened ${newTrades.length} new positions on ${todayIST()}`)
-  } else {
-    log.info('PAPER', `already opened positions today, skipping entry scan`)
-  }
+  // 2. Scan for new entries on EVERY intraday tick (options radar signals
+  //    fire mid-day when institutional positioning changes — we want the
+  //    book to react in real time, not wait for tomorrow). scanForNewTrades
+  //    already dedups on symbol so we won't double-open the same trade.
+  recomputeLedgerAndPerf(book)   // fresh cash figure first
+  const newTrades = await scanForNewTrades(book)
+  book.trades.push(...newTrades)
+  if (newTrades.length > 0) log.info('PAPER', `opened ${newTrades.length} new positions this tick`)
 
   // 3. Final recompute + persist (same file serves as state + public feed)
   recomputeLedgerAndPerf(book)
