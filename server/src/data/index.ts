@@ -44,18 +44,17 @@ export const SYMBOLS: Record<string, SymbolMap> = {
   // Drop yh/av fallbacks — they returned USD/oz spot (~4644) which mismatches
   // the GOLDBEES ₹ scale (~123) and corrupted candle math. Stay on GOLDBEES
   // alone via Angel for consistent units across quote + candles.
-  // Commodities — primary is Yahoo ETF (GLD/SLV/USO/UNG/CPER) since these
-  // never rate-limit; Angel-via-GOLDBEES/SILVERBEES stays as an INR-scale
-  // proxy path when Angel is available (GH Actions runs). Alpha Vantage
-  // (USO/GLD/SLV) is the third fallback for cold starts / IP throttling.
-  GOLD:   { key: 'GOLD',   nse: 'GOLDBEES',   yh: YH_SYMBOLS.GOLD,   av: 'GLD', commodity: true },
-  XAUUSD: { key: 'XAUUSD', nse: 'GOLDBEES',   yh: YH_SYMBOLS.XAUUSD, av: 'GLD', commodity: true },
-  SILVER: { key: 'SILVER', nse: 'SILVERBEES', yh: YH_SYMBOLS.SILVER, av: 'SLV', commodity: true },
-  XAGUSD: { key: 'XAGUSD', nse: 'SILVERBEES', yh: YH_SYMBOLS.SILVER, av: 'SLV', commodity: true },
-  CRUDE:  { key: 'CRUDE',  yh: YH_SYMBOLS.CRUDE, av: 'USO', commodity: true },
-  BRENT:  { key: 'BRENT',  yh: YH_SYMBOLS.BRENT, av: 'BNO', commodity: true },
-  NATGAS: { key: 'NATGAS', yh: YH_SYMBOLS.NATGAS, av: 'UNG', commodity: true },
-  COPPER: { key: 'COPPER', yh: YH_SYMBOLS.COPPER, av: 'CPER', commodity: true },
+  // Commodities — REAL contracts only per user directive (2026-07-25):
+  //   MCX Gold / Silver / Crude → Angel MCX FUTCOM front-month
+  //   XAUUSD → COMEX GC=F on Yahoo (spot-proxy)
+  // No ETF entries (GOLDBEES/SILVERBEES/GLD/SLV/USO were removed).
+  // The MCX routing lives in the special-case handler below getCandles;
+  // this map just gives us Yahoo as a last-resort candle fetch for chart
+  // continuity when Angel session isn't up.
+  GOLD:   { key: 'GOLD',   yh: YH_SYMBOLS.GOLD,   commodity: true },
+  XAUUSD: { key: 'XAUUSD', yh: YH_SYMBOLS.XAUUSD, commodity: true },
+  SILVER: { key: 'SILVER', yh: YH_SYMBOLS.SILVER, commodity: true },
+  CRUDE:  { key: 'CRUDE',  yh: YH_SYMBOLS.CRUDE,  commodity: true },
   DXY: { key: 'DXY', yh: YH_SYMBOLS.DXY, av: 'DX-Y.NYB' },
   USDINR: { key: 'USDINR', yh: YH_SYMBOLS.USDINR },
   RELIANCE: { key: 'RELIANCE', nse: 'RELIANCE', yh: YH_SYMBOLS.RELIANCE, av: 'RELIANCE.BSE' },
@@ -187,15 +186,19 @@ export async function getCandles(key: string, timeframe: Timeframe = '15m', coun
   if (angel.hasAngelCreds()) {
     try {
       let token: string | null = null
-      let exch: 'NSE' | 'BSE' | 'NFO' = 'NSE'
+      let exch: 'NSE' | 'BSE' | 'NFO' | 'MCX' = 'NSE'
       if (s?.index && (up === 'NIFTY' || up === 'BANKNIFTY' || up === 'FINNIFTY')) {
         token = await angel.findIndexToken(up as 'NIFTY' | 'BANKNIFTY' | 'FINNIFTY')
+      } else if (s?.commodity && (up === 'GOLD' || up === 'SILVER' || up === 'CRUDE')) {
+        // MCX FUTCOM front-month lookup via ScripMaster. Angel MCX = the
+        // real Indian rupee-denominated futures traded on MCX exchange.
+        // CRUDE base commodity is 'CRUDEOIL' on MCX, not 'CRUDE'.
+        const mcxBase = up === 'CRUDE' ? 'CRUDEOIL' : up
+        const mcx = await angel.findMcxContract(mcxBase)
+        if (mcx) { token = mcx.token; exch = 'MCX' }
       } else if (!s?.commodity) {
         // Either a mapped equity (use s.nse) or an unmapped NSE symbol (use up).
         const symbolToLookup = (s && !s.index && s.nse) ? s.nse : up
-        // 2026-05-03: findEquityScrip tries NSE-EQ first, falls back to BSE
-        // name-alias lookup. Lets us fetch BSE-only micro-caps like Cemindia,
-        // Pentokey, Indiabulls without the user supplying numeric codes.
         const scrip = await angel.findEquityScrip(symbolToLookup)
         if (scrip) { token = scrip.token; exch = scrip.exchange }
       }
@@ -207,7 +210,7 @@ export async function getCandles(key: string, timeframe: Timeframe = '15m', coun
             : timeframe === '30m' ? 15
             : timeframe === '15m' ? 10
             : 3
-        const candles = await angel.getCandles(exch, token, timeframe as any, Math.ceil(daysBack))
+        const candles = await angel.getCandles(exch as any, token, timeframe as any, Math.ceil(daysBack))
         if (candles.length) return candles.slice(-count)
       }
     } catch (e) {

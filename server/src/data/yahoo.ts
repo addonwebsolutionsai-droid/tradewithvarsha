@@ -84,25 +84,16 @@ export const YH_SYMBOLS = {
   BANKNIFTY: '^NSEBANK',
   SENSEX: '^BSESN',
   INDIAVIX: '^INDIAVIX',
-  // Commodity primary tickers — MCX contracts + international futures.
-  // 2026-07-24: switched primary GOLD/SILVER/CRUDE/NATGAS/COPPER from
-  // continuous-futures (GC=F/SI=F/CL=F/NG=F/HG=F) which return 401 on
-  // Yahoo's free tier from most IPs, to their US-listed ETFs which
-  // track the underlying commodity tick-for-tick and never rate-limit.
-  // Ordering (primary → fallback) is enforced by data/index.ts fallback chain.
-  GOLD: 'GLD',            // SPDR Gold Trust ETF (tracks XAU/USD spot)
-  GOLD_MCX: 'GOLDBEES.NS', // Nippon India Gold ETF listed on NSE
-  GOLD_FUT: 'GC=F',        // COMEX gold futures (backup)
-  XAUUSD: 'GLD',           // Same as GOLD — the spot proxy
-  SILVER: 'SLV',           // iShares Silver Trust ETF (tracks XAG/USD)
-  SILVER_FUT: 'SI=F',      // COMEX silver futures (backup)
-  CRUDE: 'USO',            // United States Oil Fund (tracks WTI)
-  CRUDE_FUT: 'CL=F',       // WTI futures (backup)
-  BRENT: 'BNO',            // United States Brent Oil Fund
-  NATGAS: 'UNG',           // United States Natural Gas Fund
-  NATGAS_FUT: 'NG=F',      // Henry Hub futures (backup)
-  COPPER: 'CPER',          // United States Copper Index Fund
-  COPPER_FUT: 'HG=F',      // COMEX copper futures (backup)
+  // Commodities — REAL futures / spot ONLY. Per user directive (2026-07-25):
+  // no ETFs (GLD/GOLDBEES/SLV/USO etc.) in the trading pipeline. ETFs move
+  // slower + have tracking error + aren't what an actual MCX/COMEX trader
+  // touches. Route MCX-Gold/Silver/Crude through Angel's MCX FUTCOM chain
+  // (findMcxContract) — see data/index.ts for the fallback ladder. XAUUSD
+  // uses COMEX GC=F spot proxy on Yahoo (401-rate-limited but retried).
+  XAUUSD: 'GC=F',       // COMEX gold futures — XAU/USD spot proxy
+  GOLD: 'GC=F',         // COMEX gold futures (Angel MCX FUTCOM is primary)
+  SILVER: 'SI=F',       // COMEX silver (Angel MCX FUTCOM primary)
+  CRUDE: 'CL=F',        // WTI crude (Angel MCX FUTCOM primary)
   DXY: 'DX-Y.NYB',
   USDINR: 'INR=X',
   // Equities

@@ -300,6 +300,45 @@ export async function findIndexToken(symbol: 'NIFTY' | 'BANKNIFTY' | 'FINNIFTY')
   return KNOWN[symbol] ?? null
 }
 
+/**
+ * Find the current-month MCX FUTCOM contract for a given base commodity.
+ * Base names on MCX ScripMaster are things like GOLD, SILVER, CRUDEOIL,
+ * NATURALGAS, COPPER. The trading symbol embeds the expiry (e.g.
+ * GOLD25JULFUT / SILVER25AUGFUT / CRUDEOIL25AUGFUT). We pick the nearest
+ * non-expired expiry so signals always reference a live contract.
+ *
+ * Returns { token, tradingSymbol, expiry, lotSize } or null.
+ */
+export async function findMcxContract(baseCommodity: string): Promise<{
+  token: string
+  tradingSymbol: string
+  expiry: string
+  lotSize: number
+} | null> {
+  const sm = await loadScripMaster()
+  if (!sm.length) return null
+  const upper = baseCommodity.toUpperCase()
+  // MCX FUTCOM instruments have exch_seg='MCX' and name=base commodity
+  const now = Date.now()
+  const candidates = sm
+    .filter(s => s.exch_seg === 'MCX' && s.instrumenttype === 'FUTCOM' && s.name === upper)
+    .map(s => {
+      // Parse expiry like "31JUL2026" → ms
+      const exp = s.expiry ? Date.parse(String(s.expiry).replace(/(\d{2})([A-Z]{3})(\d{4})/, '$3-$2-$1')) : NaN
+      return { s, expMs: exp }
+    })
+    .filter(x => Number.isFinite(x.expMs) && x.expMs > now)
+    .sort((a, b) => a.expMs - b.expMs)
+  const front = candidates[0]?.s
+  if (!front) return null
+  return {
+    token: front.token,
+    tradingSymbol: front.symbol,
+    expiry: front.expiry ?? '',
+    lotSize: front.lotsize ?? 0,
+  }
+}
+
 // ── Quote / LTP ─────────────────────────────────────────────────
 
 export async function getQuoteByToken(exchange: 'NSE' | 'BSE' | 'NFO' | 'MCX', token: string): Promise<PriceQuote | null> {

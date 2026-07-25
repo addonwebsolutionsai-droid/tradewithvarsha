@@ -26,22 +26,21 @@ const OUT_PATH = path.resolve(__dirname, '../../data/public-snapshots/commodity-
 
 // MCX contract sizing — used to convert per-unit P&L into ₹ per lot for
 // the paper trading book. Rough MCX lot sizes / value multipliers.
+// User directive (2026-07-25): only these four commodity instruments
+// are tradable. No ETFs (GOLDBEES/GLD/SLV/USO etc), no basket products.
+// XAUUSD is COMEX gold spot; the three MCX contracts are Indian rupee-
+// denominated futures on the MCX exchange (Angel FUTCOM front-month).
 export const MCX_CONTRACTS: Record<string, {
-  underlying: string
-  onDemandKey: string   // key to pass to runOnDemandScan
+  underlying: string    // canonical key for candle lookup (Yahoo fallback)
+  mcxBase: string | null // Angel MCX ScripMaster `name` field (null for XAUUSD which is COMEX-only)
   displayName: string
-  lotSize: number       // MCX lot size in base units
+  lotSize: number       // MCX lot size in base units (0 for COMEX proxies)
   quoteCcy: 'USD' | 'INR'
-  usdToInr: number      // approx conversion (bootstrapped; updates on next tick from data)
 }> = {
-  GOLD:   { underlying: 'GOLD',   onDemandKey: 'GOLD',   displayName: 'GOLD-MCX',   lotSize: 100,   quoteCcy: 'USD', usdToInr: 84 },  // 100 gm
-  XAUUSD: { underlying: 'XAUUSD', onDemandKey: 'XAUUSD', displayName: 'XAU/USD',    lotSize: 1,     quoteCcy: 'USD', usdToInr: 84 },  // 1 oz spot
-  SILVER: { underlying: 'SILVER', onDemandKey: 'SILVER', displayName: 'SILVER-MCX', lotSize: 30_000, quoteCcy: 'USD', usdToInr: 84 }, // 30 kg = 30_000 gm (approx)
-  XAGUSD: { underlying: 'XAGUSD', onDemandKey: 'XAGUSD', displayName: 'XAG/USD',    lotSize: 1,     quoteCcy: 'USD', usdToInr: 84 },  // 1 oz spot
-  CRUDE:  { underlying: 'CRUDE',  onDemandKey: 'CRUDE',  displayName: 'CRUDE-MCX',  lotSize: 100,   quoteCcy: 'USD', usdToInr: 84 },  // 100 barrels
-  BRENT:  { underlying: 'BRENT',  onDemandKey: 'BRENT',  displayName: 'BRENT-Oil',  lotSize: 100,   quoteCcy: 'USD', usdToInr: 84 },
-  NATGAS: { underlying: 'NATGAS', onDemandKey: 'NATGAS', displayName: 'NATGAS-MCX', lotSize: 1250,  quoteCcy: 'USD', usdToInr: 84 },  // 1250 mmBtu
-  COPPER: { underlying: 'COPPER', onDemandKey: 'COPPER', displayName: 'COPPER-MCX', lotSize: 2500,  quoteCcy: 'USD', usdToInr: 84 },  // 2500 kg
+  XAUUSD: { underlying: 'XAUUSD', mcxBase: null,        displayName: 'XAU/USD (COMEX)', lotSize: 1,     quoteCcy: 'USD' },
+  GOLD:   { underlying: 'GOLD',   mcxBase: 'GOLD',      displayName: 'GOLD-MCX',        lotSize: 100,   quoteCcy: 'INR' },
+  SILVER: { underlying: 'SILVER', mcxBase: 'SILVER',    displayName: 'SILVER-MCX',      lotSize: 30_000, quoteCcy: 'INR' },
+  CRUDE:  { underlying: 'CRUDE',  mcxBase: 'CRUDEOIL',  displayName: 'CRUDEOIL-MCX',    lotSize: 100,   quoteCcy: 'INR' },
 }
 
 export async function runCommodityScan(): Promise<{
@@ -51,8 +50,9 @@ export async function runCommodityScan(): Promise<{
   strongCount: number
   rows: any[]
 }> {
-  const symbols = Object.values(MCX_CONTRACTS).map(c => c.onDemandKey)
-  log.info('COMMODITY', `scanning ${symbols.length} MCX contracts`)
+  // Universe = the 4 approved commodities only. Never any ETFs.
+  const symbols = Object.keys(MCX_CONTRACTS)  // XAUUSD, GOLD, SILVER, CRUDE
+  log.info('COMMODITY', `scanning ${symbols.length} real commodities · ${symbols.join(', ')}`)
   const scan = await runOnDemandScan(symbols)
   const rows: any[] = []
   let elites = 0, strongs = 0
@@ -72,11 +72,12 @@ export async function runCommodityScan(): Promise<{
     else strongs++
 
     // Find the MCX contract meta for sizing
-    const contractKey = Object.keys(MCX_CONTRACTS).find(k => MCX_CONTRACTS[k].onDemandKey === r.symbol) ?? r.symbol
-    const contract = MCX_CONTRACTS[contractKey]
+    const contract = MCX_CONTRACTS[r.symbol]
+    // Skip if this symbol isn't in the approved universe (safety net)
+    if (!contract) continue
 
     rows.push({
-      symbol: contract?.displayName ?? r.symbol,
+      symbol: contract.displayName,
       underlying: r.symbol,
       segment: 'MCX',
       side: r.compositeBias === 'BULLISH' ? 'LONG' : 'SHORT',
@@ -99,9 +100,9 @@ export async function runCommodityScan(): Promise<{
       target2Date: r.target2Date,
       target3Date: r.target3Date,
       slDate: r.slDate,
-      lotSize: contract?.lotSize ?? 1,
-      quoteCcy: contract?.quoteCcy ?? 'USD',
-      usdToInr: contract?.usdToInr ?? 84,
+      lotSize: contract.lotSize,
+      quoteCcy: contract.quoteCcy,
+      mcxBase: contract.mcxBase,
       reasoning: r.reasoning ?? [],
       unifiedReason: r.unifiedReason ?? '',
     })
