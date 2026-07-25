@@ -118,6 +118,18 @@ async function main() {
       const r = await m.runAndPublishNiftyForesight()
       return `${r.direction} ${r.confidence} @${r.spot}`
     }],
+    // ─── NIFTY Long-Horizon Forecast — projects 2-3 months out.
+    //     Weekly + monthly Elliott Wave counts, Gann 90/180/270-day time
+    //     cycles from major pivots, Fibonacci price + time extensions,
+    //     and 60-bar historical analogue matching. Emits waypoints as
+    //     (price, targetDate, method, confidence) — the same style
+    //     Kapoor / Rathi / Shailendra publish on X but computed
+    //     mathematically instead of subjectively.
+    ['nifty-long-horizon', async () => {
+      const m = await import('../src/engine/niftyLongHorizonForecast')
+      const r = await m.runAndPublishNiftyLongHorizon()
+      return `${r.bias} · ${r.waypoints} waypoints`
+    }],
     ['nifty-volume-profile', async () => {
       const m = await import('../src/engine/niftyVolumeProfileEngine')
       const r = await m.runAndPublishNiftyVolumeProfile()
