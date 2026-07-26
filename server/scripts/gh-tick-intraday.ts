@@ -282,6 +282,23 @@ async function main() {
     log.err('TICK', `nifty-outlook: ${(e as Error).message}`)
   }
 
+  // ─── 3b. NIFTY Long-Horizon Forecast — projects levels + dates 2-3
+  //          months out (Elliott weekly/monthly + Gann 90/180/270-day
+  //          cycles + Fib price+time extensions + historical analogues).
+  //          Weekly-scale signals but refreshed every intraday tick so
+  //          "days from now" counters + intraday-drift-adjusted spot
+  //          stay live. User asked to see future waypoints in advance
+  //          so they can accumulate for anticipated moves.
+  try {
+    const t = Date.now()
+    const { runAndPublishNiftyLongHorizon } = await import('../src/engine/niftyLongHorizonForecast')
+    const r = await runAndPublishNiftyLongHorizon()
+    results['nifty-long-horizon'] = `${r.bias} · ${r.waypoints} waypoints · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['nifty-long-horizon'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `nifty-long-horizon: ${(e as Error).message}`)
+  }
+
   // ─── 4. OI Monitor — fires Telegram alerts for high-strength OI signals
   try {
     const oi = await import('../src/engine/oiMonitor')

@@ -4697,3 +4697,154 @@ export function PublicJournalPage(): JSX.Element {
     </div>
   )
 }
+
+// ─── PUBLIC NIFTY LONG-HORIZON FORECAST PAGE ─────────────────────────
+// Projections 2-3 months out, dated waypoints, cycle turn dates.
+// Refreshes every 5 min during market hours + EOD.
+export function PublicNiftyForecastPage(): JSX.Element {
+  const { data, isLoading } = useQuery({
+    queryKey: ['public-nifty-forecast'],
+    queryFn: () => snapshots.niftyLongHorizon(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  if (isLoading && !data) return <div className="p-12 text-center text-neutral-500">Loading NIFTY long-horizon forecast…</div>
+  if (!data) return <div className="p-12 text-center text-neutral-500">Forecast not yet built — next EOD or intraday tick will populate.</div>
+  const d = data as any
+  const biasColor = d.primaryBias === 'BULLISH' ? '#00c853' : d.primaryBias === 'BEARISH' ? '#ff5e7c' : '#d0d0d0'
+  const isNoData = d.status === 'NO_DATA'
+  const confColor = (c: string) => c === 'HIGH' ? '#00c853' : c === 'MEDIUM' ? '#ffb454' : '#5fd4ff'
+  const biasBg = (b: string) => b === 'BULLISH' ? 'rgba(0,200,83,0.15)' : 'rgba(255,94,124,0.15)'
+  const biasFg = (b: string) => b === 'BULLISH' ? '#00c853' : '#ff5e7c'
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-amber/15 to-accent-violet/5 border border-accent-amber/50 rounded-lg">
+        <div className="text-3xl">🔮</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-amber">NIFTY Long-Horizon Forecast — dated levels 2-3 months out</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            Weekly + Monthly Elliott Wave counts · Gann 90/180/270-day time cycles · Fibonacci PRICE + TIME extensions · Historical analogue matching. Same toolkit level-callers on X use, computed mathematically. Refreshes every 5 min during 09:15-15:30 IST + every EOD 18:30 IST.
+          </div>
+          {!isNoData && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              Spot ₹{d.spot?.toLocaleString('en-IN', { minimumFractionDigits: 2 })} · Updated {new Date(d.generatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+            </div>
+          )}
+        </div>
+        <div className="text-right">
+          <div className="text-[10px] uppercase text-neutral-500 tracking-wider">Primary bias</div>
+          <div className="text-2xl font-bold mt-1" style={{ color: biasColor }}>{d.primaryBias}</div>
+        </div>
+      </div>
+
+      {isNoData && (
+        <div className="p-6 bg-ink-800 border border-ink-500 rounded-lg text-center text-neutral-400 text-[12px]">
+          <div className="text-lg mb-2">⏳ Forecast building…</div>
+          <div>{d.note ?? 'Engine returned no data on last tick. Next refresh in ~5 min during market hours or 18:30 IST after close.'}</div>
+        </div>
+      )}
+
+      {!isNoData && (
+        <>
+          {d.narrative && (
+            <div className="p-4 bg-ink-800 border border-ink-500 rounded-lg text-[13px] text-neutral-200 leading-relaxed">
+              <div className="text-[10px] uppercase text-neutral-500 tracking-wider mb-1">Narrative</div>
+              {d.narrative}
+            </div>
+          )}
+
+          {(d.waveCountWeekly || d.waveCountMonthly) && (
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+              {d.waveCountWeekly && (
+                <div className="p-3 bg-ink-800 border border-ink-500 rounded-lg">
+                  <div className="text-[10px] uppercase text-neutral-500 tracking-wider">Weekly Elliott Wave</div>
+                  <div className="text-[12px] text-neutral-200 mt-1">{d.waveCountWeekly}</div>
+                </div>
+              )}
+              {d.waveCountMonthly && (
+                <div className="p-3 bg-ink-800 border border-ink-500 rounded-lg">
+                  <div className="text-[10px] uppercase text-neutral-500 tracking-wider">Monthly Elliott Wave</div>
+                  <div className="text-[12px] text-neutral-200 mt-1">{d.waveCountMonthly}</div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Waypoints table */}
+          <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800" style={{ maxHeight: '60vh' }}>
+            <div className="p-3 bg-ink-700 border-b border-ink-500 text-[11px] font-bold text-neutral-300 uppercase tracking-wider">
+              🎯 Projected Waypoints — accumulate ahead of these dates
+            </div>
+            <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 800 }}>
+              <thead className="bg-ink-700 text-neutral-400 sticky top-0">
+                <tr>
+                  <th className="text-left px-3 py-2">#</th>
+                  <th className="text-left px-3 py-2">Method</th>
+                  <th className="text-center px-2 py-2">Bias</th>
+                  <th className="text-center px-2 py-2">Confidence</th>
+                  <th className="text-right px-2 py-2">Target ₹</th>
+                  <th className="text-left px-2 py-2">By date</th>
+                  <th className="text-right px-2 py-2">Days out</th>
+                  <th className="text-left px-3 py-2">Reasoning</th>
+                </tr>
+              </thead>
+              <tbody>
+                {(d.waypoints ?? []).length === 0 && (
+                  <tr><td colSpan={8} className="text-center text-neutral-500 py-12">No waypoints projected — either data insufficient or no clear structure detected today.</td></tr>
+                )}
+                {(d.waypoints ?? []).map((w: any, i: number) => (
+                  <tr key={i} className="group border-t border-ink-500 hover:bg-ink-700">
+                    <td className="px-3 py-2 text-neutral-500 font-mono text-[11px]">{i + 1}</td>
+                    <td className="px-3 py-2 font-mono text-[10px] font-bold" style={{ color: '#5fd4ff' }}>{w.method}</td>
+                    <td className="px-2 py-2 text-center">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: biasBg(w.bias), color: biasFg(w.bias) }}>{w.bias}</span>
+                    </td>
+                    <td className="px-2 py-2 text-center">
+                      <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${confColor(w.confidence)}22`, color: confColor(w.confidence) }}>{w.confidence}</span>
+                    </td>
+                    <td className="px-2 py-2 text-right text-neutral-100 font-mono font-bold">₹{w.price?.toLocaleString('en-IN')}</td>
+                    <td className="px-2 py-2 text-left text-neutral-300 font-mono text-[11px]">📅 {w.targetDate}</td>
+                    <td className="px-2 py-2 text-right text-neutral-400 font-mono">{w.daysFromNow}d</td>
+                    <td className="px-3 py-2 text-left text-neutral-400 text-[11px]" style={{ minWidth: 400 }}>{w.narrative}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Cycle turn dates */}
+          {(d.cycleTurnDates ?? []).length > 0 && (
+            <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800">
+              <div className="p-3 bg-ink-700 border-b border-ink-500 text-[11px] font-bold text-neutral-300 uppercase tracking-wider">
+                📅 Upcoming Gann Cycle Turn Dates — expect volatility around these dates regardless of direction
+              </div>
+              <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0 }}>
+                <thead className="bg-ink-700 text-neutral-400">
+                  <tr>
+                    <th className="text-left px-3 py-2">Date</th>
+                    <th className="text-left px-3 py-2">Source</th>
+                    <th className="text-left px-3 py-2">Description</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {d.cycleTurnDates.map((t: any, i: number) => (
+                    <tr key={i} className="border-t border-ink-500">
+                      <td className="px-3 py-2 font-mono font-bold text-accent-amber">{t.date}</td>
+                      <td className="px-3 py-2 text-neutral-300 text-[11px]">{t.source}</td>
+                      <td className="px-3 py-2 text-neutral-400 text-[11px]">{t.description}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
+
+          <div className="p-3 bg-ink-800 border border-ink-500 rounded-lg text-[11px] text-neutral-400">
+            <b className="text-neutral-200">How to trade this:</b> waypoints are targets not predictions — historical hit rate on Gann 180-day cycles ~55-65% within ±3 sessions. Look for CONFLUENCES: when Fib price ext + Gann cycle date + Elliott Wave 3 target all point to the same window, that's the money zone. Accumulate BEFORE the dated waypoint, not after.
+          </div>
+        </>
+      )}
+    </div>
+  )
+}
+

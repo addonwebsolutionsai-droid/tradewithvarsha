@@ -71,6 +71,27 @@ export const snapshots = {
   harmonic: () => snapshot<{ generatedAt: string; criterion: string; total: number; byPattern: Record<string, number>; byTier: Record<string, number>; rows: any[] }>('harmonic.json'),
   elliottWave: () => snapshot<{ generatedAt: string; criterion: string; total: number; byType: Record<string, number>; rows: any[] }>('elliott-wave.json'),
   vpFib: () => snapshot<{ generatedAt: string; universe?: string; scanned: number; attempted?: number; eliteCount: number; strongCount: number; decentCount: number; runtimeMs?: number; rows: any[] }>('vp-fib.json'),
+  niftyLongHorizon: () => snapshot<{
+    generatedAt: string
+    status?: 'NO_DATA'
+    note?: string
+    spot: number
+    primaryBias: 'BULLISH' | 'BEARISH' | 'NEUTRAL'
+    waveCountWeekly?: string
+    waveCountMonthly?: string
+    narrative?: string
+    waypoints: Array<{
+      price: number
+      targetDate: string
+      daysFromNow: number
+      confidence: 'HIGH' | 'MEDIUM' | 'LOW'
+      method: string
+      bias: 'BULLISH' | 'BEARISH'
+      narrative: string
+    }>
+    cycleTurnDates?: Array<{ date: string; source: string; description: string }>
+    keyPivots?: any[]
+  }>('nifty-long-horizon.json'),
   tradingJournal: () => snapshot<{
     generatedAt: string
     startedAt: string

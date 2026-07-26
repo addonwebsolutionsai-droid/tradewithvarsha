@@ -150,6 +150,17 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
             >
               🧭 NIFTY Outlook
             </Link>
+            {/* 2026-07-26: NIFTY Long-Horizon Forecast — dated waypoints
+                2-3 months out (Elliott weekly/monthly + Gann 90/180/270-day
+                cycles + Fib price+time extensions + historical analogues).
+                Same style level-callers on X publish, computed math. */}
+            <Link
+              to="/nifty-forecast"
+              className="text-[11px] px-2 py-0.5 rounded border border-accent-violet/40 bg-accent-violet/10 text-accent-violet hover:bg-accent-violet/20"
+              title="NIFTY Long-Horizon Forecast — projected levels 2-3 months out with dates, cycle turn calendar, Elliott Wave counts. Refreshes every 5 min during market + EOD."
+            >
+              🔮 NIFTY Forecast
+            </Link>
             <span
               className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green"
               title="Free public mode — picks refreshed every 30 minutes from the live trading engine"
