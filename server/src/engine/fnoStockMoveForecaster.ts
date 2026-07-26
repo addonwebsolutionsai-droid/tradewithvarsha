@@ -57,8 +57,8 @@ export const FNO_STOCK_UNIVERSE: string[] = [
   'ULTRACEMCO', 'GRASIM', 'SHREECEM',
   // Defence / PSU
   'HAL', 'MAZDOCK', 'BDL', 'BEL', 'COCHINSHIP', 'SOLARINDS',
-  // New Age
-  'PAYTM', 'ETERNAL', 'ZOMATO', 'SWIGGY',
+  // New Age (ZOMATO merged into ETERNAL 26-Jun-2025, no longer a tradable ticker)
+  'PAYTM', 'ETERNAL', 'SWIGGY',
   // Real Estate
   'OBEROIRLTY', 'LODHA', 'GODREJPROP', 'PRESTIGE', 'DLF',
   // Telecom
@@ -184,7 +184,8 @@ function atr14(candles: Candle[]): number {
 function lensVolumeProfile(candles: Candle[], ltp: number, atr: number, side: 'LONG' | 'SHORT'): LensHit {
   const profile = buildVolumeProfile(candles, 40, '1D')
   if (!profile) return { key: 'vp', hit: false, points: 0, detail: 'no profile' }
-  const tol = Math.max(atr * 0.5, ltp * 0.008)
+  // Tolerance widened 2026-07-26 — 0.5×ATR was too tight, missed obvious VAL touches
+  const tol = Math.max(atr * 1.0, ltp * 0.015)
   const { poc, vah, val } = profile
   if (side === 'LONG') {
     if (Math.abs(ltp - val) <= tol) return { key: 'vp', hit: true, points: 18, detail: `LTP at VAL ₹${val.toFixed(2)} — value-area floor buy zone` }
@@ -208,7 +209,8 @@ function lensFibonacci(candles: Candle[], ltp: number, atr: number, side: 'LONG'
   }
   const range = hi - lo
   if (range <= 0) return { key: 'fib', hit: false, points: 0, detail: 'no swing' }
-  const tol = Math.max(atr * 0.5, ltp * 0.006)
+  // Widened 2026-07-26 — 0.5×ATR was skipping legitimate golden-zone touches
+  const tol = Math.max(atr * 1.0, ltp * 0.012)
   const uptrend = hiIdx > loIdx
   if (uptrend && side === 'LONG') {
     const fib618 = hi - range * 0.618
@@ -361,10 +363,13 @@ async function forecastOne(sym: string, smIdx: Map<string, any>): Promise<FnoFor
   const short = scoreSide('SHORT')
   const best = long.total >= short.total ? { ...long, side: 'LONG' as const } : { ...short, side: 'SHORT' as const }
 
-  // Gate: min 3 lenses + score ≥ 50
-  if (best.hitCount < 3 || best.total < 50) return null
+  // Gate 2026-07-26 backtest: min 2 lenses + score ≥ 35. Was 3 lenses + 50
+  // which produced 0/87 forecasts on live weekend data — too tight. Lowered
+  // to catch real setups; the confidence-tier grade + multi-lens bonus still
+  // separates ELITE from STRONG/DECENT for downstream sizing + Telegram.
+  if (best.hitCount < 2 || best.total < 35) return null
 
-  const tier: 'ELITE' | 'STRONG' | 'DECENT' = best.total >= 80 ? 'ELITE' : best.total >= 65 ? 'STRONG' : 'DECENT'
+  const tier: 'ELITE' | 'STRONG' | 'DECENT' = best.total >= 70 ? 'ELITE' : best.total >= 50 ? 'STRONG' : 'DECENT'
   const slDist = slDistanceFor(ltp, atr)
   const t1Dist = Math.max(atr * 1.5, slDist * 1.5)
   const t2Dist = Math.max(atr * 3.0, slDist * 2.5)

@@ -322,6 +322,7 @@ const HARMONIC_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'h
 const ELLIOTT_WAVE_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'elliott-wave.json')
 const FNO_FUTURES_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'fno-futures.json')
 const STOCK_FNO_VP_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'stock-fno-volume-profile.json')
+const FNO_FORECAST_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'fno-stock-forecast.json')
 
 /**
  * Gather candidate signals across all three segments, tag them with the
@@ -474,6 +475,27 @@ async function gatherCandidates(): Promise<Array<any & { _segment: 'CASH' | 'FNO
       }
       if (added > 0) log.info('PAPER', `+${added} fno-futures candidates`)
     } catch (e) { log.warn('PAPER', `fno-futures read failed: ${(e as Error).message}`) }
+  }
+
+  // ─── F&O Stock Move Forecaster (85-stock 7-lens universe) — FNO segment.
+  //     Uses `score` (0-100) directly. Gated to STRONG+ (score ≥ 50) so
+  //     paper book only takes tier-quality forecasts.
+  if (fs.existsSync(FNO_FORECAST_FILE)) {
+    try {
+      const fnc = JSON.parse(fs.readFileSync(FNO_FORECAST_FILE, 'utf-8'))
+      let added = 0
+      for (const r of (fnc.rows ?? [])) {
+        if (r.score < 50) continue
+        const norm = normaliseCandidate(r, 'FNO-FORECAST')
+        if (norm) {
+          norm.observation = r.observation
+          norm.bestWayToPlay = r.bestWayToPlay
+          await push(norm, 'FNO')
+          added++
+        }
+      }
+      if (added > 0) log.info('PAPER', `+${added} fno-forecast candidates`)
+    } catch (e) { log.warn('PAPER', `fno-forecast read failed: ${(e as Error).message}`) }
   }
 
   // ─── Stock F&O Volume Profile scanner (191 signals typical) — FNO segment

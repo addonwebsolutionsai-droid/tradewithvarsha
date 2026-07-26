@@ -62,14 +62,17 @@ async function main() {
 
   console.log(`[TICK] IST ${Math.floor(tod / 60).toString().padStart(2, '0')}:${(tod % 60).toString().padStart(2, '0')} · weekday=${wd} · isWeekday=${isWeekday} · inWindow=${inWindow}`)
 
-  if (!isWeekday) {
+  // Bypass gate for backtest / smoke-test runs (env FORCE_TICK=1)
+  const forceTick = process.env.FORCE_TICK === '1'
+  if (!isWeekday && !forceTick) {
     console.log('[TICK] Weekend — skipping.')
     return
   }
-  if (!inWindow) {
+  if (!inWindow && !forceTick) {
     console.log('[TICK] Outside 09:15-15:30 IST market window — skipping.')
     return
   }
+  if (forceTick) console.log('[TICK] FORCE_TICK=1 — running outside market window for smoke-test.')
 
   // ─── Init Telegram (all downstream broadcastSignal calls need state.bot set)
   const bot = createBot()
@@ -297,6 +300,31 @@ async function main() {
   } catch (e) {
     results['nifty-long-horizon'] = `ERR ${(e as Error).message}`
     log.err('TICK', `nifty-long-horizon: ${(e as Error).message}`)
+  }
+
+  // ─── 3b-1. F&O Futures scanner — 12-criteria pre-breakout scan across
+  //           the ~211 NSE F&O underlyings. Was buried in localhost publicSnapshots
+  //           publish path (bug: 16-day stale on GH Actions). Now wired into
+  //           intraday-tick so it refreshes every 5 min like everything else.
+  try {
+    const t = Date.now()
+    const { scanFnoFutures } = await import('../src/engine/fnoFuturesScanner')
+    const rows = await scanFnoFutures({ limit: 25 })
+    const fs2 = await import('fs')
+    const path2 = await import('path')
+    const out = {
+      generatedAt: new Date().toISOString(),
+      universeSize: rows.length,
+      total: rows.length,
+      highConvCount: rows.filter((r: any) => (r.score ?? 0) >= 8).length,
+      medConvCount: rows.filter((r: any) => (r.score ?? 0) >= 6 && (r.score ?? 0) < 8).length,
+      rows,
+    }
+    fs2.writeFileSync(path2.join(SNAPSHOT_DIR, 'fno-futures.json'), JSON.stringify(out, null, 2))
+    results['fno-futures'] = `${rows.length} signals · ${out.highConvCount} high-conv · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['fno-futures'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `fno-futures: ${(e as Error).message}`)
   }
 
   // ─── 3c. F&O Stock Move Forecaster — 85 high-beta F&O stocks scanned
