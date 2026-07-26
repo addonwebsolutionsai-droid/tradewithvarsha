@@ -299,6 +299,21 @@ async function main() {
     log.err('TICK', `nifty-long-horizon: ${(e as Error).message}`)
   }
 
+  // ─── 3c. F&O Stock Move Forecaster — 85 high-beta F&O stocks scanned
+  //          through 7 lenses (Volume Profile · Fib · Seasonality · Volume
+  //          Build · SMC primitives · Smart-Money footprint · OI radar).
+  //          Predicts moves BEFORE they happen with dated targets +
+  //          accumulation-vs-distribution observation + how-to-play guide.
+  try {
+    const t = Date.now()
+    const { runFnoStockMoveForecast } = await import('../src/engine/fnoStockMoveForecaster')
+    const r = await runFnoStockMoveForecast()
+    results['fno-stock-forecast'] = `${r.totalScored} forecasts (${r.eliteCount} elite · ${r.strongCount} strong · ${r.decentCount} decent) · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['fno-stock-forecast'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `fno-stock-forecast: ${(e as Error).message}`)
+  }
+
   // ─── 4. OI Monitor — fires Telegram alerts for high-strength OI signals
   try {
     const oi = await import('../src/engine/oiMonitor')

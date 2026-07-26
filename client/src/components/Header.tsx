@@ -161,6 +161,17 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
             >
               🔮 NIFTY Forecast
             </Link>
+            {/* 2026-07-26: F&O Stock Move Forecaster — 85-stock high-beta
+                universe scanned through 7 lenses (VP+Fib+Seasonality+
+                VolumeBuild+SMC+SmartMoney+OI). Predicts moves before they
+                happen with dated targets + how-to-play guidance. */}
+            <Link
+              to="/fno-forecast"
+              className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green hover:bg-accent-green/20"
+              title="F&O Stock Move Forecast — 85 high-beta futures stocks (ABB, Siemens, LTIM, Persistent, TVS, HAL, Trent, Reliance, etc). 7 lenses per stock, predicts moves BEFORE they happen. Refresh every 5 min during market."
+            >
+              🎯 F&O Forecast
+            </Link>
             <span
               className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green"
               title="Free public mode — picks refreshed every 30 minutes from the live trading engine"

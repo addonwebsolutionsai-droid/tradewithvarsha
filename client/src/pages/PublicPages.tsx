@@ -4848,3 +4848,117 @@ export function PublicNiftyForecastPage(): JSX.Element {
   )
 }
 
+// ─── PUBLIC F&O STOCK MOVE FORECAST PAGE ────────────────────────────
+// 85-stock high-beta F&O universe scanned through 7 lenses (VP + Fib +
+// Seasonality + Volume Build + SMC + Smart-Money Footprint + OI Radar).
+// Predicts moves BEFORE they happen with dated targets + how-to-play.
+export function PublicFnoForecastPage(): JSX.Element {
+  const { data, isLoading } = useQuery({
+    queryKey: ['public-fno-forecast'],
+    queryFn: () => snapshots.fnoStockForecast(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const [tier, setTier] = useState<'ALL' | 'ELITE' | 'STRONG' | 'DECENT'>('ELITE')
+  if (isLoading && !data) return <div className="p-12 text-center text-neutral-500">Loading F&O stock forecast…</div>
+  if (!data) return <div className="p-12 text-center text-neutral-500">Forecast not built yet — next tick will populate.</div>
+
+  const d = data as any
+  const rows: any[] = (d.rows ?? []).filter((r: any) => tier === 'ALL' || r.tier === tier)
+  const pnlColor = (b: string) => b === 'LONG' ? '#00c853' : '#ff5e7c'
+  const tierColor = (t: string) => t === 'ELITE' ? '#ffb454' : t === 'STRONG' ? '#5fd4ff' : '#8a8a8a'
+  const fmtInr = (n?: number) => n == null ? '—' : `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const lensIcon: Record<string, string> = { vp: '📊', fib: '🌀', seasonality: '🗓', volume: '📈', smc: '⬛', smart_money: '⛰', oi: '🎯' }
+  const lensName: Record<string, string> = { vp: 'VP', fib: 'FIB', seasonality: 'SEAS', volume: 'VOL', smc: 'SMC', smart_money: 'SM$', oi: 'OI' }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-cyan/15 to-accent-green/5 border border-accent-cyan/50 rounded-lg">
+        <div className="text-3xl">🎯</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-cyan">F&O Stock Move Forecast — 85 high-beta stocks scanned BEFORE the move</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            7 lenses per stock: 📊 Volume Profile · 🌀 Fibonacci · 🗓 Seasonality (5-yr monthly-return pattern) · 📈 Volume Build (5d/20d ratio + range compression) · ⬛ SMC primitives (FVG / OB / BoS / Liquidity Sweep) · ⛰ Smart-Money Footprint (Pedigree + Bulk Deals + Insider + Superstar + A/D) · 🎯 OI Accumulation Radar (institutional stacking per stock). ELITE = 5+ lenses aligning. Refreshes every 5 min during 09:15-15:30 IST.
+          </div>
+          {d.generatedAt && (
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
+              Universe {d.universeSize} · Scored {d.totalScored} · ELITE {d.eliteCount} · STRONG {d.strongCount} · DECENT {d.decentCount} · Updated {new Date(d.generatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}
+            </div>
+          )}
+        </div>
+      </div>
+
+      <div className="flex gap-2 text-[11px]">
+        {(['ELITE','STRONG','DECENT','ALL'] as const).map(t => {
+          const cnt = t === 'ALL' ? d.totalScored : t === 'ELITE' ? d.eliteCount : t === 'STRONG' ? d.strongCount : d.decentCount
+          return (
+            <button key={t} onClick={() => setTier(t)} className={`px-3 py-1.5 rounded border ${tier === t ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}>
+              {t} ({cnt ?? 0})
+            </button>
+          )
+        })}
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+        {rows.length === 0 && (
+          <div className="col-span-full p-12 text-center text-neutral-500 bg-ink-800 border border-ink-500 rounded-lg">
+            No {tier} setups right now. Try a lower tier or wait for next 5-min tick.
+          </div>
+        )}
+        {rows.map((r: any, i: number) => (
+          <div key={r.symbol + i} className={`p-4 bg-ink-800 border rounded-lg ${r.tier === 'ELITE' ? 'border-accent-amber/40' : 'border-ink-500'}`}>
+            {/* Head */}
+            <div className="flex items-center gap-2 mb-2">
+              <div className="text-[15px] font-bold text-neutral-100">{r.symbol}</div>
+              <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${pnlColor(r.side)}22`, color: pnlColor(r.side) }}>{r.side}</span>
+              <span className="ml-auto text-[11px] font-bold" style={{ color: tierColor(r.tier) }}>{r.tier} · {r.score}</span>
+            </div>
+
+            {/* Lens chips */}
+            <div className="flex flex-wrap gap-1 mb-2">
+              {Object.entries(r.lenses ?? {}).map(([k, l]: any) => (
+                <span key={k} title={l.detail} className="text-[9.5px] px-1.5 py-0.5 rounded font-bold" style={{
+                  background: l.hit ? 'rgba(95,212,255,0.15)' : 'rgba(255,255,255,0.03)',
+                  color: l.hit ? '#5fd4ff' : '#666',
+                  border: `1px solid ${l.hit ? 'rgba(95,212,255,0.35)' : 'rgba(255,255,255,0.05)'}`,
+                }}>
+                  {lensIcon[k]}{lensName[k]}{l.hit ? '✓' : '·'}
+                </span>
+              ))}
+            </div>
+
+            {/* Trade plan */}
+            <table className="w-full text-[11px] font-mono mb-2" style={{ tableLayout: 'fixed' }}>
+              <tbody>
+                <tr><td className="text-neutral-500 py-0.5" style={{ width: 55 }}>LTP</td><td className="text-neutral-200">{fmtInr(r.ltp)}</td><td className="text-neutral-500 text-right">Entered {r.entryDate}</td></tr>
+                <tr><td className="text-neutral-500 py-0.5">Entry</td><td className="text-neutral-100 font-bold">{fmtInr(r.entry)}</td><td className="text-neutral-500 text-right">Risk {r.riskPct}%</td></tr>
+                <tr><td className="text-accent-red py-0.5">SL</td><td className="text-accent-red">{fmtInr(r.stopLoss)}</td><td className="text-neutral-500 text-right">📅 {r.slDate}</td></tr>
+                <tr><td className="text-accent-green py-0.5">T1</td><td className="text-accent-green">{fmtInr(r.target1)}</td><td className="text-neutral-500 text-right">📅 {r.target1Date} · R:R {r.rrT1}</td></tr>
+                <tr><td className="text-accent-green py-0.5">T2</td><td className="text-accent-green">{fmtInr(r.target2)}</td><td className="text-neutral-500 text-right">📅 {r.target2Date} · R:R {r.rrT2}</td></tr>
+                <tr><td className="text-accent-green py-0.5">T3</td><td className="text-accent-green">{fmtInr(r.target3)}</td><td className="text-neutral-500 text-right">📅 {r.target3Date} · R:R {r.rrT3}</td></tr>
+              </tbody>
+            </table>
+
+            {/* Observation + How to play */}
+            <div className="text-[11px] mb-2 p-2 rounded" style={{ background: r.side === 'LONG' ? 'rgba(0,200,83,0.08)' : 'rgba(255,94,124,0.08)' }}>
+              <div className="text-neutral-300 font-bold text-[10px] uppercase tracking-wider mb-1">Observation</div>
+              <div className="text-neutral-200">{r.observation}</div>
+            </div>
+            <div className="text-[11px] mb-2 p-2 rounded bg-accent-amber/10">
+              <div className="text-accent-amber font-bold text-[10px] uppercase tracking-wider mb-1">Best way to play</div>
+              <div className="text-neutral-200">{r.bestWayToPlay}</div>
+            </div>
+
+            {/* Full reasoning */}
+            <details className="text-[10.5px] text-neutral-400 mt-2">
+              <summary className="cursor-pointer text-neutral-500 hover:text-neutral-300">Full reasoning ({r.lensesHit} lenses hit)</summary>
+              <ul className="mt-1 space-y-0.5 pl-2">
+                {r.reasoning.map((s: string, k: number) => <li key={k}>· {s}</li>)}
+              </ul>
+            </details>
+          </div>
+        ))}
+      </div>
+    </div>
+  )
+}
+
