@@ -963,7 +963,7 @@ function recomputeLedgerAndPerf(book: Book): void {
  *   4. Recomputes ledger + performance stats
  *   5. Persists book state + publishes public journal snapshot
  */
-export async function runPaperTradingDailyTick(): Promise<Book> {
+export async function runPaperTradingDailyTick(): Promise<Book & { newTradesThisTick?: TradeEntry[] }> {
   const book = loadBook()
   const dayStart = Date.now()
 
@@ -982,6 +982,9 @@ export async function runPaperTradingDailyTick(): Promise<Book> {
   const newTrades = await scanForNewTrades(book)
   book.trades.push(...newTrades)
   if (newTrades.length > 0) log.info('PAPER', `opened ${newTrades.length} new positions this tick`)
+  // Expose the trades opened THIS tick so the caller (cron) can broadcast
+  // them to Telegram + downstream consumers.
+  ;(book as any).newTradesThisTick = newTrades
 
   // 3. Final recompute + persist (same file serves as state + public feed)
   recomputeLedgerAndPerf(book)

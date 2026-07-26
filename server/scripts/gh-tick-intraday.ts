@@ -300,15 +300,40 @@ async function main() {
   }
 
   // ─── 3c. F&O Stock Move Forecaster — 85 high-beta F&O stocks scanned
-  //          through 7 lenses (Volume Profile · Fib · Seasonality · Volume
-  //          Build · SMC primitives · Smart-Money footprint · OI radar).
-  //          Predicts moves BEFORE they happen with dated targets +
-  //          accumulation-vs-distribution observation + how-to-play guide.
+  //          through 7 lenses. Broadcasts ELITE-tier signals (top 5 per
+  //          tick) to Telegram. broadcastSignal handles the 2-hour dedup
+  //          per (instrument|direction|source-group) — same rule the rest
+  //          of the pipeline uses so channel doesn't spam.
   try {
     const t = Date.now()
     const { runFnoStockMoveForecast } = await import('../src/engine/fnoStockMoveForecaster')
     const r = await runFnoStockMoveForecast()
-    results['fno-stock-forecast'] = `${r.totalScored} forecasts (${r.eliteCount} elite · ${r.strongCount} strong · ${r.decentCount} decent) · ${((Date.now() - t) / 1000).toFixed(1)}s`
+    let bc = 0
+    const elites = r.rows.filter(x => x.tier === 'ELITE').slice(0, 5)
+    for (const row of elites) {
+      try {
+        const sig = {
+          type: 'SWING' as const,
+          direction: (row.side === 'SHORT' ? 'SHORT' : 'BUY') as 'BUY' | 'SHORT',
+          instrument: row.symbol,
+          symbol: row.symbol,
+          score: Math.min(10, row.score / 10),
+          grade: 'A' as const,
+          source: 'FNO_FORECAST',
+          conviction: row.score,
+          entry: row.entry,
+          stopLoss: row.stopLoss,
+          target1: row.target1,
+          target2: row.target2,
+          target3: row.target3,
+          reason: `🎯 F&O FORECAST · ${row.lensesHit}/7 lenses · ${row.observation.slice(0, 180)} · Play: ${row.bestWayToPlay.slice(0, 120)}`.slice(0, 400),
+          time: Date.now(),
+        } as unknown as Parameters<typeof broadcastSignal>[0]
+        await broadcastSignal(sig)
+        bc++
+      } catch (e) { log.warn('TICK', `fno-forecast-broadcast ${row.symbol}: ${(e as Error).message}`) }
+    }
+    results['fno-stock-forecast'] = `${r.totalScored} forecasts (${r.eliteCount} elite · ${r.strongCount} strong · ${r.decentCount} decent) · ${bc} broadcast · ${((Date.now() - t) / 1000).toFixed(1)}s`
   } catch (e) {
     results['fno-stock-forecast'] = `ERR ${(e as Error).message}`
     log.err('TICK', `fno-stock-forecast: ${(e as Error).message}`)
@@ -377,7 +402,35 @@ async function main() {
   try {
     const { runPaperTradingDailyTick } = await import('../src/engine/paperTradingBook')
     const book = await runPaperTradingDailyTick()
-    results['paper-book'] = `₹${book.ledger.bookValue.toLocaleString('en-IN')} · ${book.ledger.totalReturnPct.toFixed(2)}% · open ${book.performance.openTrades} · closed ${book.performance.closedTrades}`
+    // Broadcast each new trade opened this tick to Telegram. broadcastSignal
+    // dedups per (instrument|direction|source-group) in 2h — same rule the
+    // rest of the platform uses so the channel doesn't spam on re-runs.
+    let bcPaper = 0
+    const newTrades = (book as any).newTradesThisTick ?? []
+    for (const t of newTrades) {
+      try {
+        const sig = {
+          type: (t.segment === 'MCX' ? 'SWING' : (t.source?.includes('OPT') || t.source?.includes('FORESIGHT') ? 'OPTIONS' : 'SWING')) as 'SWING' | 'OPTIONS',
+          direction: (t.direction === 'SHORT' ? 'SHORT' : 'BUY') as 'BUY' | 'SHORT',
+          instrument: t.symbol,
+          symbol: t.symbol,
+          score: Math.min(10, (t.score ?? 60) / 10),
+          grade: (t.tier === 'ELITE' ? 'A' : 'B') as 'A' | 'B',
+          source: `PAPER_BOOK_${t.segment}`,
+          conviction: t.score,
+          entry: t.entryPrice,
+          stopLoss: t.stopLoss,
+          target1: t.target1,
+          target2: t.target2,
+          target3: t.target3,
+          reason: `📓 JOURNAL ENTRY · ${t.segment} · ${t.tier} · qty ${t.qty} @ ₹${t.entryPrice} · position ₹${Math.round(t.positionValue).toLocaleString('en-IN')} · ${(t.entryReason ?? '').slice(0, 260)}`.slice(0, 400),
+          time: Date.now(),
+        } as unknown as Parameters<typeof broadcastSignal>[0]
+        await broadcastSignal(sig)
+        bcPaper++
+      } catch (e) { log.warn('TICK', `paper-book-broadcast ${t.symbol}: ${(e as Error).message}`) }
+    }
+    results['paper-book'] = `₹${book.ledger.bookValue.toLocaleString('en-IN')} · ${book.ledger.totalReturnPct.toFixed(2)}% · open ${book.performance.openTrades} · closed ${book.performance.closedTrades} · +${bcPaper} broadcast`
   } catch (e) {
     results['paper-book'] = `ERR ${(e as Error).message}`
     log.err('TICK', `paper-book: ${(e as Error).message}`)
