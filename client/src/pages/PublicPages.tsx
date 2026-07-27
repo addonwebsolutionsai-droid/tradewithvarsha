@@ -2657,14 +2657,14 @@ export function PublicStockFnoVolumeProfilePage(): JSX.Element {
                 <th {...headerProps('symbol', 'text-left px-3 py-3 bg-ink-700 sticky left-0 z-30 border-r border-ink-500')}>Symbol{sortIndicator('symbol')}</th>
                 <th className="text-center px-2 py-3">Side</th>
                 <th {...headerProps('compositeStrength', 'text-right px-2 py-3 text-accent-amber')}>Strength{sortIndicator('compositeStrength')}</th>
-                <th {...headerProps('agreementScore', 'text-right px-2 py-3 text-accent-cyan')}>TFs{sortIndicator('agreementScore')}</th>
+                <th {...headerProps('agreementScore', 'text-right px-2 py-3 text-accent-cyan')} title="Number of timeframes (out of 3: 15m, 1h, 1D) that agree on the setup direction">TFs Agree{sortIndicator('agreementScore')}</th>
                 <th className="text-left px-2 py-3">Best Setup</th>
                 <th {...headerProps('ltp', 'text-right px-2 py-3')}>LTP{sortIndicator('ltp')}</th>
-                <th {...headerProps('entry', 'text-right px-2 py-3 text-accent-cyan')}>Entry{sortIndicator('entry')}</th>
-                <th {...headerProps('stopLoss', 'text-right px-2 py-3 text-accent-red')}>SL{sortIndicator('stopLoss')}</th>
-                <th {...headerProps('target1', 'text-right px-2 py-3 text-accent-green')}>T1{sortIndicator('target1')}</th>
-                <th className="text-right px-2 py-3 text-accent-green">T2</th>
-                <th className="text-right px-2 py-3 text-accent-green">T3</th>
+                <th {...headerProps('entry', 'text-right px-2 py-3 text-accent-cyan')}>Entry · Date{sortIndicator('entry')}</th>
+                <th {...headerProps('stopLoss', 'text-right px-2 py-3 text-accent-red')}>SL · Date{sortIndicator('stopLoss')}</th>
+                <th {...headerProps('target1', 'text-right px-2 py-3 text-accent-green')}>T1 · Date{sortIndicator('target1')}</th>
+                <th className="text-right px-2 py-3 text-accent-green">T2 · Date</th>
+                <th className="text-right px-2 py-3 text-accent-green">T3 · Date</th>
                 <th className="text-right px-2 py-3">1D POC</th>
                 <th className="text-left px-3 py-3">Why</th>
               </tr>
@@ -2678,14 +2678,14 @@ export function PublicStockFnoVolumeProfilePage(): JSX.Element {
                     <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100 bg-ink-800`}>{r.symbol}</td>
                     <td className={`${tdb} text-center font-bold`} style={{ color: sideColor }}>{r.side}</td>
                     <td className={`${tdb} text-right font-bold text-accent-amber`}>{r.compositeStrength}</td>
-                    <td className={`${tdb} text-right text-accent-cyan`}>{r.agreementScore}</td>
+                    <td className={`${tdb} text-right text-accent-cyan`}>{r.agreementScore}/3</td>
                     <td className={`${tdb} text-left text-neutral-200 text-[10px]`}>{r.bestTf} · {setupLabel(r.bestSetup)}</td>
                     <td className={`${tdb} text-right text-neutral-200`}>₹{r.ltp?.toFixed?.(2)}</td>
-                    <td className={`${tdb} text-right text-accent-cyan`}>₹{r.entry?.toFixed?.(2)}</td>
-                    <td className={`${tdb} text-right text-accent-red`}>₹{r.stopLoss?.toFixed?.(2)}</td>
-                    <td className={`${tdb} text-right text-accent-green`}>₹{r.target1?.toFixed?.(2)}</td>
-                    <td className={`${tdb} text-right text-accent-green`}>₹{r.target2?.toFixed?.(2)}</td>
-                    <td className={`${tdb} text-right text-accent-green`}>₹{r.target3?.toFixed?.(2)}</td>
+                    <td className={`${tdb} text-right text-accent-cyan`}>₹{r.entry?.toFixed?.(2)}<div className="text-[9px] text-accent-cyan/60">📅 {fmtDate(r.entryDate)}</div></td>
+                    <td className={`${tdb} text-right text-accent-red`}>₹{r.stopLoss?.toFixed?.(2)}<div className="text-[9px] text-accent-red/60">📅 {fmtDate(r.slDate)}</div></td>
+                    <td className={`${tdb} text-right text-accent-green`}>₹{r.target1?.toFixed?.(2)}<div className="text-[9px] text-accent-green/60">📅 {fmtDate(r.target1Date)}</div></td>
+                    <td className={`${tdb} text-right text-accent-green`}>₹{r.target2?.toFixed?.(2)}<div className="text-[9px] text-accent-green/60">📅 {fmtDate(r.target2Date)}</div></td>
+                    <td className={`${tdb} text-right text-accent-green`}>₹{r.target3?.toFixed?.(2)}<div className="text-[9px] text-accent-green/60">📅 {fmtDate(r.target3Date)}</div></td>
                     <td className={`${tdb} text-right text-accent-amber`}>₹{r.poc1D?.toFixed?.(2)}</td>
                     <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 260 }}>
                       <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden', wordBreak: 'break-word' }}>
@@ -4862,6 +4862,8 @@ export function PublicProSetupsPage(): JSX.Element {
   const [tier, setTier] = useState<'ALL' | 'ELITE' | 'STRONG' | 'DECENT'>('ALL')
   const [tf, setTf] = useState<string>('ALL')
   const [kind, setKind] = useState<'ALL' | 'INDEX' | 'STOCK' | 'COMMODITY'>('ALL')
+  const [side, setSide] = useState<'ALL' | 'LONG' | 'SHORT'>('ALL')
+  const [sortBy, setSortBy] = useState<'score' | 'rrT1' | 'rrT3' | 'riskPct' | 'expectedReturnPct'>('score')
   if (isLoading && !data) return <div className="p-12 text-center text-neutral-500">Loading Pro Setups…</div>
   if (!data) return <div className="p-12 text-center text-neutral-500">Setups not yet computed — next tick will populate.</div>
 
@@ -4875,6 +4877,13 @@ export function PublicProSetupsPage(): JSX.Element {
     .filter(r => tier === 'ALL' || r.tier === tier)
     .filter(r => tf === 'ALL' || r.timeframe === tf)
     .filter(r => kind === 'ALL' || r.kind === kind)
+    .filter(r => side === 'ALL' || r.side === side)
+    .map(r => ({ ...r, expectedReturnPct: r.entry > 0 ? Math.abs((r.target1 - r.entry) / r.entry) * 100 : 0 }))
+    .sort((a, b) => {
+      // Higher is better for score / R:R / expected return; lower is better for risk
+      if (sortBy === 'riskPct') return (a.riskPct ?? 0) - (b.riskPct ?? 0)
+      return (b[sortBy] ?? 0) - (a[sortBy] ?? 0)
+    })
 
   const tierColor = (t: string) => t === 'ELITE' ? '#ffb454' : t === 'STRONG' ? '#5fd4ff' : '#8a8a8a'
   const sideColor = (s: string) => s === 'LONG' ? '#00c853' : '#ff5e7c'
@@ -4944,6 +4953,30 @@ export function PublicProSetupsPage(): JSX.Element {
             </button>
           ))}
         </div>
+        {/* BUY/SELL side filter */}
+        <div className="flex gap-1">
+          {(['ALL','LONG','SHORT'] as const).map(s => (
+            <button key={s} onClick={() => setSide(s)}
+              className={`px-2.5 py-1 rounded border ${side === s ? (s === 'LONG' ? 'bg-accent-green/25 border-accent-green text-accent-green' : s === 'SHORT' ? 'bg-accent-red/25 border-accent-red text-accent-red' : 'bg-accent-amber/20 border-accent-amber text-accent-amber') : 'bg-ink-700 border-ink-500 text-neutral-400'}`}>
+              {s === 'LONG' ? '🟢 BUY' : s === 'SHORT' ? '🔴 SELL' : 'ALL'}
+            </button>
+          ))}
+        </div>
+        {/* Sort selector */}
+        <label className="flex items-center gap-1 text-neutral-400">
+          <span className="text-[10px] uppercase tracking-wider">Sort</span>
+          <select
+            value={sortBy}
+            onChange={e => setSortBy(e.target.value as any)}
+            className="bg-ink-700 border border-ink-500 rounded px-2 py-1 text-[11px] text-neutral-200 font-mono"
+          >
+            <option value="score">Score ↓</option>
+            <option value="rrT1">R:R T1 ↓</option>
+            <option value="rrT3">R:R T3 ↓</option>
+            <option value="expectedReturnPct">Return % ↓</option>
+            <option value="riskPct">Risk % ↑ (lowest first)</option>
+          </select>
+        </label>
         <span className="ml-auto text-neutral-500 self-center">Showing <b className="text-neutral-300">{rows.length}</b> of {allRows.length}</span>
       </div>
 

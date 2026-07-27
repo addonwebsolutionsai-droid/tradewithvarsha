@@ -30,7 +30,7 @@ function SortableTh({
 }
 
 // ─── Types ───────────────────────────────────────────────────────────
-type TabKey = 'master' | 'nifty' | 'chart' | 'harmonic' | 'elliott' | 'tech' | 'swings' | 'vpfib' | 'journal' | 'scan'
+type TabKey = 'master' | 'nifty' | 'chart' | 'harmonic' | 'elliott' | 'tech' | 'swings' | 'vpfib' | 'fnotrades' | 'journal' | 'scan'
 type Theme = 'dark' | 'light'
 
 const TABS: Array<{ key: TabKey; label: string; icon: string; count?: number }> = [
@@ -42,6 +42,7 @@ const TABS: Array<{ key: TabKey; label: string; icon: string; count?: number }> 
   { key: 'tech',     label: 'Tech',      icon: '📊' },
   { key: 'swings',   label: 'Swings',    icon: '🌱' },
   { key: 'vpfib',    label: 'VP + FIB',  icon: '⛯' },
+  { key: 'fnotrades', label: 'F&O Trades', icon: '💰' },
   { key: 'journal',  label: 'Journal',   icon: '📓' },
   { key: 'scan',     label: 'Ask',       icon: '💬' },
 ]
@@ -230,6 +231,27 @@ const RAILS: Record<TabKey, { title: string; desc: string; groups: RailGroup[] }
       { icon: '📜', label: 'Closed trade history' },
     ]},
   ]},
+  fnotrades: { title: '💰 F&O Trades', desc: 'Multi-TF money-printing engine — 30 instruments × 6 timeframes × 7 lenses (VP · Fib · Volume · SMC · Liquidity Sweep · Seasonality · Astro). Refreshes every 5 min.', groups: [
+    { title: 'Instruments', items: [
+      { icon: '🧭', label: 'NIFTY 50' },
+      { icon: '🪙', label: 'XAU/USD (COMEX)' },
+      { icon: '🪙', label: 'MCX GOLD · SILVER · CRUDE' },
+      { icon: '📈', label: '25 top F&O stocks' },
+    ]},
+    { title: 'Timeframes', items: [
+      { icon: '⏱', label: '5m · 15m · 30m' },
+      { icon: '⏱', label: '1h · 4h · 1D' },
+    ]},
+    { title: 'Lenses', items: [
+      { icon: '📊', label: 'Volume Profile (POC/VAH/VAL)' },
+      { icon: '🌀', label: 'Fibonacci golden-zone' },
+      { icon: '📈', label: 'Volume Build + coil' },
+      { icon: '⬛', label: 'SMC (FVG/OB/BoS)' },
+      { icon: '💧', label: 'Liquidity Sweep' },
+      { icon: '🗓', label: 'Seasonality (5+ yr)' },
+      { icon: '⭐', label: 'Vedic astro overlay' },
+    ]},
+  ]},
   vpfib: { title: '⛯ VP + FIB Confluence', desc: '7-lens PRO Trader setup — Volume Profile · Fib · Order Block · Liquidity Grab · Elliott · Harmonic · Volume.', groups: [
     { title: 'Confluences', items: [
       { icon: '◉', label: 'All 7 lenses', on: true },
@@ -324,6 +346,7 @@ export default function DeskApp(): JSX.Element {
             {tab === 'master' && <MasterView />}
             {tab === 'nifty' && <NiftyView />}
             {tab === 'vpfib' && <VpFibView />}
+            {tab === 'fnotrades' && <FnoTradesView />}
             {tab === 'journal' && <JournalView />}
             {tab === 'chart' && <ChartPatternsView />}
             {tab === 'harmonic' && <HarmonicView />}
@@ -349,15 +372,24 @@ function RailPane({ tab }: { tab: TabKey }): JSX.Element {
         <div className="desk-rail-ctx-title">{rail.title}</div>
         <div className="desk-rail-ctx-desc">{rail.desc}</div>
       </div>
+      {/* 2026-07-27: Rail items are informational chips (rules / source
+          descriptions), NOT filters. They previously rendered as <button>
+          which suggested interactivity — clicking did nothing and confused
+          users. Now render as <div> with default cursor + no hover-lift.
+          Real filter/sort UI lives inside each view's toolbar. */}
       {rail.groups.map((g, gi) => (
         <div key={gi}>
           <div className="desk-rail-title">{g.title}</div>
           {g.items.map((it, i) => (
-            <button key={i} className={`desk-rail-item ${it.on ? 'on' : ''}`}>
+            <div
+              key={i}
+              className={`desk-rail-item ${it.on ? 'on' : ''}`}
+              style={{ cursor: 'default', pointerEvents: 'none' }}
+            >
               <span className="desk-rail-icon">{it.icon}</span>
               {it.label}
               {it.count != null && <span className="desk-rail-count">{it.count}</span>}
-            </button>
+            </div>
           ))}
         </div>
       ))}
@@ -683,6 +715,170 @@ function NiftyView(): JSX.Element {
 // Reads trading-journal.json (published by the paper trading engine on
 // every EOD cron). Shows the live ₹10L test book: ledger, KPIs, open
 // positions with mark-to-market P&L, and closed trade history.
+// ─── F&O TRADES VIEW (Pro Multi-TF Setups) ───────────────────────────
+// 30 instruments × 6 timeframes × 7 lenses. Same data as public /pro-setups
+// but rendered in desk style with tier/kind/timeframe/side filters + sort.
+function FnoTradesView(): JSX.Element {
+  const q = useQuery({ queryKey: ['desk-pro-setups'], queryFn: () => snapshots.proSetups(), refetchInterval: 5 * 60_000, retry: false })
+  const searchQ = useSearchQuery()
+  const [tier, setTier] = useState<'ALL' | 'ELITE' | 'STRONG' | 'DECENT'>('ALL')
+  const [tf, setTf] = useState<string>('ALL')
+  const [kind, setKind] = useState<'ALL' | 'INDEX' | 'STOCK' | 'COMMODITY'>('ALL')
+  const [side, setSide] = useState<'ALL' | 'LONG' | 'SHORT'>('ALL')
+  const [sortBy, setSortBy] = useState<'score' | 'rrT1' | 'rrT3' | 'riskPct' | 'expectedReturnPct'>('score')
+  const [pageSize, setPageSize] = useState(60)
+
+  const d = q.data as any
+  const allRows: any[] = d?.rows ?? []
+  const timeframes = Array.from(new Set(allRows.map(r => r.timeframe))).sort((a, b) => {
+    const order = ['5m','15m','30m','1h','4h','1D']
+    return order.indexOf(a) - order.indexOf(b)
+  })
+
+  const rows = allRows
+    .filter((r: any) => tier === 'ALL' || r.tier === tier)
+    .filter((r: any) => tf === 'ALL' || r.timeframe === tf)
+    .filter((r: any) => kind === 'ALL' || r.kind === kind)
+    .filter((r: any) => side === 'ALL' || r.side === side)
+    .filter((r: any) => matchesQuery({ symbol: r.instrument }, searchQ))
+    .map((r: any) => ({ ...r, expectedReturnPct: r.entry > 0 ? Math.abs((r.target1 - r.entry) / r.entry) * 100 : 0 }))
+    .sort((a: any, b: any) => sortBy === 'riskPct' ? (a.riskPct ?? 0) - (b.riskPct ?? 0) : (b[sortBy] ?? 0) - (a[sortBy] ?? 0))
+
+  const visible = rows.slice(0, pageSize)
+  const tierColor = (t: string) => t === 'ELITE' ? '#ffb547' : t === 'STRONG' ? '#4dc0ff' : 'var(--desk-text-3)'
+  const sideColor = (s: string) => s === 'LONG' ? '#42be65' : '#f05454'
+  const kindEmoji = (k: string) => k === 'INDEX' ? '🧭' : k === 'COMMODITY' ? '🪙' : '📈'
+  const lensIcon: Record<string, string> = { vp: '📊', fib: '🌀', volume: '📈', smc: '⬛', liquidity: '💧', seasonality: '🗓', astro: '⭐' }
+  const fmtInr = (n?: number) => n == null ? '—' : `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const fmtTgt = (raw?: string) => {
+    if (!raw) return '—'
+    const m = raw.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/)
+    if (!m) return raw
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    return `${parseInt(m[3], 10)} ${months[parseInt(m[2], 10) - 1]} · ${m[4]}:${m[5]}`
+  }
+
+  return (
+    <>
+      <div className="proposal-note">
+        <span>💰</span>
+        <div>
+          <b>F&O Trades — PRO Multi-TF money-printing engine.</b> 30 instruments (🧭 NIFTY · 🪙 XAUUSD + MCX Gold/Silver/Crude · 📈 top F&O stocks) × 6 timeframes (5m·15m·30m·1h·4h·1D) × 7 lenses (VP · Fib · Volume · SMC · Liquidity · Seasonality · Astro). Refreshes every 5 min.
+        </div>
+      </div>
+      <div className="desk-page-head">
+        <div>
+          <h1 className="desk-page-title">💰 F&O Trades</h1>
+          <p className="desk-page-desc">
+            {d?.marketOpen ? '🟢 MARKET OPEN' : '🔴 MARKET CLOSED (last-computed)'} · Updated {d ? new Date(d.generatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' }) : '—'} · {d?.eliteCount ?? 0} ELITE · {d?.strongCount ?? 0} STRONG · {d?.decentCount ?? 0} DECENT
+          </p>
+        </div>
+      </div>
+
+      {/* Filter toolbar */}
+      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12, alignItems: 'center' }}>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {(['ALL','ELITE','STRONG','DECENT'] as const).map(t => (
+            <button key={t} onClick={() => setTier(t)} className={`desk-btn ${tier === t ? 'primary' : ''}`} style={{ fontSize: 11.5, padding: '5px 10px' }}>{t}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {(['ALL','INDEX','COMMODITY','STOCK'] as const).map(k => (
+            <button key={k} onClick={() => setKind(k)} className={`desk-btn ${kind === k ? 'primary' : ''}`} style={{ fontSize: 11.5, padding: '5px 10px' }}>{k === 'INDEX' ? '🧭 Index' : k === 'COMMODITY' ? '🪙 Cmdty' : k === 'STOCK' ? '📈 Stock' : 'ALL'}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          <button onClick={() => setTf('ALL')} className={`desk-btn ${tf === 'ALL' ? 'primary' : ''}`} style={{ fontSize: 11.5, padding: '5px 10px' }}>ALL TF</button>
+          {timeframes.map(f => (
+            <button key={f} onClick={() => setTf(f)} className={`desk-btn ${tf === f ? 'primary' : ''}`} style={{ fontSize: 11.5, padding: '5px 10px' }}>{f}</button>
+          ))}
+        </div>
+        <div style={{ display: 'flex', gap: 4 }}>
+          {(['ALL','LONG','SHORT'] as const).map(s => (
+            <button key={s} onClick={() => setSide(s)} className={`desk-btn ${side === s ? 'primary' : ''}`} style={{ fontSize: 11.5, padding: '5px 10px', color: side === s && s !== 'ALL' ? sideColor(s) : undefined }}>
+              {s === 'LONG' ? '🟢 BUY' : s === 'SHORT' ? '🔴 SELL' : 'BOTH'}
+            </button>
+          ))}
+        </div>
+        <label style={{ display: 'flex', gap: 6, alignItems: 'center', color: 'var(--desk-text-3)', fontSize: 11 }}>
+          <span style={{ textTransform: 'uppercase', letterSpacing: '0.08em', fontSize: 10 }}>Sort</span>
+          <select value={sortBy} onChange={e => setSortBy(e.target.value as any)} style={{ background: 'var(--desk-surface)', border: '1px solid var(--desk-border)', borderRadius: 4, padding: '4px 8px', color: 'var(--desk-text-2)', fontFamily: 'inherit', fontSize: 11 }}>
+            <option value="score">Score ↓</option>
+            <option value="rrT1">R:R T1 ↓</option>
+            <option value="rrT3">R:R T3 ↓</option>
+            <option value="expectedReturnPct">Return % ↓</option>
+            <option value="riskPct">Risk % ↑ (lowest)</option>
+          </select>
+        </label>
+        <span style={{ marginLeft: 'auto', fontSize: 11, color: 'var(--desk-text-3)' }}>Showing <b style={{ color: 'var(--desk-text-2)' }}>{visible.length}</b> of {rows.length}</span>
+      </div>
+
+      {rows.length === 0 && !q.isLoading && (
+        <div style={{ padding: '48px 24px', textAlign: 'center', color: 'var(--desk-text-3)', background: 'var(--desk-surface)', border: '1px solid var(--desk-border)', borderRadius: 12 }}>
+          <div style={{ fontSize: 32, marginBottom: 12 }}>💰</div>
+          <div style={{ fontSize: 14, marginBottom: 6 }}><b>No setups match current filters.</b></div>
+          <div style={{ fontSize: 12 }}>Reset filters or wait for next 5-min tick.</div>
+        </div>
+      )}
+
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(360px, 1fr))', gap: 12 }}>
+        {visible.map((r: any, i: number) => (
+          <div key={r.instrument + r.timeframe + i} style={{
+            background: 'var(--desk-surface)',
+            border: `1px solid ${r.tier === 'ELITE' ? 'rgba(255,181,71,0.35)' : 'var(--desk-border)'}`,
+            borderRadius: 12, padding: 14, display: 'flex', flexDirection: 'column', gap: 8,
+          }}>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+              <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: 'rgba(66,190,101,0.15)', color: '#42be65', fontWeight: 700, letterSpacing: '0.06em' }}>{r.timeframe}</span>
+              <span style={{ fontSize: 10, color: 'var(--desk-text-3)' }}>{kindEmoji(r.kind)} {r.kind}</span>
+              <div style={{ fontSize: 15, fontWeight: 600, flex: 1 }}>{r.displayName}</div>
+              <span style={{ fontSize: 10, padding: '2px 6px', borderRadius: 4, background: `${sideColor(r.side)}22`, color: sideColor(r.side), fontWeight: 700, letterSpacing: '0.06em' }}>{r.side === 'LONG' ? 'BUY' : 'SELL'}</span>
+              <span style={{ fontSize: 11, color: tierColor(r.tier), fontWeight: 700, letterSpacing: '0.06em' }}>{r.tier} · {r.score}</span>
+            </div>
+            <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4 }}>
+              {Object.entries(r.lenses ?? {}).map(([k, l]: any) => (
+                <span key={k} title={l.detail} style={{
+                  fontSize: 9.5, padding: '3px 6px', borderRadius: 4,
+                  background: l.hit ? 'rgba(77,192,255,0.15)' : 'rgba(255,255,255,0.03)',
+                  color: l.hit ? '#4dc0ff' : 'var(--desk-text-3)',
+                  fontWeight: 600, letterSpacing: '0.04em',
+                  border: l.hit ? '1px solid rgba(77,192,255,0.35)' : '1px solid var(--desk-border)',
+                }}>
+                  {lensIcon[k] ?? '·'}{k.toUpperCase()}{l.hit ? '✓' : '·'}
+                </span>
+              ))}
+            </div>
+            <table style={{ width: '100%', fontSize: 11, fontFamily: 'ui-monospace, monospace' }}>
+              <tbody>
+                <tr><td style={{ color: 'var(--desk-text-3)', width: 45 }}>LTP</td><td style={{ color: 'var(--desk-text-2)' }}>{fmtInr(r.ltp)}</td><td style={{ textAlign: 'right', color: 'var(--desk-text-3)', fontSize: 10 }}>Risk {r.riskPct}%</td></tr>
+                <tr><td style={{ color: 'var(--desk-text-3)' }}>Entry</td><td style={{ fontWeight: 600 }}>{fmtInr(r.entry)}</td><td style={{ textAlign: 'right', fontSize: 9.5, color: 'var(--desk-text-3)' }}>📅 {fmtTgt(r.entryTime)}</td></tr>
+                <tr><td style={{ color: '#f05454' }}>SL</td><td style={{ color: '#f05454' }}>{fmtInr(r.stopLoss)}</td><td style={{ textAlign: 'right', fontSize: 9.5, color: '#f0545490' }}>📅 {fmtTgt(r.slTime)}</td></tr>
+                <tr><td style={{ color: '#42be65' }}>T1</td><td style={{ color: '#42be65' }}>{fmtInr(r.target1)}</td><td style={{ textAlign: 'right', fontSize: 9.5, color: '#42be6590' }}>📅 {fmtTgt(r.target1Time)} · R:R {r.rrT1}</td></tr>
+                <tr><td style={{ color: '#42be65' }}>T2</td><td style={{ color: '#42be65' }}>{fmtInr(r.target2)}</td><td style={{ textAlign: 'right', fontSize: 9.5, color: '#42be6590' }}>📅 {fmtTgt(r.target2Time)} · R:R {r.rrT2}</td></tr>
+                <tr><td style={{ color: '#42be65' }}>T3</td><td style={{ color: '#42be65' }}>{fmtInr(r.target3)}</td><td style={{ textAlign: 'right', fontSize: 9.5, color: '#42be6590' }}>📅 {fmtTgt(r.target3Time)} · R:R {r.rrT3}</td></tr>
+              </tbody>
+            </table>
+            <div style={{ fontSize: 10.5, padding: '6px 8px', borderRadius: 4, background: r.side === 'LONG' ? 'rgba(66,190,101,0.08)' : 'rgba(240,84,84,0.08)' }}>
+              <div style={{ color: 'var(--desk-text-3)', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Observation</div>
+              <div style={{ color: 'var(--desk-text-2)' }}>{r.observation}</div>
+            </div>
+            <div style={{ fontSize: 10.5, padding: '6px 8px', borderRadius: 4, background: 'rgba(255,181,71,0.08)' }}>
+              <div style={{ color: '#ffb547', fontSize: 9, textTransform: 'uppercase', letterSpacing: '0.06em', marginBottom: 3 }}>Best way to play</div>
+              <div style={{ color: 'var(--desk-text-2)' }}>{r.bestWayToPlay}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {rows.length > pageSize && (
+        <div className="load-more-strip" style={{ marginTop: 12 }}>
+          <div className="showing-count">Showing <b>{visible.length}</b> of <b className="accent">{rows.length}</b></div>
+          <div className="load-more-actions"><button className="load-more-btn" onClick={() => setPageSize(s => s + 60)}>Load next 60 ↓</button></div>
+        </div>
+      )}
+    </>
+  )
+}
+
 function JournalView(): JSX.Element {
   const q = useQuery({ queryKey: ['desk-journal'], queryFn: () => snapshots.tradingJournal(), refetchInterval: 15 * 60_000, retry: false })
   const d: any = q.data
