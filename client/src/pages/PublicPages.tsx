@@ -4848,6 +4848,157 @@ export function PublicNiftyForecastPage(): JSX.Element {
   )
 }
 
+// ─── PRO MULTI-TF SETUPS PAGE ────────────────────────────────────────
+// 30 instruments × 6 timeframes = 180 scans through 7 lenses (VP + Fib
+// + Volume + SMC + Liquidity + Seasonality + Astro). Refreshes every
+// 5 min during market hours. Always shows something — filters default
+// to ALL so user sees latest ranked list even when no ELITE fires.
+export function PublicProSetupsPage(): JSX.Element {
+  const { data, isLoading } = useQuery({
+    queryKey: ['public-pro-setups'],
+    queryFn: () => snapshots.proSetups(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const [tier, setTier] = useState<'ALL' | 'ELITE' | 'STRONG' | 'DECENT'>('ALL')
+  const [tf, setTf] = useState<string>('ALL')
+  const [kind, setKind] = useState<'ALL' | 'INDEX' | 'STOCK' | 'COMMODITY'>('ALL')
+  if (isLoading && !data) return <div className="p-12 text-center text-neutral-500">Loading Pro Setups…</div>
+  if (!data) return <div className="p-12 text-center text-neutral-500">Setups not yet computed — next tick will populate.</div>
+
+  const d = data as any
+  const allRows: any[] = d.rows ?? []
+  const timeframes = Array.from(new Set(allRows.map(r => r.timeframe))).sort((a, b) => {
+    const order = ['5m','15m','30m','1h','4h','1D']
+    return order.indexOf(a) - order.indexOf(b)
+  })
+  const rows = allRows
+    .filter(r => tier === 'ALL' || r.tier === tier)
+    .filter(r => tf === 'ALL' || r.timeframe === tf)
+    .filter(r => kind === 'ALL' || r.kind === kind)
+
+  const tierColor = (t: string) => t === 'ELITE' ? '#ffb454' : t === 'STRONG' ? '#5fd4ff' : '#8a8a8a'
+  const sideColor = (s: string) => s === 'LONG' ? '#00c853' : '#ff5e7c'
+  const kindEmoji = (k: string) => k === 'INDEX' ? '🧭' : k === 'COMMODITY' ? '🪙' : '📈'
+  const fmtInr = (n?: number) => n == null ? '—' : `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const lensIcon: Record<string, string> = { vp: '📊', fib: '🌀', volume: '📈', smc: '⬛', liquidity: '💧', seasonality: '🗓', astro: '⭐' }
+
+  return (
+    <div className="space-y-4">
+      <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-cyan/15 to-accent-amber/5 border border-accent-cyan/50 rounded-lg">
+        <div className="text-3xl">💰</div>
+        <div className="flex-1">
+          <div className="text-sm font-bold text-accent-cyan">PRO Multi-TF Setups — money-printing signals across every instrument + timeframe</div>
+          <div className="text-[11px] text-neutral-400 mt-1 leading-relaxed">
+            {d.instruments} instruments (🧭 NIFTY · 🪙 XAUUSD + MCX Gold/Silver/Crude · 📈 top F&O stocks) × {d.timeframes} timeframes (5m · 15m · 30m · 1h · 4h · 1D) = {d.totalScanned} scans. Each scored through 7 lenses: 📊 Volume Profile · 🌀 Fibonacci · 📈 Volume Build · ⬛ SMC · 💧 Liquidity Sweep · 🗓 Seasonality · ⭐ Astro overlay (Vedic day/hora). Refreshes every 5 min during market hours.
+          </div>
+          {d.generatedAt && (
+            <div className="text-[10px] mt-2 font-mono flex items-center gap-3">
+              <span className={d.marketOpen ? 'text-accent-green' : 'text-neutral-500'}>
+                {d.marketOpen ? '🟢 MARKET OPEN' : '🔴 MARKET CLOSED (last-computed)'}
+              </span>
+              <span className="text-neutral-500">Updated {new Date(d.generatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</span>
+              <span className="text-accent-amber">{d.eliteCount} ELITE</span>
+              <span className="text-accent-cyan">{d.strongCount} STRONG</span>
+              <span className="text-neutral-500">{d.decentCount} DECENT</span>
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Filters */}
+      <div className="flex flex-wrap gap-2 text-[11px]">
+        <div className="flex gap-1">
+          {(['ALL','ELITE','STRONG','DECENT'] as const).map(t => (
+            <button key={t} onClick={() => setTier(t)}
+              className={`px-2.5 py-1 rounded border ${tier === t ? 'bg-accent-cyan/20 border-accent-cyan text-accent-cyan' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}>
+              {t}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1">
+          {(['ALL','INDEX','COMMODITY','STOCK'] as const).map(k => (
+            <button key={k} onClick={() => setKind(k)}
+              className={`px-2.5 py-1 rounded border ${kind === k ? 'bg-accent-violet/20 border-accent-violet text-accent-violet' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}>
+              {k === 'INDEX' ? '🧭 Index' : k === 'COMMODITY' ? '🪙 Commodities' : k === 'STOCK' ? '📈 Stocks' : 'ALL'}
+            </button>
+          ))}
+        </div>
+        <div className="flex gap-1 flex-wrap">
+          <button onClick={() => setTf('ALL')}
+            className={`px-2.5 py-1 rounded border ${tf === 'ALL' ? 'bg-accent-green/20 border-accent-green text-accent-green' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}>
+            ALL TFs
+          </button>
+          {timeframes.map(f => (
+            <button key={f} onClick={() => setTf(f)}
+              className={`px-2.5 py-1 rounded border ${tf === f ? 'bg-accent-green/20 border-accent-green text-accent-green' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}>
+              {f}
+            </button>
+          ))}
+        </div>
+        <span className="ml-auto text-neutral-500 self-center">Showing <b className="text-neutral-300">{rows.length}</b> of {allRows.length}</span>
+      </div>
+
+      {/* Cards */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
+        {rows.length === 0 && (
+          <div className="col-span-full p-12 text-center text-neutral-500 bg-ink-800 border border-ink-500 rounded-lg">
+            No setups match the current filters. Try a lower tier or ALL TFs.
+          </div>
+        )}
+        {rows.slice(0, 60).map((r: any, i: number) => (
+          <div key={r.instrument + r.timeframe + i}
+            className={`p-4 bg-ink-800 border rounded-lg ${r.tier === 'ELITE' ? 'border-accent-amber/40' : 'border-ink-500'}`}>
+            <div className="flex items-center gap-2 mb-2">
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-accent-green/20 text-accent-green">{r.timeframe}</span>
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-accent-violet/20 text-accent-violet">
+                {kindEmoji(r.kind)} {r.kind}
+              </span>
+              <div className="text-[14px] font-bold text-neutral-100 flex-1">{r.displayName}</div>
+              <span className="text-[10px] px-1.5 py-0.5 rounded font-bold" style={{ background: `${sideColor(r.side)}22`, color: sideColor(r.side) }}>{r.side}</span>
+              <span className="text-[11px] font-bold" style={{ color: tierColor(r.tier) }}>{r.tier} {r.score}</span>
+            </div>
+
+            <div className="flex flex-wrap gap-1 mb-2">
+              {Object.entries(r.lenses ?? {}).map(([k, l]: any) => (
+                <span key={k} title={l.detail} className="text-[9px] px-1.5 py-0.5 rounded font-bold" style={{
+                  background: l.hit ? 'rgba(95,212,255,0.15)' : 'rgba(255,255,255,0.03)',
+                  color: l.hit ? '#5fd4ff' : '#666',
+                  border: `1px solid ${l.hit ? 'rgba(95,212,255,0.35)' : 'rgba(255,255,255,0.05)'}`,
+                }}>
+                  {lensIcon[k] ?? '·'}{k.toUpperCase()}{l.hit ? '✓' : '·'}
+                </span>
+              ))}
+            </div>
+
+            <table className="w-full text-[11px] font-mono mb-2" style={{ tableLayout: 'fixed' }}>
+              <tbody>
+                <tr><td className="text-neutral-500 py-0.5" style={{ width: 45 }}>LTP</td><td className="text-neutral-200">{fmtInr(r.ltp)}</td><td className="text-neutral-500 text-right text-[10px]">Risk {r.riskPct}%</td></tr>
+                <tr><td className="text-neutral-500 py-0.5">Entry</td><td className="text-neutral-100 font-bold">{fmtInr(r.entry)}</td><td className="text-neutral-500 text-right text-[9px]">{r.entryTime.split(' ')[1] ?? ''}</td></tr>
+                <tr><td className="text-accent-red py-0.5">SL</td><td className="text-accent-red">{fmtInr(r.stopLoss)}</td><td className="text-neutral-500 text-right text-[9px]">by {r.slTime.split(' ')[1] ?? ''}</td></tr>
+                <tr><td className="text-accent-green py-0.5">T1</td><td className="text-accent-green">{fmtInr(r.target1)}</td><td className="text-neutral-500 text-right text-[9px]">R:R {r.rrT1} · {r.target1Time.split(' ')[1] ?? ''}</td></tr>
+                <tr><td className="text-accent-green py-0.5">T2</td><td className="text-accent-green">{fmtInr(r.target2)}</td><td className="text-neutral-500 text-right text-[9px]">R:R {r.rrT2}</td></tr>
+                <tr><td className="text-accent-green py-0.5">T3</td><td className="text-accent-green">{fmtInr(r.target3)}</td><td className="text-neutral-500 text-right text-[9px]">R:R {r.rrT3}</td></tr>
+              </tbody>
+            </table>
+
+            <div className="text-[10.5px] mb-2 p-2 rounded" style={{ background: r.side === 'LONG' ? 'rgba(0,200,83,0.08)' : 'rgba(255,94,124,0.08)' }}>
+              <div className="text-neutral-300 font-bold text-[9px] uppercase tracking-wider mb-1">Observation</div>
+              <div className="text-neutral-200">{r.observation}</div>
+            </div>
+            <div className="text-[10.5px] p-2 rounded bg-accent-amber/10">
+              <div className="text-accent-amber font-bold text-[9px] uppercase tracking-wider mb-1">Best way to play</div>
+              <div className="text-neutral-200">{r.bestWayToPlay}</div>
+            </div>
+          </div>
+        ))}
+      </div>
+      {rows.length > 60 && (
+        <div className="text-center text-neutral-500 text-[11px]">Showing top 60 by score. Refine filters to see more.</div>
+      )}
+    </div>
+  )
+}
+
 // ─── PUBLIC F&O STOCK MOVE FORECAST PAGE ────────────────────────────
 // 85-stock high-beta F&O universe scanned through 7 lenses (VP + Fib +
 // Seasonality + Volume Build + SMC + Smart-Money Footprint + OI Radar).
@@ -4858,7 +5009,9 @@ export function PublicFnoForecastPage(): JSX.Element {
     queryFn: () => snapshots.fnoStockForecast(),
     refetchInterval: 5 * 60_000, retry: false,
   })
-  const [tier, setTier] = useState<'ALL' | 'ELITE' | 'STRONG' | 'DECENT'>('ELITE')
+  // 2026-07-27: default to ALL so user ALWAYS sees signals even on days
+  // when the market has no ELITE-tier confluences. Was ELITE, showed empty.
+  const [tier, setTier] = useState<'ALL' | 'ELITE' | 'STRONG' | 'DECENT'>('ALL')
   if (isLoading && !data) return <div className="p-12 text-center text-neutral-500">Loading F&O stock forecast…</div>
   if (!data) return <div className="p-12 text-center text-neutral-500">Forecast not built yet — next tick will populate.</div>
 

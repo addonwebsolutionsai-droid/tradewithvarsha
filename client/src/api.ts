@@ -71,6 +71,46 @@ export const snapshots = {
   harmonic: () => snapshot<{ generatedAt: string; criterion: string; total: number; byPattern: Record<string, number>; byTier: Record<string, number>; rows: any[] }>('harmonic.json'),
   elliottWave: () => snapshot<{ generatedAt: string; criterion: string; total: number; byType: Record<string, number>; rows: any[] }>('elliott-wave.json'),
   vpFib: () => snapshot<{ generatedAt: string; universe?: string; scanned: number; attempted?: number; eliteCount: number; strongCount: number; decentCount: number; runtimeMs?: number; rows: any[] }>('vp-fib.json'),
+  proSetups: () => snapshot<{
+    generatedAt: string
+    marketOpen: boolean
+    instruments: number
+    timeframes: number
+    totalScanned: number
+    eliteCount: number
+    strongCount: number
+    decentCount: number
+    rows: Array<{
+      instrument: string
+      displayName: string
+      kind: 'INDEX' | 'STOCK' | 'COMMODITY'
+      timeframe: string
+      side: 'LONG' | 'SHORT'
+      score: number
+      tier: 'ELITE' | 'STRONG' | 'DECENT'
+      lensesHit: number
+      ltp: number
+      entry: number
+      stopLoss: number
+      target1: number
+      target2: number
+      target3: number
+      riskPct: number
+      rrT1: number
+      rrT2: number
+      rrT3: number
+      entryTime: string
+      target1Time: string
+      target2Time: string
+      target3Time: string
+      slTime: string
+      lenses: Record<string, { hit: boolean; points: number; detail: string }>
+      observation: string
+      bestWayToPlay: string
+      reasoning: string[]
+      unifiedReason: string
+    }>
+  }>('pro-setups.json'),
   fnoStockForecast: () => snapshot<{
     generatedAt: string
     universeSize: number

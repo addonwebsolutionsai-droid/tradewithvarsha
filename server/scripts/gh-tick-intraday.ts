@@ -302,6 +302,22 @@ async function main() {
     log.err('TICK', `nifty-long-horizon: ${(e as Error).message}`)
   }
 
+  // ─── 3a-1. PRO Multi-TF Setups — the money-printing engine.
+  //           NIFTY + XAUUSD + MCX Gold/Silver/Crude + top 25 F&O stocks
+  //           scanned across 5m/15m/30m/1h/4h/1D via 7-lens confluence
+  //           (VP + Fib + Volume + SMC + Liquidity Sweep + Seasonality
+  //           + Astro overlay). Emits pro-setups.json with per-(inst,tf)
+  //           setup + observation + dated targets + how-to-play.
+  try {
+    const t = Date.now()
+    const { runProMultiTfSetups } = await import('../src/engine/proMultiTfSetups')
+    const r = await runProMultiTfSetups()
+    results['pro-setups'] = `${r.rows.length}/${r.totalScanned} setups (${r.eliteCount}E ${r.strongCount}S ${r.decentCount}D) · market ${r.marketOpen ? 'OPEN' : 'CLOSED'} · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['pro-setups'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `pro-setups: ${(e as Error).message}`)
+  }
+
   // ─── 3b-1. F&O Futures scanner — 12-criteria pre-breakout scan across
   //           the ~211 NSE F&O underlyings. Was buried in localhost publicSnapshots
   //           publish path (bug: 16-day stale on GH Actions). Now wired into

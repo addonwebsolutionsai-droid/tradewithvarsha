@@ -168,9 +168,19 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
             <Link
               to="/fno-forecast"
               className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green hover:bg-accent-green/20"
-              title="F&O Stock Move Forecast — 85 high-beta futures stocks (ABB, Siemens, LTIM, Persistent, TVS, HAL, Trent, Reliance, etc). 7 lenses per stock, predicts moves BEFORE they happen. Refresh every 5 min during market."
+              title="F&O Stock Move Forecast — 85 high-beta futures stocks. 7 lenses per stock. Refresh every 5 min during market."
             >
               🎯 F&O Forecast
+            </Link>
+            {/* 2026-07-27: PRO Setups — the flagship money-printing tab.
+                30 instruments (NIFTY + 4 commodities + top-25 F&O stocks)
+                × 6 timeframes (5m/15m/30m/1h/4h/1D) × 7 lenses. */}
+            <Link
+              to="/pro-setups"
+              className="text-[11px] px-2 py-0.5 rounded border border-accent-red/40 bg-accent-red/10 text-accent-red hover:bg-accent-red/20"
+              title="PRO Multi-TF Setups — 30 instruments (NIFTY, XAUUSD, MCX Gold/Silver/Crude, top F&O stocks) × 6 timeframes (5m, 15m, 30m, 1h, 4h, 1D) × 7 lenses (VP, Fib, Volume, SMC, Liquidity, Seasonality, Astro). Money-printing signals."
+            >
+              💰 PRO Setups
             </Link>
             <span
               className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green"
