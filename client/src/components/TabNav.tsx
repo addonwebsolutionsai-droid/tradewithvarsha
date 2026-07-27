@@ -153,9 +153,14 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
       count: (counts.options ?? 0) + (counts.futures ?? 0),
       acc: wr('OPTIONS'),
       title: 'Options + Futures (NIFTY / Stock derivatives) — single source for all F&O trades.' },
-    { to: '/fno-futures',  label: 'F&O Futures',  icon: <BarChart3 size={14} />,
-      acc: null,
-      title: 'F&O Stock-Futures — 12-criteria pre-breakout scan across all ~211 NSE F&O underlyings.' },
+    // 2026-07-27: Stock F&O VP promoted to main nav (per user directive)
+    // and F&O Futures demoted to the More dropdown. Rationale: Stock F&O
+    // VP surfaces per-stock multi-TF Volume Profile setups (POC/VAH/VAL
+    // touches, breakouts, rejections) — a richer signal than the pure
+    // 12-criteria F&O futures score.
+    { to: '/stock-fno-vp', label: '📊 Stock F&O VP',  icon: <BarChart3 size={14} />,
+      acc: null, highProb: true,
+      title: 'Stock F&O Volume Profile — 15m + 1h + 1D scan across ~180 F&O underlyings. Rows only when 2+ TF agree OR 1D setup ≥ 70 strength. Same VP framework hedge funds use.' },
     // 2026-07-10: NIFTY Directional Foresight — flagship fix for the July
     // 1-10 missed moves (700↑/700↓/360↑). Multi-expiry OI + max-pain drift +
     // time cycles + astro + operator playbook detection. Refreshes every 4
@@ -221,7 +226,11 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // 2026-06-30: PILOT — Insider buys (SEBI PIT + SAST). Promote to main
     // nav once user confirms outputs match the expected insider trade flow.
     { to: '/insider-buys',   label: '🕵️ Insider Buys (Pilot)', title: 'PILOT — SEBI PIT (Reg 7) + SAST (Reg 29) filings. Promoter / KMP / external 5%+ acquirer buys per stock with technical + shareholding context. Smartest single insider signal Indian markets give us, free.' },
-    { to: '/stock-fno-vp',   label: '📊 Stock F&O VP', title: 'Volume Profile scanner extended to ~180 F&O underlyings on 15m + 1h + 1D. Only rows with 2+ TF agreement OR 1D setup ≥ 70 strength. UI-only (no Telegram per NIFTY-only F&O rule).' },
+    // 2026-07-27: F&O Futures moved from main nav → More dropdown, swapped
+    // with Stock F&O VP which now sits in main nav. F&O Futures still runs
+    // via the intraday-tick cron (fix from 2026-07-27) and its route is
+    // preserved for bookmarks.
+    { to: '/fno-futures',    label: '📈 F&O Futures',  title: 'F&O Stock-Futures — 12-criteria pre-breakout scan across all ~211 NSE F&O underlyings. Moved to More per user directive; Stock F&O VP now in main nav.' },
     // 2026-06-26: X-Recs relocated to More per user request (best-effort
     // data, doesn't need primary-nav slot).
     { to: '/x-recs',         label: '🐦 X-Recs (analyst posts)', title: 'Analyst X-Recs — best-effort scrape of stock calls from 6 named profiles via nitter mirrors. Reliability fluctuates day-to-day.' },
