@@ -139,48 +139,18 @@ export function Header({ botRunning, health }: { botRunning: boolean; health?: H
             >
               📓 Journal
             </Link>
-            {/* 2026-07-25: NIFTY Outlook moved from primary nav to header
-                (next to Journal) per user directive. Same meta/audit
-                treatment — it's a single directional call, not a
-                per-symbol scan feed. Route /nifty-outlook still works. */}
-            <Link
-              to="/nifty-outlook"
-              className="text-[11px] px-2 py-0.5 rounded border border-accent-amber/40 bg-accent-amber/10 text-accent-amber hover:bg-accent-amber/20"
-              title="NIFTY Directional Foresight — multi-expiry OI + max-pain drift + PCR + cycles + KP+Bradley + playbook. Unified BULLISH/BEARISH call with dated entry/SL/T1-T2-T3."
-            >
-              🧭 NIFTY Outlook
-            </Link>
-            {/* 2026-07-26: NIFTY Long-Horizon Forecast — dated waypoints
-                2-3 months out (Elliott weekly/monthly + Gann 90/180/270-day
-                cycles + Fib price+time extensions + historical analogues).
-                Same style level-callers on X publish, computed math. */}
-            <Link
-              to="/nifty-forecast"
-              className="text-[11px] px-2 py-0.5 rounded border border-accent-violet/40 bg-accent-violet/10 text-accent-violet hover:bg-accent-violet/20"
-              title="NIFTY Long-Horizon Forecast — projected levels 2-3 months out with dates, cycle turn calendar, Elliott Wave counts. Refreshes every 5 min during market + EOD."
-            >
-              🔮 NIFTY Forecast
-            </Link>
-            {/* 2026-07-26: F&O Stock Move Forecaster — 85-stock high-beta
-                universe scanned through 7 lenses (VP+Fib+Seasonality+
-                VolumeBuild+SMC+SmartMoney+OI). Predicts moves before they
-                happen with dated targets + how-to-play guidance. */}
+            {/* 2026-07-27: Removed 🧭 NIFTY Outlook · 🔮 NIFTY Forecast ·
+                💰 PRO Setups pills from header per user directive. PRO
+                Setups is now the primary /pro-setups tab (💰 F&O Trades)
+                in main nav. NIFTY Outlook/Forecast routes still resolve
+                for bookmarks; 🎯 F&O Forecast kept below since it's a
+                distinct stock forecaster surface. */}
             <Link
               to="/fno-forecast"
               className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green hover:bg-accent-green/20"
               title="F&O Stock Move Forecast — 85 high-beta futures stocks. 7 lenses per stock. Refresh every 5 min during market."
             >
               🎯 F&O Forecast
-            </Link>
-            {/* 2026-07-27: PRO Setups — the flagship money-printing tab.
-                30 instruments (NIFTY + 4 commodities + top-25 F&O stocks)
-                × 6 timeframes (5m/15m/30m/1h/4h/1D) × 7 lenses. */}
-            <Link
-              to="/pro-setups"
-              className="text-[11px] px-2 py-0.5 rounded border border-accent-red/40 bg-accent-red/10 text-accent-red hover:bg-accent-red/20"
-              title="PRO Multi-TF Setups — 30 instruments (NIFTY, XAUUSD, MCX Gold/Silver/Crude, top F&O stocks) × 6 timeframes (5m, 15m, 30m, 1h, 4h, 1D) × 7 lenses (VP, Fib, Volume, SMC, Liquidity, Seasonality, Astro). Money-printing signals."
-            >
-              💰 PRO Setups
             </Link>
             <span
               className="text-[11px] px-2 py-0.5 rounded border border-accent-green/40 bg-accent-green/10 text-accent-green"

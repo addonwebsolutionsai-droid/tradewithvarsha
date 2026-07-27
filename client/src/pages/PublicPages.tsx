@@ -4881,6 +4881,15 @@ export function PublicProSetupsPage(): JSX.Element {
   const kindEmoji = (k: string) => k === 'INDEX' ? '🧭' : k === 'COMMODITY' ? '🪙' : '📈'
   const fmtInr = (n?: number) => n == null ? '—' : `₹${n.toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
   const lensIcon: Record<string, string> = { vp: '📊', fib: '🌀', volume: '📈', smc: '⬛', liquidity: '💧', seasonality: '🗓', astro: '⭐' }
+  // Engine emits strings like "2026-07-27 18:31:29 IST". Show as "27 Jul · 18:31 IST"
+  // so the DATE is always visible on every target row.
+  const fmtTgtDateTime = (raw?: string) => {
+    if (!raw) return '—'
+    const m = raw.match(/(\d{4})-(\d{2})-(\d{2})\s+(\d{2}):(\d{2})/)
+    if (!m) return raw
+    const months = ['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec']
+    return `${parseInt(m[3], 10)} ${months[parseInt(m[2], 10) - 1]} · ${m[4]}:${m[5]}`
+  }
 
   return (
     <div className="space-y-4">
@@ -4970,14 +4979,41 @@ export function PublicProSetupsPage(): JSX.Element {
               ))}
             </div>
 
-            <table className="w-full text-[11px] font-mono mb-2" style={{ tableLayout: 'fixed' }}>
+            <table className="w-full text-[11px] font-mono mb-2" style={{ tableLayout: 'auto' }}>
               <tbody>
-                <tr><td className="text-neutral-500 py-0.5" style={{ width: 45 }}>LTP</td><td className="text-neutral-200">{fmtInr(r.ltp)}</td><td className="text-neutral-500 text-right text-[10px]">Risk {r.riskPct}%</td></tr>
-                <tr><td className="text-neutral-500 py-0.5">Entry</td><td className="text-neutral-100 font-bold">{fmtInr(r.entry)}</td><td className="text-neutral-500 text-right text-[9px]">{r.entryTime.split(' ')[1] ?? ''}</td></tr>
-                <tr><td className="text-accent-red py-0.5">SL</td><td className="text-accent-red">{fmtInr(r.stopLoss)}</td><td className="text-neutral-500 text-right text-[9px]">by {r.slTime.split(' ')[1] ?? ''}</td></tr>
-                <tr><td className="text-accent-green py-0.5">T1</td><td className="text-accent-green">{fmtInr(r.target1)}</td><td className="text-neutral-500 text-right text-[9px]">R:R {r.rrT1} · {r.target1Time.split(' ')[1] ?? ''}</td></tr>
-                <tr><td className="text-accent-green py-0.5">T2</td><td className="text-accent-green">{fmtInr(r.target2)}</td><td className="text-neutral-500 text-right text-[9px]">R:R {r.rrT2}</td></tr>
-                <tr><td className="text-accent-green py-0.5">T3</td><td className="text-accent-green">{fmtInr(r.target3)}</td><td className="text-neutral-500 text-right text-[9px]">R:R {r.rrT3}</td></tr>
+                <tr>
+                  <td className="text-neutral-500 py-0.5" style={{ width: 40 }}>LTP</td>
+                  <td className="text-neutral-200">{fmtInr(r.ltp)}</td>
+                  <td className="text-neutral-500 text-right text-[10px]" colSpan={2}>Risk {r.riskPct}%</td>
+                </tr>
+                <tr>
+                  <td className="text-neutral-500 py-0.5">Entry</td>
+                  <td className="text-neutral-100 font-bold">{fmtInr(r.entry)}</td>
+                  <td className="text-neutral-500 text-[9px]" colSpan={2}>📅 {fmtTgtDateTime(r.entryTime)}</td>
+                </tr>
+                <tr>
+                  <td className="text-accent-red py-0.5">SL</td>
+                  <td className="text-accent-red">{fmtInr(r.stopLoss)}</td>
+                  <td className="text-accent-red/60 text-[9px]" colSpan={2}>📅 by {fmtTgtDateTime(r.slTime)}</td>
+                </tr>
+                <tr>
+                  <td className="text-accent-green py-0.5">T1</td>
+                  <td className="text-accent-green">{fmtInr(r.target1)}</td>
+                  <td className="text-accent-green/60 text-[9px]">📅 {fmtTgtDateTime(r.target1Time)}</td>
+                  <td className="text-neutral-500 text-right text-[9px]">R:R {r.rrT1}</td>
+                </tr>
+                <tr>
+                  <td className="text-accent-green py-0.5">T2</td>
+                  <td className="text-accent-green">{fmtInr(r.target2)}</td>
+                  <td className="text-accent-green/60 text-[9px]">📅 {fmtTgtDateTime(r.target2Time)}</td>
+                  <td className="text-neutral-500 text-right text-[9px]">R:R {r.rrT2}</td>
+                </tr>
+                <tr>
+                  <td className="text-accent-green py-0.5">T3</td>
+                  <td className="text-accent-green">{fmtInr(r.target3)}</td>
+                  <td className="text-accent-green/60 text-[9px]">📅 {fmtTgtDateTime(r.target3Time)}</td>
+                  <td className="text-neutral-500 text-right text-[9px]">R:R {r.rrT3}</td>
+                </tr>
               </tbody>
             </table>
 

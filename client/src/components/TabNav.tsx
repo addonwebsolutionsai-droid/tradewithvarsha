@@ -149,33 +149,21 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     { to: '/pre-move',     label: 'Pre-Move',     icon: <Wind size={14} />,
       acc: wr('PREMOVE'),
       title: 'Cash / Equity early-stage signals — pre-breakout setups (VCP / Wyckoff / volume dry-up).' },
-    { to: '/options',      label: 'F&O',          icon: <Layers size={14} />,
-      count: (counts.options ?? 0) + (counts.futures ?? 0),
-      acc: wr('OPTIONS'),
-      title: 'Options + Futures (NIFTY / Stock derivatives) — single source for all F&O trades.' },
+    // 2026-07-27: F&O tab replaced with 💰 F&O Trades → /pro-setups.
+    //   Old /options route still resolves for bookmarks; /pro-setups is
+    //   the new primary destination. Multi-TF (5m…1D) × NIFTY + XAUUSD +
+    //   MCX Gold/Silver/Crude + top F&O stocks × 7-lens confluence.
+    { to: '/pro-setups',   label: '💰 F&O Trades',   icon: <Layers size={14} />,
+      acc: wr('OPTIONS'), highProb: true,
+      title: 'F&O Trades (PRO Multi-TF Setups) — 30 instruments × 6 timeframes × 7 lenses (Volume Profile · Fibonacci · Volume Build · SMC · Liquidity Sweep · Seasonality · Vedic Astro). NIFTY + XAUUSD + MCX Gold/Silver/Crude + top F&O stocks. Refreshes every 5 min during market.' },
     // 2026-07-27: Stock F&O VP promoted to main nav (per user directive)
-    // and F&O Futures demoted to the More dropdown. Rationale: Stock F&O
-    // VP surfaces per-stock multi-TF Volume Profile setups (POC/VAH/VAL
-    // touches, breakouts, rejections) — a richer signal than the pure
-    // 12-criteria F&O futures score.
+    // and F&O Futures demoted to the More dropdown.
     { to: '/stock-fno-vp', label: '📊 Stock F&O VP',  icon: <BarChart3 size={14} />,
       acc: null, highProb: true,
       title: 'Stock F&O Volume Profile — 15m + 1h + 1D scan across ~180 F&O underlyings. Rows only when 2+ TF agree OR 1D setup ≥ 70 strength. Same VP framework hedge funds use.' },
-    // 2026-07-10: NIFTY Directional Foresight — flagship fix for the July
-    // 1-10 missed moves (700↑/700↓/360↑). Multi-expiry OI + max-pain drift +
-    // time cycles + astro + operator playbook detection. Refreshes every 4
-    // min during 9:15-15:30 IST.
-    // 2026-07-25: NIFTY Outlook moved from primary nav to header (next
-    // to Journal + Archive) per user directive. It's a single directional
-    // call, not a per-symbol scan — belongs with the other meta/audit
-    // surfaces. Route /nifty-outlook still resolves.
-    // 2026-07-15 — Volume Profile setup detector — the framework used by
-    // institutions, hedge funds, market-makers. Caught user's 15-Jul 24200
-    // PE @165→300+ manual trade. Multi-TF (5m/15m/30m/45m/1h/2h/4h/1D)
-    // POC/VAH/VAL/HVN/LVN with 7 setup families.
-    { to: '/volume-profile', label: '📊 Volume Profile', icon: <BarChart3 size={14} />,
-      acc: null, highProb: true,
-      title: 'NIFTY Volume Profile — the framework institutions & hedge funds use. Multi-TF (5m/15m/30m/45m/1h/2h/4h/1D) POC/VAH/VAL/HVN/LVN detector. Fires 7 setup families (VA-Breakout, VA-Rotation, HVN-Reject, LVN-Slice, IB-Break, Failed-Auction) with ATM PE/CE recommendation when 2+ timeframes agree. NIFTY-only.' },
+    // 2026-07-27: NIFTY-only /volume-profile page removed from main nav
+    // per user directive (redundant with /pro-setups which includes NIFTY
+    // multi-TF). Route preserved for bookmarks.
     { to: '/confluence',   label: 'Ultra Picks',  icon: <Star size={14} />,
       acc: null, highProb: true,
       title: 'Ultra Picks — names confirmed by multiple independent scanners. Structurally higher conviction.' },
