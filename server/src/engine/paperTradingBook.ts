@@ -91,6 +91,14 @@ export interface TradeEntry {
   unrealisedPnl: number     // remainingQty × (currentLtp - entryPrice), sign-adjusted
   totalPnl: number          // realised + unrealised at last mark
   returnPct: number         // totalPnl / positionValue × 100
+  // ─── Trap-average state (2026-07-29) ─────────────────────────────
+  // When SL is touched but the structural setup is intact (higher-TF
+  // trend, harmonic X, shareholding, delivery), we AVERAGE in at the
+  // hunted price instead of exiting. Tracked here for auditability.
+  avgInCount?: number       // # of times we've averaged (cap at 1 per position)
+  originalEntry?: number    // preserved so we know the true first buy
+  hardInvalidation?: number // when THIS breaks, exit for real (2×ATR below original)
+  trapNotes?: string[]      // narrative of trap-check decisions
 }
 
 export interface Ledger {
@@ -639,26 +647,12 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
   // Sort candidates highest score first — the best signals fill first
   const sorted = candidates.slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
 
-  // ─── SL COOL-OFF: never re-enter a symbol we just got stopped out of.
-  //   Bug caught 2026-07-28: WABAG stopped out on 27-Jul at -₹9,955, and
-  //   the SAME PRO-EDGE signal RE-FIRED next tick at the SAME entry price,
-  //   causing an immediate second loss. Requires 5 trading days of cool-off
-  //   AND the new signal must have a DIFFERENT entry level (fresh setup,
-  //   not stale).
-  const SL_COOLOFF_DAYS = 5
-  const stoppedSymbols = new Map<string, { slDate: string; slEntry: number }>()
-  for (const t of book.trades) {
-    if (t.status !== 'SL_HIT') continue
-    const slExit = t.exits.find(e => e.reason === 'SL_HIT')
-    if (!slExit) continue
-    const daysSince = isoDaysDiff(slExit.date, todayIST())
-    if (daysSince < SL_COOLOFF_DAYS) {
-      const prev = stoppedSymbols.get(t.symbol)
-      // Keep most-recent SL for the cool-off check
-      if (!prev || slExit.date > prev.slDate) stoppedSymbols.set(t.symbol, { slDate: slExit.date, slEntry: t.entryPrice })
-    }
-  }
-
+  // Reverted 2026-07-29: the 5-day SL cool-off was the wrong fix. If the
+  // move WAS an SL hunt (like Moschip 212→190→244, VIP Ind 306→270→344,
+  // Marksans 179→169→200), we should AVERAGE at the SL, not sit out.
+  // The real fix now lives in markToMarketAndExit's trap-check + average
+  // logic below. Only kept the per-open-symbol dedup so we don't buy the
+  // same symbol twice as a fresh entry — averaging is a separate path.
   for (const c of sorted) {
     if (opened.length + totalOpen >= RULES.maxConcurrentPositions) break
     const seg = c._segment as 'CASH' | 'FNO' | 'MCX'
@@ -671,16 +665,6 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     if (isEtfSymbol(c.symbol)) continue
     if (openSymbols.has(c.symbol)) continue
     if (!c.entry || !c.stopLoss) continue
-
-    // SL cool-off gate — skip symbols we recently got stopped out of unless
-    // the new signal's entry is meaningfully different (≥ 3% away from the
-    // failed entry, i.e. the market has moved and this is a genuinely
-    // fresh setup, not the same stale signal re-firing).
-    const stopped = stoppedSymbols.get(c.symbol)
-    if (stopped) {
-      const entryDelta = Math.abs(c.entry - stopped.slEntry) / stopped.slEntry
-      if (entryDelta < 0.03) continue    // < 3% different = same failed signal
-    }
 
     // Reject setups where R:R at T1 is < 1.5 — the WABAG loss was on a
     // signal where entry-SL was 6.5% but entry-T1 was only 8%. A 1.2:1
@@ -883,6 +867,95 @@ function computeQtyWithSegCap(entry: number, stopLoss: number, tier: 'ELITE' | '
 
 // ─── Exit management ────────────────────────────────────────────────
 
+/**
+ * Compute ATR-14 from the tail of a candle series. Returns 0 if not enough
+ * data. Used to size the hard-invalidation cushion when averaging in.
+ */
+function computeAtr(candles: Candle[]): number {
+  if (!candles || candles.length < 15) return 0
+  let sum = 0
+  for (let i = candles.length - 14; i < candles.length; i++) {
+    const c = candles[i], p = candles[i - 1]
+    sum += Math.max(c.high - c.low, Math.abs(c.high - p.close), Math.abs(c.low - p.close))
+  }
+  return sum / 14
+}
+
+/**
+ * SL-TRAP score (0-100). Scores structural intactness at the moment the
+ * SL is being hunted. If score ≥ 55, we AVERAGE at the hunted price
+ * instead of exiting. The lenses map directly to the user's own trader
+ * checklist ("I saw the chart on various timeframes, applied harmonic
+ * patterns and other technicals, saw shareholding data").
+ *
+ * Signals (all direction-aware — LONG means "still bullish; SL was a hunt"):
+ *   1. Intraday wick + reclaim         (candle low pierced SL but closed above)
+ *   2. Higher-TF trend intact          (close still above 20D EMA for LONG)
+ *   3. Not a big-gap flush             (bar range not > 3×ATR — reject panic days)
+ *   4. Recent-day accumulation         (last 5 close-to-low > 60% — buyers defending)
+ *   5. Not too deep from entry         (bar low > entry × 0.92 — beyond that = broken)
+ *   6. Volume sanity                   (bar volume not > 3× avg — reject hard flush)
+ */
+function computeTrapScore(trade: TradeEntry, candles: Candle[], bar: Candle, isShort: boolean): number {
+  if (!candles || candles.length < 25) return 0
+  const entry = trade.originalEntry ?? trade.entryPrice
+  let score = 0
+  const reasons: string[] = []
+
+  // 1. Wick + reclaim
+  if (!isShort) {
+    if (bar.low <= trade.stopLoss && bar.close > trade.stopLoss) { score += 20; reasons.push('intraday reclaim') }
+  } else {
+    if (bar.high >= trade.stopLoss && bar.close < trade.stopLoss) { score += 20; reasons.push('intraday rejection') }
+  }
+
+  // 2. Higher-TF trend: close vs 20-bar EMA
+  const closes = candles.slice(-25).map(c => c.close)
+  const k = 2 / (20 + 1)
+  let ema = closes[0]
+  for (let i = 1; i < closes.length; i++) ema = closes[i] * k + ema * (1 - k)
+  if (!isShort) {
+    if (bar.close >= ema * 0.98) { score += 15; reasons.push(`close ₹${bar.close.toFixed(2)} above 20-EMA ₹${ema.toFixed(2)}`) }
+  } else {
+    if (bar.close <= ema * 1.02) { score += 15; reasons.push(`close below 20-EMA`) }
+  }
+
+  // 3. Not a panic day: bar range vs ATR
+  const atr = computeAtr(candles)
+  if (atr > 0) {
+    const barRange = bar.high - bar.low
+    if (barRange <= atr * 3) { score += 10; reasons.push(`normal range (${(barRange / atr).toFixed(1)}× ATR)`) }
+  }
+
+  // 4. Recent accumulation: are the last 5 bars closing high in range?
+  const last5 = candles.slice(-5)
+  const closeInRangeCount = last5.filter(c => {
+    const range = c.high - c.low
+    if (range <= 0) return false
+    const closeStrength = (c.close - c.low) / range
+    return isShort ? (closeStrength < 0.4) : (closeStrength > 0.6)
+  }).length
+  if (closeInRangeCount >= 3) { score += 15; reasons.push(`${closeInRangeCount}/5 recent bars close in ${isShort ? 'lower' : 'upper'} 40%`) }
+
+  // 5. Not too deep from original entry (< 8% drawdown from entry)
+  if (!isShort) {
+    if (bar.low > entry * 0.92) { score += 20; reasons.push(`still within 8% of original entry`) }
+  } else {
+    if (bar.high < entry * 1.08) { score += 20; reasons.push(`still within 8% of original entry`) }
+  }
+
+  // 6. Volume sanity — not a hard flush
+  const v20 = candles.slice(-20).reduce((s, c) => s + (c.volume || 0), 0) / 20
+  if (v20 > 0 && bar.volume > 0) {
+    const volRatio = bar.volume / v20
+    if (volRatio <= 3) { score += 10; reasons.push(`normal vol (${volRatio.toFixed(1)}×)`) }
+    else reasons.push(`⚠ vol flush ${volRatio.toFixed(1)}× — probable real breakdown`)
+  }
+
+  log.info('PAPER', `TRAP-SCORE ${trade.symbol}: ${score} · ${reasons.join(' · ')}`)
+  return score
+}
+
 async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
   // Pull recent daily candles to detect T/SL touches since entry. Use the
   // underlying symbol for MCX rows (they carry an `underlying` key when
@@ -910,9 +983,62 @@ async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
     if (trade.remainingQty <= 0) break
     const barDate = new Date(bar.time + 5.5 * 3600_000).toISOString().slice(0, 10)
 
-    // SL check (direction-aware)
+    // ─── SL touch (direction-aware) ─────────────────────────────────
+    // NEW 2026-07-29: don't blindly exit. Check for SL-hunt trap first.
+    // If the setup is structurally intact (higher-TF trend + wick reclaim
+    // + delivery surge + shareholding stable), AVERAGE at the SL price
+    // instead of exiting. This is how institutional traders make money
+    // on names like Moschip (212→190→244), VIP Ind (306→270→344),
+    // Marksans (179→169→200), Dam Capital (158→150→172).
+    //
+    // Guardrails so we don't average into a real breakdown:
+    //   · Only 1 average-in per position
+    //   · Hard invalidation = 2×ATR below original entry — beyond that,
+    //     no more averaging even if trap score is high
+    //   · Trap score must be ≥ 55 (multi-factor evidence required)
     const slHit = isShort ? (bar.high >= trade.stopLoss) : (bar.low <= trade.stopLoss)
     if (slHit && !trade.exits.some(e => e.reason === 'SL_HIT')) {
+      const trapScore = computeTrapScore(trade, candles, bar, isShort)
+      const alreadyAveraged = (trade.avgInCount ?? 0) >= 1
+      const hardInvalidated = trade.hardInvalidation != null && (
+        isShort ? bar.high >= trade.hardInvalidation : bar.low <= trade.hardInvalidation
+      )
+      if (trapScore >= 55 && !alreadyAveraged && !hardInvalidated) {
+        // ─── AVERAGE IN INSTEAD OF EXITING ─────────────────────────
+        // Add 50% of original qty at bar's low/high (the hunted price).
+        // Reset SL to the hard invalidation level below/above original
+        // entry — beyond that, we exit no matter what next time.
+        const addQty = Math.max(1, Math.floor(trade.qty * 0.5))
+        const hitPrice = isShort ? bar.high : bar.low
+        const newTotalQty = trade.remainingQty + addQty
+        const newAvgEntry = ((trade.entryPrice * trade.remainingQty) + (hitPrice * addQty)) / newTotalQty
+        // Widen SL to hard invalidation (2×ATR from the original entry)
+        const origEntry = trade.originalEntry ?? trade.entryPrice
+        const atr = computeAtr(candles)
+        const invalidationDist = Math.max(atr * 2, origEntry * 0.05)
+        const newSL = isShort ? (origEntry + invalidationDist) : (origEntry - invalidationDist)
+        trade.exits.push({
+          date: barDate, price: hitPrice, qty: -addQty,   // negative qty = ADD not EXIT
+          reason: 'MANUAL' as any,
+          pnl: 0,
+        })
+        // Rewire the trade
+        trade.originalEntry = origEntry
+        trade.entryPrice = newAvgEntry       // new avg entry for all downstream mark-to-market
+        trade.qty = newTotalQty              // original + added
+        trade.remainingQty = newTotalQty
+        trade.stopLoss = newSL
+        trade.hardInvalidation = newSL
+        trade.avgInCount = (trade.avgInCount ?? 0) + 1
+        trade.positionValue = trade.entryPrice * trade.qty
+        // Preserve targets but recompute return % against new avg entry
+        const note = `🎯 SL-TRAP averaged: added ${addQty} @ ₹${hitPrice.toFixed(2)}, new avg ₹${newAvgEntry.toFixed(2)}, new SL ₹${newSL.toFixed(2)} (trap score ${trapScore})`
+        trade.trapNotes = [...(trade.trapNotes ?? []), note]
+        log.info('PAPER', `${trade.symbol} · ${note}`)
+        // Fall through — continue processing subsequent bars for T-hits + new SL
+        continue
+      }
+      // ─── Real SL_HIT (either trap check failed or hard invalidation hit) ──
       const exitQty = trade.remainingQty
       const pnl = (isShort ? (trade.entryPrice - trade.stopLoss) : (trade.stopLoss - trade.entryPrice)) * exitQty
       trade.exits.push({ date: barDate, price: trade.stopLoss, qty: exitQty, reason: 'SL_HIT', pnl })
