@@ -167,7 +167,9 @@ const SEGMENT_TARGET_PCT = {
 const RULES = {
   // Per-tier weight within the trade's segment allocation
   tierAlloc: { ELITE: 0.15, STRONG: 0.08 },
-  positionCapPct: 0.20,           // cap per position: 20% of book
+  positionCapPct: 0.10,           // 2026-07-28: was 20%. WABAG double-fire
+                                  // put 30% of book on one symbol → -₹24K
+                                  // loss in 2 days. 10% cap prevents that.
   riskPerTradePct: 0.01,          // 1% of book per trade
   maxConcurrentPositions: 20,     // across ALL segments
   maxPerSegment: { CASH: 12, FNO: 6, MCX: 4 },
@@ -393,16 +395,21 @@ function normaliseCandidate(row: any, source: string, defaultTier?: 'ELITE' | 'S
   }
 }
 
-async function gatherCandidates(): Promise<Array<any & { _segment: 'CASH' | 'FNO' | 'MCX' }>> {
+async function gatherCandidates(): Promise<Array<any & { _segment: 'CASH' | 'FNO' | 'MCX'; _sourceCount?: number }>> {
   const out: any[] = []
-  const seen = new Set<string>()   // dedup by (symbol, source-family) so same signal from HQS + raw engine doesn't double-count
+  const firstBySym = new Map<string, any>()      // first-seen candidate wins the trade plan
+  const sourceCount = new Map<string, Set<string>>()   // (symbol|side) → set of source families
 
   const push = async (c: any, seg?: 'CASH' | 'FNO' | 'MCX') => {
     if (!c || !c.symbol) return
     const key = `${c.symbol}-${c.side}`
-    if (seen.has(key)) return
-    seen.add(key)
-    // Auto-classify segment if not provided (async F&O eligibility check)
+    // Track source families for confluence gate (2026-07-28 fix — WABAG
+    // was ELITE from PRO-EDGE alone and lost -₹24K on double-fire. Only
+    // ≥ 2 distinct sources should earn ELITE tier).
+    if (!sourceCount.has(key)) sourceCount.set(key, new Set())
+    if (c.source) sourceCount.get(key)!.add(String(c.source).split('-')[0])
+    if (firstBySym.has(key)) return
+    firstBySym.set(key, c)
     let _segment = seg
     if (!_segment) _segment = (await isFnoEligible(c.symbol)) ? 'FNO' : 'CASH'
     out.push({ ...c, _segment, segment: _segment })
@@ -591,6 +598,11 @@ async function gatherCandidates(): Promise<Array<any & { _segment: 'CASH' | 'FNO
       }
     } catch (e) { log.warn('PAPER', `nifty-outlook read failed: ${(e as Error).message}`) }
   }
+  // Attach confluence count so downstream can gate ELITE-tier
+  for (const c of out) {
+    const key = `${c.symbol}-${c.side}`
+    c._sourceCount = sourceCount.get(key)?.size ?? 1
+  }
   return out
 }
 
@@ -627,6 +639,26 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
   // Sort candidates highest score first — the best signals fill first
   const sorted = candidates.slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
 
+  // ─── SL COOL-OFF: never re-enter a symbol we just got stopped out of.
+  //   Bug caught 2026-07-28: WABAG stopped out on 27-Jul at -₹9,955, and
+  //   the SAME PRO-EDGE signal RE-FIRED next tick at the SAME entry price,
+  //   causing an immediate second loss. Requires 5 trading days of cool-off
+  //   AND the new signal must have a DIFFERENT entry level (fresh setup,
+  //   not stale).
+  const SL_COOLOFF_DAYS = 5
+  const stoppedSymbols = new Map<string, { slDate: string; slEntry: number }>()
+  for (const t of book.trades) {
+    if (t.status !== 'SL_HIT') continue
+    const slExit = t.exits.find(e => e.reason === 'SL_HIT')
+    if (!slExit) continue
+    const daysSince = isoDaysDiff(slExit.date, todayIST())
+    if (daysSince < SL_COOLOFF_DAYS) {
+      const prev = stoppedSymbols.get(t.symbol)
+      // Keep most-recent SL for the cool-off check
+      if (!prev || slExit.date > prev.slDate) stoppedSymbols.set(t.symbol, { slDate: slExit.date, slEntry: t.entryPrice })
+    }
+  }
+
   for (const c of sorted) {
     if (opened.length + totalOpen >= RULES.maxConcurrentPositions) break
     const seg = c._segment as 'CASH' | 'FNO' | 'MCX'
@@ -639,6 +671,38 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     if (isEtfSymbol(c.symbol)) continue
     if (openSymbols.has(c.symbol)) continue
     if (!c.entry || !c.stopLoss) continue
+
+    // SL cool-off gate — skip symbols we recently got stopped out of unless
+    // the new signal's entry is meaningfully different (≥ 3% away from the
+    // failed entry, i.e. the market has moved and this is a genuinely
+    // fresh setup, not the same stale signal re-firing).
+    const stopped = stoppedSymbols.get(c.symbol)
+    if (stopped) {
+      const entryDelta = Math.abs(c.entry - stopped.slEntry) / stopped.slEntry
+      if (entryDelta < 0.03) continue    // < 3% different = same failed signal
+    }
+
+    // Reject setups where R:R at T1 is < 1.5 — the WABAG loss was on a
+    // signal where entry-SL was 6.5% but entry-T1 was only 8%. A 1.2:1
+    // R:R is not worth taking after fees + slippage.
+    const risk = Math.abs(c.entry - c.stopLoss)
+    const reward = Math.abs((c.target1 ?? c.entry) - c.entry)
+    if (risk > 0 && reward / risk < 1.5) continue
+
+    // ELITE requires ≥ 2 independent sources (WABAG was PRO-EDGE alone at
+    // score 96 and lost twice). Single-source signals get downgraded to
+    // STRONG regardless of upstream tier claim; this affects sizing later.
+    // Same logic for FNO forecasts derived from a single lens combo.
+    const srcCount = c._sourceCount ?? 1
+    if (c.tier === 'ELITE' && srcCount < 2) {
+      c.tier = 'STRONG'   // downgrade — still tradable but smaller size
+      c._downgradeReason = `single-source ELITE downgraded to STRONG (need ≥ 2 confluences)`
+    }
+    // Reject STRONG signals with SL wider than 8% for stocks — too much
+    // book risk per trade; if the SL needs to be that wide the setup
+    // isn't tight enough.
+    const slPct = risk / c.entry
+    if (seg !== 'MCX' && slPct > 0.08) continue
 
     // CASH gates: MC ≥ ₹500 Cr, pledge < 20%, LONG only
     if (seg === 'CASH') {
