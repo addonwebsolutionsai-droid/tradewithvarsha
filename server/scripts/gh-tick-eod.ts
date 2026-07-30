@@ -187,6 +187,15 @@ async function main() {
       }
       return 'no runner export'
     }],
+    // ─── Sector rotation + money-flow (₹ Cr day + 5d, stock-wise breakdown).
+    //     Extracted 2026-07-30 from publishPublicSnapshots (localhost-only)
+    //     so GH Actions refreshes sector-rotation.json daily. Adds
+    //     dayInflowCr / weekInflowCr + topInflowStocks per sector.
+    ['sector-rotation', async () => {
+      const m = await import('../src/engine/sectorRotationWriter')
+      const r = await m.writeSectorRotationSnapshot()
+      return `${r.rows} sectors · IN=[${r.leading.join(',') || '—'}] · net ${r.totalDayInflowCr >= 0 ? '+' : ''}₹${r.totalDayInflowCr.toFixed(0)} Cr`
+    }],
     // ─── VP + FIB confluence — belt-and-braces so EOD refreshes the
     //     snapshot even if all intraday ticks missed (Actions delays /
     //     rate limits / network). Full MARKET_ALL universe, 6-min budget
@@ -227,6 +236,20 @@ async function main() {
       const m = await import('../src/engine/commodityScanner')
       const r = await m.runCommodityScan()
       return `${r.rows.length} MCX setups (${r.eliteCount} elite · ${r.strongCount} strong)`
+    }],
+    // ─── Master public-snapshot publish — kills the 20-day stale problem.
+    //     Runs runWeeklyPick + runDailyPick + runPreMoveIdentifier +
+    //     buildScorecard, then invokes publishPublicSnapshots so all 18
+    //     classic-tab JSON files (weekly-pick, daily-pick, top-trades,
+    //     pre-move, options, sl-trap-alerts, ad-divergence, superstar,
+    //     signals-history, hit-log, archive, intraday, old-weekly-pick,
+    //     multi-strike-oi, ...) refresh daily on GH Actions instead of
+    //     only via the localhost cron. Extracted 2026-07-30 in response
+    //     to the audit findings.
+    ['master-publish', async () => {
+      const m = await import('../src/engine/masterPublishCron')
+      const r = await m.runMasterPublish()
+      return `${r.files.length} classic snapshots · wk=${r.weeklyRows} daily=${r.dailyRows} preMove=${r.preMoveRows} hits=${r.hitLog}`
     }],
     // ─── Paper Trading Book — the ₹10L test account. Runs AFTER
     //     high-quality-setups AND commodity-scan are fresh so it can

@@ -99,6 +99,14 @@ export interface TradeEntry {
   originalEntry?: number    // preserved so we know the true first buy
   hardInvalidation?: number // when THIS breaks, exit for real (2×ATR below original)
   trapNotes?: string[]      // narrative of trap-check decisions
+  // Latest SL Decision Engine verdict — surfaced in /journal so the user
+  // sees WHY we held / averaged / exited on each hunt (2026-07-30).
+  slVerdict?: {
+    action: 'AVERAGE' | 'HOLD' | 'EXIT'
+    confidence: number
+    humanExplain: string
+    at: string
+  }
 }
 
 export interface Ledger {
@@ -882,6 +890,61 @@ function computeAtr(candles: Candle[]): number {
 }
 
 /**
+ * Smart-money footprint lookup for the current tick. Reads pedigree,
+ * insider-buys, bulk-deals, superstar, and x-recs snapshots from
+ * server/data/public-snapshots and returns which sources flagged the
+ * symbol in the last 15 sessions.
+ *
+ * Cached per-tick — the paper-book runs mark-to-market on every trade in
+ * one pass, so we don't want to hit disk 15 times per open position.
+ * Cleared implicitly by module reload; refreshed lazily on first call
+ * per Node process instance.
+ */
+let smartMoneyCache: { ts: number; map: Map<string, string[]> } | null = null
+function loadSmartMoneyFootprint(): Map<string, string[]> {
+  const now = Date.now()
+  if (smartMoneyCache && (now - smartMoneyCache.ts) < 30 * 60_000) return smartMoneyCache.map
+  const map = new Map<string, string[]>()
+  const path = require('path')
+  const fs = require('fs')
+  const SNAP_DIR = path.resolve(__dirname, '../../data/public-snapshots')
+  const cutoffMs = now - 15 * 24 * 3600_000
+  const sources: Array<[string, string, string]> = [
+    // [file, source-label, field for date]
+    ['pedigree-accumulation.json', 'PEDIGREE', 'lastFlagDate'],
+    ['insider-buys.json',          'INSIDER',  'txnDate'],
+    ['bulk-deals.json',            'BULK',     'dealDate'],
+    ['superstar-picks.json',       'SUPERSTAR', 'lastSeen'],
+    ['x-recs.json',                'X-REC',    'timestamp'],
+  ]
+  for (const [file, label, dateField] of sources) {
+    try {
+      const raw = fs.readFileSync(path.join(SNAP_DIR, file), 'utf-8')
+      const j = JSON.parse(raw)
+      const rows: any[] = Array.isArray(j) ? j : (j.rows ?? j.data ?? j.recommendations ?? [])
+      for (const r of rows) {
+        const sym = (r.symbol ?? r.ticker ?? r.stock ?? '').toString().toUpperCase().trim()
+        if (!sym) continue
+        const dateStr = r[dateField] ?? r.date ?? r.generatedAt ?? j.generatedAt
+        const t = dateStr ? Date.parse(dateStr) : now
+        if (Number.isFinite(t) && t < cutoffMs) continue
+        // For x-recs, only count BUY / STRONG_BUY / LONG signals
+        if (label === 'X-REC') {
+          const rec = String(r.recommendation ?? r.action ?? '').toUpperCase()
+          if (!rec.includes('BUY') && !rec.includes('LONG')) continue
+        }
+        const prior = map.get(sym) ?? []
+        if (!prior.includes(label)) prior.push(label)
+        map.set(sym, prior)
+      }
+    } catch { /* file missing / stale / corrupt — skip source, don't fail the trap check */ }
+  }
+  smartMoneyCache = { ts: now, map }
+  log.info('PAPER', `SMART-MONEY footprint loaded: ${map.size} symbols across sources`)
+  return map
+}
+
+/**
  * SL-TRAP score (0-100). Scores structural intactness at the moment the
  * SL is being hunted. If score ≥ 55, we AVERAGE at the hunted price
  * instead of exiting. The lenses map directly to the user's own trader
@@ -895,6 +958,12 @@ function computeAtr(candles: Candle[]): number {
  *   4. Recent-day accumulation         (last 5 close-to-low > 60% — buyers defending)
  *   5. Not too deep from entry         (bar low > entry × 0.92 — beyond that = broken)
  *   6. Volume sanity                   (bar volume not > 3× avg — reject hard flush)
+ *   7. SMART-MONEY footprint           (FII / promoter / insider / bulk / superstar
+ *                                        flagged in last 15d — up to 25 pts).
+ *                                       This is the hard override the user asked for:
+ *                                       "if FII and promoters are allocating capital
+ *                                        or increasing stakes we should not panic and
+ *                                        book loss" (30 Jul 2026).
  */
 function computeTrapScore(trade: TradeEntry, candles: Candle[], bar: Candle, isShort: boolean): number {
   if (!candles || candles.length < 25) return 0
@@ -952,6 +1021,22 @@ function computeTrapScore(trade: TradeEntry, candles: Candle[], bar: Candle, isS
     else reasons.push(`⚠ vol flush ${volRatio.toFixed(1)}× — probable real breakdown`)
   }
 
+  // 7. Smart-money footprint (only meaningful for LONG — a short setup
+  //    being hunted UP is NOT confirmed by insider buys). Direct check
+  //    of the four institutional-flow snapshots.
+  if (!isShort) {
+    const footprint = loadSmartMoneyFootprint()
+    const hits = footprint.get(trade.symbol.toUpperCase()) ?? []
+    if (hits.length > 0) {
+      // Up to 25 pts: 10 for first hit, +5 per additional confirming source
+      const smBoost = Math.min(25, 10 + (hits.length - 1) * 5)
+      score += smBoost
+      reasons.push(`SMART-MONEY footprint: ${hits.join('+')} (+${smBoost})`)
+      // Record on the trade so we can label the average-in note
+      ;(trade as any).smartMoneySources = hits
+    }
+  }
+
   log.info('PAPER', `TRAP-SCORE ${trade.symbol}: ${score} · ${reasons.join(' · ')}`)
   return score
 }
@@ -998,12 +1083,33 @@ async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
     //   · Trap score must be ≥ 55 (multi-factor evidence required)
     const slHit = isShort ? (bar.high >= trade.stopLoss) : (bar.low <= trade.stopLoss)
     if (slHit && !trade.exits.some(e => e.reason === 'SL_HIT')) {
-      const trapScore = computeTrapScore(trade, candles, bar, isShort)
+      // ── SL Decision Engine ─────────────────────────────────────────
+      // Full trader-grade evaluation: technical trap-score + shareholding
+      // (FII/DII/promoter QoQ + pledge) + quality floor (MC, P/E) +
+      // smart-money footprint + hard invalidation. Returns an action +
+      // human-readable verdict that we surface in the journal.
       const alreadyAveraged = (trade.avgInCount ?? 0) >= 1
-      const hardInvalidated = trade.hardInvalidation != null && (
-        isShort ? bar.high >= trade.hardInvalidation : bar.low <= trade.hardInvalidation
-      )
-      if (trapScore >= 55 && !alreadyAveraged && !hardInvalidated) {
+      const { evaluateSlDecision } = await import('./slDecisionEngine')
+      const decision = await evaluateSlDecision({
+        symbol: trade.symbol,
+        originalEntry: trade.originalEntry ?? trade.entryPrice,
+        stopLoss: trade.stopLoss,
+        hardInvalidation: trade.hardInvalidation,
+        isShort,
+        alreadyAveraged,
+        candles,
+        bar,
+      })
+      trade.slVerdict = {
+        action: decision.action,
+        confidence: decision.confidence,
+        humanExplain: decision.humanExplain,
+        at: barDate,
+      }
+      const trapScore = decision.factors.trapScore
+      const hardInvalidated = decision.factors.hardInvalidated
+      const smartMoneyHits = decision.factors.smartMoneySources
+      if (decision.action === 'AVERAGE') {
         // ─── AVERAGE IN INSTEAD OF EXITING ─────────────────────────
         // Add 50% of original qty at bar's low/high (the hunted price).
         // Reset SL to the hard invalidation level below/above original
@@ -1032,19 +1138,34 @@ async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
         trade.avgInCount = (trade.avgInCount ?? 0) + 1
         trade.positionValue = trade.entryPrice * trade.qty
         // Preserve targets but recompute return % against new avg entry
-        const note = `🎯 SL-TRAP averaged: added ${addQty} @ ₹${hitPrice.toFixed(2)}, new avg ₹${newAvgEntry.toFixed(2)}, new SL ₹${newSL.toFixed(2)} (trap score ${trapScore})`
+        const smLabel = smartMoneyHits && smartMoneyHits.length > 0
+          ? ` · smart-money=[${smartMoneyHits.join(',')}]`
+          : ''
+        const note = `🎯 AVERAGED (conf ${decision.confidence}): added ${addQty} @ ₹${hitPrice.toFixed(2)}, new avg ₹${newAvgEntry.toFixed(2)}, new SL ₹${newSL.toFixed(2)} · trap ${trapScore}${smLabel}`
         trade.trapNotes = [...(trade.trapNotes ?? []), note]
         log.info('PAPER', `${trade.symbol} · ${note}`)
         // Fall through — continue processing subsequent bars for T-hits + new SL
         continue
       }
-      // ─── Real SL_HIT (either trap check failed or hard invalidation hit) ──
+      // ── HOLD path: institutional evidence isn't strong enough to add,
+      //    but not weak enough to panic. Skip this bar's SL and give the
+      //    next 1-2 bars to prove themselves. Emit note so /journal sees.
+      if (decision.action === 'HOLD' && !hardInvalidated) {
+        const holdNote = `⏸ HELD through SL touch (conf ${decision.confidence}) · trap ${trapScore} · smart-money=[${smartMoneyHits.join(',') || 'none'}] · waiting for next 2 bars`
+        trade.trapNotes = [...(trade.trapNotes ?? []), holdNote]
+        log.info('PAPER', `${trade.symbol} · ${holdNote}`)
+        continue
+      }
+      // ─── Real SL_HIT (Decision Engine returned EXIT) ─────────────────
       const exitQty = trade.remainingQty
       const pnl = (isShort ? (trade.entryPrice - trade.stopLoss) : (trade.stopLoss - trade.entryPrice)) * exitQty
       trade.exits.push({ date: barDate, price: trade.stopLoss, qty: exitQty, reason: 'SL_HIT', pnl })
+      const exitNote = `🛑 EXIT (conf ${decision.confidence}) · trap ${trapScore}${hardInvalidated ? ' · hard invalidation breached' : ''}${smartMoneyHits.length ? ' · smart-money couldn\'t save it' : ''}`
+      trade.trapNotes = [...(trade.trapNotes ?? []), exitNote]
       trade.remainingQty = 0
       trade.totalRealisedPnl += pnl
       trade.status = 'SL_HIT'
+      log.info('PAPER', `${trade.symbol} · ${exitNote}`)
       break
     }
     // T1 partial (direction-aware)

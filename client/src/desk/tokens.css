@@ -309,7 +309,25 @@
   font-size: 9.5px; font-weight: 700; letter-spacing: 0.08em;
   border-radius: 4px; text-transform: uppercase; white-space: nowrap;
 }
-[data-desk] .status-tag.new { background: #16A34A; color: white; }
+[data-desk] .status-tag.new,
+[data-desk] .status-tag.new-buy {
+  background: linear-gradient(135deg, #00c853 0%, #00a848 100%);
+  color: white;
+  border-radius: 3px 8px 3px 3px;
+  box-shadow: 0 1px 6px rgba(0,200,83,0.45), inset 0 1px 0 rgba(255,255,255,0.25);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.35);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
+[data-desk] .status-tag.new-sell {
+  background: linear-gradient(135deg, #ff1744 0%, #d81032 100%);
+  color: white;
+  border-radius: 3px 8px 3px 3px;
+  box-shadow: 0 1px 6px rgba(255,23,68,0.5), inset 0 1px 0 rgba(255,255,255,0.25);
+  text-shadow: 0 1px 1px rgba(0,0,0,0.35);
+  font-weight: 900;
+  letter-spacing: 0.08em;
+}
 [data-desk] .status-tag.live { background: var(--desk-accent); color: white; }
 [data-desk] .status-tag.waiting { background: var(--desk-surface-2); color: var(--desk-text-2); border: 1px solid var(--desk-border-2); }
 [data-desk] .status-tag.t1-hit { background: #3B82F6; color: white; }

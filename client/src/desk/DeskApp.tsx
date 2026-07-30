@@ -437,10 +437,21 @@ function statusOf(r: any): MergedRow['status'] {
   if (s === 'T1_HIT' || s === 'T2_HIT' || s === 'T3_HIT' || s === 'SL_HIT') return s as MergedRow['status']
   if (s === 'ACTIVE') return 'LIVE'
   if (s === 'PENDING') return 'WAITING'
-  const t = todayIst()
-  const entryToday = typeof r?.entryDate === 'string' && r.entryDate.startsWith(t)
-  const firstSeenToday = typeof r?.firstSeenAt === 'string' && r.firstSeenAt.slice(0, 10) === t
-  if (entryToday || firstSeenToday) return 'NEW'
+  // NEW window widened again 30 Jul 2026 to 7 days. The user's mental model
+  // is "did we surface this recently", not "in today's session". Weekend +
+  // holiday gaps + EOD-18:30 write cadence mean a same-cycle badge is often
+  // 2-3 days old by the time it lands in the browser.
+  const nowMs = Date.now()
+  const window = 7 * 24 * 3600_000
+  const isWithin = (v: unknown): boolean => {
+    if (typeof v !== 'string' || !v) return false
+    const t = Date.parse(v.length === 10 ? v + 'T09:15:00+05:30' : v)
+    return Number.isFinite(t) && (nowMs - t) <= window && (nowMs - t) >= -6 * 3600_000
+  }
+  // Permissive: if row has NO date info at all, treat as freshly generated.
+  const anyDate = r?.entryDate || r?.firstSeenAt || r?.generatedAt
+  if (!anyDate) return 'NEW'
+  if (isWithin(r?.entryDate) || isWithin(r?.firstSeenAt) || isWithin(r?.generatedAt)) return 'NEW'
   return 'WAITING'
 }
 
@@ -632,7 +643,7 @@ function MasterRow({ r }: { r: MergedRow }): JSX.Element {
       <td>
         <div className="status-stack">
           <span className={`dir-pill ${isSell ? 'sell' : 'buy'}`}>{isSell ? 'SELL' : 'BUY'}</span>
-          <StatusTag s={r.status} />
+          <StatusTag s={r.status} direction={r.direction} />
         </div>
       </td>
       <td className="r-right"><span className={`conv-badge ${r.conviction < 85 ? 'mid' : ''}`}>{r.conviction || '—'}</span></td>
@@ -663,9 +674,16 @@ function MasterRow({ r }: { r: MergedRow }): JSX.Element {
   )
 }
 
-function StatusTag({ s }: { s: MergedRow['status'] }): JSX.Element {
-  const map: Record<MergedRow['status'], { cls: string; label: string }> = {
-    NEW:     { cls: 'new',     label: '🆕 NEW' },
+function StatusTag({ s, direction }: { s: MergedRow['status']; direction?: string }): JSX.Element {
+  // NEW ribbon is direction-coloured (green BUY / red SELL) per the 30 Jul
+  // 2026 user request. Other statuses keep their existing style.
+  if (s === 'NEW') {
+    const dir = String(direction ?? '').toUpperCase()
+    const isSell = /SELL|SHORT|BEAR/.test(dir)
+    const cls = isSell ? 'new-sell' : 'new-buy'
+    return <span className={`status-tag ${cls}`} title={`New signal · ${dir || 'BUY'}`}>NEW!</span>
+  }
+  const map: Record<Exclude<MergedRow['status'], 'NEW'>, { cls: string; label: string }> = {
     LIVE:    { cls: 'live',    label: '🔴 LIVE' },
     WAITING: { cls: 'waiting', label: '⏸ WAITING' },
     T1_HIT:  { cls: 't1-hit',  label: '🎯 T1 HIT' },
@@ -673,7 +691,7 @@ function StatusTag({ s }: { s: MergedRow['status'] }): JSX.Element {
     T3_HIT:  { cls: 't3-hit',  label: '🏆 T3 HIT' },
     SL_HIT:  { cls: 'sl-hit',  label: '⛔ SL HIT' },
   }
-  const v = map[s]
+  const v = map[s as Exclude<MergedRow['status'], 'NEW'>]
   return <span className={`status-tag ${v.cls}`}>{v.label}</span>
 }
 
@@ -1301,7 +1319,7 @@ function SmartMoneyView(): JSX.Element {
               {visible.map((r, i) => (
                 <tr key={r.symbol + i} className={r.signal === 'STRONG_INSIDER_BUY' ? 'el' : ''}>
                   <td><div className="sym-stack"><div className="sym-line">{r.symbol}{r.signal === 'STRONG_INSIDER_BUY' && <span className="double-badge">STRONG</span>}</div><div className="src-line"><span className="src-mini pro">INSIDER</span></div></div></td>
-                  <td><div className="status-stack"><span className="status-tag new">🆕 NEW</span></div></td>
+                  <td><div className="status-stack"><span className="status-tag new-buy" title="New insider-buy signal · BUY">NEW!</span></div></td>
                   <td className="r-right"><span className={`conv-badge ${r.score < 70 ? 'mid' : ''}`}>{r.score}</span></td>
                   <td className="r-right"><div className="stack-2"><span className="l1">{fmtRupee(r.close)}</span></div></td>
                   <td className="mono" style={{ fontSize: 11.5, color: 'var(--desk-text-2)' }}>
@@ -1458,7 +1476,7 @@ function PatternRow({ r }: { r: any }): JSX.Element {
       <td>
         <div className="status-stack">
           <span className={`dir-pill ${isSell ? 'sell' : 'buy'}`}>{isSell ? 'SELL' : 'BUY'}</span>
-          <StatusTag s={statusOf(r)} />
+          <StatusTag s={statusOf(r)} direction={r.direction ?? r.side ?? r.trade} />
         </div>
       </td>
       <td className="r-right"><span className={`conv-badge ${(r.score ?? 0) < 70 ? 'mid' : ''}`}>{r.score ?? '—'}</span></td>

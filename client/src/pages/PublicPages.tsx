@@ -33,6 +33,75 @@ function pickReason(r: any): string {
   return ''
 }
 
+// NEW-badge freshness check. Widened 30 Jul 2026 to a 7-day rolling
+// window because:
+//   · EOD writes at 18:30 IST → next-morning view sees rows already 12h old
+//   · Weekend + holiday gaps mean freshest write can be 3-4 days back
+//   · The user's expectation is "did we generate this recently" not
+//     "is this from today's session"
+// Any row whose entryDate / firstSeenAt / generatedAt (row-level) OR the
+// enclosing snapshot's generatedAt is within the last 7 days qualifies.
+// This keeps the badge honest — it only disappears when the underlying
+// engine has genuinely stopped emitting the row.
+function isRowNew(r: any, generatedAt?: string): boolean {
+  const nowMs = Date.now()
+  const window = 7 * 24 * 3600_000
+  const check = (v: unknown): boolean => {
+    if (typeof v !== 'string' || !v) return false
+    const t = Date.parse(v.length === 10 ? v + 'T09:15:00+05:30' : v)
+    return Number.isFinite(t) && (nowMs - t) <= window && (nowMs - t) >= -6 * 3600_000
+  }
+  // Permissive rule (30 Jul 2026): if the row and the enclosing snapshot
+  // carry NO date info at all, treat as newly generated. Scanners like
+  // pro-setups and high-quality-setups build rows fresh on every run but
+  // don't stamp per-row entryDate, so a strict date test would hide the
+  // badge on genuinely new setups. Server-side we prune anything stale
+  // before publishing, so "no date + present in the feed = fresh".
+  const anyDate = r?.entryDate || r?.firstSeenAt || r?.generatedAt || generatedAt
+  if (!anyDate) return true
+  return check(r?.entryDate) || check(r?.firstSeenAt) || check(r?.generatedAt) || check(generatedAt)
+}
+
+// A page hands its snapshot's file-level `generatedAt` to every NewBadge
+// inside its tree via this Context. Some engines (pro-setups, HQS) don't
+// stamp per-row dates; without this the badge would silently not render.
+// A page just wraps its return in <SnapshotContext.Provider value={data.generatedAt}>.
+export const SnapshotContext = React.createContext<string | undefined>(undefined)
+
+// Solid ribbon NEW badge — like the reference retail-price-tag ribbons.
+// Colour is direction-aware: BUY / LONG / BULLISH → green; SELL / SHORT /
+// BEARISH → red. Neutral direction defaults to red. Sits inline beside
+// the symbol and never wraps.
+export function NewBadge({ row, generatedAt, className }: { row: any; generatedAt?: string; className?: string }): JSX.Element | null {
+  const ctxGeneratedAt = React.useContext(SnapshotContext)
+  const gAt = generatedAt ?? ctxGeneratedAt
+  if (!isRowNew(row, gAt)) return null
+  const dir = String(row?.direction ?? row?.side ?? row?.trade ?? row?.action ?? '').toUpperCase()
+  const isBuy = /BUY|LONG|BULL/.test(dir)
+  const isSell = /SELL|SHORT|BEAR/.test(dir)
+  // BUY → green tag ("new arrival, go"); SELL → red tag ("distribution, watch"). Neutral → red.
+  const bg = isBuy ? '#00c853' : isSell ? '#ff1744' : '#ff1744'
+  const glow = isBuy ? 'rgba(0,200,83,0.55)' : 'rgba(255,23,68,0.55)'
+  return (
+    <span
+      className={`inline-flex items-center px-2 py-[3px] text-[9px] font-black uppercase tracking-[0.08em] align-middle whitespace-nowrap select-none ${className ?? ''}`}
+      style={{
+        background: `linear-gradient(135deg, ${bg} 0%, ${bg}dd 100%)`,
+        color: '#ffffff',
+        borderRadius: '3px 8px 3px 3px',
+        boxShadow: `0 1px 6px ${glow}, inset 0 1px 0 rgba(255,255,255,0.28)`,
+        textShadow: '0 1px 1px rgba(0,0,0,0.35)',
+        letterSpacing: '0.06em',
+        lineHeight: 1.15,
+        marginLeft: 6,
+      }}
+      title={`Signal generated in last 36h${dir ? ` · ${dir}` : ''}`}
+    >
+      NEW!
+    </span>
+  )
+}
+
 const fmtExpiry = (s?: string | null): string => {
   if (!s) return '—'
   const d = new Date(s)
@@ -384,7 +453,7 @@ export function PublicSignalsHistoryPage(): JSX.Element {
                     {/* Stock column — wide; name+badges, 📊 Stake, ⚡ Setup stacked. */}
                     <td className={`${td} px-3 sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ minWidth: 320, maxWidth: 360 }}>
                       <div className="flex items-center gap-1.5 flex-wrap">
-                        <b className="text-neutral-100">{r.symbol}</b>
+                        <b className="text-neutral-100">{r.symbol}</b><NewBadge row={r} />
                         <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
                         <span className="text-[9px] text-neutral-500">{r.source}</span>
                         <span className="text-[9px] text-neutral-600">{fmtDate(r.generatedAt)}</span>
@@ -538,8 +607,9 @@ function WeeklyCard({ r }: { r: any }): JSX.Element {
   return (
     <div className={cardCls}>
       <div className="flex items-center justify-between mb-2">
-        <div className="flex items-center gap-2">
-          <b className="text-neutral-100 text-[13px]">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+        <div className="flex items-center gap-2 flex-wrap">
+          <b className="text-neutral-100 text-[13px]">{r.noBrainerBet && '⭐ '}{r.symbol}</b><NewBadge row={r} />
+          <NewBadge row={r} />
           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
           {r.bucket === 'WAVE_2' && status === 'ACTIVE' && (
             <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40">🔄 WAVE-2</span>
@@ -590,7 +660,7 @@ function WeeklyRow({ r }: { r: any }): JSX.Element {
       <tr className="group border-t border-ink-500">
         <td className={`${tdNoBorder} px-4 text-left sticky left-0 z-10 border-r border-ink-500 shadow-[2px_0_4px_rgba(0,0,0,0.4)]`} style={{ ...tdStyle, minWidth: 320, maxWidth: 360, whiteSpace: 'normal' }}>
           <div className="flex items-center gap-1.5 flex-wrap">
-            <b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+            <b className="text-neutral-200">{r.noBrainerBet && '⭐ '}{r.symbol}</b><NewBadge row={r} />
             {r.bucket === 'WAVE_2' && status === 'ACTIVE' && (
               <span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet border border-accent-violet/40">🔄 WAVE-2</span>
             )}
@@ -1225,7 +1295,7 @@ function EliteCard({ row: r, verdict, tier }: { row: any; verdict: { pass: boole
       {/* Header: stock + tier + direction + source + conviction + expected return */}
       <div className="flex items-center justify-between gap-3 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <b className="text-neutral-100 text-[15px]">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+          <b className="text-neutral-100 text-[15px]">{r.noBrainerBet && '⭐ '}{r.symbol}</b><NewBadge row={r} />
           {tierBadge && (
             <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${tierBadge.cls}`}>
               {tierBadge.emoji} {tierBadge.label}
@@ -1499,7 +1569,9 @@ export function PublicSectorRotationPage(): JSX.Element {
     queryKey: ['public-sector-rotation'], queryFn: () => snapshots.sectorRotation(),
     refetchInterval: 5 * 60_000, retry: false,
   })
-  const rawRows: any[] = data?.rows ?? []
+  const [expanded, setExpanded] = React.useState<Record<string, boolean>>({})
+  const rawRows: any[] = (data as any)?.rows ?? []
+  const totalDayInflow = (data as any)?.totalDayInflowCr ?? 0
   const trendColor: Record<string, string> = {
     LEADING: '#00c853', IMPROVING: '#00bcd4', NEUTRAL: '#9e9e9e',
     WEAKENING: '#ff9800', LAGGING: '#ff1744',
@@ -1509,7 +1581,7 @@ export function PublicSectorRotationPage(): JSX.Element {
   }
   const { rows, headerProps, sortIndicator } = useSortableTable<any>(
     rawRows,
-    { key: 'rotationScore', dir: 'desc' },
+    { key: 'dayInflowCr', dir: 'desc' },
     {
       label: r => r.label ?? '',
       trend: r => TREND_RANK[r.trend] ?? 0,
@@ -1520,8 +1592,11 @@ export function PublicSectorRotationPage(): JSX.Element {
       relStr20d: r => r.relStr20d ?? 0,
       pctAboveEma21: r => r.pctAboveEma21 ?? 0,
       volRatio5_20: r => r.volRatio5_20 ?? 0,
+      dayInflowCr: r => r.dayInflowCr ?? 0,
+      weekInflowCr: r => r.weekInflowCr ?? 0,
     },
   )
+  const fmtCr = (v: number) => (v >= 0 ? '+' : '') + '₹' + Math.round(v).toLocaleString('en-IN') + ' Cr'
   return (
     <div className="space-y-4">
       <div className="flex items-start gap-3 p-4 bg-gradient-to-br from-accent-violet/10 to-accent-cyan/5 border border-accent-violet/40 rounded-lg">
@@ -1534,10 +1609,19 @@ export function PublicSectorRotationPage(): JSX.Element {
             shorts with lagging — adds the sector tailwind lens to every stock setup.
           </div>
           {data && (
-            <div className="text-[10px] text-neutral-500 mt-2 font-mono">
-              <span className="text-accent-green">Leading: {data.leading?.join(', ') || '—'}</span>
-              {' · '}
-              <span className="text-accent-red">Lagging: {data.lagging?.join(', ') || '—'}</span>
+            <div className="text-[10px] text-neutral-500 mt-2 font-mono space-y-0.5">
+              <div>
+                <span className="text-accent-green">Leading: {(data as any).leading?.join(', ') || '—'}</span>
+                {' · '}
+                <span className="text-accent-red">Lagging: {(data as any).lagging?.join(', ') || '—'}</span>
+              </div>
+              <div>
+                <span className="text-neutral-400">Net market money-flow today: </span>
+                <span className={totalDayInflow >= 0 ? 'text-accent-green font-bold' : 'text-accent-red font-bold'}>
+                  {fmtCr(totalDayInflow)}
+                </span>
+                <span className="text-neutral-500"> (MFI-style — typical price × volume, signed)</span>
+              </div>
             </div>
           )}
         </div>
@@ -1547,15 +1631,22 @@ export function PublicSectorRotationPage(): JSX.Element {
       {error && <Empty msg="Couldn't load sector rotation. Refreshes every 30 min." />}
       {rows.length > 0 && (
         <div className="overflow-auto rounded-lg border border-ink-500 bg-ink-800">
-          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 900 }}>
+          <table className="w-full text-[12px] border-separate" style={{ borderSpacing: 0, minWidth: 1180 }}>
             <thead className="bg-ink-700 text-neutral-400 sticky top-0 z-20">
               <tr>
+                <th className="text-center px-2 py-3 w-6"></th>
                 <th {...headerProps('label', 'text-left px-3 py-3')}>Sector{sortIndicator('label')}</th>
                 <th {...headerProps('trend', 'text-center px-2 py-3')}>Trend{sortIndicator('trend')}</th>
+                <th {...headerProps('dayInflowCr', 'text-right px-2 py-3')} title="MFI-style money-flow today (₹ Cr) — typical price × volume, signed by TP direction">
+                  Day Flow{sortIndicator('dayInflowCr')}
+                </th>
+                <th {...headerProps('weekInflowCr', 'text-right px-2 py-3')} title="Sum of signed money-flow over last 5 sessions (₹ Cr)">
+                  5d Flow{sortIndicator('weekInflowCr')}
+                </th>
                 <th {...headerProps('rotationScore', 'text-right px-2 py-3')}>Score{sortIndicator('rotationScore')}</th>
                 <th {...headerProps('ret5d', 'text-right px-2 py-3')}>5d{sortIndicator('ret5d')}</th>
                 <th {...headerProps('ret20d', 'text-right px-2 py-3')}>20d{sortIndicator('ret20d')}</th>
-                <th {...headerProps('pctAboveEma21', 'text-right px-2 py-3')}>EMA21 breadth{sortIndicator('pctAboveEma21')}</th>
+                <th {...headerProps('pctAboveEma21', 'text-right px-2 py-3')}>Breadth{sortIndicator('pctAboveEma21')}</th>
                 <th {...headerProps('volRatio5_20', 'text-right px-2 py-3')}>Vol×{sortIndicator('volRatio5_20')}</th>
               </tr>
             </thead>
@@ -1563,32 +1654,102 @@ export function PublicSectorRotationPage(): JSX.Element {
               {rows.map((r: any, i: number) => {
                 const color = trendColor[r.trend] || '#9e9e9e'
                 const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
+                const flowDay = r.dayInflowCr ?? 0
+                const flowWeek = r.weekInflowCr ?? 0
+                const hasBreakdown = Array.isArray(r.topInflowStocks) && r.topInflowStocks.length > 0
+                const isOpen = !!expanded[r.index]
                 return (
-                  <tr key={r.index} className="group border-t border-ink-500">
-                    <td className={`${tdb} px-3 font-bold text-neutral-100`}>{i + 1}. {r.label}</td>
-                    <td className={`${tdb} text-center`}>
-                      <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${color}22`, color }}>{r.trend}</span>
-                    </td>
-                    <td className={`${tdb} text-right font-bold`} style={{ color }}>{r.rotationScore.toFixed(1)}</td>
-                    <td className={`${tdb} text-right ${(r.ret5d ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
-                      {(r.ret5d ?? 0) > 0 ? '+' : ''}{(r.ret5d ?? 0).toFixed(1)}%
-                      {r.relStr5d != null && (
-                        <span className={`ml-1 text-[9px] ${r.relStr5d >= 0 ? 'text-accent-green/70' : 'text-accent-red/70'}`}>
-                          ({r.relStr5d > 0 ? '+' : ''}{r.relStr5d.toFixed(1)})
-                        </span>
-                      )}
-                    </td>
-                    <td className={`${tdb} text-right ${(r.ret20d ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
-                      {(r.ret20d ?? 0) > 0 ? '+' : ''}{(r.ret20d ?? 0).toFixed(1)}%
-                      {r.relStr20d != null && (
-                        <span className={`ml-1 text-[9px] ${r.relStr20d >= 0 ? 'text-accent-green/70' : 'text-accent-red/70'}`}>
-                          ({r.relStr20d > 0 ? '+' : ''}{r.relStr20d.toFixed(1)})
-                        </span>
-                      )}
-                    </td>
-                    <td className={`${tdb} text-right text-neutral-200`}>{(r.pctAboveEma21 ?? 0).toFixed(0)}%</td>
-                    <td className={`${tdb} text-right text-neutral-300`}>{(r.volRatio5_20 ?? 1).toFixed(2)}×</td>
-                  </tr>
+                  <React.Fragment key={r.index}>
+                    <tr
+                      className="group border-t border-ink-500 cursor-pointer"
+                      onClick={() => hasBreakdown && setExpanded(e => ({ ...e, [r.index]: !e[r.index] }))}
+                    >
+                      <td className={`${tdb} text-center text-neutral-500`}>
+                        {hasBreakdown ? (isOpen ? '▾' : '▸') : ''}
+                      </td>
+                      <td className={`${tdb} px-3 font-bold text-neutral-100`}>{i + 1}. {r.label}</td>
+                      <td className={`${tdb} text-center`}>
+                        <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${color}22`, color }}>{r.trend}</span>
+                      </td>
+                      <td className={`${tdb} text-right font-bold ${flowDay >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                        {fmtCr(flowDay)}
+                        {r.dayFlowVsAvgPct != null && Math.abs(r.dayFlowVsAvgPct) >= 20 && (
+                          <span className="ml-1 text-[9px] text-neutral-400">({r.dayFlowVsAvgPct > 0 ? '+' : ''}{Math.round(r.dayFlowVsAvgPct)}%)</span>
+                        )}
+                      </td>
+                      <td className={`${tdb} text-right font-bold ${flowWeek >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                        {fmtCr(flowWeek)}
+                      </td>
+                      <td className={`${tdb} text-right font-bold`} style={{ color }}>{r.rotationScore.toFixed(1)}</td>
+                      <td className={`${tdb} text-right ${(r.ret5d ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                        {(r.ret5d ?? 0) > 0 ? '+' : ''}{(r.ret5d ?? 0).toFixed(1)}%
+                        {r.relStr5d != null && (
+                          <span className={`ml-1 text-[9px] ${r.relStr5d >= 0 ? 'text-accent-green/70' : 'text-accent-red/70'}`}>
+                            ({r.relStr5d > 0 ? '+' : ''}{r.relStr5d.toFixed(1)})
+                          </span>
+                        )}
+                      </td>
+                      <td className={`${tdb} text-right ${(r.ret20d ?? 0) >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                        {(r.ret20d ?? 0) > 0 ? '+' : ''}{(r.ret20d ?? 0).toFixed(1)}%
+                        {r.relStr20d != null && (
+                          <span className={`ml-1 text-[9px] ${r.relStr20d >= 0 ? 'text-accent-green/70' : 'text-accent-red/70'}`}>
+                            ({r.relStr20d > 0 ? '+' : ''}{r.relStr20d.toFixed(1)})
+                          </span>
+                        )}
+                      </td>
+                      <td className={`${tdb} text-right text-neutral-200`}>{(r.pctAboveEma21 ?? 0).toFixed(0)}%</td>
+                      <td className={`${tdb} text-right text-neutral-300`}>{(r.volRatio5_20 ?? 1).toFixed(2)}×</td>
+                    </tr>
+                    {isOpen && hasBreakdown && (
+                      <tr className="bg-ink-900/60 border-t border-ink-500">
+                        <td colSpan={10} className="px-3 py-3">
+                          <div className="text-[10px] text-neutral-400 mb-2 font-mono uppercase tracking-wider">
+                            Stock-wise money flow · {r.label} · top {r.topInflowStocks.length} by ₹-flow today
+                          </div>
+                          <div className="overflow-x-auto">
+                            <table className="w-full text-[11px] font-mono" style={{ minWidth: 720 }}>
+                              <thead className="text-neutral-500">
+                                <tr>
+                                  <th className="text-left px-2 py-1 font-normal">Stock</th>
+                                  <th className="text-right px-2 py-1 font-normal">LTP</th>
+                                  <th className="text-right px-2 py-1 font-normal">Day Flow</th>
+                                  <th className="text-right px-2 py-1 font-normal">5d Flow</th>
+                                  <th className="text-right px-2 py-1 font-normal">Turnover</th>
+                                  <th className="text-right px-2 py-1 font-normal">5d %</th>
+                                  <th className="text-right px-2 py-1 font-normal">20d %</th>
+                                </tr>
+                              </thead>
+                              <tbody>
+                                {r.topInflowStocks.map((s: any) => (
+                                  <tr key={s.symbol} className="border-t border-ink-500/40">
+                                    <td className="px-2 py-1 text-neutral-100 font-bold">{s.symbol}</td>
+                                    <td className="px-2 py-1 text-right text-neutral-300">₹{s.ltp.toFixed(2)}</td>
+                                    <td className={`px-2 py-1 text-right font-bold ${s.dayFlowCr >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                                      {fmtCr(s.dayFlowCr)}
+                                    </td>
+                                    <td className={`px-2 py-1 text-right ${s.weekFlowCr >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                                      {fmtCr(s.weekFlowCr)}
+                                    </td>
+                                    <td className="px-2 py-1 text-right text-neutral-300">₹{Math.round(s.turnoverCr).toLocaleString('en-IN')} Cr</td>
+                                    <td className={`px-2 py-1 text-right ${s.ret5d >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                                      {s.ret5d > 0 ? '+' : ''}{s.ret5d.toFixed(1)}%
+                                    </td>
+                                    <td className={`px-2 py-1 text-right ${s.ret20d >= 0 ? 'text-accent-green' : 'text-accent-red'}`}>
+                                      {s.ret20d > 0 ? '+' : ''}{s.ret20d.toFixed(1)}%
+                                    </td>
+                                  </tr>
+                                ))}
+                              </tbody>
+                            </table>
+                          </div>
+                          <div className="text-[10px] text-neutral-500 mt-2 leading-relaxed">
+                            💡 Green = MFI-signed inflow (accumulation) · Red = MFI-signed outflow (distribution).
+                            Look for sectors where the top 3-4 stocks all show green day flow — that's where institutions are stacking today.
+                          </div>
+                        </td>
+                      </tr>
+                    )}
+                  </React.Fragment>
                 )
               })}
             </tbody>
@@ -1904,7 +2065,7 @@ export function PublicEarlyMomentumPage(): JSX.Element {
                 const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
                 return (
                   <tr key={r.symbol + i} className="group border-t border-ink-500">
-                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{r.symbol}</td>
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{r.symbol}<NewBadge row={r} /></td>
                     <td className={`${tdb} text-center`}>
                       <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${tierColor}22`, color: tierColor }}>{r.tier}</span>
                     </td>
@@ -2055,7 +2216,7 @@ export function PublicChartPatternsPage(): JSX.Element {
                 const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
                 return (
                   <tr key={r.symbol + r.pattern + i} className="group border-t border-ink-500">
-                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{r.symbol}</td>
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{r.symbol}<NewBadge row={r} /></td>
                     <td className={`${tdb} text-left font-bold text-accent-amber`}>{r.pattern}</td>
                     <td className={`${tdb} text-center text-neutral-300`}>{r.timeframe}</td>
                     <td className={`${tdb} text-center`}>
@@ -2675,7 +2836,7 @@ export function PublicStockFnoVolumeProfilePage(): JSX.Element {
                 const sideColor = r.side === 'BULLISH' ? '#00c853' : '#ff4560'
                 return (
                   <tr key={r.symbol + i} className="group border-t border-ink-500">
-                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100 bg-ink-800`}>{r.symbol}</td>
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100 bg-ink-800`}>{r.symbol}<NewBadge row={r} /></td>
                     <td className={`${tdb} text-center font-bold`} style={{ color: sideColor }}>{r.side}</td>
                     <td className={`${tdb} text-right font-bold text-accent-amber`}>{r.compositeStrength}</td>
                     <td className={`${tdb} text-right text-accent-cyan`}>{r.agreementScore}/3</td>
@@ -3298,7 +3459,7 @@ function BulkDealsTable({ rows }: { rows: any[] }): JSX.Element {
             const tdb = `px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]`
             return (
               <tr key={r.symbol + i} className="group border-t border-ink-500">
-                <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{r.symbol}</td>
+                <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{r.symbol}<NewBadge row={r} /></td>
                 <td className={`${tdb} text-center`}>
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${sigColor}22`, color: sigColor }}>{r.signal.replace('_', ' ')}</span>
                 </td>
@@ -3602,7 +3763,7 @@ export function PublicArchivePage(): JSX.Element {
                 const statusColor = r.status === 'SL_HIT' ? '#ff5e7c' : r.status === 'SUPERSEDED' ? '#9e9e9e' : '#ffb454'
                 return (
                   <tr key={i} className="border-t border-ink-500 hover:bg-ink-700/30">
-                    <td className="px-3 py-2 font-bold text-neutral-100">{r.symbol}</td>
+                    <td className="px-3 py-2 font-bold text-neutral-100">{r.symbol}<NewBadge row={r} /></td>
                     <td className="px-2 py-2 text-center"><span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span></td>
                     <td className="px-2 py-2 text-center"><span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${statusColor}22`, color: statusColor }}>{r.status}</span></td>
                     <td className="px-2 py-2 text-right font-mono">₹{fmtPx(r.entry)}</td>
@@ -3700,7 +3861,7 @@ export function PublicSlTrapPage(): JSX.Element {
               <div key={i} className="bg-ink-800 border rounded-lg p-3" style={{ borderColor: `${color}66` }}>
                 <div className="flex items-center justify-between gap-2 flex-wrap">
                   <div className="flex items-center gap-2 flex-wrap">
-                    <b className="text-neutral-100 text-[13px]">{r.symbol}</b>
+                    <b className="text-neutral-100 text-[13px]">{r.symbol}</b><NewBadge row={r} />
                     <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${color}22`, color }}>{label}</span>
                     <span className="text-[10px] text-neutral-500">{r.source}</span>
                   </div>
@@ -3800,7 +3961,7 @@ function ProEdgeCard({ row: r }: { row: any }): JSX.Element {
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
           <span className="text-[14px]">💎</span>
-          <b className="text-neutral-100 text-[14px]">{r.symbol}</b>
+          <b className="text-neutral-100 text-[14px]">{r.symbol}</b><NewBadge row={r} />
           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent-amber/15 text-accent-amber border border-accent-amber/50">PRO · conv {r.conviction}</span>
         </div>
@@ -3969,7 +4130,7 @@ function AdCard({ row: r }: { row: any }): JSX.Element {
     <div className="bg-ink-800 border border-accent-cyan/20 rounded-lg p-3 hover:border-accent-cyan/50 transition-colors">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <b className="text-neutral-100 text-[13px]">{r.symbol}</b>
+          <b className="text-neutral-100 text-[13px]">{r.symbol}</b><NewBadge row={r} />
           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${color}22`, color }}>
             {accum ? '🟢 ACCUMULATION' : '🔴 DISTRIBUTION'}
           </span>
@@ -4157,7 +4318,7 @@ export function UniformPickTable({ rows, minRowCount }: { rows: any[]; minRowCou
             return (
               <tr key={r.symbol + i} className="group border-t border-ink-500">
                 <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500`} style={{ minWidth: 140 }}>
-                  <b className="text-neutral-100">{conv >= 85 && '🔥 '}{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+                  <b className="text-neutral-100">{conv >= 85 && '🔥 '}{r.noBrainerBet && '⭐ '}{r.symbol}</b><NewBadge row={r} />
                 </td>
                 <td className={`${tdb} text-center`}>
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
@@ -4245,7 +4406,7 @@ function OldWeeklyTable({ rows }: { rows: any[] }): JSX.Element {
             return (
               <tr key={r.symbol + i} className="group border-t border-ink-500">
                 <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500`} style={{ minWidth: 140 }}>
-                  <b className="text-neutral-100">{r.noBrainerBet && '⭐ '}{r.symbol}</b>
+                  <b className="text-neutral-100">{r.noBrainerBet && '⭐ '}{r.symbol}</b><NewBadge row={r} />
                 </td>
                 <td className={`${tdb} text-center`}>
                   <span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.direction}</span>
@@ -4438,7 +4599,7 @@ function FnoFuturesCard({ row: r }: { row: any }): JSX.Element {
     <div className="bg-ink-800 border border-accent-amber/20 rounded-lg p-4 hover:border-accent-amber/50 transition-colors">
       <div className="flex items-center justify-between gap-2 flex-wrap">
         <div className="flex items-center gap-2 flex-wrap">
-          <b className="text-neutral-100 text-[14px]">{r.symbol}</b>
+          <b className="text-neutral-100 text-[14px]">{r.symbol}</b><NewBadge row={r} />
           <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor}22`, color: dirColor }}>{r.side}</span>
           <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold border ${confBadge.cls}`}>{confBadge.label}</span>
           <span className="text-[10px] font-bold px-1.5 py-0.5 rounded bg-accent-green/15 text-accent-green border border-accent-green/40">
@@ -4510,6 +4671,76 @@ function FnoFuturesCard({ row: r }: { row: any }): JSX.Element {
 // Renders the ₹10L auto-managed test book on the old-platform public UI.
 // Same data source (trading-journal.json) as the /desk Journal tab, but
 // styled to match the public dashboard's dark theme + table treatment.
+// SL Decision Engine verdict — small badge + click-to-expand rationale.
+// Shows the LATEST decision (AVERAGE / HOLD / EXIT) with confidence, and
+// opens a modal-style panel with the full trader-grade explanation:
+// shareholding (FII/DII/promoter QoQ + pledge), smart-money footprint,
+// quality floor, and the six-lens trap breakdown.
+function SlVerdictCell({ t }: { t: any }): JSX.Element {
+  const [open, setOpen] = React.useState(false)
+  const verdict = t.slVerdict
+  const notes: string[] = t.trapNotes ?? []
+  if (!verdict && notes.length === 0) return <span className="text-neutral-600 text-[10px]">—</span>
+  const color = !verdict ? '#8a8a8a'
+    : verdict.action === 'AVERAGE' ? '#00c853'
+    : verdict.action === 'HOLD' ? '#ffb454'
+    : '#ff5e7c'
+  const icon = !verdict ? '·'
+    : verdict.action === 'AVERAGE' ? '🎯'
+    : verdict.action === 'HOLD' ? '⏸'
+    : '🛑'
+  return (
+    <>
+      <button
+        type="button"
+        onClick={() => setOpen(true)}
+        className="px-1.5 py-0.5 rounded text-[10px] font-bold border transition-colors hover:brightness-125"
+        style={{ background: `${color}22`, color, borderColor: `${color}55` }}
+        title="Click for full SL decision rationale"
+      >
+        {icon} {verdict?.action ?? 'notes'} {verdict && `(${verdict.confidence})`}
+      </button>
+      {open && (
+        <div
+          onClick={() => setOpen(false)}
+          className="fixed inset-0 z-50 bg-black/70 flex items-center justify-center p-4"
+        >
+          <div
+            onClick={e => e.stopPropagation()}
+            className="bg-ink-800 border border-ink-500 rounded-lg p-6 max-w-3xl w-full max-h-[85vh] overflow-auto"
+            style={{ textAlign: 'left' }}
+          >
+            <div className="flex items-start justify-between mb-4">
+              <div>
+                <div className="text-sm font-bold text-neutral-100">SL Decision — {t.symbol}</div>
+                <div className="text-[11px] text-neutral-500 mt-1">Full trader-grade rationale: shareholding · smart-money · quality · structural trap-score</div>
+              </div>
+              <button onClick={() => setOpen(false)} className="text-neutral-500 hover:text-neutral-200 text-xl leading-none">×</button>
+            </div>
+            {verdict && (
+              <div className="mb-4 p-3 bg-ink-900 rounded" style={{ borderLeft: `3px solid ${color}` }}>
+                <div className="text-[10px] uppercase tracking-wider mb-1" style={{ color }}>{icon} {verdict.action} · confidence {verdict.confidence}%</div>
+                <pre className="whitespace-pre-wrap text-[11px] leading-relaxed text-neutral-300 font-mono">{verdict.humanExplain}</pre>
+                {verdict.at && <div className="text-[10px] text-neutral-500 mt-2 font-mono">Decision recorded {verdict.at}</div>}
+              </div>
+            )}
+            {notes.length > 0 && (
+              <div>
+                <div className="text-[10px] uppercase tracking-wider text-neutral-500 mb-1">Trade history</div>
+                <ul className="space-y-1 text-[11px] font-mono text-neutral-300">
+                  {notes.slice().reverse().map((n, i) => (
+                    <li key={i} className="p-2 bg-ink-900 rounded border-l border-neutral-700">{n}</li>
+                  ))}
+                </ul>
+              </div>
+            )}
+          </div>
+        </div>
+      )}
+    </>
+  )
+}
+
 export function PublicJournalPage(): JSX.Element {
   const { data, isLoading } = useQuery({ queryKey: ['public-journal'], queryFn: () => snapshots.tradingJournal(), refetchInterval: 15 * 60_000, retry: false })
   const [tab, setTab] = useState<'open' | 'closed'>('open')
@@ -4595,19 +4826,20 @@ export function PublicJournalPage(): JSX.Element {
                 <th className="text-right px-2 py-3">Days</th>
                 <th className="text-right px-2 py-3">P&amp;L</th>
                 <th className="text-right px-2 py-3">Return</th>
+                <th className="text-center px-2 py-3" title="Latest SL Decision Engine verdict — includes shareholding + smart-money + trap-score analysis">SL Verdict</th>
                 <th className="text-left px-3 py-3">Why taken</th>
               </tr>
             </thead>
             <tbody>
               {open.length === 0 && (
-                <tr><td colSpan={14} className="text-center text-neutral-500 py-12">No open positions right now.</td></tr>
+                <tr><td colSpan={15} className="text-center text-neutral-500 py-12">No open positions right now.</td></tr>
               )}
               {open.map((t: any, i: number) => {
                 const tierColor = t.tier === 'ELITE' ? '#ffb454' : '#5fd4ff'
                 const tdb = 'px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]'
                 return (
                   <tr key={t.id + i} className="group border-t border-ink-500">
-                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{t.symbol}</td>
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{t.symbol}<NewBadge row={t} /></td>
                     <td className={`${tdb} text-center`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${tierColor}22`, color: tierColor }}>{t.tier}</span></td>
                     <td className={`${tdb} text-left`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet">{t.source}</span></td>
                     <td className={`${tdb} text-left text-neutral-400`}>{t.entryDate}{t.entryTime && <div className="text-[9px] text-neutral-600">{t.entryTime} IST</div>}</td>
@@ -4621,6 +4853,7 @@ export function PublicJournalPage(): JSX.Element {
                     <td className={`${tdb} text-right text-neutral-400`}>{t.daysHeld}d</td>
                     <td className={`${tdb} text-right font-bold`} style={{ color: pnlColor(t.totalPnl) }}>{t.totalPnl >= 0 ? '+' : ''}{fmtInr0(t.totalPnl)}</td>
                     <td className={`${tdb} text-right`} style={{ color: pnlColor(t.returnPct) }}>{t.returnPct >= 0 ? '+' : ''}{t.returnPct.toFixed(2)}%</td>
+                    <td className={`${tdb} text-center`}><SlVerdictCell t={t} /></td>
                     <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 280, maxWidth: 400 }} title={t.entryReason}>
                       <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.entryReason || '—'}</div>
                     </td>
@@ -4650,12 +4883,13 @@ export function PublicJournalPage(): JSX.Element {
                 <th className="text-right px-2 py-3">P&amp;L</th>
                 <th className="text-right px-2 py-3">Return</th>
                 <th className="text-right px-2 py-3">Days</th>
+                <th className="text-center px-2 py-3" title="SL Decision — shareholding + smart-money + trap-score rationale that led to this exit">SL Verdict</th>
                 <th className="text-left px-3 py-3">Why taken</th>
               </tr>
             </thead>
             <tbody>
               {closed.length === 0 && (
-                <tr><td colSpan={14} className="text-center text-neutral-500 py-12">No closed trades yet — book has been running {d.daysRunning} day(s).</td></tr>
+                <tr><td colSpan={15} className="text-center text-neutral-500 py-12">No closed trades yet — book has been running {d.daysRunning} day(s).</td></tr>
               )}
               {closed.slice().reverse().map((t: any, i: number) => {
                 const tierColor = t.tier === 'ELITE' ? '#ffb454' : '#5fd4ff'
@@ -4663,7 +4897,7 @@ export function PublicJournalPage(): JSX.Element {
                 const tdb = 'px-2 py-2 align-top bg-ink-800 group-hover:bg-ink-700 font-mono text-[11px]'
                 return (
                   <tr key={t.id + i} className="group border-t border-ink-500">
-                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{t.symbol}</td>
+                    <td className={`${tdb} px-3 sticky left-0 z-10 border-r border-ink-500 font-bold text-neutral-100`}>{t.symbol}<NewBadge row={t} /></td>
                     <td className={`${tdb} text-center`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold" style={{ background: `${tierColor}22`, color: tierColor }}>{t.tier}</span></td>
                     <td className={`${tdb} text-left`}><span className="px-1.5 py-0.5 rounded text-[9px] font-bold bg-accent-violet/20 text-accent-violet">{t.source}</span></td>
                     <td className={`${tdb} text-left text-neutral-400`}>{t.entryDate}{t.entryTime && <div className="text-[9px] text-neutral-600">{t.entryTime} IST</div>}</td>
@@ -4680,6 +4914,7 @@ export function PublicJournalPage(): JSX.Element {
                     <td className={`${tdb} text-right font-bold`} style={{ color: pnlColor(t.totalPnl) }}>{t.totalPnl >= 0 ? '+' : ''}{fmtInr0(t.totalPnl)}</td>
                     <td className={`${tdb} text-right`} style={{ color: pnlColor(t.returnPct) }}>{t.returnPct >= 0 ? '+' : ''}{t.returnPct.toFixed(2)}%</td>
                     <td className={`${tdb} text-right text-neutral-400`}>{t.daysHeld}d</td>
+                    <td className={`${tdb} text-center`}><SlVerdictCell t={t} /></td>
                     <td className={`${tdb} text-left text-neutral-400`} style={{ minWidth: 260, maxWidth: 400 }} title={t.entryReason}>
                       <div style={{ display: '-webkit-box', WebkitLineClamp: 3, WebkitBoxOrient: 'vertical', overflow: 'hidden' }}>{t.entryReason || '—'}</div>
                     </td>
@@ -5129,8 +5364,9 @@ export function PublicFnoForecastPage(): JSX.Element {
         {rows.map((r: any, i: number) => (
           <div key={r.symbol + i} className={`p-4 bg-ink-800 border rounded-lg ${r.tier === 'ELITE' ? 'border-accent-amber/40' : 'border-ink-500'}`}>
             {/* Head */}
-            <div className="flex items-center gap-2 mb-2">
+            <div className="flex items-center gap-2 mb-2 flex-wrap">
               <div className="text-[15px] font-bold text-neutral-100">{r.symbol}</div>
+              <NewBadge row={r} generatedAt={d.generatedAt} />
               <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${pnlColor(r.side)}22`, color: pnlColor(r.side) }}>{r.side}</span>
               <span className="ml-auto text-[11px] font-bold" style={{ color: tierColor(r.tier) }}>{r.tier} · {r.score}</span>
             </div>

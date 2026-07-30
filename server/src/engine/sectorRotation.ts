@@ -92,6 +92,19 @@ export const SECTOR_BASKETS: SectorBasket[] = [
   ]},
 ]
 
+export interface StockMoneyFlow {
+  symbol: string
+  ltp: number
+  ret5d: number
+  ret20d: number
+  /** Signed money-flow today, in ₹ Cr (MFI-style — sign = today's TP vs yesterday's TP). */
+  dayFlowCr: number
+  /** Signed money-flow over last 5 sessions, in ₹ Cr. */
+  weekFlowCr: number
+  /** Absolute turnover today in ₹ Cr — how much cash actually changed hands. */
+  turnoverCr: number
+}
+
 export interface SectorReading {
   key: SectorKey
   label: string
@@ -106,10 +119,17 @@ export interface SectorReading {
   pctAboveEma50: number
   // Volume
   volRatio: number     // basket-avg today vs 30d basket-avg
+  // Money flow (₹ Cr, signed by MFI-style TP direction)
+  dayInflowCr: number         // sum of member day flows
+  weekInflowCr: number        // sum of member 5d flows
+  dayTurnoverCr: number       // sum of member day turnover (absolute)
+  dayFlowVsAvgPct: number     // day inflow vs 20d avg (%)
   // Verdict
   rotatingIn: boolean      // money flowing IN
   rotatingOut: boolean     // money flowing OUT
   topMovers: Array<{ symbol: string; ret5d: number; ret20d: number; ltp: number }>
+  /** Top 8 constituents by absolute money-flow today, signed (+ = inflow, - = outflow). */
+  topInflowStocks: StockMoneyFlow[]
   note: string
 }
 
@@ -138,6 +158,14 @@ interface NameStats {
   aboveEma50: boolean
   volRatio30: number
   ltp: number
+  /** Signed ₹ Cr money-flow today (typical-price × volume, signed by TP direction). */
+  dayFlowCr: number
+  /** Signed ₹ Cr money-flow over last 5 sessions. */
+  weekFlowCr: number
+  /** Absolute ₹ Cr turnover today. */
+  turnoverCr: number
+  /** 20-day avg absolute daily turnover in ₹ Cr — baseline for spike detection. */
+  avgTurnoverCr20: number
 }
 
 async function statsFor(symbol: string): Promise<NameStats | null> {
@@ -158,6 +186,29 @@ async function statsFor(symbol: string): Promise<NameStats | null> {
     const vols30 = candles.slice(-31, -1).map(c => c.volume)
     const avgVol30 = vols30.reduce((s, v) => s + v, 0) / Math.max(1, vols30.length)
     const volRatio30 = avgVol30 > 0 ? last.volume / avgVol30 : 0
+
+    // MFI-style money-flow: typical price × volume, signed by whether today's
+    // TP rose vs yesterday's. Rupee terms → convert to ₹ Cr (÷ 1e7).
+    const tp = (c: Candle) => (c.high + c.low + c.close) / 3
+    const signedFlow = (c: Candle, prev: Candle): number => {
+      const t = tp(c)
+      const tPrev = tp(prev)
+      const raw = t * c.volume
+      const sign = t > tPrev ? 1 : t < tPrev ? -1 : 0
+      return sign * raw
+    }
+    const turnover = (c: Candle) => tp(c) * c.volume
+    const prev1 = candles[candles.length - 2] ?? last
+    const dayFlow = signedFlow(last, prev1)
+    let weekFlow = 0
+    const wStart = Math.max(1, candles.length - 5)
+    for (let i = wStart; i < candles.length; i++) {
+      weekFlow += signedFlow(candles[i], candles[i - 1])
+    }
+    const dayTurnover = turnover(last)
+    const twenty = candles.slice(-21, -1)
+    const avgTurnover20 = twenty.length ? twenty.reduce((s, c) => s + turnover(c), 0) / twenty.length : dayTurnover
+
     return {
       symbol,
       ret5d: +ret5d.toFixed(2),
@@ -166,6 +217,10 @@ async function statsFor(symbol: string): Promise<NameStats | null> {
       aboveEma50: !!(e50 && ltp > e50),
       volRatio30: +volRatio30.toFixed(2),
       ltp: +ltp.toFixed(2),
+      dayFlowCr: +(dayFlow / 1e7).toFixed(2),
+      weekFlowCr: +(weekFlow / 1e7).toFixed(2),
+      turnoverCr: +(dayTurnover / 1e7).toFixed(2),
+      avgTurnoverCr20: +(avgTurnover20 / 1e7).toFixed(2),
     }
   } catch { return null }
 }
@@ -211,16 +266,35 @@ export async function runSectorRotationScan(): Promise<SectorRotationSnapshot> {
     const top = [...stats].sort((a, b) => b.ret5d - a.ret5d).slice(0, 5)
       .map(s => ({ symbol: s.symbol, ret5d: s.ret5d, ret20d: s.ret20d, ltp: s.ltp }))
 
+    // ── Money-flow aggregation (₹ Cr) ──
+    const dayInflowCr = stats.reduce((s, x) => s + x.dayFlowCr, 0)
+    const weekInflowCr = stats.reduce((s, x) => s + x.weekFlowCr, 0)
+    const dayTurnoverCr = stats.reduce((s, x) => s + x.turnoverCr, 0)
+    const basketAvgTurnover20 = stats.reduce((s, x) => s + x.avgTurnoverCr20, 0)
+    const dayFlowVsAvgPct = basketAvgTurnover20 > 0
+      ? (dayTurnoverCr / basketAvgTurnover20 - 1) * 100
+      : 0
+    // Top-8 constituents by absolute money-flow (keeps sign — a big outflow
+    // stock is as informative as a big inflow one for the sector story).
+    const topInflowStocks: StockMoneyFlow[] = [...stats]
+      .sort((a, b) => Math.abs(b.dayFlowCr) - Math.abs(a.dayFlowCr))
+      .slice(0, 8)
+      .map(s => ({
+        symbol: s.symbol, ltp: s.ltp, ret5d: s.ret5d, ret20d: s.ret20d,
+        dayFlowCr: s.dayFlowCr, weekFlowCr: s.weekFlowCr, turnoverCr: s.turnoverCr,
+      }))
+
     const rotatingIn = relStr5d >= REL_OUTPERF_BPS && pctAboveEma21 >= BREADTH_FLOOR && volRatio >= VOL_PICKUP
     const rotatingOut = relStr5d <= -REL_OUTPERF_BPS && pctAboveEma21 <= (100 - BREADTH_FLOOR)
 
+    const flowSign = dayInflowCr > 0 ? '+' : ''
     let note: string
     if (rotatingIn) {
-      note = `🟢 ROTATING IN — basket ${ret5d > 0 ? '+' : ''}${ret5d.toFixed(1)}% (vs NIFTY ${niftyRet5d > 0 ? '+' : ''}${niftyRet5d.toFixed(1)}%) · breadth ${pctAboveEma21.toFixed(0)}% > EMA21 · vol ${volRatio.toFixed(1)}×`
+      note = `🟢 ROTATING IN — basket ${ret5d > 0 ? '+' : ''}${ret5d.toFixed(1)}% (vs NIFTY ${niftyRet5d > 0 ? '+' : ''}${niftyRet5d.toFixed(1)}%) · breadth ${pctAboveEma21.toFixed(0)}% > EMA21 · vol ${volRatio.toFixed(1)}× · flow ${flowSign}₹${dayInflowCr.toFixed(0)} Cr`
     } else if (rotatingOut) {
-      note = `🔴 ROTATING OUT — basket ${ret5d.toFixed(1)}% · breadth ${pctAboveEma21.toFixed(0)}% > EMA21`
+      note = `🔴 ROTATING OUT — basket ${ret5d.toFixed(1)}% · breadth ${pctAboveEma21.toFixed(0)}% > EMA21 · flow ${flowSign}₹${dayInflowCr.toFixed(0)} Cr`
     } else {
-      note = `⚪ neutral — basket ${ret5d > 0 ? '+' : ''}${ret5d.toFixed(1)}% · rel ${relStr5d > 0 ? '+' : ''}${relStr5d.toFixed(1)}% vs NIFTY`
+      note = `⚪ neutral — basket ${ret5d > 0 ? '+' : ''}${ret5d.toFixed(1)}% · rel ${relStr5d > 0 ? '+' : ''}${relStr5d.toFixed(1)}% vs NIFTY · flow ${flowSign}₹${dayInflowCr.toFixed(0)} Cr`
     }
 
     baskets.push({
@@ -229,8 +303,14 @@ export async function runSectorRotationScan(): Promise<SectorRotationSnapshot> {
       relStr5d: +relStr5d.toFixed(2), relStr20d: +relStr20d.toFixed(2),
       pctAboveEma21: +pctAboveEma21.toFixed(0), pctAboveEma50: +pctAboveEma50.toFixed(0),
       volRatio: +volRatio.toFixed(2),
+      dayInflowCr: +dayInflowCr.toFixed(1),
+      weekInflowCr: +weekInflowCr.toFixed(1),
+      dayTurnoverCr: +dayTurnoverCr.toFixed(1),
+      dayFlowVsAvgPct: +dayFlowVsAvgPct.toFixed(1),
       rotatingIn, rotatingOut,
-      topMovers: top, note,
+      topMovers: top,
+      topInflowStocks,
+      note,
     })
   }
 
