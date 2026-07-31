@@ -5576,3 +5576,151 @@ export function PublicMasterSetupsPage(): JSX.Element {
   )
 }
 
+// ─── 💰 MONEY-PRINTER PAGE ───────────────────────────────────────────
+// The Moschip / Marksans / Epack / VIP / Hikal winning-setup pattern.
+// Multi-TF harmonic (1D + 1W OR 1M) OR Elliott Wave-3 PLUS volume
+// accumulation + tight base. Fewer signals, dramatically higher hit rate.
+export function PublicMoneyPrinterPage(): JSX.Element {
+  const { data, isLoading } = useQuery({
+    queryKey: ['public-money-printer'],
+    queryFn: () => snapshots.moneyPrinter(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const [expanded, setExpanded] = React.useState<Record<string, boolean>>({})
+  const [side, setSide] = React.useState<'ALL' | 'BUY' | 'SELL'>('ALL')
+  if (isLoading && !data) return <div className="p-12 text-center text-neutral-500">Loading Money-Printer setups…</div>
+  if (!data) return <div className="p-12 text-center text-neutral-500">Money-Printer not yet computed — next tick will populate.</div>
+
+  const d = data as any
+  const allRows: any[] = d.rows ?? []
+  const rows = allRows.filter(r => side === 'ALL' || r.direction === side)
+  const dirColor = (dir: string) => dir === 'SELL' ? '#ff5e7c' : '#00c853'
+  const fmtInr = (n?: number) => n == null ? '—' : `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+
+  return (
+    <SnapshotContext.Provider value={d.generatedAt}>
+      <div className="space-y-4">
+        {/* Hero */}
+        <div className="p-4 bg-gradient-to-br from-accent-green/20 to-accent-amber/10 border-2 border-accent-green/60 rounded-lg">
+          <div className="flex items-start gap-3">
+            <div className="text-4xl">💰</div>
+            <div className="flex-1">
+              <div className="text-base font-bold text-accent-green">Money-Printer Setups — the Moschip / Marksans / Epack / VIP / Hikal pattern</div>
+              <div className="text-[11px] text-neutral-300 mt-1 leading-relaxed">
+                These winners all showed the SAME signature at entry: <b className="text-accent-amber">multi-TF harmonic (1D + 1W or 1M) OR Elliott Wave-3</b>, PLUS <b className="text-accent-amber">volume accumulation</b> (5d/20d ratio ≥ 1.3 AND up-day vol dominating down-day vol) AND <b className="text-accent-amber">tight base</b> (last 10 bars range ≤ 8%). Only symbols passing all four gates emit.
+              </div>
+              {d.generatedAt && (
+                <div className="text-[10px] text-neutral-500 mt-2 font-mono flex flex-wrap gap-3">
+                  <span>Updated {new Date(d.generatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</span>
+                  <span className="text-accent-green">{d.emitted} Money-Printers · {d.candidatesEvaluated} evaluated</span>
+                </div>
+              )}
+              {d.filteredOut && d.filteredOut.length > 0 && (
+                <div className="text-[10px] text-neutral-500 mt-1 font-mono">
+                  Filtered: {d.filteredOut.slice(0, 4).map((f: any) => `${f.reason} (${f.count})`).join(' · ')}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Side filter */}
+        <div className="flex gap-2 text-[11px]">
+          {(['ALL', 'BUY', 'SELL'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setSide(s)}
+              className={`px-3 py-1.5 rounded border font-mono ${side === s ? 'bg-accent-green/20 border-accent-green text-accent-green' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}
+            >
+              {s === 'BUY' ? '🟢 BUY' : s === 'SELL' ? '🔴 SELL' : `ALL (${allRows.length})`}
+            </button>
+          ))}
+        </div>
+
+        {rows.length === 0 && (
+          <div className="p-8 text-center text-neutral-500 bg-ink-800 border border-ink-500 rounded-lg">
+            <div className="text-3xl mb-2">🎯</div>
+            <div className="text-sm font-bold text-neutral-300">No Money-Printer setups this cycle</div>
+            <div className="text-[11px] text-neutral-500 mt-2 max-w-md mx-auto">
+              This is EXPECTED behaviour when no symbol has the full stack — Moschip-grade setups aren't every-day. Check /master, /pro-setups, /confluence for the broader signal feeds meanwhile.
+            </div>
+          </div>
+        )}
+
+        {/* Grid */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {rows.map((r: any, i: number) => {
+            const isOpen = !!expanded[r.symbol]
+            return (
+              <div key={r.symbol + i} className="p-4 bg-gradient-to-br from-ink-800 to-ink-900 border-2 border-accent-green/50 rounded-lg shadow-lg">
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-accent-green text-black">💰 MONEY-PRINTER</span>
+                    <b className="text-[16px] text-neutral-100">{r.symbol}</b>
+                    <NewBadge row={r} />
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor(r.direction)}22`, color: dirColor(r.direction) }}>{r.direction}</span>
+                  </div>
+                  <span className="text-[15px] font-bold text-accent-green">{r.score}</span>
+                </div>
+
+                <div className="grid grid-cols-4 gap-2 mb-3 text-[10px] font-mono">
+                  <div><div className="text-neutral-500 uppercase tracking-wider">Entry</div><div className="text-neutral-100 text-[12px] font-bold">{fmtInr(r.entry)}</div></div>
+                  <div><div className="text-neutral-500 uppercase tracking-wider">SL</div><div className="text-accent-red text-[12px] font-bold">{fmtInr(r.stopLoss)}</div></div>
+                  <div><div className="text-neutral-500 uppercase tracking-wider">T1 · R:R</div><div className="text-accent-green text-[12px] font-bold">{fmtInr(r.target1)} <span className="text-[9px] text-neutral-400">({r.rrT1?.toFixed(1)})</span></div></div>
+                  <div><div className="text-neutral-500 uppercase tracking-wider">T3</div><div className="text-accent-green text-[12px] font-bold">{fmtInr(r.target3)}</div></div>
+                </div>
+
+                {/* Pillar chips */}
+                <div className="flex flex-wrap gap-1 mb-2 text-[10px]">
+                  {r.pillars?.mtfHarmonic?.pass && (
+                    <span className="px-1.5 py-0.5 rounded bg-accent-violet/20 text-accent-violet font-mono" title={r.pillars.mtfHarmonic.detail}>
+                      🌀 MTF Harmonic ({r.pillars.mtfHarmonic.timeframes?.join('+')})
+                    </span>
+                  )}
+                  {r.pillars?.elliottWave?.pass && (
+                    <span className="px-1.5 py-0.5 rounded bg-accent-cyan/20 text-accent-cyan font-mono" title={r.pillars.elliottWave.detail}>
+                      🌊 {r.pillars.elliottWave.setup}
+                    </span>
+                  )}
+                  {r.pillars?.volumeAccumulation?.pass && (
+                    <span className="px-1.5 py-0.5 rounded bg-accent-amber/20 text-accent-amber font-mono" title={r.pillars.volumeAccumulation.detail}>
+                      📊 Vol {r.pillars.volumeAccumulation.vol5d20dRatio}× · Up/Dn {r.pillars.volumeAccumulation.upDownVolRatio}×
+                    </span>
+                  )}
+                  {r.pillars?.tightBase?.pass && (
+                    <span className="px-1.5 py-0.5 rounded bg-neutral-700 text-neutral-300 font-mono" title={r.pillars.tightBase.detail}>
+                      🎯 Coil {r.pillars.tightBase.range10dPct?.toFixed(1)}%
+                    </span>
+                  )}
+                </div>
+
+                {/* Sources */}
+                <div className="text-[10px] text-neutral-500 mb-2 font-mono">
+                  Sources: {r.sources?.join(' · ')}
+                </div>
+
+                <button onClick={() => setExpanded(e => ({ ...e, [r.symbol]: !e[r.symbol] }))} className="w-full text-left text-[10px] text-accent-green hover:text-accent-amber mt-1 font-mono">
+                  {isOpen ? '▾ Hide' : '▸ Show'} full rationale
+                </button>
+                {isOpen && (
+                  <div className="mt-2 p-3 bg-ink-900 rounded text-[10px] font-mono space-y-1">
+                    <pre className="whitespace-pre-wrap text-neutral-300 leading-relaxed">{r.humanExplain}</pre>
+                    {r.reasoning?.length > 0 && (
+                      <div className="pt-2 mt-2 border-t border-ink-500">
+                        <div className="text-neutral-400 uppercase tracking-wider mb-1">Reasoning</div>
+                        {r.reasoning.map((rs: string, ix: number) => (
+                          <div key={ix} className="text-neutral-300">• {rs}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </SnapshotContext.Provider>
+  )
+}
+

@@ -291,18 +291,67 @@ export async function runMasterSetupScan(): Promise<{
 
   // Sort by masterScore desc, cap at 50 (curated, not exhaustive)
   emitted.sort((a, b) => b.masterScore - a.masterScore)
-  const top = emitted.slice(0, 50)
+  let top = emitted.slice(0, 50)
+
+  // ─── Never-empty fallback (30 Jul 2026) ────────────────────────────
+  // If ZERO symbols passed all pillars, surface the top-15 near-misses
+  // sorted by highest source-count. Rows are tagged `tier: NEAR_MASTER`
+  // and carry the failing pillar so the UI can render them clearly. Only
+  // ever fires when the strict list is empty — user rule: "we cannot
+  // leave any page without data and signals even if market close".
+  let fallbackUsed = false
+  if (top.length === 0) {
+    const near = [...map.values()]
+      .filter(c => c.sources.size >= 2 && c.entry > 0 && c.stopLoss > 0)
+      .sort((a, b) => (b.sources.size * 100 + b.bestScore) - (a.sources.size * 100 + a.bestScore))
+      .slice(0, 15)
+      .map(c => {
+        const risk = Math.abs(c.entry - c.stopLoss)
+        const rrT1 = risk > 0 ? Math.abs(c.target1 - c.entry) / risk : 0
+        const rrT2 = risk > 0 ? Math.abs(c.target2 - c.entry) / risk : 0
+        const rrT3 = risk > 0 ? Math.abs(c.target3 - c.entry) / risk : 0
+        return {
+          symbol: c.symbol,
+          direction: c.direction,
+          masterScore: Math.round(c.bestScore * 0.6 + c.sources.size * 5),
+          sources: [...c.sources],
+          sourceCount: c.sources.size,
+          entry: c.entry, stopLoss: c.stopLoss,
+          target1: c.target1, target2: c.target2, target3: c.target3,
+          ltp: c.ltp,
+          rrT1, rrT2, rrT3,
+          ret5d: c.ret5d ?? 0,
+          sector: c.sector ?? '',
+          marketCapCr: c.marketCapCr ?? 0,
+          entryDate: c.entryDate,
+          target1Date: c.target1Date,
+          target2Date: c.target2Date,
+          target3Date: c.target3Date,
+          pillars: [],
+          reasoning: c.reasons,
+          winnerMatch: undefined,
+          shareholdingSnapshot: undefined,
+          smartMoneySources: [],
+          humanExplain: `NEAR-MASTER · ${c.sources.size} sources agree · didn't clear every pillar but shows above-average confluence. Shown because the strict MASTER pillar set found zero passing setups in this cycle.`,
+          tier: 'NEAR_MASTER' as any,
+        }
+      })
+    top = near as MasterSetup[]
+    fallbackUsed = true
+    log.info('MASTER', `strict list empty — falling back to ${top.length} NEAR_MASTER candidates`)
+  }
 
   const out = {
     generatedAt: new Date().toISOString(),
     totalEvaluated,
     emitted: top.length,
+    fallbackUsed,
     filteredOut: Object.entries(filtered).sort(([, a], [, b]) => b - a).map(([reason, count]) => ({ reason, count })),
     rows: top,
   }
   await fs.mkdir(SNAP_DIR, { recursive: true })
   await fs.writeFile(OUTPUT_FILE, JSON.stringify(out, null, 2), 'utf-8')
-  log.ok('MASTER', `${top.length}/${totalEvaluated} passed all pillars · ${((Date.now() - t0) / 1000).toFixed(1)}s`)
+  log.ok('MASTER', `${top.length}/${totalEvaluated} emitted (fallback=${fallbackUsed}) · ${((Date.now() - t0) / 1000).toFixed(1)}s`)
   return { emitted: top, candidatesEvaluated: totalEvaluated, filteredOut: out.filteredOut }
 }
 

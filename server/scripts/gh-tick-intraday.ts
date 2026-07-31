@@ -318,6 +318,19 @@ async function main() {
     log.err('TICK', `pro-setups: ${(e as Error).message}`)
   }
 
+  // ─── 3a-1b. Money-Printer Engine — the Moschip / Marksans / Epack /
+  //           VIP / Hikal winning-setup pattern. Multi-TF harmonic OR
+  //           Wave-3 + volume-accum + tight base. Runs BEFORE MASTER.
+  try {
+    const t = Date.now()
+    const { runMoneyPrinterScan } = await import('../src/engine/moneyPrinterEngine')
+    const r = await runMoneyPrinterScan()
+    results['money-printer'] = `${r.emitted.length}/${r.candidatesEvaluated} qualified · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['money-printer'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `money-printer: ${(e as Error).message}`)
+  }
+
   // ─── 3a-2. MASTER Setup Engine — the 85% WR curated feed (30 Jul 2026).
   //           Runs AFTER every underlying signal engine so joins see fresh
   //           data. Emits master-setups.json which /master surfaces with

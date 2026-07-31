@@ -237,6 +237,17 @@ async function main() {
       const r = await m.runCommodityScan()
       return `${r.rows.length} MCX setups (${r.eliteCount} elite · ${r.strongCount} strong)`
     }],
+    // ─── Money-Printer Engine (30 Jul 2026) — the Moschip / Marksans /
+    //     Epack / VIP / Hikal winning-setup pattern. Requires multi-TF
+    //     harmonic (1D + 1W OR 1M) OR Elliott Wave-3, PLUS volume
+    //     accumulation + tight base. Runs BEFORE MASTER so MASTER can
+    //     reference money-printer.json as a source.
+    ['money-printer', async () => {
+      const m = await import('../src/engine/moneyPrinterEngine')
+      const r = await m.runMoneyPrinterScan()
+      const topReasons = Object.entries(r.filteredOut).sort((a, b) => (b[1] as number) - (a[1] as number)).slice(0, 3).map(([k, v]) => `${k}=${v}`).join(' · ')
+      return `${r.emitted.length}/${r.candidatesEvaluated} qualified · filters: ${topReasons || 'none'}`
+    }],
     // ─── MASTER Setup Engine — 85% WR curated feed (30 Jul 2026).
     //     Synthesises every signal source + winning-pattern memory +
     //     shareholding + smart-money + sector-tailwind + freshness. Only

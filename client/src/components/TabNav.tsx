@@ -137,6 +137,12 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // 2026-07-15 — Pedigree + PRO Edge merged into single Elite Picks tab.
     // Symbols in BOTH get 🔥 DOUBLE-CONFLUENCE badge and top ranking.
     // Old /pedigree + /pro-edge routes preserved for bookmarks.
+    // 2026-07-30: 💰 Money-Printer — the Moschip / Marksans / Epack / VIP /
+    // Hikal setup pattern. Multi-TF harmonic (1D+1W or 1D+1M) OR Elliott
+    // Wave-3 PLUS volume accumulation + tight base.
+    { to: '/money-printer', label: '💰 Money Printer', icon: <Star size={14} />,
+      acc: null, highProb: true,
+      title: 'Money-Printer setups — the Moschip / Marksans / Epack / VIP / Hikal pattern. Multi-TF harmonic (1D+1W/M) OR Elliott Wave-3 PLUS volume accumulation + tight base. Highest-conviction stackable setups.' },
     // 2026-07-30: MASTER Setup Engine — the 85% WR curated feed. Passes
     // all 7 pillars: multi-source + winning-pattern + no-losing-pattern +
     // smart-money + shareholding + sector-tailwind + quality bar.

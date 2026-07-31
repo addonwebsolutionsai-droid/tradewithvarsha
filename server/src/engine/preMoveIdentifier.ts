@@ -126,6 +126,7 @@ export interface PreMoveRun {
   tier1Count: number
   tier2Count: number
   tier3Count: number
+  fallbackUsed?: boolean                        // 30 Jul: true when strict filter was empty
   notes: string[]
 }
 
@@ -583,7 +584,18 @@ export async function runPreMoveIdentifier(opts: { universe?: string; sample?: n
   if (timedOut) log.warn('PRE-MOVE', `Runtime cap hit at ${cursor}/${universe.length} symbols — partial result`)
 
   candidates.sort((a, b) => b.totalScore - a.totalScore)
-  const top = candidates.filter(c => c.passedQualityFilter && c.tier <= 3).slice(0, topN)
+  let top = candidates.filter(c => c.passedQualityFilter && c.tier <= 3).slice(0, topN)
+  // Never-empty fallback (30 Jul 2026): if strict filter emits zero, drop
+  // the quality gate and show top-15 by score. Marked with tier=4 in the
+  // UI so trader knows these are best-available not passing full filter.
+  // User rule: "we cannot leave any page without data and signals even if
+  // market close".
+  let fallbackUsed = false
+  if (top.length === 0 && candidates.length > 0) {
+    top = candidates.slice(0, 15).map(c => ({ ...c, tier: 4 as any, passedQualityFilter: false }))
+    fallbackUsed = true
+    log.info('PRE-MOVE', `strict filter empty — falling back to top-${top.length} by score`)
+  }
   const tier1 = top.filter(c => c.tier === 1).length
   const tier2 = top.filter(c => c.tier === 2).length
   const tier3 = top.filter(c => c.tier === 3).length
@@ -604,6 +616,7 @@ export async function runPreMoveIdentifier(opts: { universe?: string; sample?: n
     qualityPassed,
     candidates: top,
     tier1Count: tier1, tier2Count: tier2, tier3Count: tier3,
+    fallbackUsed,
     notes,
   }
   await fs.writeFile(SNAP_FILE, JSON.stringify(run, null, 2)).catch(() => {})
