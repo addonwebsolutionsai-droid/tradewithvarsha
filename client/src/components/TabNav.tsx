@@ -137,6 +137,12 @@ export function TabNav({ counts }: { counts: Record<string, number> }) {
     // 2026-07-15 — Pedigree + PRO Edge merged into single Elite Picks tab.
     // Symbols in BOTH get 🔥 DOUBLE-CONFLUENCE badge and top ranking.
     // Old /pedigree + /pro-edge routes preserved for bookmarks.
+    // 2026-07-30: MASTER Setup Engine — the 85% WR curated feed. Passes
+    // all 7 pillars: multi-source + winning-pattern + no-losing-pattern +
+    // smart-money + shareholding + sector-tailwind + quality bar.
+    { to: '/master',       label: '🏆 Master',      icon: <Star size={14} />,
+      acc: null, highProb: true,
+      title: 'MASTER Setups — signals that pass ALL 7 pillars (multi-source confluence + winning-pattern memory + smart-money + shareholding + sector-tailwind + quality). Targeting 85% WR.' },
     { to: '/elite-picks',  label: '💎🎯 Elite Picks', icon: <Star size={14} />,
       acc: null, highProb: true,
       title: 'Elite Picks — Pedigree Accumulation (institutional FII/DII/Promoter build) + PRO Edge (multi-engine confluence, conv ≥ 85) MERGED. Symbols in both get 🔥 DOUBLE-CONFLUENCE tag. Sorted by combined score.' },

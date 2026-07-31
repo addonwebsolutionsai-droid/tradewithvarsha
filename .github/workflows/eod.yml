@@ -63,7 +63,7 @@ jobs:
           git config user.email 'bot@tradewithvarsha.local'
           # Auto-tune + pattern memory persist across EOD runs so meta-tune
           # on Sunday sees the full 7-day trail.
-          git add server/data/public-snapshots/ server/data/auto-tune.json server/data/losing-patterns.json server/data/winning-patterns.json 2>/dev/null || true
+          git add server/data/public-snapshots/ server/data/auto-tune.json server/data/losing-patterns.json server/data/winning-patterns.json server/data/public-snapshots/master-setups.json 2>/dev/null || true
           if git diff --cached --quiet ; then
             echo "No changes."
           else

@@ -237,6 +237,17 @@ async function main() {
       const r = await m.runCommodityScan()
       return `${r.rows.length} MCX setups (${r.eliteCount} elite · ${r.strongCount} strong)`
     }],
+    // ─── MASTER Setup Engine — 85% WR curated feed (30 Jul 2026).
+    //     Synthesises every signal source + winning-pattern memory +
+    //     shareholding + smart-money + sector-tailwind + freshness. Only
+    //     symbols passing ALL 7 pillars emit. Runs AFTER every underlying
+    //     engine has refreshed above so the joins see fresh data.
+    ['master-setups', async () => {
+      const m = await import('../src/engine/masterSetupEngine')
+      const r = await m.runMasterSetupScan()
+      const topReasons = r.filteredOut.slice(0, 3).map(x => `${x.reason.split(' ')[0]}=${x.count}`).join(' · ')
+      return `${r.emitted.length}/${r.candidatesEvaluated} passed all pillars · filters: ${topReasons || 'none'}`
+    }],
     // ─── Master public-snapshot publish — kills the 20-day stale problem.
     //     Runs runWeeklyPick + runDailyPick + runPreMoveIdentifier +
     //     buildScorecard, then invokes publishPublicSnapshots so all 18

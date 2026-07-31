@@ -71,6 +71,7 @@ export const snapshots = {
   harmonic: () => snapshot<{ generatedAt: string; criterion: string; total: number; byPattern: Record<string, number>; byTier: Record<string, number>; rows: any[] }>('harmonic.json'),
   elliottWave: () => snapshot<{ generatedAt: string; criterion: string; total: number; byType: Record<string, number>; rows: any[] }>('elliott-wave.json'),
   vpFib: () => snapshot<{ generatedAt: string; universe?: string; scanned: number; attempted?: number; eliteCount: number; strongCount: number; decentCount: number; runtimeMs?: number; rows: any[] }>('vp-fib.json'),
+  masterSetups: () => snapshot<{ generatedAt: string; totalEvaluated: number; emitted: number; filteredOut: Array<{ reason: string; count: number }>; rows: any[] }>('master-setups.json'),
   proSetups: () => snapshot<{
     generatedAt: string
     marketOpen: boolean

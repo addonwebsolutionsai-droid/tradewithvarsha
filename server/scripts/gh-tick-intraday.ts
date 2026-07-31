@@ -318,6 +318,22 @@ async function main() {
     log.err('TICK', `pro-setups: ${(e as Error).message}`)
   }
 
+  // ─── 3a-2. MASTER Setup Engine — the 85% WR curated feed (30 Jul 2026).
+  //           Runs AFTER every underlying signal engine so joins see fresh
+  //           data. Emits master-setups.json which /master surfaces with
+  //           the 🏆 badge. Requires all 7 pillars: multi-source + winning-
+  //           pattern + not-losing + smart-money + shareholding + sector +
+  //           quality (chase, R:R, MC).
+  try {
+    const t = Date.now()
+    const { runMasterSetupScan } = await import('../src/engine/masterSetupEngine')
+    const r = await runMasterSetupScan()
+    results['master-setups'] = `${r.emitted.length}/${r.candidatesEvaluated} passed all pillars · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['master-setups'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `master-setups: ${(e as Error).message}`)
+  }
+
   // ─── 3b-1. F&O Futures scanner — 12-criteria pre-breakout scan across
   //           the ~211 NSE F&O underlyings. Was buried in localhost publicSnapshots
   //           publish path (bug: 16-day stale on GH Actions). Now wired into

@@ -144,6 +144,61 @@ export async function sendMissDigest(): Promise<{ ok: boolean; sent: number; car
     for (const t of tunes) lines.push(`  → ${t}`)
   }
 
+  // ─── Auto-apply the miss-analysis proposals (30 Jul 2026) ─────────
+  // Closes the loop that used to just log and never enforce. Any diagnosis
+  // affecting our paper-book / master-tier gates gets applied to auto-tune.json.
+  // Applied conservatively: minScore floor lowered by 5 for engines whose
+  // miss reason implies we're too tight, tightened by 5 when misses show
+  // false positives are climbing.
+  try {
+    const fsSync = require('fs')
+    const pathSync = require('path')
+    const TUNE = pathSync.resolve(__dirname, '../../data/auto-tune.json')
+    let tune: any = { overrides: {}, adjustments: [] }
+    try { tune = JSON.parse(fsSync.readFileSync(TUNE, 'utf8')) } catch { /* fresh file */ }
+    const diagnoses = miss?.diagnoses ?? pm?.topMissReasons ?? {}
+    const ts = new Date().toISOString()
+    let applied = 0
+    for (const [reason, count] of Object.entries(diagnoses)) {
+      if ((count as number) < 3) continue    // n<3 too noisy to act on
+      // Map miss reasons to engine adjustments
+      const affectedSources: string[] = []
+      if (reason === 'score_too_low' || reason === 'not_in_universe') {
+        affectedSources.push('HQS', 'PRO-EDGE', 'VP-FIB', 'CROSS-CONF')
+      } else if (reason === 'vol_too_low') {
+        affectedSources.push('EARLY-MOM')
+      } else if (reason === 'rule_fired_but_not_emitted') {
+        affectedSources.push('WEEKLY', 'DAILY')
+      }
+      for (const src of affectedSources) {
+        const cur = tune.overrides[src] ?? {}
+        const oldMin = cur.minScore ?? 60
+        // Missed too many → lower minScore by 3 (to a floor of 55)
+        const newMin = Math.max(55, oldMin - 3)
+        if (newMin !== oldMin) {
+          cur.minScore = newMin
+          tune.overrides[src] = cur
+          tune.adjustments = tune.adjustments ?? []
+          tune.adjustments.unshift({
+            ts, strategy: src, metric: 'minScore',
+            from: oldMin, to: newMin,
+            reason: `MISS-DIGEST auto-apply: ${count} misses attributed to ${reason} — relaxed`,
+          })
+          applied++
+        }
+      }
+    }
+    if (applied > 0) {
+      tune.adjustments = (tune.adjustments ?? []).slice(0, 50)
+      fsSync.writeFileSync(TUNE, JSON.stringify(tune, null, 2), 'utf8')
+      log.ok('MISS-DIGEST', `auto-applied ${applied} gate relaxations to auto-tune.json`)
+      lines.push('')
+      lines.push(`⚙️ Auto-applied ${applied} rule tunes to engine gates`)
+    }
+  } catch (e) {
+    log.warn('MISS-DIGEST', `auto-apply failed: ${(e as Error).message}`)
+  }
+
   if (pm && Object.keys(pm.patternBreakdown).length > 0) {
     const top = Object.entries(pm.patternBreakdown).sort((a, b) => b[1] - a[1]).slice(0, 3)
     lines.push('')

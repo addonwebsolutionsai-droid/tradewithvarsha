@@ -5420,3 +5420,155 @@ export function PublicFnoForecastPage(): JSX.Element {
   )
 }
 
+// ─── 🏆 MASTER SETUPS PAGE ───────────────────────────────────────────
+// The 85% WR "money-printing" feed. Signals passing ALL 7 pillars:
+// multi-source (≥3 in 5d), winning-pattern match, no losing-pattern,
+// smart-money footprint, shareholding (FII/promoter ↑), sector tailwind,
+// quality (not chased, R:R ≥ 2, MC ≥ ₹1000 Cr).
+export function PublicMasterSetupsPage(): JSX.Element {
+  const { data, isLoading } = useQuery({
+    queryKey: ['public-master-setups'],
+    queryFn: () => snapshots.masterSetups(),
+    refetchInterval: 5 * 60_000, retry: false,
+  })
+  const [expanded, setExpanded] = React.useState<Record<string, boolean>>({})
+  const [side, setSide] = React.useState<'ALL' | 'BUY' | 'SHORT'>('ALL')
+  if (isLoading && !data) return <div className="p-12 text-center text-neutral-500">Loading MASTER setups…</div>
+  if (!data) return <div className="p-12 text-center text-neutral-500">MASTER setups not yet computed — next tick will populate.</div>
+
+  const d = data as any
+  const allRows: any[] = d.rows ?? []
+  const rows = allRows.filter(r => side === 'ALL' || r.direction === side)
+  const dirColor = (dir: string) => dir === 'SHORT' ? '#ff5e7c' : '#00c853'
+  const fmtInr = (n?: number) => n == null ? '—' : `₹${Number(n).toLocaleString('en-IN', { minimumFractionDigits: 2, maximumFractionDigits: 2 })}`
+  const fmtCr = (n?: number) => n == null ? '—' : `₹${Math.round(n).toLocaleString('en-IN')} Cr`
+
+  return (
+    <SnapshotContext.Provider value={d.generatedAt}>
+      <div className="space-y-4">
+        {/* Hero header */}
+        <div className="p-4 bg-gradient-to-br from-accent-amber/20 to-accent-cyan/10 border border-accent-amber/50 rounded-lg">
+          <div className="flex items-start gap-3">
+            <div className="text-4xl">🏆</div>
+            <div className="flex-1">
+              <div className="text-base font-bold text-accent-amber">MASTER Setups — Targeting 85% Win Rate</div>
+              <div className="text-[11px] text-neutral-300 mt-1 leading-relaxed">
+                The curated feed. Only symbols passing <b className="text-accent-amber">ALL 7 pillars</b> emit: multi-source (≥ 3 engines within 5d) · winning-pattern memory · not-losing-pattern · smart-money footprint · shareholding (FII/promoter ↑) · sector tailwind · quality bar (not chased, R:R ≥ 2, MC ≥ ₹1000 Cr).
+              </div>
+              {d.generatedAt && (
+                <div className="text-[10px] text-neutral-500 mt-2 font-mono flex flex-wrap gap-3">
+                  <span>Updated {new Date(d.generatedAt).toLocaleString('en-IN', { timeZone: 'Asia/Kolkata' })}</span>
+                  <span className="text-accent-amber">{d.emitted} MASTER · {d.totalEvaluated} evaluated</span>
+                </div>
+              )}
+              {d.filteredOut && d.filteredOut.length > 0 && (
+                <div className="text-[10px] text-neutral-500 mt-1 font-mono">
+                  Filtered: {d.filteredOut.slice(0, 4).map((f: any) => `${f.reason.split(' ')[0]} (${f.count})`).join(' · ')}
+                </div>
+              )}
+            </div>
+          </div>
+        </div>
+
+        {/* Side filter */}
+        <div className="flex gap-2 text-[11px]">
+          {(['ALL', 'BUY', 'SHORT'] as const).map(s => (
+            <button
+              key={s}
+              onClick={() => setSide(s)}
+              className={`px-3 py-1.5 rounded border font-mono ${side === s ? 'bg-accent-amber/20 border-accent-amber text-accent-amber' : 'bg-ink-700 border-ink-500 text-neutral-400'}`}
+            >
+              {s === 'BUY' ? '🟢 BUY' : s === 'SHORT' ? '🔴 SHORT' : `ALL (${allRows.length})`}
+            </button>
+          ))}
+        </div>
+
+        {rows.length === 0 && (
+          <div className="p-8 text-center text-neutral-500 bg-ink-800 border border-ink-500 rounded-lg">
+            <div className="text-3xl mb-2">🎯</div>
+            <div className="text-sm font-bold text-neutral-300">No MASTER setups fired yet</div>
+            <div className="text-[11px] text-neutral-500 mt-2 max-w-md mx-auto">
+              This is EXPECTED behaviour — MASTER is a high bar. Rows only appear when a symbol clears every one of the 7 pillars. Miss any = doesn't emit. Check /pro-setups, /confluence, /elite-picks for the broader signal feeds meanwhile.
+            </div>
+          </div>
+        )}
+
+        {/* Grid of master setups */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+          {rows.map((r: any, i: number) => {
+            const isOpen = !!expanded[r.symbol]
+            return (
+              <div key={r.symbol + i} className="p-4 bg-gradient-to-br from-ink-800 to-ink-900 border-2 border-accent-amber/40 rounded-lg shadow-lg">
+                {/* Head */}
+                <div className="flex items-center justify-between mb-3">
+                  <div className="flex items-center gap-2 flex-wrap">
+                    <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded bg-accent-amber text-black">🏆 MASTER</span>
+                    <b className="text-[16px] text-neutral-100">{r.symbol}</b>
+                    <NewBadge row={r} />
+                    <span className="px-1.5 py-0.5 rounded text-[10px] font-bold" style={{ background: `${dirColor(r.direction)}22`, color: dirColor(r.direction) }}>{r.direction}</span>
+                  </div>
+                  <span className="text-[15px] font-bold text-accent-amber">{r.masterScore}</span>
+                </div>
+
+                {/* KPI row */}
+                <div className="grid grid-cols-4 gap-2 mb-3 text-[10px] font-mono">
+                  <div><div className="text-neutral-500 uppercase tracking-wider">Entry</div><div className="text-neutral-100 text-[12px] font-bold">{fmtInr(r.entry)}</div></div>
+                  <div><div className="text-neutral-500 uppercase tracking-wider">SL</div><div className="text-accent-red text-[12px] font-bold">{fmtInr(r.stopLoss)}</div></div>
+                  <div><div className="text-neutral-500 uppercase tracking-wider">T1 · R:R</div><div className="text-accent-green text-[12px] font-bold">{fmtInr(r.target1)} <span className="text-[9px] text-neutral-400">({r.rrT1?.toFixed(1)})</span></div></div>
+                  <div><div className="text-neutral-500 uppercase tracking-wider">T3</div><div className="text-accent-green text-[12px] font-bold">{fmtInr(r.target3)}</div></div>
+                </div>
+
+                {/* Context strip */}
+                <div className="flex flex-wrap gap-1 mb-2 text-[10px]">
+                  <span className="px-1.5 py-0.5 rounded bg-accent-violet/20 text-accent-violet font-mono">{r.sourceCount} sources</span>
+                  {r.winnerMatch && <span className="px-1.5 py-0.5 rounded bg-accent-green/20 text-accent-green font-mono">🧠 matches {r.winnerMatch.symbol}</span>}
+                  {r.smartMoneySources?.length > 0 && <span className="px-1.5 py-0.5 rounded bg-accent-cyan/20 text-accent-cyan font-mono">💰 {r.smartMoneySources.join('+')}</span>}
+                  {r.sector && <span className="px-1.5 py-0.5 rounded bg-neutral-700 text-neutral-300 font-mono">{r.sector}</span>}
+                  <span className="px-1.5 py-0.5 rounded bg-neutral-700 text-neutral-300 font-mono">MC {fmtCr(r.marketCapCr)}</span>
+                </div>
+
+                {/* Sources list */}
+                <div className="text-[10px] text-neutral-500 mb-2 font-mono">
+                  Sources: {r.sources?.join(' · ')}
+                </div>
+
+                {/* Expand for full rationale */}
+                <button onClick={() => setExpanded(e => ({ ...e, [r.symbol]: !e[r.symbol] }))} className="w-full text-left text-[10px] text-accent-amber hover:text-accent-cyan mt-1 font-mono">
+                  {isOpen ? '▾ Hide' : '▸ Show'} 7-pillar breakdown + rationale
+                </button>
+                {isOpen && (
+                  <div className="mt-2 p-3 bg-ink-900 rounded text-[10px] font-mono space-y-1">
+                    <div className="text-neutral-400 uppercase tracking-wider mb-1">7 Pillars</div>
+                    {r.pillars?.map((p: any) => (
+                      <div key={p.name} className="flex items-start gap-2">
+                        <span className={p.pass === true ? 'text-accent-green' : p.pass === false ? 'text-accent-red' : 'text-neutral-500'}>
+                          {p.pass === true ? '✓' : p.pass === false ? '✗' : '·'}
+                        </span>
+                        <span className="text-neutral-300"><b>{p.name}</b> — {p.detail}</span>
+                      </div>
+                    ))}
+                    {r.shareholdingSnapshot && (
+                      <div className="pt-2 mt-2 border-t border-ink-500 text-neutral-400">
+                        FII {r.shareholdingSnapshot.fiiPct?.toFixed(1)}% ({r.shareholdingSnapshot.fiiDeltaQoQ >= 0 ? '+' : ''}{r.shareholdingSnapshot.fiiDeltaQoQ?.toFixed(2)}) ·
+                        Promoter {r.shareholdingSnapshot.promoterPct?.toFixed(1)}% ({r.shareholdingSnapshot.promoterDeltaQoQ >= 0 ? '+' : ''}{r.shareholdingSnapshot.promoterDeltaQoQ?.toFixed(2)})
+                      </div>
+                    )}
+                    {r.reasoning?.length > 0 && (
+                      <div className="pt-2 mt-2 border-t border-ink-500">
+                        <div className="text-neutral-400 uppercase tracking-wider mb-1">Reasoning ({r.reasoning.length})</div>
+                        {r.reasoning.slice(0, 5).map((rs: string, ix: number) => (
+                          <div key={ix} className="text-neutral-300">• {rs}</div>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+                )}
+              </div>
+            )
+          })}
+        </div>
+      </div>
+    </SnapshotContext.Provider>
+  )
+}
+
