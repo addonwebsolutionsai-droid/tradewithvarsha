@@ -675,11 +675,12 @@ function MasterRow({ r }: { r: MergedRow }): JSX.Element {
 }
 
 function StatusTag({ s, direction }: { s: MergedRow['status']; direction?: string }): JSX.Element {
-  // NEW ribbon is direction-coloured (green BUY / red SELL) per the 30 Jul
-  // 2026 user request. Other statuses keep their existing style.
+  // NEW ribbon is direction-coloured (green BUY / red SELL). Default when
+  // direction is absent = BUY (green) — most equity signals are implicit
+  // long. Only explicit SELL / SHORT / BEAR / DIST flips to red.
   if (s === 'NEW') {
     const dir = String(direction ?? '').toUpperCase()
-    const isSell = /SELL|SHORT|BEAR/.test(dir)
+    const isSell = /SELL|SHORT|BEAR|DIST|PUT/.test(dir)
     const cls = isSell ? 'new-sell' : 'new-buy'
     return <span className={`status-tag ${cls}`} title={`New signal · ${dir || 'BUY'}`}>NEW!</span>
   }

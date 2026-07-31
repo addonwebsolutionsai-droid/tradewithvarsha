@@ -69,19 +69,23 @@ function isRowNew(r: any, generatedAt?: string): boolean {
 export const SnapshotContext = React.createContext<string | undefined>(undefined)
 
 // Solid ribbon NEW badge — like the reference retail-price-tag ribbons.
-// Colour is direction-aware: BUY / LONG / BULLISH → green; SELL / SHORT /
-// BEARISH → red. Neutral direction defaults to red. Sits inline beside
-// the symbol and never wraps.
+// Colour is direction-aware: BUY / LONG / BULLISH → green (default when
+// direction absent — most equity signals are implicit BUY); SELL / SHORT /
+// BEARISH / DIST → red. Fixed 30 Jul 2026 after screenshot showed early-
+// momentum rows (no `direction` field, implicit BUY) rendering red.
 export function NewBadge({ row, generatedAt, className }: { row: any; generatedAt?: string; className?: string }): JSX.Element | null {
   const ctxGeneratedAt = React.useContext(SnapshotContext)
   const gAt = generatedAt ?? ctxGeneratedAt
   if (!isRowNew(row, gAt)) return null
-  const dir = String(row?.direction ?? row?.side ?? row?.trade ?? row?.action ?? '').toUpperCase()
-  const isBuy = /BUY|LONG|BULL/.test(dir)
-  const isSell = /SELL|SHORT|BEAR/.test(dir)
-  // BUY → green tag ("new arrival, go"); SELL → red tag ("distribution, watch"). Neutral → red.
-  const bg = isBuy ? '#00c853' : isSell ? '#ff1744' : '#ff1744'
-  const glow = isBuy ? 'rgba(0,200,83,0.55)' : 'rgba(255,23,68,0.55)'
+  const dir = String(
+    row?.direction ?? row?.side ?? row?.trade ?? row?.action ?? row?.bias ??
+    row?.signal ?? row?.dir ?? ''
+  ).toUpperCase()
+  // Explicit SELL only turns the badge red; anything else (including the
+  // no-direction case) is treated as BUY = green.
+  const isSell = /SELL|SHORT|BEAR|DIST|PUT|-VE|NEGATIVE/.test(dir)
+  const bg = isSell ? '#ff1744' : '#00c853'
+  const glow = isSell ? 'rgba(255,23,68,0.55)' : 'rgba(0,200,83,0.55)'
   return (
     <span
       className={`inline-flex items-center px-2 py-[3px] text-[9px] font-black uppercase tracking-[0.08em] align-middle whitespace-nowrap select-none ${className ?? ''}`}
