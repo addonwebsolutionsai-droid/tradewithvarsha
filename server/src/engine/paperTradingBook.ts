@@ -233,7 +233,7 @@ function parseShareholdingPledge(note?: string): number | undefined {
 
 // ─── State I/O ──────────────────────────────────────────────────────
 
-function loadBook(): Book {
+export function loadBook(): Book {
   if (fs.existsSync(JOURNAL_FILE)) {
     try {
       const parsed = JSON.parse(fs.readFileSync(JOURNAL_FILE, 'utf-8')) as any
@@ -652,8 +652,66 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     MCX:  bookValue * SEGMENT_TARGET_PCT.MCX  - perSegmentDeployed.MCX,
   }
 
+  // ─── Auto-tune overrides enforcement (30 Jul 2026) ─────────────────
+  // Read the tune file; if any source has an override minScore, apply
+  // it as a hard filter on candidates. Closes the loop from selfImprove.
+  const autoTuneOverrides: Record<string, { minScore?: number }> = (() => {
+    try {
+      const fsSync = require('fs')
+      const pathSync = require('path')
+      const raw = fsSync.readFileSync(pathSync.resolve(__dirname, '../../data/auto-tune.json'), 'utf8')
+      return (JSON.parse(raw)?.overrides ?? {}) as Record<string, { minScore?: number }>
+    } catch { return {} }
+  })()
+
   // Sort candidates highest score first — the best signals fill first
   const sorted = candidates.slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+
+  // ─── Regime-aware sizing (30 Jul 2026) ─────────────────────────────
+  // Even best signals fail in risk-off tape. We read NIFTY 5d return +
+  // sector-rotation breadth (already snapshotted) to derive a regime
+  // multiplier. Risk-off halves position size AND raises the tier gate to
+  // ELITE-only. Risk-on keeps sizes as computed.
+  // Sources — no new fetches: nifty-long-horizon.json (has bias/spot),
+  // sector-rotation.json (breadth via % of leading sectors).
+  const regime = (() => {
+    try {
+      const fsSync = require('fs')
+      const pathSync = require('path')
+      const SNAP = pathSync.resolve(__dirname, '../../data/public-snapshots')
+      let nifty5d = 0
+      try {
+        const nlh = JSON.parse(fsSync.readFileSync(pathSync.join(SNAP, 'nifty-long-horizon.json'), 'utf8'))
+        nifty5d = Number(nlh.recentReturn5d ?? nlh.ret5d ?? nlh.ret5D ?? 0)
+      } catch { /* ignore */ }
+      if (!nifty5d) {
+        try {
+          const sr = JSON.parse(fsSync.readFileSync(pathSync.join(SNAP, 'sector-rotation.json'), 'utf8'))
+          nifty5d = Number(sr.niftyRet5d ?? 0)
+        } catch { /* ignore */ }
+      }
+      // Breadth = fraction of tracked sectors that are LEADING or IMPROVING
+      let breadthPct = 50
+      try {
+        const sr = JSON.parse(fsSync.readFileSync(pathSync.join(SNAP, 'sector-rotation.json'), 'utf8'))
+        const rows: any[] = sr.rows ?? []
+        if (rows.length > 0) {
+          const positive = rows.filter(r => r.trend === 'LEADING' || r.trend === 'IMPROVING').length
+          breadthPct = (positive / rows.length) * 100
+        }
+      } catch { /* ignore */ }
+      const riskOff = nifty5d < -2 || breadthPct < 40
+      const strongRiskOff = nifty5d < -4 || breadthPct < 25
+      const sizeMul = strongRiskOff ? 0.35 : riskOff ? 0.6 : 1.0
+      const eliteOnly = strongRiskOff  // block STRONG in strong risk-off
+      const label = strongRiskOff ? 'STRONG_RISK_OFF' : riskOff ? 'RISK_OFF' : 'NORMAL'
+      log.info('PAPER', `REGIME ${label}: nifty5d=${nifty5d.toFixed(2)}% breadth=${breadthPct.toFixed(0)}% · sizeMul=${sizeMul} eliteOnly=${eliteOnly}`)
+      return { label, sizeMul, eliteOnly, nifty5d, breadthPct }
+    } catch (e) {
+      log.warn('PAPER', `regime detection failed: ${(e as Error).message}`)
+      return { label: 'UNKNOWN', sizeMul: 1.0, eliteOnly: false, nifty5d: 0, breadthPct: 50 }
+    }
+  })()
 
   // Reverted 2026-07-29: the 5-day SL cool-off was the wrong fix. If the
   // move WAS an SL hunt (like Moschip 212→190→244, VIP Ind 306→270→344,
@@ -670,9 +728,72 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
 
     // Quality gates
     if (c.tier !== 'ELITE' && c.tier !== 'STRONG') continue
+    if (regime.eliteOnly && c.tier !== 'ELITE') continue      // regime block: only ELITE in strong risk-off
     if (isEtfSymbol(c.symbol)) continue
     if (openSymbols.has(c.symbol)) continue
     if (!c.entry || !c.stopLoss) continue
+    // Auto-tune override: source-specific minScore (self-improve loop)
+    const srcKey = String(c.source ?? '').toUpperCase()
+    const minScoreOverride = autoTuneOverrides[srcKey]?.minScore
+    if (minScoreOverride != null && (c.score ?? 0) < minScoreOverride) {
+      log.info('PAPER', `SKIP ${c.symbol}: auto-tune ${srcKey} minScore ${minScoreOverride} > ${c.score}`)
+      continue
+    }
+
+    // Losing-pattern penalty (30 Jul 2026): fetch candles + fingerprint-
+    // match against losing-patterns.json. If a proven-loser setup, skip
+    // outright unless score is exceptional (≥ 92). Guards against
+    // re-taking setups the system has already been burnt on.
+    try {
+      const dirGuess = (String(c.side ?? c.direction ?? 'LONG').toUpperCase() === 'SHORT' || String(c.side ?? c.direction ?? '').toUpperCase() === 'SELL' || String(c.side ?? c.direction ?? '').toUpperCase() === 'BEARISH') ? 'SHORT' as const : 'BUY' as const
+      const cs = await getCandles(c.symbol, '1D' as any, 60).catch(() => [] as Candle[])
+      if (cs && cs.length >= 30) {
+        const { matchesKnownLoser } = await import('./patternMemory')
+        const m = await matchesKnownLoser({ candles: cs, direction: dirGuess })
+        if (m.match && (c.score ?? 0) < 92) {
+          log.info('PAPER', `SKIP ${c.symbol}: matches known LOSING pattern from ${m.loserSymbol} (dd ${m.drawdown?.toFixed(1)}%) · need score ≥ 92, got ${c.score}`)
+          continue
+        }
+      }
+    } catch { /* silent — don't block trades on lookup failure */ }
+
+    // ── Anti-chase filter (30 Jul 2026) ────────────────────────────────
+    // If price already extended >8% in last 5d in trade direction, the move
+    // is likely spent. Late signals fail hardest. Only applies to stocks.
+    const dirEarly = String(c.side ?? c.direction ?? 'LONG').toUpperCase()
+    const isShortEarly = dirEarly === 'SHORT' || dirEarly === 'SELL' || dirEarly === 'BEARISH'
+    const ret5d = Number(c.ret5d ?? c.pct5d ?? c.change5d ?? 0)
+    if (Number.isFinite(ret5d) && ret5d !== 0) {
+      if (!isShortEarly && ret5d > 8) { log.info('PAPER', `SKIP ${c.symbol}: chase (5d +${ret5d.toFixed(1)}%)`); continue }
+      if (isShortEarly && ret5d < -8) { log.info('PAPER', `SKIP ${c.symbol}: chase-short (5d ${ret5d.toFixed(1)}%)`); continue }
+    }
+
+    // ── Correlation cap: max 2 open positions per sector ───────────────
+    // Prevents a sector-wide flush from wiping the book. Sector inferred
+    // from row.sector, falling back to shareholding note pattern.
+    const sec = String(c.sector ?? c.sectorLabel ?? '').toUpperCase().trim()
+    if (sec) {
+      const sameSector = [
+        ...openTrades.filter(t => String((t as any).sector ?? '').toUpperCase() === sec),
+        ...opened.filter(t => String((t as any).sector ?? '').toUpperCase() === sec),
+      ].length
+      if (sameSector >= 2) { log.info('PAPER', `SKIP ${c.symbol}: sector cap (${sec} already has 2)`); continue }
+    }
+
+    // ── Volatility-scaled SL sanity (30 Jul 2026) ──────────────────────
+    // Reject signals where SL distance is < 0.8× ATR estimate. Too-tight
+    // SLs cause premature exits before the setup plays out. ATR proxy =
+    // 1.5% of price when we don't have candles at this stage — most
+    // liquid names sit around this range. Skip for options.
+    const isOptCheck = c.isOption === true || c.source === 'OPT-RADAR' || c.source === 'NIFTY-FORESIGHT'
+    if (!isOptCheck) {
+      const slDist = Math.abs(c.entry - c.stopLoss)
+      const atrProxy = c.atr14 ?? c.entry * 0.015
+      if (slDist < atrProxy * 0.8) {
+        log.info('PAPER', `SKIP ${c.symbol}: SL too tight (${(slDist/c.entry*100).toFixed(2)}% < 0.8× ATR ${(atrProxy/c.entry*100).toFixed(2)}%)`)
+        continue
+      }
+    }
 
     // Reject setups where R:R at T1 is < 1.5 — the WABAG loss was on a
     // signal where entry-SL was 6.5% but entry-T1 was only 8%. A 1.2:1
@@ -752,7 +873,8 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
       // Stocks: linear 60→100 maps to 7% → 20%
       return 0.07 + (s - 60) / 40 * 0.13
     }
-    const scaledAllocPct = confidenceScale(c.score, isOptionRow)
+    const rawAllocPct = confidenceScale(c.score, isOptionRow)
+    const scaledAllocPct = rawAllocPct * regime.sizeMul       // regime multiplier
     if (scaledAllocPct <= 0) continue
     const tierAllocInr = Math.min(segBudgetLeft, bookValue * scaledAllocPct)
     const availableAfter = availableCash - opened.reduce((s, t) => s + t.positionValue, 0)
@@ -784,6 +906,8 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
       entryReason: c.unifiedReason ?? (Array.isArray(c.reasoning) ? c.reasoning.join(' · ') : ''),
       shareholdingNote: c.shareholdingNote,
       marketCapCr: c.marketCapCr,
+      // Persist sector so correlation cap survives across ticks (30 Jul 2026)
+      ...(sec ? { sector: sec } as any : {}),
       status: 'OPEN',
       exits: [],
       daysHeld: 0,
@@ -1168,7 +1292,10 @@ async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
       log.info('PAPER', `${trade.symbol} · ${exitNote}`)
       break
     }
-    // T1 partial (direction-aware)
+    // T1 partial (direction-aware) + trail SL to breakeven on remaining qty.
+    // 2026-07-30: the single largest driver of the 28% WR was "T1 hit, then
+    // gave back to SL" — turning locked wins into losses. Moving SL to entry
+    // after T1 fires converts those into breakeven trades at worst.
     const t1Hit = isShort ? (bar.low <= trade.target1) : (bar.high >= trade.target1)
     if (t1Hit && !trade.exits.some(e => e.reason === 'T1_HIT')) {
       const t1Qty = Math.floor(trade.qty * RULES.exitPartials.T1)
@@ -1178,8 +1305,17 @@ async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
       trade.remainingQty -= exitQty
       trade.totalRealisedPnl += pnl
       trade.status = 'T1_HIT'
+      // ─── TRAIL: move SL to breakeven (original entry) ────────────────
+      const beSL = trade.originalEntry ?? trade.entryPrice
+      const wouldWiden = isShort ? beSL > trade.stopLoss : beSL < trade.stopLoss
+      if (!wouldWiden) {
+        const prevSL = trade.stopLoss
+        trade.stopLoss = beSL
+        trade.trapNotes = [...(trade.trapNotes ?? []), `🔒 T1 hit — SL trailed to breakeven ₹${beSL.toFixed(2)} (was ₹${prevSL.toFixed(2)})`]
+      }
     }
-    // T2 partial (direction-aware)
+    // T2 partial (direction-aware) + trail SL to T1 on remaining qty.
+    // Locks in ≥ T1 profit even if T3 never triggers.
     const t2Hit = isShort ? (bar.low <= trade.target2) : (bar.high >= trade.target2)
     if (t2Hit && !trade.exits.some(e => e.reason === 'T2_HIT')) {
       const t2Qty = Math.floor(trade.qty * RULES.exitPartials.T2)
@@ -1189,6 +1325,13 @@ async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
       trade.remainingQty -= exitQty
       trade.totalRealisedPnl += pnl
       trade.status = 'T2_HIT'
+      // ─── TRAIL: move SL to T1 (locks in first-target profit) ─────────
+      const wouldWiden = isShort ? trade.target1 > trade.stopLoss : trade.target1 < trade.stopLoss
+      if (!wouldWiden) {
+        const prevSL = trade.stopLoss
+        trade.stopLoss = trade.target1
+        trade.trapNotes = [...(trade.trapNotes ?? []), `🔒 T2 hit — SL trailed to T1 ₹${trade.target1.toFixed(2)} (was ₹${prevSL.toFixed(2)})`]
+      }
     }
     // T3 final exit (direction-aware)
     const t3Hit = isShort ? (bar.low <= trade.target3) : (bar.high >= trade.target3)

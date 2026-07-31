@@ -55,15 +55,23 @@ jobs:
           ALERT_ON_NEW_SIGNAL: 'true'
         run: npm run tick:eod
 
-      - name: Commit refreshed snapshots
+      # Weekly meta-tune (30 Jul 2026) — reviews last 7d of self-improve
+      # adjustments, reverts any that hurt WR by ≥2pp, confirms winners.
+      # Runs AFTER EOD so it sees the latest journal.
+      - name: Weekly meta-tune
+        working-directory: server
+        continue-on-error: true
+        run: npm run tick:weekly-metatune
+
+      - name: Commit refreshed snapshots + auto-tune state
         if: success()
         run: |
           git config user.name  'tradewithvarsha-bot'
           git config user.email 'bot@tradewithvarsha.local'
-          if git diff --quiet server/data/public-snapshots/ ; then
-            echo "No snapshot changes."
+          if git diff --quiet server/data/public-snapshots/ server/data/auto-tune.json server/data/losing-patterns.json server/data/winning-patterns.json ; then
+            echo "No changes."
           else
-            git add server/data/public-snapshots/
-            git commit -m "snapshot: sunday-prep $(TZ=Asia/Kolkata date '+%d/%-m/%Y, %H:%M:%S')"
+            git add server/data/public-snapshots/ server/data/auto-tune.json server/data/losing-patterns.json server/data/winning-patterns.json 2>/dev/null || true
+            git commit -m "snapshot: sunday-prep + meta-tune $(TZ=Asia/Kolkata date '+%d/%-m/%Y, %H:%M:%S')"
             git push || (git pull --rebase && git push) || echo "Push failed — next run will retry."
           fi

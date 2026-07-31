@@ -436,6 +436,24 @@ export async function checkTransitions(ltps: Map<string, number>): Promise<Trans
         e.hitAt = now
         e.statusReason = `LTP ${ltp} crossed SL ${e.stopLoss}`
         transitions.push({ entry: e, from, to: 'SL_HIT', hitPrice: ltp })
+        // Capture LOSING fingerprint for pattern-memory penalty bank (30 Jul 2026)
+        void (async () => {
+          try {
+            const { getCandles } = await import('../data')
+            const candles = await getCandles(e.symbol, '1D' as any, 60)
+            if (candles && candles.length >= 30) {
+              const { recordLosingPattern } = await import('./patternMemory')
+              const entryRef = e.entryPrice || ltp
+              const ddPct = Math.abs((ltp - entryRef) / entryRef) * 100
+              await recordLosingPattern({
+                symbol: e.symbol,
+                direction: e.direction as 'BUY' | 'SHORT',
+                candlesAtEntry: candles,
+                drawdownPct: ddPct,
+              })
+            }
+          } catch { /* silent */ }
+        })()
         continue
       }
       // Target detection — highest-numbered target reached wins

@@ -19,6 +19,7 @@ import type { Candle } from '../types'
 
 const DATA_DIR = path.resolve(__dirname, '../../data')
 const PATTERN_FILE = path.join(DATA_DIR, 'winning-patterns.json')
+const LOSING_FILE = path.join(DATA_DIR, 'losing-patterns.json')  // 30 Jul 2026
 const MAX_PATTERNS = 500
 
 export interface PatternFingerprint {
@@ -210,4 +211,73 @@ export async function matchesKnownWinner(opts: {
 
 export async function getPatternStore(): Promise<PatternStore> {
   return load()
+}
+
+// ═══════════════════════════════════════════════════════════════════════
+// LOSING pattern bank (30 Jul 2026)
+// ═══════════════════════════════════════════════════════════════════════
+// Symmetric to the winners bank. Every SL_HIT captures the fingerprint of
+// the setup that failed. Live scans check candidates against the losing
+// bank and penalise those matching a known burnt setup (−15 conviction).
+// This complements the +5 winner bonus so the system learns from both
+// wins AND losses — a proper reinforcement loop.
+let losersCache: PatternStore | null = null
+async function loadLosers(): Promise<PatternStore> {
+  if (losersCache) return losersCache
+  try {
+    const raw = await fs.readFile(LOSING_FILE, 'utf8')
+    losersCache = JSON.parse(raw)
+    return losersCache!
+  } catch {
+    losersCache = { patterns: [], lastUpdated: '' }
+    return losersCache
+  }
+}
+async function saveLosers(store: PatternStore): Promise<void> {
+  await fs.mkdir(DATA_DIR, { recursive: true })
+  await fs.writeFile(LOSING_FILE, JSON.stringify(store, null, 2), 'utf8')
+  losersCache = store
+}
+
+export async function recordLosingPattern(opts: {
+  symbol: string
+  direction: 'BUY' | 'SHORT'
+  candlesAtEntry: Candle[]
+  drawdownPct: number    // how deeply it broke (helps prioritise the worst)
+}): Promise<void> {
+  const fp = computeFingerprint(opts.candlesAtEntry)
+  if (!fp) return
+  const store = await loadLosers()
+  store.patterns.unshift({
+    symbol: opts.symbol,
+    status: 'T1_HIT' as any,       // reuse the type; the pattern is what matters
+    direction: opts.direction,
+    capturedAt: new Date().toISOString(),
+    ...fp,
+    // drawdownPct stored via any-cast so store shape stays compatible
+    ...({ drawdownPct: opts.drawdownPct } as any),
+  })
+  store.patterns = store.patterns.slice(0, MAX_PATTERNS)
+  store.lastUpdated = new Date().toISOString()
+  await saveLosers(store)
+  log.info('PATTERN-MEM', `Captured LOSING pattern: ${opts.symbol} (dd=${opts.drawdownPct.toFixed(1)}%, stack=${fp.emaStack}, adx=${fp.adx})`)
+}
+
+export async function matchesKnownLoser(opts: {
+  candles: Candle[]
+  direction: 'BUY' | 'SHORT'
+}): Promise<{ match: boolean; loserSymbol?: string; drawdown?: number }> {
+  const fp = computeFingerprint(opts.candles)
+  if (!fp) return { match: false }
+  const store = await loadLosers()
+  for (const l of store.patterns) {
+    if (l.direction !== opts.direction) continue
+    if (l.emaStack !== fp.emaStack) continue
+    if (Math.abs(l.adx - fp.adx) > 10) continue
+    if (Math.abs(l.rsi - fp.rsi) > 10) continue
+    if (Math.abs(l.atrPct - fp.atrPct) > 1.2) continue
+    if (Math.abs(l.volRatio - fp.volRatio) > 0.8) continue
+    return { match: true, loserSymbol: l.symbol, drawdown: (l as any).drawdownPct }
+  }
+  return { match: false }
 }

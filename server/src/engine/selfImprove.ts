@@ -47,7 +47,12 @@ const MAX_ADX_BUMP = 30
 export interface AutoTune {
   lastRunAt: string
   /** Per-strategy current overrides (used by strategies via getAutoTune()) */
-  overrides: Record<string, { minConfluence?: number; minAdx?: number }>
+  overrides: Record<string, {
+    minConfluence?: number
+    minAdx?: number
+    /** 30 Jul 2026 — paper-book candidate acceptance floor per source. */
+    minScore?: number
+  }>
   /** History of adjustments for the dashboard / ERRORS.md trail */
   adjustments: { ts: string; strategy: string; metric: string; from: number; to: number; reason: string }[]
   /** Last computed perf stats per strategy */
@@ -135,6 +140,57 @@ export async function runSelfImprove(): Promise<AutoTune> {
     } else {
       decisions.push(`${strategy}: wr ${winRate}% within band [${target - 5}, ${target + 5}], no change`)
     }
+  }
+
+  // ─── Paper-book per-source tune (30 Jul 2026) ─────────────────────
+  // Reads the paper-trading book, groups closed trades by source, and
+  // adjusts overrides[source].minScore so under-performing sources need
+  // a stricter score bar next tick. Closes the feedback loop that used
+  // to just log proposals and never enforce them.
+  try {
+    const { loadBook } = await import('./paperTradingBook')
+    const book = (loadBook as any)?.() as { trades?: any[] } | undefined
+    if (book?.trades?.length) {
+      const closed = book.trades.filter(t => t.status === 'SL_HIT' || t.status === 'T3_HIT' || t.status === 'T2_HIT' || t.status === 'T1_HIT' || t.status === 'TIME_STOP')
+      const bySource: Record<string, { wins: number; losses: number; scores: number[] }> = {}
+      for (const t of closed) {
+        const src = String(t.source ?? 'UNKNOWN').toUpperCase()
+        const win = (t.totalRealisedPnl ?? 0) > 0
+        const stats = bySource[src] ??= { wins: 0, losses: 0, scores: [] }
+        if (win) stats.wins++; else stats.losses++
+        if (typeof t.score === 'number') stats.scores.push(t.score)
+      }
+      for (const [src, s] of Object.entries(bySource)) {
+        const total = s.wins + s.losses
+        if (total < 8) continue    // n<8 too noisy
+        const wr = (s.wins / total) * 100
+        const currentMinScore = tune.overrides[src]?.minScore ?? 60
+        // Under-performing: raise minScore bar; over-performing: lower it
+        if (wr < 40 && currentMinScore < 90) {
+          const newMin = Math.min(90, currentMinScore + 5)
+          tune.overrides[src] = { ...(tune.overrides[src] ?? {}), minScore: newMin }
+          tune.adjustments.unshift({
+            ts: new Date().toISOString(), strategy: src, metric: 'minScore',
+            from: currentMinScore, to: newMin,
+            reason: `PAPER-BOOK wr ${wr.toFixed(0)}% over ${total} closed — raised score bar`,
+          })
+          log.ok('IMPROVE', `[paper] ${src}: wr ${wr.toFixed(0)}% (${s.wins}/${total}) → minScore ${currentMinScore}→${newMin}`)
+        } else if (wr > 75 && currentMinScore > 60) {
+          const newMin = Math.max(60, currentMinScore - 3)
+          tune.overrides[src] = { ...(tune.overrides[src] ?? {}), minScore: newMin }
+          tune.adjustments.unshift({
+            ts: new Date().toISOString(), strategy: src, metric: 'minScore',
+            from: currentMinScore, to: newMin,
+            reason: `PAPER-BOOK wr ${wr.toFixed(0)}% over ${total} closed — safe to relax`,
+          })
+          log.ok('IMPROVE', `[paper] ${src}: wr ${wr.toFixed(0)}% (${s.wins}/${total}) → minScore ${currentMinScore}→${newMin} (relaxed)`)
+        } else {
+          log.info('IMPROVE', `[paper] ${src}: wr ${wr.toFixed(0)}% (${s.wins}/${total}) — no change`)
+        }
+      }
+    }
+  } catch (e) {
+    log.warn('IMPROVE', `paper-book tune skipped: ${(e as Error).message}`)
   }
 
   // Keep only last 50 adjustments
