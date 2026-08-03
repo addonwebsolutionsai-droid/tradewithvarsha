@@ -246,6 +246,15 @@ async function main() {
       const r = await m.runNiftyBiasComposer()
       return `${r.direction} ${r.confidence} · net ${r.netScore} · spot ₹${r.spot.toFixed(2)}`
     }],
+    // ─── Multi-TF Harmonic Engine (3 Aug 2026) — Weekly + Daily + Monthly
+    //     harmonic confluence. Groups harmonic.json hits by symbol+direction,
+    //     emits only when ≥ 2 TFs agree. Small, high-hit-rate feed. MASTER
+    //     and Money-Printer both reference this. Must run after harmonic.
+    ['mtf-harmonic', async () => {
+      const m = await import('../src/engine/mtfHarmonicEngine')
+      const r = await m.runMtfHarmonicEngine()
+      return `${r.emitted.length} MTF setups (${r.total3TF} 3-TF + ${r.total2TF} 2-TF)`
+    }],
     // ─── Money-Printer Engine (30 Jul 2026) — the Moschip / Marksans /
     //     Epack / VIP / Hikal winning-setup pattern. Requires multi-TF
     //     harmonic (1D + 1W OR 1M) OR Elliott Wave-3, PLUS volume

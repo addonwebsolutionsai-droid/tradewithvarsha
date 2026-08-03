@@ -157,7 +157,12 @@ function detectWave3Underway(candles: Candle[], pivots: Pivot[]): WaveHit | null
     if (t1 <= entry) return null                      // targets must be above entry
 
     const w1Pct = (w1Range / w1Low) * 100
-    const score = Math.min(100, Math.round(60 + w1Pct + (recentVol / baseVol - 1) * 30))
+    // WAVE-3 PRIORITY BOOST (3 Aug 2026 · user directive #4 "Elliott Wave
+    // Counts" + specific ask for "sharpest move wave"). Wave-3 is the
+    // strongest impulsive wave — boost base from 60 to 70 and cap higher.
+    // This makes Wave-3 candidates rank above Wave-2 pullbacks in the same
+    // symbol universe, matching real-trader intuition.
+    const score = Math.min(100, Math.round(70 + w1Pct + (recentVol / baseVol - 1) * 30))
     return {
       symbol: '', timeframe: '1D',
       setup: 'WAVE_3_UNDERWAY', direction: 'BUY',

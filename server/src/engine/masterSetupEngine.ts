@@ -207,6 +207,12 @@ export async function runMasterSetupScan(): Promise<{
     ['pedigree-accumulation.json', 'PEDIGREE'],
     ['weekly-pick.json', 'WEEKLY'],
     ['daily-pick.json', 'DAILY'],
+    // 3 Aug 2026 — new premium sources: multi-TF harmonic + Money-Printer
+    // both count as their own source families. A symbol showing MTF-HARMONIC
+    // AND MONEY-PRINTER alone already clears the 3-source pillar (they
+    // count as 2, but their weight in score is heavier via boost below).
+    ['mtf-harmonic.json', 'MTF-HARMONIC'],
+    ['money-printer.json', 'MONEY-PRINTER'],
   ]
   for (const [file, tag] of sources) {
     const snap = await readSnap(file)
@@ -457,13 +463,23 @@ async function evaluatePillars(
   const confirmedCount = pillars.filter(p => p.pass === true).length
   if (confirmedCount < 5) return { reason: `insufficient-pillars (${confirmedCount})` }
 
-  const masterScore = Math.round(
+  // Premium-source bonuses (3 Aug 2026):
+  //   MTF-HARMONIC   → +15 (multi-timeframe confluence — user's manual signal)
+  //   MONEY-PRINTER  → +15 (the Moschip/Marksans winning-setup pattern)
+  //   Both present   → +25 total (super-premium)
+  const hasMtfHarmonic = c.sources.has('MTF-HARMONIC')
+  const hasMoneyPrinter = c.sources.has('MONEY-PRINTER')
+  const premiumBonus = (hasMtfHarmonic && hasMoneyPrinter) ? 25
+    : (hasMtfHarmonic || hasMoneyPrinter) ? 15 : 0
+
+  const masterScore = Math.min(100, Math.round(
     c.bestScore * 0.35 +
     Math.min(30, sourceCount * 6) +
     Math.min(15, rrT1 * 5) +
     (winnerMatch ? 10 : 0) +
-    (secTrend === 'LEADING' ? 10 : secTrend === 'IMPROVING' ? 5 : 0)
-  )
+    (secTrend === 'LEADING' ? 10 : secTrend === 'IMPROVING' ? 5 : 0) +
+    premiumBonus
+  ))
 
   const humanLines: string[] = [
     `🏆 MASTER · score ${masterScore} · ${c.direction} @ ₹${c.entry.toFixed(2)}`,
