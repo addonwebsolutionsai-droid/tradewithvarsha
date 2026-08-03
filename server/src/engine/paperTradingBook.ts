@@ -637,6 +637,45 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     perSegmentOpenCount[t.segment]++
     perSegmentDeployed[t.segment] += t.remainingQty * t.entryPrice
   }
+
+  // ═══ SYMBOL COOL-OFF (3 Aug 2026) — THE MAIN WR KILLER FIX ═══════════
+  // Closed-trade analysis revealed the paper book was retaking the same
+  // losing signals every day:
+  //   GODREJIND × 5 = 5 SL_HITs (-₹36K)
+  //   WABAG × 3 = 3 SL_HITs (-₹29K)
+  //   SPANDANA × 2 = 2 SL_HITs
+  //   UJJIVANSFB × 4 = 4 T3_HITs (win noise stacked too)
+  // Real unique-symbol WR was ~1/7 = 14% masked as 4/17 = 23.5%.
+  //
+  // Rule now:
+  //   · SL_HIT within last 15 sessions on this symbol → skip (blacklist)
+  //   · ANY exit within last 5 sessions on this symbol → skip (dedup)
+  // Prevents both compounding losses AND win-stacking noise. If the
+  // setup is real, it'll reappear after the cool-off.
+  const nowMsCoolOff = Date.now()
+  const SL_BLACKLIST_MS = 15 * 24 * 3600_000
+  const RECENT_TRADE_MS = 5 * 24 * 3600_000
+  const symbolCoolOffUntil = new Map<string, { until: number; reason: string }>()
+  for (const t of book.trades) {
+    const lastExitDate = t.exits?.[t.exits.length - 1]?.date
+    if (!lastExitDate) continue
+    const exitMs = Date.parse(lastExitDate + 'T15:30:00+05:30')
+    if (!Number.isFinite(exitMs)) continue
+    const isSl = t.status === 'SL_HIT'
+    const until = exitMs + (isSl ? SL_BLACKLIST_MS : RECENT_TRADE_MS)
+    if (until > nowMsCoolOff) {
+      const existing = symbolCoolOffUntil.get(t.symbol)
+      if (!existing || until > existing.until) {
+        symbolCoolOffUntil.set(t.symbol, {
+          until,
+          reason: isSl ? `SL_HIT ${lastExitDate} — 15d blacklist` : `closed ${t.status} ${lastExitDate} — 5d dedup`,
+        })
+      }
+    }
+  }
+  if (symbolCoolOffUntil.size > 0) {
+    log.info('PAPER', `SYMBOL cool-off: ${symbolCoolOffUntil.size} symbols currently blacklisted`)
+  }
   const totalOpen = openTrades.length
 
   const bookValue = book.ledger.bookValue
@@ -731,6 +770,12 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     if (regime.eliteOnly && c.tier !== 'ELITE') continue      // regime block: only ELITE in strong risk-off
     if (isEtfSymbol(c.symbol)) continue
     if (openSymbols.has(c.symbol)) continue
+    // Symbol cool-off enforcement (3 Aug 2026)
+    const coolOff = symbolCoolOffUntil.get(c.symbol)
+    if (coolOff) {
+      log.info('PAPER', `SKIP ${c.symbol}: ${coolOff.reason} · unblocks in ${Math.ceil((coolOff.until - nowMsCoolOff) / 86400_000)}d`)
+      continue
+    }
     if (!c.entry || !c.stopLoss) continue
     // Auto-tune override: source-specific minScore (self-improve loop)
     const srcKey = String(c.source ?? '').toUpperCase()
