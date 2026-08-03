@@ -61,7 +61,7 @@ export interface TradeExit {
 export interface TradeEntry {
   id: string               // stable id, e.g. `RELIANCE-2026-07-23-BUY`
   symbol: string
-  segment: 'FNO' | 'CASH' | 'MCX'
+  segment: 'FNO' | 'CASH' | 'MCX' | 'OPT'
   direction: 'LONG' | 'SHORT'
   source: string           // VP+FIB · PRO-EDGE · CROSS-CONFLUENCE · WEEKLY-PICK
   tier: 'ELITE' | 'STRONG'
@@ -166,18 +166,26 @@ const HQS_SNAPSHOT_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots'
 
 // ─── Constants ──────────────────────────────────────────────────────
 
-const STARTING_CAPITAL = 10_00_000
+// STARTING_CAPITAL bumped to ₹20L on 3 Aug 2026 per user directive:
+// "add 10 lakh more capital for future and options trades from f&o trades,
+// stocks f&o vp all trade setups with highest accuracy and confidence".
+// The extra ₹10L is dedicated to the FNO bucket — stock F&O trades from
+// pro-setups + stock-fno-vp + fno-stock-forecast, filtered to Money-Printer
+// or MTF-Harmonic or PRO-EDGE ELITE only (highest-accuracy sources).
+const STARTING_CAPITAL = 20_00_000
 
-// Segment allocation model — total book value split across three risk buckets.
-//   CASH  60% → high-quality-setups.json (cash tab, LONG only)
-//   FNO   20% → high-quality-setups.json (fno tab, LONG or SHORT)
-//                 F&O stock signals traded as SPOT proxy (delta-1 approx)
-//   MCX   20% → commodity-signals.json (Gold/Silver/Crude/NatGas/Copper)
+// Segment allocation model — total book value split across four risk buckets.
+//   CASH  30% (₹6L)  → high-quality-setups.json (cash tab, LONG only)
+//   FNO   50% (₹10L) → F&O stock trades (pro-setups + stock-fno-vp +
+//                       fno-stock-forecast) — the ₹10L addition
+//   MCX   10% (₹2L)  → commodity-signals.json (Gold/Silver/Crude/NatGas/Copper)
+//   OPT   10% (₹2L)  → options-radar.json + nifty-outlook.json options trades
 // Cap per position within each segment: 20% of that segment's allocation.
 const SEGMENT_TARGET_PCT = {
-  CASH: 0.60,
-  FNO: 0.20,
-  MCX: 0.20,
+  CASH: 0.30,
+  FNO: 0.50,      // 3 Aug 2026 — was 0.20, doubled per +₹10L F&O allocation
+  MCX: 0.10,
+  OPT: 0.10,      // new dedicated options bucket
 } as const
 
 const RULES = {
@@ -187,8 +195,8 @@ const RULES = {
                                   // put 30% of book on one symbol → -₹24K
                                   // loss in 2 days. 10% cap prevents that.
   riskPerTradePct: 0.01,          // 1% of book per trade
-  maxConcurrentPositions: 20,     // across ALL segments
-  maxPerSegment: { CASH: 12, FNO: 6, MCX: 4 },
+  maxConcurrentPositions: 25,     // 3 Aug: raised from 20 to accommodate F&O expansion
+  maxPerSegment: { CASH: 8, FNO: 10, MCX: 4, OPT: 6 },   // FNO raised for +₹10L
   minMarketCapCr: 500,
   maxPledgePct: 20,
   segmentTargetPct: SEGMENT_TARGET_PCT,
@@ -411,12 +419,12 @@ function normaliseCandidate(row: any, source: string, defaultTier?: 'ELITE' | 'S
   }
 }
 
-async function gatherCandidates(): Promise<Array<any & { _segment: 'CASH' | 'FNO' | 'MCX'; _sourceCount?: number }>> {
+async function gatherCandidates(): Promise<Array<any & { _segment: 'CASH' | 'FNO' | 'MCX' | 'OPT'; _sourceCount?: number }>> {
   const out: any[] = []
   const firstBySym = new Map<string, any>()      // first-seen candidate wins the trade plan
   const sourceCount = new Map<string, Set<string>>()   // (symbol|side) → set of source families
 
-  const push = async (c: any, seg?: 'CASH' | 'FNO' | 'MCX') => {
+  const push = async (c: any, seg?: 'CASH' | 'FNO' | 'MCX' | 'OPT') => {
     if (!c || !c.symbol) return
     const key = `${c.symbol}-${c.side}`
     // Track source families for confluence gate (2026-07-28 fix — WABAG
@@ -631,8 +639,8 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
 
   const openTrades = book.trades.filter(t => t.status === 'OPEN' || /^T[12]_HIT$/.test(t.status))
   const openSymbols = new Set(openTrades.map(t => t.symbol))
-  const perSegmentOpenCount: Record<'CASH' | 'FNO' | 'MCX', number> = { CASH: 0, FNO: 0, MCX: 0 }
-  const perSegmentDeployed: Record<'CASH' | 'FNO' | 'MCX', number> = { CASH: 0, FNO: 0, MCX: 0 }
+  const perSegmentOpenCount: Record<'CASH' | 'FNO' | 'MCX' | 'OPT', number> = { CASH: 0, FNO: 0, MCX: 0, OPT: 0 }
+  const perSegmentDeployed: Record<'CASH' | 'FNO' | 'MCX' | 'OPT', number> = { CASH: 0, FNO: 0, MCX: 0, OPT: 0 }
   for (const t of openTrades) {
     perSegmentOpenCount[t.segment]++
     perSegmentDeployed[t.segment] += t.remainingQty * t.entryPrice
@@ -685,10 +693,11 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
   const time = nowTimeIST()
 
   // Compute per-segment budget remaining
-  const segmentBudget: Record<'CASH' | 'FNO' | 'MCX', number> = {
+  const segmentBudget: Record<'CASH' | 'FNO' | 'MCX' | 'OPT', number> = {
     CASH: bookValue * SEGMENT_TARGET_PCT.CASH - perSegmentDeployed.CASH,
     FNO:  bookValue * SEGMENT_TARGET_PCT.FNO  - perSegmentDeployed.FNO,
     MCX:  bookValue * SEGMENT_TARGET_PCT.MCX  - perSegmentDeployed.MCX,
+    OPT:  bookValue * SEGMENT_TARGET_PCT.OPT  - perSegmentDeployed.OPT,
   }
 
   // ─── Auto-tune overrides enforcement (30 Jul 2026) ─────────────────
@@ -760,7 +769,7 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
   // same symbol twice as a fresh entry — averaging is a separate path.
   for (const c of sorted) {
     if (opened.length + totalOpen >= RULES.maxConcurrentPositions) break
-    const seg = c._segment as 'CASH' | 'FNO' | 'MCX'
+    const seg = c._segment as 'CASH' | 'FNO' | 'MCX' | 'OPT'
 
     // Per-segment concurrent-position cap
     if (perSegmentOpenCount[seg] + opened.filter(t => t.segment === seg).length >= (RULES.maxPerSegment as any)[seg]) continue
