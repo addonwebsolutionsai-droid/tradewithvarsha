@@ -349,6 +349,10 @@ const ELLIOTT_WAVE_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots'
 const FNO_FUTURES_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'fno-futures.json')
 const STOCK_FNO_VP_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'stock-fno-volume-profile.json')
 const FNO_FORECAST_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'fno-stock-forecast.json')
+// 3 Aug 2026 — new premium sources for the +₹10L F&O bucket
+const MONEY_PRINTER_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'money-printer.json')
+const MTF_HARMONIC_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'mtf-harmonic.json')
+const MASTER_SETUPS_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'master-setups.json')
 
 /**
  * Gather candidate signals across all three segments, tag them with the
@@ -541,6 +545,56 @@ async function gatherCandidates(): Promise<Array<any & { _segment: 'CASH' | 'FNO
       if (added > 0) log.info('PAPER', `+${added} stock-fno-vp candidates`)
     } catch (e) { log.warn('PAPER', `stock-fno-vp read failed: ${(e as Error).message}`) }
   }
+  // ─── Money-Printer (3 Aug 2026) — the Moschip/Marksans winning-setup
+  //     pattern. Highest-conviction feed. Route to FNO segment (they're
+  //     typically F&O-eligible large caps).
+  if (fs.existsSync(MONEY_PRINTER_FILE)) {
+    try {
+      const mp = JSON.parse(fs.readFileSync(MONEY_PRINTER_FILE, 'utf-8'))
+      let added = 0
+      for (const r of (mp.rows ?? [])) {
+        // Score already 70-100 range from money-printer emit
+        const norm = normaliseCandidate(r, 'MONEY-PRINTER')
+        if (norm && (norm.score ?? 0) >= 70) {
+          const seg = await isFnoEligible(norm.symbol) ? 'FNO' : 'CASH'
+          await push(norm, seg); added++
+        }
+      }
+      if (added > 0) log.info('PAPER', `+${added} MONEY-PRINTER candidates`)
+    } catch (e) { log.warn('PAPER', `money-printer read failed: ${(e as Error).message}`) }
+  }
+  // ─── MTF-Harmonic (3 Aug 2026) — multi-timeframe harmonic confluence.
+  //     Same routing logic — FNO or CASH based on F&O eligibility.
+  if (fs.existsSync(MTF_HARMONIC_FILE)) {
+    try {
+      const mtf = JSON.parse(fs.readFileSync(MTF_HARMONIC_FILE, 'utf-8'))
+      let added = 0
+      for (const r of (mtf.rows ?? [])) {
+        const norm = normaliseCandidate({ ...r, score: r.compositeScore }, 'MTF-HARMONIC')
+        if (norm && (norm.score ?? 0) >= 70) {
+          const seg = await isFnoEligible(norm.symbol) ? 'FNO' : 'CASH'
+          await push(norm, seg); added++
+        }
+      }
+      if (added > 0) log.info('PAPER', `+${added} MTF-HARMONIC candidates`)
+    } catch (e) { log.warn('PAPER', `mtf-harmonic read failed: ${(e as Error).message}`) }
+  }
+  // ─── MASTER Setups (3 Aug 2026) — 7-pillar composite. Any MASTER with
+  //     score ≥ 75 gets priority; force ELITE tier for these.
+  if (fs.existsSync(MASTER_SETUPS_FILE)) {
+    try {
+      const ms = JSON.parse(fs.readFileSync(MASTER_SETUPS_FILE, 'utf-8'))
+      let added = 0
+      for (const r of (ms.rows ?? [])) {
+        const norm = normaliseCandidate({ ...r, score: r.masterScore, tier: 'ELITE' }, 'MASTER')
+        if (norm && (norm.score ?? 0) >= 75) {
+          const seg = await isFnoEligible(norm.symbol) ? 'FNO' : 'CASH'
+          await push(norm, seg); added++
+        }
+      }
+      if (added > 0) log.info('PAPER', `+${added} MASTER candidates`)
+    } catch (e) { log.warn('PAPER', `master-setups read failed: ${(e as Error).message}`) }
+  }
   // MCX — commodity signals from dedicated scanner (Gold/XAUUSD/Silver/Crude/NatGas/Copper)
   if (fs.existsSync(COMMODITY_SNAPSHOT_FILE)) {
     try {
@@ -562,8 +616,9 @@ async function gatherCandidates(): Promise<Array<any & { _segment: 'CASH' | 'FNO
         out.push({
           symbol,
           underlying: s.underlying,
-          _segment: 'FNO',
-          segment: 'FNO',
+          // 3 Aug 2026 — options-radar routes to OPT bucket (₹2L dedicated)
+          _segment: 'OPT',
+          segment: 'OPT',
           side: s.side === 'CE' ? 'LONG' : 'LONG',            // Always LONG (buying the option)
           direction: 'LONG',
           source: 'OPT-RADAR',
@@ -714,6 +769,18 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
 
   // Sort candidates highest score first — the best signals fill first
   const sorted = candidates.slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
+
+  // ─── Daily drawdown circuit-breaker (3 Aug 2026 · user safety rule) ─
+  // "Safest and secure way" — if intraday unrealised P&L is < -2% of book
+  // value, halt ALL new entries for the rest of the tick. Preserves
+  // capital during regime-flip days. Existing open trades still process
+  // exits normally (T-hits, SL-decision engine).
+  const openUnrealised = openTrades.reduce((s, t) => s + (t.unrealisedPnl ?? 0), 0)
+  const drawdownPct = bookValue > 0 ? (openUnrealised / bookValue) * 100 : 0
+  if (drawdownPct <= -2) {
+    log.warn('PAPER', `🛑 CIRCUIT-BREAKER: intraday drawdown ${drawdownPct.toFixed(2)}% — halting new entries for this tick`)
+    return []
+  }
 
   // ─── Regime-aware sizing (30 Jul 2026) ─────────────────────────────
   // Even best signals fail in risk-off tape. We read NIFTY 5d return +
