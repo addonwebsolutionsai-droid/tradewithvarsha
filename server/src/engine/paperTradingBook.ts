@@ -755,17 +755,24 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     OPT:  bookValue * SEGMENT_TARGET_PCT.OPT  - perSegmentDeployed.OPT,
   }
 
-  // ─── Auto-tune overrides enforcement (30 Jul 2026) ─────────────────
-  // Read the tune file; if any source has an override minScore, apply
-  // it as a hard filter on candidates. Closes the loop from selfImprove.
-  const autoTuneOverrides: Record<string, { minScore?: number }> = (() => {
+  // ─── Auto-tune overrides + symbol blacklist enforcement ────────────
+  // Reads both `overrides` (per-source minScore) and `symbolBlacklist`
+  // (persistent 30d blocks written by daily-improve routine).
+  const autoTune: { overrides: Record<string, { minScore?: number }>; symbolBlacklist: Record<string, number> } = (() => {
     try {
       const fsSync = require('fs')
       const pathSync = require('path')
       const raw = fsSync.readFileSync(pathSync.resolve(__dirname, '../../data/auto-tune.json'), 'utf8')
-      return (JSON.parse(raw)?.overrides ?? {}) as Record<string, { minScore?: number }>
-    } catch { return {} }
+      const j = JSON.parse(raw)
+      return {
+        overrides: (j?.overrides ?? {}) as Record<string, { minScore?: number }>,
+        symbolBlacklist: (j?.symbolBlacklist ?? {}) as Record<string, number>,
+      }
+    } catch { return { overrides: {}, symbolBlacklist: {} } }
   })()
+  const autoTuneOverrides = autoTune.overrides
+  const persistentBlacklist = autoTune.symbolBlacklist
+  const nowMsBl = Date.now()
 
   // Sort candidates highest score first — the best signals fill first
   const sorted = candidates.slice().sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
@@ -846,10 +853,16 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
     if (regime.eliteOnly && c.tier !== 'ELITE') continue      // regime block: only ELITE in strong risk-off
     if (isEtfSymbol(c.symbol)) continue
     if (openSymbols.has(c.symbol)) continue
-    // Symbol cool-off enforcement (3 Aug 2026)
+    // Symbol cool-off enforcement (3 Aug 2026 dynamic)
     const coolOff = symbolCoolOffUntil.get(c.symbol)
     if (coolOff) {
       log.info('PAPER', `SKIP ${c.symbol}: ${coolOff.reason} · unblocks in ${Math.ceil((coolOff.until - nowMsCoolOff) / 86400_000)}d`)
+      continue
+    }
+    // Persistent blacklist enforcement (from daily-improve routine)
+    const blockedUntil = persistentBlacklist[c.symbol]
+    if (blockedUntil && blockedUntil > nowMsBl) {
+      log.info('PAPER', `SKIP ${c.symbol}: persistent blacklist · unblocks in ${Math.ceil((blockedUntil - nowMsBl) / 86400_000)}d`)
       continue
     }
     if (!c.entry || !c.stopLoss) continue

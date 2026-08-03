@@ -1,0 +1,262 @@
+{
+  "lastRunAt": "2026-08-03T18:23:36.033Z",
+  "overrides": {
+    "oi-flow": {
+      "minConfluence": 2
+    },
+    "unknown": {
+      "minConfluence": 6
+    },
+    "options-mtf": {
+      "minConfluence": 6
+    },
+    "confluence-monthly": {
+      "minConfluence": 6
+    },
+    "confluence-weekly": {
+      "minConfluence": 6
+    },
+    "swing": {
+      "minConfluence": 6
+    },
+    "PRO-EDGE": {
+      "minScore": 90
+    },
+    "VP+FIB": {
+      "minScore": 75
+    },
+    "WEEKLY-PICK": {
+      "minScore": 80
+    }
+  },
+  "adjustments": [
+    {
+      "ts": "2026-08-03T18:23:36.033Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 60,
+      "to": 90,
+      "reason": "DAILY-IMPROVE routine: 18% WR / 11 closed trades (GODREJIND×5+WABAG×3 duplicates already blacklisted). Require score 90+ for confluence."
+    },
+    {
+      "ts": "2026-08-03T18:23:36.033Z",
+      "strategy": "VP+FIB",
+      "metric": "minScore",
+      "from": 60,
+      "to": 75,
+      "reason": "DAILY-IMPROVE routine: 0/2 WR — tighten while sample builds"
+    },
+    {
+      "ts": "2026-08-03T18:23:36.033Z",
+      "strategy": "WEEKLY-PICK",
+      "metric": "minScore",
+      "from": 60,
+      "to": 80,
+      "reason": "DAILY-IMPROVE routine: 0/2 WR (SPANDANA×2 duplicate). Tighten to 80."
+    },
+    {
+      "ts": "2026-08-03T18:23:36.033Z",
+      "strategy": "GODREJIND",
+      "metric": "blacklist",
+      "from": "",
+      "to": "30d",
+      "reason": "DAILY-IMPROVE: 5+ SL_HITs in 15d — extended cool-off"
+    },
+    {
+      "ts": "2026-08-03T18:23:36.033Z",
+      "strategy": "WABAG",
+      "metric": "blacklist",
+      "from": "",
+      "to": "30d",
+      "reason": "DAILY-IMPROVE: 5+ SL_HITs in 15d — extended cool-off"
+    },
+    {
+      "ts": "2026-08-03T18:23:36.033Z",
+      "strategy": "SPANDANA",
+      "metric": "blacklist",
+      "from": "",
+      "to": "30d",
+      "reason": "DAILY-IMPROVE: 5+ SL_HITs in 15d — extended cool-off"
+    },
+    {
+      "ts": "2026-07-06T11:20:16.004Z",
+      "strategy": "swing",
+      "metric": "minConfluence",
+      "from": 5,
+      "to": 6,
+      "reason": "Win-rate 53.3% < target 60% over 30 closed trades — raised confluence floor"
+    },
+    {
+      "ts": "2026-06-24T11:21:51.088Z",
+      "strategy": "confluence-weekly",
+      "metric": "minConfluence",
+      "from": 5,
+      "to": 6,
+      "reason": "Win-rate 0% < target 60% over 126 closed trades — raised confluence floor"
+    },
+    {
+      "ts": "2026-06-24T11:21:51.050Z",
+      "strategy": "confluence-monthly",
+      "metric": "minConfluence",
+      "from": 5,
+      "to": 6,
+      "reason": "Win-rate 0% < target 60% over 84 closed trades — raised confluence floor"
+    },
+    {
+      "ts": "2026-06-24T11:21:51.049Z",
+      "strategy": "options-mtf",
+      "metric": "minConfluence",
+      "from": 5,
+      "to": 6,
+      "reason": "Win-rate 0% < target 65% over 180 closed trades — raised confluence floor"
+    },
+    {
+      "ts": "2026-06-24T11:21:51.049Z",
+      "strategy": "oi-flow",
+      "metric": "minConfluence",
+      "from": 3,
+      "to": 2,
+      "reason": "Win-rate 100% > target+5 (80%) over 33 trades — relaxed to surface more setups"
+    },
+    {
+      "ts": "2026-06-24T11:21:50.704Z",
+      "strategy": "unknown",
+      "metric": "minConfluence",
+      "from": 5,
+      "to": 6,
+      "reason": "Win-rate 1.2% < target 60% over 2673 closed trades — raised confluence floor"
+    },
+    {
+      "ts": "2026-06-24T06:45:47.121Z",
+      "strategy": "confluence-weekly",
+      "metric": "minConfluence",
+      "from": 4,
+      "to": 5,
+      "reason": "Win-rate 0% < target 60% over 126 closed trades — raised confluence floor"
+    },
+    {
+      "ts": "2026-06-24T06:45:47.096Z",
+      "strategy": "confluence-monthly",
+      "metric": "minConfluence",
+      "from": 4,
+      "to": 5,
+      "reason": "Win-rate 0% < target 60% over 84 closed trades — raised confluence floor"
+    },
+    {
+      "ts": "2026-06-24T06:45:46.216Z",
+      "strategy": "options-mtf",
+      "metric": "minConfluence",
+      "from": 4,
+      "to": 5,
+      "reason": "Win-rate 0% < target 65% over 180 closed trades — raised confluence floor"
+    },
+    {
+      "ts": "2026-06-24T06:45:46.216Z",
+      "strategy": "oi-flow",
+      "metric": "minConfluence",
+      "from": 3,
+      "to": 4,
+      "reason": "Win-rate 100% > target+5 (80%) over 33 trades — relaxed to surface more setups"
+    },
+    {
+      "ts": "2026-06-24T06:45:45.387Z",
+      "strategy": "unknown",
+      "metric": "minConfluence",
+      "from": 4,
+      "to": 5,
+      "reason": "Win-rate 1.2% < target 60% over 2673 closed trades — raised confluence floor"
+    },
+    {
+      "ts": "2026-06-24T00:00:00.000Z",
+      "strategy": "*",
+      "metric": "RESET",
+      "from": 6,
+      "to": 0,
+      "reason": "PRO reset: prior auto-tune ratcheted EVERY strategy's minConfluence to 6/6 on noisy n=10-21 samples (±15% standard error). Headline 80% target was unrealistic for cash-equity swing/weekly. New regime: per-strategy realistic targets (60-75%), min n=30 closed before adjusting, and relax-asymmetry restored. Overrides cleared; strategies fall back to natural defaults."
+    }
+  ],
+  "lastPerf": {
+    "totalSignals": 107216,
+    "closedSignals": 3230,
+    "pending": 103986,
+    "wins": 120,
+    "losses": 113,
+    "expired": 2997,
+    "winRatePct": 3.7,
+    "avgWinPct": 40407.83,
+    "avgLossPct": -87.68,
+    "byStrategy": {
+      "unknown": {
+        "trades": 2722,
+        "wins": 49,
+        "losses": 70,
+        "winRatePct": 1.8
+      },
+      "intraday": {
+        "trades": 9,
+        "wins": 4,
+        "losses": 5,
+        "winRatePct": 44.4
+      },
+      "oi-flow": {
+        "trades": 33,
+        "wins": 33,
+        "losses": 0,
+        "winRatePct": 100
+      },
+      "commodity": {
+        "trades": 14,
+        "wins": 6,
+        "losses": 7,
+        "winRatePct": 42.9
+      },
+      "intraday-reversal": {
+        "trades": 17,
+        "wins": 7,
+        "losses": 10,
+        "winRatePct": 41.2
+      },
+      "swing": {
+        "trades": 33,
+        "wins": 16,
+        "losses": 15,
+        "winRatePct": 48.5
+      },
+      "harmonic": {
+        "trades": 11,
+        "wins": 5,
+        "losses": 6,
+        "winRatePct": 45.5
+      },
+      "options-mtf": {
+        "trades": 180,
+        "wins": 0,
+        "losses": 0,
+        "winRatePct": 0
+      },
+      "confluence-monthly": {
+        "trades": 84,
+        "wins": 0,
+        "losses": 0,
+        "winRatePct": 0
+      },
+      "confluence-weekly": {
+        "trades": 126,
+        "wins": 0,
+        "losses": 0,
+        "winRatePct": 0
+      },
+      "confluence-quarterly": {
+        "trades": 1,
+        "wins": 0,
+        "losses": 0,
+        "winRatePct": 0
+      }
+    }
+  },
+  "symbolBlacklist": {
+    "GODREJIND": 1788373416060,
+    "WABAG": 1788373416060,
+    "SPANDANA": 1788373416060
+  }
+}
