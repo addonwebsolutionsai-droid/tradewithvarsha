@@ -1019,6 +1019,59 @@ async function scanForNewTrades(book: Book): Promise<TradeEntry[]> {
         segmentBudget[seg] -= hedgePositionValue
       }
     }
+
+    // ─── F&O FUTURES hedge (3 Aug 2026 · user directive #7) ──────────
+    // "For F&O WHY WE ARE NOT TAKING HEDGE BETS?" — every futures LONG
+    // gets a protective 3-4% OTM PE at ~15% of position value. Futures
+    // SHORT gets a protective OTM CE. Caps max loss on adverse gap.
+    // Different from the OPTION hedge above (which is a tail hedge on
+    // an already-option trade). This is a futures-side insurance leg.
+    if (seg === 'FNO' && !isOptionRow && qty > 0) {
+      // Rough option premium proxy for 3-4% OTM = 0.8% of spot
+      const hedgePremium = Math.max(1, c.entry * 0.008)
+      // Size hedge to spend ~15% of primary futures notional
+      const hedgeBudget = positionValue * 0.15
+      const hedgeQty = Math.max(1, Math.floor(hedgeBudget / hedgePremium))
+      const hedgePositionValue = hedgeQty * hedgePremium
+      const availAfterAll = availableCash - opened.reduce((s, t) => s + t.positionValue, 0)
+      if (hedgePositionValue > 0 && hedgePositionValue <= segmentBudget[seg] && hedgePositionValue <= availAfterAll) {
+        const hedgeSide: 'PE' | 'CE' = direction === 'LONG' ? 'PE' : 'CE'
+        const strikeOffset = direction === 'LONG' ? -0.035 : 0.035  // 3.5% OTM
+        const hedgeStrike = Math.round((c.entry * (1 + strikeOffset)) / 50) * 50
+        const hedgeSymbol = `${trade.symbol}-FUT-HEDGE-${hedgeStrike}${hedgeSide}`
+        const futHedgeTrade: TradeEntry = {
+          id: `${hedgeSymbol}-${now}-LONG`,
+          symbol: hedgeSymbol,
+          segment: 'FNO',
+          direction: 'LONG',
+          source: `${c.source}-FUT-HEDGE`,
+          tier: c.tier,
+          score: c.score,
+          entryDate: now,
+          entryTime: time,
+          entryPrice: hedgePremium,
+          qty: hedgeQty,
+          remainingQty: hedgeQty,
+          positionValue: hedgePositionValue,
+          riskAmount: hedgeQty * hedgePremium * 0.6,      // hedge can lose ~60% in benign case
+          stopLoss: +(hedgePremium * 0.4).toFixed(2),      // -60% SL on hedge premium
+          target1: +(hedgePremium * 2.5).toFixed(2),        // +150%
+          target2: +(hedgePremium * 4).toFixed(2),           // +300%
+          target3: +(hedgePremium * 8).toFixed(2),           // +700% (rare tail event)
+          entryReason: `🛡 FUTURES HEDGE for ${trade.symbol} · protective ${hedgeStrike}${hedgeSide} · ~15% of futures notional · pays on adverse ${direction === 'LONG' ? 'gap-down' : 'gap-up'}`,
+          status: 'OPEN',
+          exits: [],
+          daysHeld: 0,
+          totalRealisedPnl: 0,
+          unrealisedPnl: 0,
+          totalPnl: 0,
+          returnPct: 0,
+        }
+        opened.push(futHedgeTrade)
+        segmentBudget[seg] -= hedgePositionValue
+        log.info('PAPER', `  ↳ hedge ${trade.symbol}: bought ${hedgeQty}× ${hedgeStrike}${hedgeSide} @ ₹${hedgePremium.toFixed(2)}`)
+      }
+    }
   }
   log.info('PAPER', `opened ${opened.length} · CASH ${opened.filter(t => t.segment === 'CASH').length} · FNO ${opened.filter(t => t.segment === 'FNO').length} · MCX ${opened.filter(t => t.segment === 'MCX').length}`)
   return opened

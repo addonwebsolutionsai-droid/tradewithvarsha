@@ -376,12 +376,15 @@ async function evaluatePillars(
   pillars.push({ name: 'multi-source-fresh', pass: p1Pass, detail: `${sourceCount} sources within ${spanDays.toFixed(1)}d` })
   if (!p1Pass) return { reason: `pillar-1-multi-source (${sourceCount} sources, ${spanDays.toFixed(1)}d span)` }
 
-  // Pillar 7 early bail: chase filter + market cap
+  // Pillar 7: PRE-MOVE strict (3 Aug 2026) — user directive: "AGENDA IS
+  // YOU GENERATE THE SIGNAL BEFORE MOVE STARTED NOT AFTER". Tightened
+  // from [-6%, +6%] to [-3%, +3%]. Setups already up/down >3% in 5d are
+  // extended, not pre-move.
   const ret5d = Number(c.ret5d ?? 0)
-  const notChased = ret5d >= -6 && ret5d <= 6
-  const p7chase: PillarCheck = { name: 'not-chased', pass: notChased, detail: `5d ret ${ret5d.toFixed(1)}%` }
+  const notChased = ret5d >= -3 && ret5d <= 3
+  const p7chase: PillarCheck = { name: 'pre-move-strict', pass: notChased, detail: `5d ret ${ret5d.toFixed(1)}% (must be within ±3%)` }
   pillars.push(p7chase)
-  if (!notChased) return { reason: `pillar-chase (5d ${ret5d.toFixed(1)}%)` }
+  if (!notChased) return { reason: `pillar-pre-move (5d ${ret5d.toFixed(1)}% — extended)` }
 
   // Pillar 7 R:R
   const risk = Math.abs(c.entry - c.stopLoss)

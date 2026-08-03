@@ -328,10 +328,37 @@ export async function evaluateSlDecision(input: SlDecisionInput): Promise<SlDeci
   let confidence: number
   let verdictLine: string
 
+  // HARD OVERRIDE (3 Aug 2026 · user directive #6):
+  //   "IF FII, PROMOTERS AND DII ANY OF THESE ARE INCREASING STAKES, WE
+  //    SHOULD NOT TAKE SL INSTEAD KEEP THIS"
+  // If institutions are actively accumulating AND we're not hard-invalidated,
+  // NEVER exit on an SL touch. Either AVERAGE (if not already) or HOLD.
+  const anyInstAccumulating = !!(shp && !input.isShort && (
+    (shp.fiiDeltaQoQ ?? 0) > 0.3 ||
+    (shp.promoterDeltaQoQ ?? 0) > 0.1 ||
+    (shp.diiDeltaQoQ ?? 0) > 0.5
+  ) && (shp.promoterPledgePct ?? 0) < 15)
+
   if (hardInvalidated) {
     action = 'EXIT'
     confidence = 95
     verdictLine = `EXIT · hard invalidation floor breached at ₹${input.hardInvalidation!.toFixed(2)}. Case is broken — no averaging.`
+  } else if (anyInstAccumulating && !input.alreadyAveraged) {
+    // Institutions buying + first hunt → AVERAGE regardless of trap score.
+    action = 'AVERAGE'
+    confidence = 90
+    const parts: string[] = []
+    if ((shp!.fiiDeltaQoQ ?? 0) > 0.3) parts.push(`FII ↑ ${shp!.fiiDeltaQoQ!.toFixed(2)}pp`)
+    if ((shp!.promoterDeltaQoQ ?? 0) > 0.1) parts.push(`Promoter ↑ ${shp!.promoterDeltaQoQ!.toFixed(2)}pp`)
+    if ((shp!.diiDeltaQoQ ?? 0) > 0.5) parts.push(`DII ↑ ${shp!.diiDeltaQoQ!.toFixed(2)}pp`)
+    verdictLine = `AVERAGE IN · HARD OVERRIDE (institutional accumulation: ${parts.join(' + ')}). User rule: never take SL when smart money is buying. Adding 50% at hunted price.`
+    breakdown.push({ name: '🛡 Hard-hold override', pts: 100, reason: `Institutional accumulation active — SL suppressed per user rule` })
+  } else if (anyInstAccumulating && input.alreadyAveraged) {
+    // Already averaged once but institutions STILL buying → HOLD (don't exit)
+    action = 'HOLD'
+    confidence = 80
+    verdictLine = `HOLD · already averaged once but institutions still accumulating. Waiting for hard invalidation.`
+    breakdown.push({ name: '🛡 Hard-hold override', pts: 50, reason: `Post-average institutional support — hold until hard invalidation` })
   } else if (input.alreadyAveraged) {
     action = 'EXIT'
     confidence = 80

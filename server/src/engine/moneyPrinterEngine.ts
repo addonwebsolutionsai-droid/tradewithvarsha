@@ -258,7 +258,19 @@ export async function runMoneyPrinterScan(): Promise<{
         }
 
         const volAccum = vb.vol5d20dRatio >= 1.3 && vb.upDownVolRatio >= 1.3
-        const tightBase = vb.range10dPct <= 8
+        // Tightened 3 Aug 2026 — user rule: "SIGNAL BEFORE MOVE STARTED"
+        const tightBase = vb.range10dPct <= 6
+
+        // PRE-MOVE gate: 5-day return must be small (compression, not
+        // already-moving). Compute from candles.
+        const last = candles[candles.length - 1].close
+        const ref5 = candles[candles.length - 6]?.close ?? last
+        const ret5dHere = ((last - ref5) / ref5) * 100
+        const preMove = Math.abs(ret5dHere) <= 3
+        if (!preMove) {
+          filteredOut['pre-move-extended'] = (filteredOut['pre-move-extended'] ?? 0) + 1
+          continue
+        }
 
         // Gate B: volume accumulation required
         if (!volAccum) {
