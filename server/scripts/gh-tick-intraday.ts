@@ -318,6 +318,21 @@ async function main() {
     log.err('TICK', `pro-setups: ${(e as Error).message}`)
   }
 
+  // ─── 3a-1a. NIFTY Bias Composer (31 Jul 2026) — the Jul-25 miss fix.
+  //           Composes OI-buildup + long-horizon + foresight + trend into
+  //           ONE unified BULLISH/BEARISH call with trade plan. Also
+  //           hydrates nifty-outlook.json when foresight returns NO_DATA
+  //           so /nifty-outlook never renders empty.
+  try {
+    const t = Date.now()
+    const { runNiftyBiasComposer } = await import('../src/engine/niftyBiasComposer')
+    const r = await runNiftyBiasComposer()
+    results['nifty-bias'] = `${r.direction} ${r.confidence} · net ${r.netScore} · ${r.sources.length} sources · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['nifty-bias'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `nifty-bias: ${(e as Error).message}`)
+  }
+
   // ─── 3a-1b. Money-Printer Engine — the Moschip / Marksans / Epack /
   //           VIP / Hikal winning-setup pattern. Multi-TF harmonic OR
   //           Wave-3 + volume-accum + tight base. Runs BEFORE MASTER.

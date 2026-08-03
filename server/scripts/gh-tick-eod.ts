@@ -237,6 +237,15 @@ async function main() {
       const r = await m.runCommodityScan()
       return `${r.rows.length} MCX setups (${r.eliteCount} elite · ${r.strongCount} strong)`
     }],
+    // ─── NIFTY Bias Composer (31 Jul 2026) — the Jul-25 miss fix.
+    //     Runs AFTER oi-buildup + nifty-outlook + nifty-long-horizon so it
+    //     has fresh inputs. Emits nifty-bias.json + hydrates nifty-outlook
+    //     when foresight returned NO_DATA.
+    ['nifty-bias', async () => {
+      const m = await import('../src/engine/niftyBiasComposer')
+      const r = await m.runNiftyBiasComposer()
+      return `${r.direction} ${r.confidence} · net ${r.netScore} · spot ₹${r.spot.toFixed(2)}`
+    }],
     // ─── Money-Printer Engine (30 Jul 2026) — the Moschip / Marksans /
     //     Epack / VIP / Hikal winning-setup pattern. Requires multi-TF
     //     harmonic (1D + 1W OR 1M) OR Elliott Wave-3, PLUS volume
