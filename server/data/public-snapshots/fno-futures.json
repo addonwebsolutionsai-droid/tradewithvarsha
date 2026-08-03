@@ -1,34 +1,276 @@
 {
-  "generatedAt": "2026-08-03T07:31:33.815Z",
+  "generatedAt": "2026-08-03T07:39:23.411Z",
   "universeSize": 25,
   "total": 25,
   "highConvCount": 25,
   "medConvCount": 0,
   "rows": [
     {
-      "symbol": "LICHSGFIN",
-      "side": "SHORT",
-      "price": 517.5999755859375,
-      "entry": 517.5999755859375,
-      "stopLoss": 540.89,
-      "target1": 486.54,
-      "target2": 455.49,
-      "target3": 414.08,
+      "symbol": "ABCAPITAL",
+      "side": "LONG",
+      "price": 424.55,
+      "entry": 424.55,
+      "stopLoss": 399.08,
+      "target1": 450.02,
+      "target2": 475.5,
+      "target3": 509.46,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
       "expectedMovePct": 20,
-      "score": 91,
+      "score": 98.4,
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": -6.189401796839602,
-        "ret20d": -5.693723492770195,
-        "rsi14": 33.350693297698825,
-        "bbWidthPct": 6.9262052380335835,
-        "distFromHigh20": 6.477556388178954,
+        "ret5d": 6.018229491821706,
+        "ret20d": 3.6119585112873733,
+        "rsi14": 63.42887473460721,
+        "bbWidthPct": 9.13908844659051,
+        "distFromHigh20": 0,
+        "distFromLow20": 10.058327932598836,
+        "volRatio": 1.435603230861357,
+        "emaStackBull": true,
+        "emaStackBear": false
+      },
+      "confluences": [
+        {
+          "name": "EMA 9>21>50 stack",
+          "pass": true,
+          "detail": "9=403.6 21=398.7 50=384.5"
+        },
+        {
+          "name": "At 20d high",
+          "pass": true,
+          "detail": "0.0% off"
+        },
+        {
+          "name": "Tight coil (BB <12%)",
+          "pass": true,
+          "detail": "9.1%"
+        },
+        {
+          "name": "Vol 5d/20d rising >1.3×",
+          "pass": true,
+          "detail": "1.44×"
+        },
+        {
+          "name": "RSI 50–70 productive",
+          "pass": true,
+          "detail": "63"
+        },
+        {
+          "name": "20d return 5–25% (not extended)",
+          "pass": false,
+          "detail": "3.6%"
+        },
+        {
+          "name": "FII stake ↑",
+          "pass": true,
+          "detail": "+0.93pp QoQ"
+        },
+        {
+          "name": "Promoter stable/buying",
+          "pass": true,
+          "detail": "+0.30pp"
+        }
+      ],
+      "reasons": [
+        "EMA 9>21>50 stack: 9=403.6 21=398.7 50=384.5",
+        "At 20d high: 0.0% off",
+        "Tight coil (BB <12%): 9.1%",
+        "Vol 5d/20d rising >1.3×: 1.44×",
+        "RSI 50–70 productive: 63"
+      ],
+      "fiiDelta": 0.9300000000000006,
+      "diiDelta": -0.3500000000000014,
+      "promoterDelta": 0.29999999999999716,
+      "marketCapCr": 116478,
+      "twelveCriteria": {
+        "total": 55,
+        "passCount": 7,
+        "results": [
+          {
+            "key": "seasonality",
+            "label": "Seasonality",
+            "pass": false,
+            "score": 0,
+            "detail": "Month 8 not in LONG seasonal sweet spot"
+          },
+          {
+            "key": "cycle",
+            "label": "Cycle (Gann 90d)",
+            "pass": true,
+            "score": 10,
+            "detail": "near 90d HIGH — inflection cycle window"
+          },
+          {
+            "key": "volume_increase",
+            "label": "Volume Increase (today / 20d)",
+            "pass": true,
+            "score": 10,
+            "detail": "3.03× 20d avg"
+          },
+          {
+            "key": "stakes",
+            "label": "FII/DII/Promoter ↑",
+            "pass": true,
+            "score": 7.5,
+            "detail": "FII 7.9% (+0.93%) · DII 13.4% (-0.35%) · P 68.8% · Pledge 0.0%"
+          },
+          {
+            "key": "vol5d20d",
+            "label": "Last 5-day Vol Formula (5d/20d)",
+            "pass": false,
+            "score": 0,
+            "detail": "1.07× — no consistent build"
+          },
+          {
+            "key": "technical",
+            "label": "Technical (EMA+RSI+ADX+MACD)",
+            "pass": true,
+            "score": 7.5,
+            "detail": "EMA✓ · RSI 63✓ · ADX 20✓ · MACD✗"
+          },
+          {
+            "key": "harmonic",
+            "label": "Harmonic / Fib PRZ",
+            "pass": false,
+            "score": 0,
+            "detail": "near none retrace of 50d range"
+          },
+          {
+            "key": "elliott",
+            "label": "Elliott W1/W3/W4",
+            "pass": false,
+            "score": 0,
+            "detail": "impulse 10.1% · no wave"
+          },
+          {
+            "key": "darvas",
+            "label": "Darvas Box",
+            "pass": true,
+            "score": 8,
+            "detail": "3x box top"
+          },
+          {
+            "key": "news",
+            "label": "News-Driven",
+            "pass": false,
+            "score": 0,
+            "detail": "no news-driven bar"
+          },
+          {
+            "key": "accumulation",
+            "label": "Big-hands Accumulation",
+            "pass": true,
+            "score": 6,
+            "detail": "OBV 25% vs price 5%"
+          },
+          {
+            "key": "tight_range",
+            "label": "Tight Range b/f Blast",
+            "pass": false,
+            "score": 0,
+            "detail": "ATR contraction 119% · BB-w 9.5%"
+          },
+          {
+            "key": "oi_buildup",
+            "label": "OI Buildup direction",
+            "pass": false,
+            "score": 0,
+            "detail": "no OI snapshot for ABCAPITAL"
+          },
+          {
+            "key": "market_regime",
+            "label": "Market Regime",
+            "pass": true,
+            "score": 6,
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
+          },
+          {
+            "key": "vix",
+            "label": "VIX Context",
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
+          },
+          {
+            "key": "rr_floor",
+            "label": "R:R ≥ 2.5",
+            "pass": false,
+            "score": 0,
+            "detail": "1.00:1 reward:risk"
+          },
+          {
+            "key": "bulk_deals",
+            "label": "Bulk-deals confirm",
+            "pass": false,
+            "score": 0,
+            "detail": "no recent named buyer/seller"
+          },
+          {
+            "key": "rs_z",
+            "label": "RS-z vs NIFTY",
+            "pass": false,
+            "score": 0,
+            "detail": "stock 20d 3.6% vs NIFTY 0.7% · z=0.85"
+          },
+          {
+            "key": "smc",
+            "label": "SMC (FVG/OB/BoS/Sweep)",
+            "pass": false,
+            "score": 3,
+            "detail": "BoS: bullish BoS — close 424.6 > 20d swing high 413.0"
+          },
+          {
+            "key": "stage_analysis",
+            "label": "Stage Analysis (30W lifecycle)",
+            "pass": false,
+            "score": 0,
+            "detail": "<160 bars (need ~30 weeks)"
+          },
+          {
+            "key": "kp_astro",
+            "label": "KP sub-lord alignment",
+            "pass": false,
+            "score": -3,
+            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
+          },
+          {
+            "key": "bradley",
+            "label": "Bradley siderograph",
+            "pass": false,
+            "score": 0,
+            "detail": "compute failed: undefined"
+          }
+        ]
+      },
+      "asOf": "2026-08-03T07:38:58.081Z"
+    },
+    {
+      "symbol": "LICHSGFIN",
+      "side": "SHORT",
+      "price": 516.5499877929688,
+      "entry": 516.5499877929688,
+      "stopLoss": 539.79,
+      "target1": 485.56,
+      "target2": 454.56,
+      "target3": 413.24,
+      "target1Date": "2026-08-12",
+      "target2Date": "2026-08-21",
+      "target3Date": "2026-09-01",
+      "expectedMovePct": 20,
+      "score": 96,
+      "confidence": "HIGH",
+      "grade": "A",
+      "features": {
+        "ret5d": -6.379703163938605,
+        "ret20d": -5.885030378016533,
+        "rsi14": 32.99024255092175,
+        "bbWidthPct": 7.1435534384044725,
+        "distFromHigh20": 6.667273213512762,
         "distFromLow20": 0,
-        "volRatio": 1.4380391118937867,
+        "volRatio": 1.4443393286387056,
         "emaStackBull": false,
         "emaStackBear": true
       },
@@ -36,7 +278,7 @@
         {
           "name": "EMA 9<21<50 stack",
           "pass": true,
-          "detail": "9=536.4 21=542.0 50=544.0"
+          "detail": "9=536.2 21=541.9 50=544.0"
         },
         {
           "name": "At 20d low",
@@ -46,7 +288,7 @@
         {
           "name": "Tight coil (BB <12%)",
           "pass": true,
-          "detail": "6.9%"
+          "detail": "7.1%"
         },
         {
           "name": "Vol 5d/20d distribution >1.3×",
@@ -61,33 +303,33 @@
         {
           "name": "20d return -25–-5% (breakdown)",
           "pass": true,
-          "detail": "-5.7%"
+          "detail": "-5.9%"
         },
         {
           "name": "FII stake ↑",
           "pass": false,
-          "detail": "unavailable"
+          "detail": "0.08pp QoQ"
         },
         {
           "name": "Promoter stable/buying",
-          "pass": false,
-          "detail": "unavailable"
+          "pass": true,
+          "detail": "+0.00pp"
         }
       ],
       "reasons": [
-        "EMA 9<21<50 stack: 9=536.4 21=542.0 50=544.0",
+        "EMA 9<21<50 stack: 9=536.2 21=541.9 50=544.0",
         "At 20d low: 0.0% off",
-        "Tight coil (BB <12%): 6.9%",
+        "Tight coil (BB <12%): 7.1%",
         "Vol 5d/20d distribution >1.3×: 1.44×",
         "RSI 30–50 weak: 33",
-        "20d return -25–-5% (breakdown): -5.7%"
+        "20d return -25–-5% (breakdown): -5.9%"
       ],
-      "fiiDelta": null,
-      "diiDelta": null,
-      "promoterDelta": null,
-      "marketCapCr": null,
+      "fiiDelta": 0.0799999999999983,
+      "diiDelta": 0.129999999999999,
+      "promoterDelta": 0,
+      "marketCapCr": 28455,
       "twelveCriteria": {
-        "total": 35.5,
+        "total": 40.5,
         "passCount": 5,
         "results": [
           {
@@ -102,21 +344,21 @@
             "label": "Cycle (Gann 90d)",
             "pass": false,
             "score": 0,
-            "detail": "mid-range 30% of 90d band — no cycle edge"
+            "detail": "mid-range 29% of 90d band — no cycle edge"
           },
           {
             "key": "volume_increase",
             "label": "Volume Increase (today / 20d)",
             "pass": false,
             "score": 0,
-            "detail": "1.15× 20d avg"
+            "detail": "1.20× 20d avg"
           },
           {
             "key": "stakes",
             "label": "FII/DII/Promoter ↑",
             "pass": false,
-            "score": 0,
-            "detail": "no shareholding data"
+            "score": 5,
+            "detail": "FII 21.5% (+0.08%) · DII 21.0% (+0.13%) · P 45.2% · Pledge 0.0%"
           },
           {
             "key": "vol5d20d",
@@ -130,7 +372,7 @@
             "label": "Technical (EMA+RSI+ADX+MACD)",
             "pass": true,
             "score": 7.5,
-            "detail": "EMA✓ · RSI 33✓ · ADX 27✓ · MACD✗"
+            "detail": "EMA✓ · RSI 33✓ · ADX 28✓ · MACD✗"
           },
           {
             "key": "harmonic",
@@ -172,7 +414,7 @@
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 113% · BB-w 8.3%"
+            "detail": "ATR contraction 114% · BB-w 8.4%"
           },
           {
             "key": "oi_buildup",
@@ -186,14 +428,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
             "pass": false,
             "score": 0,
-            "detail": "VIX 11.9 (LOW) ✗ not aligned"
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -214,14 +456,14 @@
             "label": "RS-z vs NIFTY",
             "pass": false,
             "score": 0,
-            "detail": "stock 20d -5.7% vs NIFTY 0.7% · z=-1.84"
+            "detail": "stock 20d -5.9% vs NIFTY 0.7% · z=-1.89"
           },
           {
             "key": "smc",
             "label": "SMC (FVG/OB/BoS/Sweep)",
             "pass": true,
             "score": 6,
-            "detail": "FVG: bearish FVG ₹540.2–546.6 · BoS: bearish BoS — close 517.6 < 20d swing low 521.5"
+            "detail": "FVG: bearish FVG ₹540.2–546.6 · BoS: bearish BoS — close 516.5 < 20d swing low 521.5"
           },
           {
             "key": "stage_analysis",
@@ -246,17 +488,17 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
       "symbol": "WAAREEENER",
       "side": "SHORT",
-      "price": 2686.39990234375,
-      "entry": 2686.39990234375,
-      "stopLoss": 2847.58,
-      "target1": 2525.22,
-      "target2": 2364.03,
-      "target3": 2149.12,
+      "price": 2686,
+      "entry": 2686,
+      "stopLoss": 2847.16,
+      "target1": 2524.84,
+      "target2": 2363.68,
+      "target3": 2148.8,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
@@ -265,13 +507,13 @@
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": -2.006274237953315,
-        "ret20d": -6.598986581263,
-        "rsi14": 36.74397708766216,
-        "bbWidthPct": 11.092912851136195,
-        "distFromHigh20": 8.091279479340386,
-        "distFromLow20": 2.342946485124526,
-        "volRatio": 1.9019587887552714,
+        "ret5d": -2.0208617610435473,
+        "ret20d": -6.61289042489484,
+        "rsi14": 36.6937761812891,
+        "bbWidthPct": 11.094564408041698,
+        "distFromHigh20": 8.104961177554864,
+        "distFromLow20": 2.327711529178475,
+        "volRatio": 1.9023713791128618,
         "emaStackBull": false,
         "emaStackBear": true
       },
@@ -279,7 +521,7 @@
         {
           "name": "EMA 9<21<50 stack",
           "pass": true,
-          "detail": "9=2707.7 21=2773.5 50=2891.4"
+          "detail": "9=2707.6 21=2773.5 50=2891.3"
         },
         {
           "name": "At 20d low",
@@ -318,7 +560,7 @@
         }
       ],
       "reasons": [
-        "EMA 9<21<50 stack: 9=2707.7 21=2773.5 50=2891.4",
+        "EMA 9<21<50 stack: 9=2707.6 21=2773.5 50=2891.3",
         "At 20d low: 2.3% off",
         "Tight coil (BB <12%): 11.1%",
         "Vol 5d/20d distribution >1.3×: 1.90×",
@@ -429,14 +671,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
             "pass": false,
             "score": 0,
-            "detail": "VIX 11.9 (LOW) ✗ not aligned"
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -489,17 +731,17 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
-      "symbol": "MUTHOOTFIN",
+      "symbol": "DABUR",
       "side": "SHORT",
-      "price": 2877.60009765625,
-      "entry": 2877.60009765625,
-      "stopLoss": 3050.26,
-      "target1": 2704.94,
-      "target2": 2532.29,
-      "target3": 2302.08,
+      "price": 423.5,
+      "entry": 423.5,
+      "stopLoss": 442.56,
+      "target1": 398.09,
+      "target2": 372.68,
+      "target3": 338.8,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
@@ -508,13 +750,13 @@
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": -4.901014887261554,
-        "ret20d": -8.286588217351756,
-        "rsi14": 39.12908631580879,
-        "bbWidthPct": 8.750340427517573,
-        "distFromHigh20": 8.046264860522163,
-        "distFromLow20": 0,
-        "volRatio": 1.9411636788744941,
+        "ret5d": -0.9009023162580815,
+        "ret20d": -5.836575875486381,
+        "rsi14": 37.10246282895352,
+        "bbWidthPct": 7.567883776379871,
+        "distFromHigh20": 6.615214994487322,
+        "distFromLow20": 0.4864130344268974,
+        "volRatio": 1.736357285373855,
         "emaStackBull": false,
         "emaStackBear": true
       },
@@ -522,32 +764,32 @@
         {
           "name": "EMA 9<21<50 stack",
           "pass": true,
-          "detail": "9=3005.9 21=3028.4 50=3097.9"
+          "detail": "9=426.0 21=428.9 50=432.4"
         },
         {
           "name": "At 20d low",
           "pass": true,
-          "detail": "0.0% off"
+          "detail": "0.5% off"
         },
         {
           "name": "Tight coil (BB <12%)",
           "pass": true,
-          "detail": "8.8%"
+          "detail": "7.6%"
         },
         {
           "name": "Vol 5d/20d distribution >1.3×",
           "pass": true,
-          "detail": "1.94×"
+          "detail": "1.74×"
         },
         {
           "name": "RSI 30–50 weak",
           "pass": true,
-          "detail": "39"
+          "detail": "37"
         },
         {
           "name": "20d return -25–-5% (breakdown)",
           "pass": true,
-          "detail": "-8.3%"
+          "detail": "-5.8%"
         },
         {
           "name": "FII stake ↑",
@@ -561,12 +803,255 @@
         }
       ],
       "reasons": [
-        "EMA 9<21<50 stack: 9=3005.9 21=3028.4 50=3097.9",
+        "EMA 9<21<50 stack: 9=426.0 21=428.9 50=432.4",
+        "At 20d low: 0.5% off",
+        "Tight coil (BB <12%): 7.6%",
+        "Vol 5d/20d distribution >1.3×: 1.74×",
+        "RSI 30–50 weak: 37",
+        "20d return -25–-5% (breakdown): -5.8%"
+      ],
+      "fiiDelta": null,
+      "diiDelta": null,
+      "promoterDelta": null,
+      "marketCapCr": null,
+      "twelveCriteria": {
+        "total": 34,
+        "passCount": 4,
+        "results": [
+          {
+            "key": "seasonality",
+            "label": "Seasonality",
+            "pass": false,
+            "score": 0,
+            "detail": "Month 8 not in SHORT seasonal sweet spot"
+          },
+          {
+            "key": "cycle",
+            "label": "Cycle (Gann 90d)",
+            "pass": false,
+            "score": 0,
+            "detail": "mid-range 23% of 90d band — no cycle edge"
+          },
+          {
+            "key": "volume_increase",
+            "label": "Volume Increase (today / 20d)",
+            "pass": false,
+            "score": 0,
+            "detail": "0.59× 20d avg"
+          },
+          {
+            "key": "stakes",
+            "label": "FII/DII/Promoter ↑",
+            "pass": false,
+            "score": 0,
+            "detail": "no shareholding data"
+          },
+          {
+            "key": "vol5d20d",
+            "label": "Last 5-day Vol Formula (5d/20d)",
+            "pass": true,
+            "score": 8,
+            "detail": "1.59× — sustained accumulation"
+          },
+          {
+            "key": "technical",
+            "label": "Technical (EMA+RSI+ADX+MACD)",
+            "pass": true,
+            "score": 10,
+            "detail": "EMA✓ · RSI 37✓ · ADX 25✓ · MACD✓"
+          },
+          {
+            "key": "harmonic",
+            "label": "Harmonic / Fib PRZ",
+            "pass": false,
+            "score": 0,
+            "detail": "near none retrace of 50d range"
+          },
+          {
+            "key": "elliott",
+            "label": "Elliott Wave 1/3/4",
+            "pass": false,
+            "score": 0,
+            "detail": "no impulse pattern"
+          },
+          {
+            "key": "darvas",
+            "label": "Darvas Box",
+            "pass": false,
+            "score": 0,
+            "detail": "no box pattern"
+          },
+          {
+            "key": "news",
+            "label": "News-Driven",
+            "pass": false,
+            "score": 0,
+            "detail": "no news-driven bar"
+          },
+          {
+            "key": "accumulation",
+            "label": "Big-hands Accumulation",
+            "pass": false,
+            "score": 0,
+            "detail": "OBV -93% vs price -7%"
+          },
+          {
+            "key": "tight_range",
+            "label": "Tight Range b/f Blast",
+            "pass": false,
+            "score": 0,
+            "detail": "ATR contraction 103% · BB-w 3.0%"
+          },
+          {
+            "key": "oi_buildup",
+            "label": "OI Buildup direction",
+            "pass": false,
+            "score": 0,
+            "detail": "no OI snapshot for DABUR"
+          },
+          {
+            "key": "market_regime",
+            "label": "Market Regime",
+            "pass": true,
+            "score": 6,
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
+          },
+          {
+            "key": "vix",
+            "label": "VIX Context",
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
+          },
+          {
+            "key": "rr_floor",
+            "label": "R:R ≥ 2.5",
+            "pass": false,
+            "score": 0,
+            "detail": "1.33:1 reward:risk"
+          },
+          {
+            "key": "bulk_deals",
+            "label": "Bulk-deals confirm",
+            "pass": false,
+            "score": 0,
+            "detail": "no recent named buyer/seller"
+          },
+          {
+            "key": "rs_z",
+            "label": "RS-z vs NIFTY",
+            "pass": false,
+            "score": 0,
+            "detail": "stock 20d -5.8% vs NIFTY 0.7% · z=-1.88"
+          },
+          {
+            "key": "smc",
+            "label": "SMC (FVG/OB/BoS/Sweep)",
+            "pass": false,
+            "score": 0,
+            "detail": "no aligned SMC primitives"
+          },
+          {
+            "key": "stage_analysis",
+            "label": "Stage Analysis (30W lifecycle)",
+            "pass": false,
+            "score": 0,
+            "detail": "<160 bars (need ~30 weeks)"
+          },
+          {
+            "key": "kp_astro",
+            "label": "KP sub-lord alignment",
+            "pass": true,
+            "score": 10,
+            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
+          },
+          {
+            "key": "bradley",
+            "label": "Bradley siderograph",
+            "pass": false,
+            "score": 0,
+            "detail": "compute failed: undefined"
+          }
+        ]
+      },
+      "asOf": "2026-08-03T07:38:58.081Z"
+    },
+    {
+      "symbol": "MUTHOOTFIN",
+      "side": "SHORT",
+      "price": 2879.10009765625,
+      "entry": 2879.10009765625,
+      "stopLoss": 3051.85,
+      "target1": 2706.35,
+      "target2": 2533.61,
+      "target3": 2303.28,
+      "target1Date": "2026-08-12",
+      "target2Date": "2026-08-21",
+      "target3Date": "2026-09-01",
+      "expectedMovePct": 20,
+      "score": 89.8,
+      "confidence": "HIGH",
+      "grade": "A",
+      "features": {
+        "ret5d": -4.8514428575047805,
+        "ret20d": -8.238780977636265,
+        "rsi14": 39.2212415026093,
+        "bbWidthPct": 8.693681921349597,
+        "distFromHigh20": 7.998332348001899,
+        "distFromLow20": 0,
+        "volRatio": 1.9465297405208557,
+        "emaStackBull": false,
+        "emaStackBear": true
+      },
+      "confluences": [
+        {
+          "name": "EMA 9<21<50 stack",
+          "pass": true,
+          "detail": "9=3006.2 21=3028.5 50=3097.9"
+        },
+        {
+          "name": "At 20d low",
+          "pass": true,
+          "detail": "0.0% off"
+        },
+        {
+          "name": "Tight coil (BB <12%)",
+          "pass": true,
+          "detail": "8.7%"
+        },
+        {
+          "name": "Vol 5d/20d distribution >1.3×",
+          "pass": true,
+          "detail": "1.95×"
+        },
+        {
+          "name": "RSI 30–50 weak",
+          "pass": true,
+          "detail": "39"
+        },
+        {
+          "name": "20d return -25–-5% (breakdown)",
+          "pass": true,
+          "detail": "-8.2%"
+        },
+        {
+          "name": "FII stake ↑",
+          "pass": false,
+          "detail": "unavailable"
+        },
+        {
+          "name": "Promoter stable/buying",
+          "pass": false,
+          "detail": "unavailable"
+        }
+      ],
+      "reasons": [
+        "EMA 9<21<50 stack: 9=3006.2 21=3028.5 50=3097.9",
         "At 20d low: 0.0% off",
-        "Tight coil (BB <12%): 8.8%",
-        "Vol 5d/20d distribution >1.3×: 1.94×",
+        "Tight coil (BB <12%): 8.7%",
+        "Vol 5d/20d distribution >1.3×: 1.95×",
         "RSI 30–50 weak: 39",
-        "20d return -25–-5% (breakdown): -8.3%"
+        "20d return -25–-5% (breakdown): -8.2%"
       ],
       "fiiDelta": null,
       "diiDelta": null,
@@ -595,7 +1080,7 @@
             "label": "Volume Increase (today / 20d)",
             "pass": true,
             "score": 10,
-            "detail": "8.60× 20d avg"
+            "detail": "8.67× 20d avg"
           },
           {
             "key": "stakes",
@@ -651,14 +1136,14 @@
             "label": "Big-hands Accumulation",
             "pass": false,
             "score": 0,
-            "detail": "OBV -99% vs price -8%"
+            "detail": "OBV -100% vs price -8%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 153% · BB-w 7.9%"
+            "detail": "ATR contraction 153% · BB-w 7.8%"
           },
           {
             "key": "oi_buildup",
@@ -672,14 +1157,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
             "pass": false,
             "score": 0,
-            "detail": "VIX 11.9 (LOW) ✗ not aligned"
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -700,14 +1185,14 @@
             "label": "RS-z vs NIFTY",
             "pass": false,
             "score": 0,
-            "detail": "stock 20d -8.3% vs NIFTY 0.7% · z=-2.59"
+            "detail": "stock 20d -8.2% vs NIFTY 0.7% · z=-2.57"
           },
           {
             "key": "smc",
             "label": "SMC (FVG/OB/BoS/Sweep)",
             "pass": false,
             "score": 3,
-            "detail": "BoS: bearish BoS — close 2877.6 < 20d swing low 2925.1"
+            "detail": "BoS: bearish BoS — close 2879.1 < 20d swing low 2925.1"
           },
           {
             "key": "stage_analysis",
@@ -732,17 +1217,17 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
       "symbol": "TIINDIA",
       "side": "SHORT",
-      "price": 2755,
-      "entry": 2755,
-      "stopLoss": 2920.3,
-      "target1": 2589.7,
-      "target2": 2424.4,
-      "target3": 2204,
+      "price": 2748.89990234375,
+      "entry": 2748.89990234375,
+      "stopLoss": 2913.83,
+      "target1": 2583.97,
+      "target2": 2419.03,
+      "target3": 2199.12,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
@@ -751,13 +1236,13 @@
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": -3.3095864672767337,
-        "ret20d": -8.34691475082451,
-        "rsi14": 35.357201503632595,
-        "bbWidthPct": 10.526315789473683,
-        "distFromHigh20": 7.513094036512087,
-        "distFromLow20": 2.4620630009556606,
-        "volRatio": 1.7217578651592735,
+        "ret5d": -3.5236775616407296,
+        "ret20d": -8.549852235585517,
+        "rsi14": 34.860545438789785,
+        "bbWidthPct": 10.549674790003886,
+        "distFromHigh20": 7.71787776003357,
+        "distFromLow20": 2.2351923692436206,
+        "volRatio": 1.7229270281818754,
         "emaStackBull": false,
         "emaStackBear": true
       },
@@ -765,12 +1250,12 @@
         {
           "name": "EMA 9<21<50 stack",
           "pass": true,
-          "detail": "9=2792.9 21=2867.2 50=2934.8"
+          "detail": "9=2791.6 21=2866.6 50=2934.5"
         },
         {
           "name": "At 20d low",
           "pass": true,
-          "detail": "2.5% off"
+          "detail": "2.2% off"
         },
         {
           "name": "Tight coil (BB <12%)",
@@ -790,7 +1275,7 @@
         {
           "name": "20d return -25–-5% (breakdown)",
           "pass": true,
-          "detail": "-8.3%"
+          "detail": "-8.5%"
         },
         {
           "name": "FII stake ↑",
@@ -804,12 +1289,12 @@
         }
       ],
       "reasons": [
-        "EMA 9<21<50 stack: 9=2792.9 21=2867.2 50=2934.8",
-        "At 20d low: 2.5% off",
+        "EMA 9<21<50 stack: 9=2791.6 21=2866.6 50=2934.5",
+        "At 20d low: 2.2% off",
         "Tight coil (BB <12%): 10.5%",
         "Vol 5d/20d distribution >1.3×: 1.72×",
         "RSI 30–50 weak: 35",
-        "20d return -25–-5% (breakdown): -8.3%"
+        "20d return -25–-5% (breakdown): -8.5%"
       ],
       "fiiDelta": null,
       "diiDelta": null,
@@ -831,14 +1316,14 @@
             "label": "Cycle (Gann 90d)",
             "pass": false,
             "score": 0,
-            "detail": "mid-range 33% of 90d band — no cycle edge"
+            "detail": "mid-range 32% of 90d band — no cycle edge"
           },
           {
             "key": "volume_increase",
             "label": "Volume Increase (today / 20d)",
             "pass": false,
             "score": 0,
-            "detail": "0.47× 20d avg"
+            "detail": "0.48× 20d avg"
           },
           {
             "key": "stakes",
@@ -894,14 +1379,14 @@
             "label": "Big-hands Accumulation",
             "pass": false,
             "score": 0,
-            "detail": "OBV -133% vs price -8%"
+            "detail": "OBV -150% vs price -8%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 115% · BB-w 9.4%"
+            "detail": "ATR contraction 116% · BB-w 9.5%"
           },
           {
             "key": "oi_buildup",
@@ -915,14 +1400,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
             "pass": false,
             "score": 0,
-            "detail": "VIX 11.9 (LOW) ✗ not aligned"
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -943,7 +1428,7 @@
             "label": "RS-z vs NIFTY",
             "pass": false,
             "score": 0,
-            "detail": "stock 20d -8.3% vs NIFTY 0.7% · z=-2.60"
+            "detail": "stock 20d -8.5% vs NIFTY 0.7% · z=-2.66"
           },
           {
             "key": "smc",
@@ -975,17 +1460,17 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
       "symbol": "ASIANPAINT",
       "side": "LONG",
-      "price": 2776.800048828125,
-      "entry": 2776.800048828125,
-      "stopLoss": 2651.84,
-      "target1": 2943.41,
-      "target2": 3110.02,
-      "target3": 3332.16,
+      "price": 2770,
+      "entry": 2770,
+      "stopLoss": 2645.35,
+      "target1": 2936.2,
+      "target2": 3102.4,
+      "target3": 3324,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
@@ -994,13 +1479,13 @@
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": 5.265557891751825,
-        "ret20d": 1.424501399095722,
-        "rsi14": 72.1806829502157,
-        "bbWidthPct": 5.00216594792247,
+        "ret5d": 2.2064810680211178,
+        "ret20d": 0.5481178333704062,
+        "rsi14": 74.50606084217321,
+        "bbWidthPct": 4.768956594088448,
         "distFromHigh20": 0,
-        "distFromLow20": 5.265557891751825,
-        "volRatio": 1.7290185488949028,
+        "distFromLow20": 5.007775220692805,
+        "volRatio": 1.7323262609471262,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -1008,7 +1493,7 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=2725.9 21=2705.0 50=2662.9"
+          "detail": "9=2730.0 21=2708.5 50=2667.4"
         },
         {
           "name": "At 20d high",
@@ -1018,7 +1503,7 @@
         {
           "name": "Tight coil (BB <12%)",
           "pass": true,
-          "detail": "5.0%"
+          "detail": "4.8%"
         },
         {
           "name": "Vol 5d/20d rising >1.3×",
@@ -1028,12 +1513,12 @@
         {
           "name": "RSI 50–70 productive",
           "pass": false,
-          "detail": "72"
+          "detail": "75"
         },
         {
           "name": "20d return 5–25% (not extended)",
           "pass": false,
-          "detail": "1.4%"
+          "detail": "0.5%"
         },
         {
           "name": "FII stake ↑",
@@ -1047,15 +1532,15 @@
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=2725.9 21=2705.0 50=2662.9",
+        "EMA 9>21>50 stack: 9=2730.0 21=2708.5 50=2667.4",
         "At 20d high: 0.0% off",
-        "Tight coil (BB <12%): 5.0%",
+        "Tight coil (BB <12%): 4.8%",
         "Vol 5d/20d rising >1.3×: 1.73×"
       ],
       "fiiDelta": 1.2100000000000009,
       "diiDelta": -1.0399999999999991,
       "promoterDelta": 0,
-      "marketCapCr": 266369,
+      "marketCapCr": 265890,
       "twelveCriteria": {
         "total": 55.5,
         "passCount": 7,
@@ -1093,14 +1578,14 @@
             "label": "Last 5-day Vol Formula (5d/20d)",
             "pass": true,
             "score": 8,
-            "detail": "1.75× — sustained accumulation"
+            "detail": "1.76× — sustained accumulation"
           },
           {
             "key": "technical",
             "label": "Technical (EMA+RSI+ADX+MACD)",
             "pass": false,
             "score": 5,
-            "detail": "EMA✓ · RSI 72✗ · ADX 29✓ · MACD✗"
+            "detail": "EMA✓ · RSI 75✗ · ADX 44✓ · MACD✗"
           },
           {
             "key": "harmonic",
@@ -1114,14 +1599,14 @@
             "label": "Elliott Wave 1/3/4",
             "pass": false,
             "score": 0,
-            "detail": "weak impulse 5.4%"
+            "detail": "weak impulse 5.1%"
           },
           {
             "key": "darvas",
             "label": "Darvas Box",
-            "pass": false,
-            "score": 0,
-            "detail": "no box pattern"
+            "pass": true,
+            "score": 8,
+            "detail": "3x box top"
           },
           {
             "key": "news",
@@ -1135,14 +1620,14 @@
             "label": "Big-hands Accumulation",
             "pass": true,
             "score": 6,
-            "detail": "OBV 29% vs price 1%"
+            "detail": "OBV 42% vs price 1%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 134% · BB-w 6.0%"
+            "detail": "ATR contraction 135% · BB-w 6.0%"
           },
           {
             "key": "oi_buildup",
@@ -1156,14 +1641,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -1184,7 +1669,7 @@
             "label": "RS-z vs NIFTY",
             "pass": false,
             "score": 0,
-            "detail": "stock 20d 1.4% vs NIFTY 0.7% · z=0.22"
+            "detail": "stock 20d 0.5% vs NIFTY 0.7% · z=-0.03"
           },
           {
             "key": "smc",
@@ -1216,17 +1701,17 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
       "symbol": "BEL",
       "side": "SHORT",
-      "price": 389.8500061035156,
-      "entry": 389.8500061035156,
-      "stopLoss": 413.24,
-      "target1": 366.46,
-      "target2": 343.07,
-      "target3": 311.88,
+      "price": 389.75,
+      "entry": 389.75,
+      "stopLoss": 413.14,
+      "target1": 366.36,
+      "target2": 342.98,
+      "target3": 311.8,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
@@ -1235,13 +1720,13 @@
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": -4.249045327842293,
-        "ret20d": -8.38913939925226,
-        "rsi14": 27.323640618635068,
-        "bbWidthPct": 8.78543015615747,
-        "distFromHigh20": 6.990334777436461,
-        "distFromLow20": 1.2860515161147323,
-        "volRatio": 1.8624270921709727,
+        "ret5d": -4.273607799907821,
+        "ret20d": -8.412639835484038,
+        "rsi14": 27.16049636426534,
+        "bbWidthPct": 8.787684413085312,
+        "distFromHigh20": 7.014194041416391,
+        "distFromLow20": 1.2600691557350332,
+        "volRatio": 1.8633140303647524,
         "emaStackBull": false,
         "emaStackBear": true
       },
@@ -1297,7 +1782,7 @@
       "fiiDelta": -1.490000000000002,
       "diiDelta": 1.0199999999999996,
       "promoterDelta": 0,
-      "marketCapCr": 285374,
+      "marketCapCr": 285081,
       "twelveCriteria": {
         "total": 55,
         "passCount": 7,
@@ -1321,7 +1806,7 @@
             "label": "Volume Increase (today / 20d)",
             "pass": false,
             "score": 0,
-            "detail": "0.44× 20d avg"
+            "detail": "0.45× 20d avg"
           },
           {
             "key": "stakes",
@@ -1398,14 +1883,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
             "pass": false,
             "score": 0,
-            "detail": "VIX 11.9 (LOW) ✗ not aligned"
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -1426,7 +1911,7 @@
             "label": "RS-z vs NIFTY",
             "pass": false,
             "score": 0,
-            "detail": "stock 20d -8.4% vs NIFTY 0.7% · z=-2.61"
+            "detail": "stock 20d -8.4% vs NIFTY 0.7% · z=-2.62"
           },
           {
             "key": "smc",
@@ -1458,17 +1943,17 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
-      "symbol": "RADICO",
+      "symbol": "ABB",
       "side": "LONG",
-      "price": 4410.10009765625,
-      "entry": 4410.10009765625,
-      "stopLoss": 4145.49,
-      "target1": 4674.71,
-      "target2": 4939.31,
-      "target3": 5292.12,
+      "price": 7515.5,
+      "entry": 7515.5,
+      "stopLoss": 7064.57,
+      "target1": 7966.43,
+      "target2": 8417.36,
+      "target3": 9018.6,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
@@ -1477,13 +1962,13 @@
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": 7.792145406676765,
-        "ret20d": 13.303189433816176,
-        "rsi14": 78.15349392267859,
-        "bbWidthPct": 8.269657994981113,
-        "distFromHigh20": 0,
-        "distFromLow20": 9.015182778375177,
-        "volRatio": 1.7975293577890108,
+        "ret5d": 2.5656772432616854,
+        "ret20d": 6.256185494132617,
+        "rsi14": 69.24976844705157,
+        "bbWidthPct": 11.922027809194331,
+        "distFromHigh20": 1.9823932181284643,
+        "distFromLow20": 10.987225873144798,
+        "volRatio": 1.0746900361905058,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -1491,57 +1976,57 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=4259.1 21=4131.0 50=3884.1"
+          "detail": "9=7358.6 21=7275.7 50=7122.3"
         },
         {
           "name": "At 20d high",
           "pass": true,
-          "detail": "0.0% off"
+          "detail": "2.0% off"
         },
         {
           "name": "Tight coil (BB <12%)",
           "pass": true,
-          "detail": "8.3%"
+          "detail": "11.9%"
         },
         {
           "name": "Vol 5d/20d rising >1.3×",
-          "pass": true,
-          "detail": "1.80×"
+          "pass": false,
+          "detail": "1.07×"
         },
         {
           "name": "RSI 50–70 productive",
-          "pass": false,
-          "detail": "78"
+          "pass": true,
+          "detail": "69"
         },
         {
           "name": "20d return 5–25% (not extended)",
           "pass": true,
-          "detail": "13.3%"
+          "detail": "6.3%"
         },
         {
           "name": "FII stake ↑",
           "pass": false,
-          "detail": "unavailable"
+          "detail": "-0.52pp QoQ"
         },
         {
           "name": "Promoter stable/buying",
-          "pass": false,
-          "detail": "unavailable"
+          "pass": true,
+          "detail": "+0.00pp"
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=4259.1 21=4131.0 50=3884.1",
-        "At 20d high: 0.0% off",
-        "Tight coil (BB <12%): 8.3%",
-        "Vol 5d/20d rising >1.3×: 1.80×",
-        "20d return 5–25% (not extended): 13.3%"
+        "EMA 9>21>50 stack: 9=7358.6 21=7275.7 50=7122.3",
+        "At 20d high: 2.0% off",
+        "Tight coil (BB <12%): 11.9%",
+        "RSI 50–70 productive: 69",
+        "20d return 5–25% (not extended): 6.3%"
       ],
-      "fiiDelta": null,
-      "diiDelta": null,
-      "promoterDelta": null,
-      "marketCapCr": null,
+      "fiiDelta": -0.5199999999999996,
+      "diiDelta": 0.6100000000000012,
+      "promoterDelta": 0,
+      "marketCapCr": 159355,
       "twelveCriteria": {
-        "total": 63.5,
+        "total": 59.5,
         "passCount": 8,
         "results": [
           {
@@ -1554,58 +2039,58 @@
           {
             "key": "cycle",
             "label": "Cycle (Gann 90d)",
-            "pass": true,
-            "score": 10,
-            "detail": "near 90d HIGH — inflection cycle window"
+            "pass": false,
+            "score": 0,
+            "detail": "mid-range 80% of 90d band — no cycle edge"
           },
           {
             "key": "volume_increase",
             "label": "Volume Increase (today / 20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.43× 20d avg"
+            "pass": true,
+            "score": 8,
+            "detail": "2.12× 20d avg"
           },
           {
             "key": "stakes",
             "label": "FII/DII/Promoter ↑",
-            "pass": false,
-            "score": 0,
-            "detail": "no shareholding data"
+            "pass": true,
+            "score": 7.5,
+            "detail": "FII 7.7% (-0.52%) · DII 9.9% (+0.61%) · P 75.0% · Pledge 0.0%"
           },
           {
             "key": "vol5d20d",
             "label": "Last 5-day Vol Formula (5d/20d)",
-            "pass": true,
-            "score": 8,
-            "detail": "1.85× — sustained accumulation"
+            "pass": false,
+            "score": 0,
+            "detail": "0.91× — no consistent build"
           },
           {
             "key": "technical",
             "label": "Technical (EMA+RSI+ADX+MACD)",
             "pass": true,
-            "score": 7.5,
-            "detail": "EMA✓ · RSI 78✗ · ADX 73✓ · MACD✓"
+            "score": 10,
+            "detail": "EMA✓ · RSI 69✓ · ADX 60✓ · MACD✓"
           },
           {
             "key": "harmonic",
             "label": "Harmonic / Fib PRZ",
-            "pass": false,
-            "score": 0,
-            "detail": "near none retrace of 50d range"
+            "pass": true,
+            "score": 5,
+            "detail": "near 38.2% retrace of 50d range"
           },
           {
             "key": "elliott",
             "label": "Elliott W1/W3/W4",
-            "pass": false,
-            "score": 0,
-            "detail": "impulse 13.8% · no wave"
+            "pass": true,
+            "score": 10,
+            "detail": "impulse 13.2% · W3 start"
           },
           {
             "key": "darvas",
             "label": "Darvas Box",
-            "pass": true,
-            "score": 8,
-            "detail": "3x box top"
+            "pass": false,
+            "score": 0,
+            "detail": "no box pattern"
           },
           {
             "key": "news",
@@ -1619,35 +2104,35 @@
             "label": "Big-hands Accumulation",
             "pass": true,
             "score": 6,
-            "detail": "OBV 30% vs price 7%"
+            "detail": "OBV 63% vs price 8%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 149% · BB-w 12.1%"
+            "detail": "ATR contraction 109% · BB-w 6.0%"
           },
           {
             "key": "oi_buildup",
             "label": "OI Buildup direction",
             "pass": false,
             "score": 0,
-            "detail": "no OI snapshot for RADICO"
+            "detail": "no OI snapshot for ABB"
           },
           {
             "key": "market_regime",
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -1667,15 +2152,15 @@
             "key": "rs_z",
             "label": "RS-z vs NIFTY",
             "pass": true,
-            "score": 10,
-            "detail": "stock 20d 13.3% vs NIFTY 0.7% · z=3.65"
+            "score": 7,
+            "detail": "stock 20d 6.3% vs NIFTY 0.7% · z=1.61"
           },
           {
             "key": "smc",
             "label": "SMC (FVG/OB/BoS/Sweep)",
             "pass": false,
             "score": 3,
-            "detail": "FVG: bullish FVG ₹4201.0–4270.0"
+            "detail": "OB: bullish OB zone ₹6771.5–6908.5"
           },
           {
             "key": "stage_analysis",
@@ -1700,17 +2185,17 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
-      "symbol": "BHARATFORG",
+      "symbol": "BRITANNIA",
       "side": "LONG",
-      "price": 2201.60009765625,
-      "entry": 2201.60009765625,
-      "stopLoss": 2102.53,
-      "target1": 2333.7,
-      "target2": 2465.79,
-      "target3": 2641.92,
+      "price": 5430,
+      "entry": 5430,
+      "stopLoss": 5185.65,
+      "target1": 5755.8,
+      "target2": 6081.6,
+      "target3": 6516,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
@@ -1719,13 +2204,13 @@
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": 0.9306399107738955,
-        "ret20d": 2.941045865265467,
-        "rsi14": 64.31318571134778,
-        "bbWidthPct": 4.932780379682125,
-        "distFromHigh20": 0.3349887887618832,
-        "distFromLow20": 4.818139402862038,
-        "volRatio": 0.818173374148917,
+        "ret5d": 0.8450181075308757,
+        "ret20d": -0.44917040975341455,
+        "rsi14": 62.53207869974337,
+        "bbWidthPct": 4.438305709023941,
+        "distFromHigh20": 1.7105620418137388,
+        "distFromLow20": 2.7727831929592126,
+        "volRatio": 1.304831656788174,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -1733,12 +2218,496 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=2178.9 21=2155.4 50=2085.5"
+          "detail": "9=5442.0 21=5402.4 50=5375.0"
         },
         {
           "name": "At 20d high",
           "pass": true,
-          "detail": "0.3% off"
+          "detail": "1.7% off"
+        },
+        {
+          "name": "Tight coil (BB <12%)",
+          "pass": true,
+          "detail": "4.4%"
+        },
+        {
+          "name": "Vol 5d/20d rising >1.3×",
+          "pass": true,
+          "detail": "1.30×"
+        },
+        {
+          "name": "RSI 50–70 productive",
+          "pass": true,
+          "detail": "63"
+        },
+        {
+          "name": "20d return 5–25% (not extended)",
+          "pass": false,
+          "detail": "-0.4%"
+        },
+        {
+          "name": "FII stake ↑",
+          "pass": false,
+          "detail": "unavailable"
+        },
+        {
+          "name": "Promoter stable/buying",
+          "pass": false,
+          "detail": "unavailable"
+        }
+      ],
+      "reasons": [
+        "EMA 9>21>50 stack: 9=5442.0 21=5402.4 50=5375.0",
+        "At 20d high: 1.7% off",
+        "Tight coil (BB <12%): 4.4%",
+        "Vol 5d/20d rising >1.3×: 1.30×",
+        "RSI 50–70 productive: 63"
+      ],
+      "fiiDelta": null,
+      "diiDelta": null,
+      "promoterDelta": null,
+      "marketCapCr": null,
+      "twelveCriteria": {
+        "total": 42.5,
+        "passCount": 7,
+        "results": [
+          {
+            "key": "seasonality",
+            "label": "Seasonality",
+            "pass": false,
+            "score": 0,
+            "detail": "Month 8 not in LONG seasonal sweet spot"
+          },
+          {
+            "key": "cycle",
+            "label": "Cycle (Gann 90d)",
+            "pass": false,
+            "score": 0,
+            "detail": "mid-range 44% of 90d band — no cycle edge"
+          },
+          {
+            "key": "volume_increase",
+            "label": "Volume Increase (today / 20d)",
+            "pass": false,
+            "score": 0,
+            "detail": "0.34× 20d avg"
+          },
+          {
+            "key": "stakes",
+            "label": "FII/DII/Promoter ↑",
+            "pass": false,
+            "score": 0,
+            "detail": "no shareholding data"
+          },
+          {
+            "key": "vol5d20d",
+            "label": "Last 5-day Vol Formula (5d/20d)",
+            "pass": true,
+            "score": 6,
+            "detail": "1.42× — sustained accumulation"
+          },
+          {
+            "key": "technical",
+            "label": "Technical (EMA+RSI+ADX+MACD)",
+            "pass": true,
+            "score": 7.5,
+            "detail": "EMA✓ · RSI 63✓ · ADX 15✗ · MACD✓"
+          },
+          {
+            "key": "harmonic",
+            "label": "Harmonic / Fib PRZ",
+            "pass": true,
+            "score": 5,
+            "detail": "near 38.2% retrace of 50d range"
+          },
+          {
+            "key": "elliott",
+            "label": "Elliott W1/W3/W4",
+            "pass": true,
+            "score": 7,
+            "detail": "impulse 7.3% · W4 pullback"
+          },
+          {
+            "key": "darvas",
+            "label": "Darvas Box",
+            "pass": true,
+            "score": 8,
+            "detail": "5x box top"
+          },
+          {
+            "key": "news",
+            "label": "News-Driven",
+            "pass": false,
+            "score": 0,
+            "detail": "no news-driven bar"
+          },
+          {
+            "key": "accumulation",
+            "label": "Big-hands Accumulation",
+            "pass": true,
+            "score": 6,
+            "detail": "OBV 8% vs price -0%"
+          },
+          {
+            "key": "tight_range",
+            "label": "Tight Range b/f Blast",
+            "pass": false,
+            "score": 0,
+            "detail": "ATR contraction 115% · BB-w 3.9%"
+          },
+          {
+            "key": "oi_buildup",
+            "label": "OI Buildup direction",
+            "pass": false,
+            "score": 0,
+            "detail": "no OI snapshot for BRITANNIA"
+          },
+          {
+            "key": "market_regime",
+            "label": "Market Regime",
+            "pass": true,
+            "score": 6,
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
+          },
+          {
+            "key": "vix",
+            "label": "VIX Context",
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
+          },
+          {
+            "key": "rr_floor",
+            "label": "R:R ≥ 2.5",
+            "pass": false,
+            "score": 0,
+            "detail": "1.33:1 reward:risk"
+          },
+          {
+            "key": "bulk_deals",
+            "label": "Bulk-deals confirm",
+            "pass": false,
+            "score": 0,
+            "detail": "no recent named buyer/seller"
+          },
+          {
+            "key": "rs_z",
+            "label": "RS-z vs NIFTY",
+            "pass": false,
+            "score": 0,
+            "detail": "stock 20d -0.4% vs NIFTY 0.7% · z=-0.32"
+          },
+          {
+            "key": "smc",
+            "label": "SMC (FVG/OB/BoS/Sweep)",
+            "pass": false,
+            "score": 0,
+            "detail": "no aligned SMC primitives"
+          },
+          {
+            "key": "stage_analysis",
+            "label": "Stage Analysis (30W lifecycle)",
+            "pass": false,
+            "score": 0,
+            "detail": "<160 bars (need ~30 weeks)"
+          },
+          {
+            "key": "kp_astro",
+            "label": "KP sub-lord alignment",
+            "pass": false,
+            "score": -3,
+            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
+          },
+          {
+            "key": "bradley",
+            "label": "Bradley siderograph",
+            "pass": false,
+            "score": 0,
+            "detail": "compute failed: undefined"
+          }
+        ]
+      },
+      "asOf": "2026-08-03T07:38:58.081Z"
+    },
+    {
+      "symbol": "SUNPHARMA",
+      "side": "LONG",
+      "price": 1959.5,
+      "entry": 1959.5,
+      "stopLoss": 1871.32,
+      "target1": 2077.07,
+      "target2": 2194.64,
+      "target3": 2351.4,
+      "target1Date": "2026-08-12",
+      "target2Date": "2026-08-21",
+      "target3Date": "2026-09-01",
+      "expectedMovePct": 20,
+      "score": 83.4,
+      "confidence": "HIGH",
+      "grade": "A",
+      "features": {
+        "ret5d": -0.719458454839797,
+        "ret20d": 2.44144447823941,
+        "rsi14": 54.19355190468949,
+        "bbWidthPct": 5.7616751423354176,
+        "distFromHigh20": 2.0788554341847267,
+        "distFromLow20": 3.776085725660251,
+        "volRatio": 1.301161158122051,
+        "emaStackBull": true,
+        "emaStackBear": false
+      },
+      "confluences": [
+        {
+          "name": "EMA 9>21>50 stack",
+          "pass": true,
+          "detail": "9=1970.8 21=1946.3 50=1898.9"
+        },
+        {
+          "name": "At 20d high",
+          "pass": true,
+          "detail": "2.1% off"
+        },
+        {
+          "name": "Tight coil (BB <12%)",
+          "pass": true,
+          "detail": "5.8%"
+        },
+        {
+          "name": "Vol 5d/20d rising >1.3×",
+          "pass": true,
+          "detail": "1.30×"
+        },
+        {
+          "name": "RSI 50–70 productive",
+          "pass": true,
+          "detail": "54"
+        },
+        {
+          "name": "20d return 5–25% (not extended)",
+          "pass": false,
+          "detail": "2.4%"
+        },
+        {
+          "name": "FII stake ↑",
+          "pass": false,
+          "detail": "unavailable"
+        },
+        {
+          "name": "Promoter stable/buying",
+          "pass": false,
+          "detail": "unavailable"
+        }
+      ],
+      "reasons": [
+        "EMA 9>21>50 stack: 9=1970.8 21=1946.3 50=1898.9",
+        "At 20d high: 2.1% off",
+        "Tight coil (BB <12%): 5.8%",
+        "Vol 5d/20d rising >1.3×: 1.30×",
+        "RSI 50–70 productive: 54"
+      ],
+      "fiiDelta": null,
+      "diiDelta": null,
+      "promoterDelta": null,
+      "marketCapCr": null,
+      "twelveCriteria": {
+        "total": 47,
+        "passCount": 7,
+        "results": [
+          {
+            "key": "seasonality",
+            "label": "Seasonality",
+            "pass": false,
+            "score": 0,
+            "detail": "Month 8 not in LONG seasonal sweet spot"
+          },
+          {
+            "key": "cycle",
+            "label": "Cycle (Gann 90d)",
+            "pass": false,
+            "score": 0,
+            "detail": "mid-range 80% of 90d band — no cycle edge"
+          },
+          {
+            "key": "volume_increase",
+            "label": "Volume Increase (today / 20d)",
+            "pass": false,
+            "score": 0,
+            "detail": "0.99× 20d avg"
+          },
+          {
+            "key": "stakes",
+            "label": "FII/DII/Promoter ↑",
+            "pass": false,
+            "score": 0,
+            "detail": "no shareholding data"
+          },
+          {
+            "key": "vol5d20d",
+            "label": "Last 5-day Vol Formula (5d/20d)",
+            "pass": true,
+            "score": 8,
+            "detail": "1.56× — sustained accumulation"
+          },
+          {
+            "key": "technical",
+            "label": "Technical (EMA+RSI+ADX+MACD)",
+            "pass": true,
+            "score": 10,
+            "detail": "EMA✓ · RSI 54✓ · ADX 25✓ · MACD✓"
+          },
+          {
+            "key": "harmonic",
+            "label": "Harmonic / Fib PRZ",
+            "pass": true,
+            "score": 5,
+            "detail": "near 38.2% retrace of 50d range"
+          },
+          {
+            "key": "elliott",
+            "label": "Elliott W1/W3/W4",
+            "pass": true,
+            "score": 7,
+            "detail": "impulse 7.4% · W4 pullback"
+          },
+          {
+            "key": "darvas",
+            "label": "Darvas Box",
+            "pass": true,
+            "score": 8,
+            "detail": "4x box top"
+          },
+          {
+            "key": "news",
+            "label": "News-Driven",
+            "pass": false,
+            "score": 0,
+            "detail": "no news-driven bar"
+          },
+          {
+            "key": "accumulation",
+            "label": "Big-hands Accumulation",
+            "pass": true,
+            "score": 6,
+            "detail": "OBV 38% vs price 3%"
+          },
+          {
+            "key": "tight_range",
+            "label": "Tight Range b/f Blast",
+            "pass": false,
+            "score": 0,
+            "detail": "ATR contraction 134% · BB-w 4.0%"
+          },
+          {
+            "key": "oi_buildup",
+            "label": "OI Buildup direction",
+            "pass": false,
+            "score": 0,
+            "detail": "no OI snapshot for SUNPHARMA"
+          },
+          {
+            "key": "market_regime",
+            "label": "Market Regime",
+            "pass": true,
+            "score": 6,
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
+          },
+          {
+            "key": "vix",
+            "label": "VIX Context",
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
+          },
+          {
+            "key": "rr_floor",
+            "label": "R:R ≥ 2.5",
+            "pass": false,
+            "score": 0,
+            "detail": "1.33:1 reward:risk"
+          },
+          {
+            "key": "bulk_deals",
+            "label": "Bulk-deals confirm",
+            "pass": false,
+            "score": 0,
+            "detail": "no recent named buyer/seller"
+          },
+          {
+            "key": "rs_z",
+            "label": "RS-z vs NIFTY",
+            "pass": false,
+            "score": 0,
+            "detail": "stock 20d 2.4% vs NIFTY 0.7% · z=0.51"
+          },
+          {
+            "key": "smc",
+            "label": "SMC (FVG/OB/BoS/Sweep)",
+            "pass": false,
+            "score": 0,
+            "detail": "no aligned SMC primitives"
+          },
+          {
+            "key": "stage_analysis",
+            "label": "Stage Analysis (30W lifecycle)",
+            "pass": false,
+            "score": 0,
+            "detail": "<160 bars (need ~30 weeks)"
+          },
+          {
+            "key": "kp_astro",
+            "label": "KP sub-lord alignment",
+            "pass": false,
+            "score": -3,
+            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
+          },
+          {
+            "key": "bradley",
+            "label": "Bradley siderograph",
+            "pass": false,
+            "score": 0,
+            "detail": "compute failed: undefined"
+          }
+        ]
+      },
+      "asOf": "2026-08-03T07:38:58.081Z"
+    },
+    {
+      "symbol": "BHARATFORG",
+      "side": "LONG",
+      "price": 2198.10009765625,
+      "entry": 2198.10009765625,
+      "stopLoss": 2099.19,
+      "target1": 2329.99,
+      "target2": 2461.87,
+      "target3": 2637.72,
+      "target1Date": "2026-08-12",
+      "target2Date": "2026-08-21",
+      "target3Date": "2026-09-01",
+      "expectedMovePct": 20,
+      "score": 82.2,
+      "confidence": "HIGH",
+      "grade": "A",
+      "features": {
+        "ret5d": 0.7701851396900031,
+        "ret20d": 2.7773950456129857,
+        "rsi14": 63.70630761521763,
+        "bbWidthPct": 4.940634767818178,
+        "distFromHigh20": 0.4934315230307832,
+        "distFromLow20": 4.651504468433862,
+        "volRatio": 0.8229453411544769,
+        "emaStackBull": true,
+        "emaStackBear": false
+      },
+      "confluences": [
+        {
+          "name": "EMA 9>21>50 stack",
+          "pass": true,
+          "detail": "9=2178.2 21=2155.0 50=2085.3"
+        },
+        {
+          "name": "At 20d high",
+          "pass": true,
+          "detail": "0.5% off"
         },
         {
           "name": "Tight coil (BB <12%)",
@@ -1758,7 +2727,7 @@
         {
           "name": "20d return 5–25% (not extended)",
           "pass": false,
-          "detail": "2.9%"
+          "detail": "2.8%"
         },
         {
           "name": "FII stake ↑",
@@ -1772,18 +2741,18 @@
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=2178.9 21=2155.4 50=2085.5",
-        "At 20d high: 0.3% off",
+        "EMA 9>21>50 stack: 9=2178.2 21=2155.0 50=2085.3",
+        "At 20d high: 0.5% off",
         "Tight coil (BB <12%): 4.9%",
         "RSI 50–70 productive: 64"
       ],
       "fiiDelta": 0.8899999999999988,
       "diiDelta": -0.4399999999999977,
       "promoterDelta": 0,
-      "marketCapCr": 105220,
+      "marketCapCr": 105194,
       "twelveCriteria": {
-        "total": 59.5,
-        "passCount": 7,
+        "total": 51.5,
+        "passCount": 6,
         "results": [
           {
             "key": "seasonality",
@@ -1804,7 +2773,7 @@
             "label": "Volume Increase (today / 20d)",
             "pass": false,
             "score": 0,
-            "detail": "0.48× 20d avg"
+            "detail": "0.51× 20d avg"
           },
           {
             "key": "stakes",
@@ -1860,14 +2829,14 @@
             "label": "Big-hands Accumulation",
             "pass": false,
             "score": 0,
-            "detail": "OBV 4% vs price 4%"
+            "detail": "OBV 1% vs price 4%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": true,
             "score": 10,
-            "detail": "ATR contraction 67% · BB-w 3.1%"
+            "detail": "ATR contraction 67% · BB-w 3.0%"
           },
           {
             "key": "oi_buildup",
@@ -1881,14 +2850,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -1909,7 +2878,7 @@
             "label": "RS-z vs NIFTY",
             "pass": false,
             "score": 0,
-            "detail": "stock 20d 2.9% vs NIFTY 0.7% · z=0.66"
+            "detail": "stock 20d 2.8% vs NIFTY 0.7% · z=0.61"
           },
           {
             "key": "smc",
@@ -1941,32 +2910,32 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
       "symbol": "M&M",
       "side": "LONG",
-      "price": 3394.2,
-      "entry": 3394.2,
-      "stopLoss": 3190.55,
-      "target1": 3597.85,
-      "target2": 3801.5,
-      "target3": 4073.04,
+      "price": 3394.300048828125,
+      "entry": 3394.300048828125,
+      "stopLoss": 3190.64,
+      "target1": 3597.96,
+      "target2": 3801.62,
+      "target3": 4073.16,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
       "expectedMovePct": 20,
-      "score": 83.4,
+      "score": 82.2,
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": 4.804545173840546,
-        "ret20d": 6.028989129076597,
-        "rsi14": 73.2930794240595,
-        "bbWidthPct": 9.29821460137882,
-        "distFromHigh20": 0.12652640870973023,
-        "distFromLow20": 10.09763534334554,
-        "volRatio": 1.4384500675148935,
+        "ret5d": 4.807631275147366,
+        "ret20d": 6.032116100263001,
+        "rsi14": 73.30443566374666,
+        "bbWidthPct": 9.297943408544871,
+        "distFromHigh20": 0.12358249733338236,
+        "distFromLow20": 10.100884113935567,
+        "volRatio": 1.4391613978617896,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -1974,7 +2943,7 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=3283.6 21=3217.2 50=3161.9"
+          "detail": "9=3283.7 21=3218.0 50=3164.9"
         },
         {
           "name": "At 20d high",
@@ -2013,7 +2982,7 @@
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=3283.6 21=3217.2 50=3161.9",
+        "EMA 9>21>50 stack: 9=3283.7 21=3218.0 50=3164.9",
         "At 20d high: 0.1% off",
         "Tight coil (BB <12%): 9.3%",
         "Vol 5d/20d rising >1.3×: 1.44×",
@@ -2024,8 +2993,8 @@
       "promoterDelta": null,
       "marketCapCr": null,
       "twelveCriteria": {
-        "total": 53,
-        "passCount": 7,
+        "total": 45,
+        "passCount": 6,
         "results": [
           {
             "key": "seasonality",
@@ -2102,14 +3071,14 @@
             "label": "Big-hands Accumulation",
             "pass": true,
             "score": 6,
-            "detail": "OBV 245% vs price 6%"
+            "detail": "OBV 584% vs price 6%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 138% · BB-w 9.6%"
+            "detail": "ATR contraction 144% · BB-w 9.6%"
           },
           {
             "key": "oi_buildup",
@@ -2123,14 +3092,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -2183,17 +3152,17 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
-      "symbol": "AMBUJACEM",
+      "symbol": "RADICO",
       "side": "LONG",
-      "price": 443.20001220703125,
-      "entry": 443.20001220703125,
-      "stopLoss": 423.26,
-      "target1": 469.79,
-      "target2": 496.38,
-      "target3": 531.84,
+      "price": 4412.7998046875,
+      "entry": 4412.7998046875,
+      "stopLoss": 4148.03,
+      "target1": 4677.57,
+      "target2": 4942.34,
+      "target3": 5295.36,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
@@ -2202,13 +3171,13 @@
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": 2.8425570606817896,
-        "ret20d": 0.40779753861279144,
-        "rsi14": 59.73838292436259,
-        "bbWidthPct": 4.98646333366798,
+        "ret5d": 6.345338105494639,
+        "ret20d": 7.453663399251556,
+        "rsi14": 75.96954028127723,
+        "bbWidthPct": 8.325777705879139,
         "distFromHigh20": 0,
-        "distFromLow20": 5.248160955400926,
-        "volRatio": 1.6264772191902594,
+        "distFromLow20": 9.081918010896588,
+        "volRatio": 1.853149054729218,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -2216,7 +3185,7 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=434.1 21=432.4 50=431.7"
+          "detail": "9=4278.8 21=4150.9 50=3905.2"
         },
         {
           "name": "At 20d high",
@@ -2226,12 +3195,254 @@
         {
           "name": "Tight coil (BB <12%)",
           "pass": true,
-          "detail": "5.0%"
+          "detail": "8.3%"
         },
         {
           "name": "Vol 5d/20d rising >1.3×",
           "pass": true,
-          "detail": "1.63×"
+          "detail": "1.85×"
+        },
+        {
+          "name": "RSI 50–70 productive",
+          "pass": false,
+          "detail": "76"
+        },
+        {
+          "name": "20d return 5–25% (not extended)",
+          "pass": true,
+          "detail": "7.5%"
+        },
+        {
+          "name": "FII stake ↑",
+          "pass": false,
+          "detail": "unavailable"
+        },
+        {
+          "name": "Promoter stable/buying",
+          "pass": false,
+          "detail": "unavailable"
+        }
+      ],
+      "reasons": [
+        "EMA 9>21>50 stack: 9=4278.8 21=4150.9 50=3905.2",
+        "At 20d high: 0.0% off",
+        "Tight coil (BB <12%): 8.3%",
+        "Vol 5d/20d rising >1.3×: 1.85×",
+        "20d return 5–25% (not extended): 7.5%"
+      ],
+      "fiiDelta": null,
+      "diiDelta": null,
+      "promoterDelta": null,
+      "marketCapCr": null,
+      "twelveCriteria": {
+        "total": 44.5,
+        "passCount": 6,
+        "results": [
+          {
+            "key": "seasonality",
+            "label": "Seasonality",
+            "pass": false,
+            "score": 0,
+            "detail": "Month 8 not in LONG seasonal sweet spot"
+          },
+          {
+            "key": "cycle",
+            "label": "Cycle (Gann 90d)",
+            "pass": true,
+            "score": 10,
+            "detail": "near 90d HIGH — inflection cycle window"
+          },
+          {
+            "key": "volume_increase",
+            "label": "Volume Increase (today / 20d)",
+            "pass": false,
+            "score": 0,
+            "detail": "0.43× 20d avg"
+          },
+          {
+            "key": "stakes",
+            "label": "FII/DII/Promoter ↑",
+            "pass": false,
+            "score": 0,
+            "detail": "no shareholding data"
+          },
+          {
+            "key": "vol5d20d",
+            "label": "Last 5-day Vol Formula (5d/20d)",
+            "pass": true,
+            "score": 8,
+            "detail": "1.83× — sustained accumulation"
+          },
+          {
+            "key": "technical",
+            "label": "Technical (EMA+RSI+ADX+MACD)",
+            "pass": true,
+            "score": 7.5,
+            "detail": "EMA✓ · RSI 76✗ · ADX 69✓ · MACD✓"
+          },
+          {
+            "key": "harmonic",
+            "label": "Harmonic / Fib PRZ",
+            "pass": false,
+            "score": 0,
+            "detail": "near none retrace of 50d range"
+          },
+          {
+            "key": "elliott",
+            "label": "Elliott W1/W3/W4",
+            "pass": false,
+            "score": 0,
+            "detail": "impulse 13.4% · no wave"
+          },
+          {
+            "key": "darvas",
+            "label": "Darvas Box",
+            "pass": false,
+            "score": 0,
+            "detail": "no box pattern"
+          },
+          {
+            "key": "news",
+            "label": "News-Driven",
+            "pass": false,
+            "score": 0,
+            "detail": "no news-driven bar"
+          },
+          {
+            "key": "accumulation",
+            "label": "Big-hands Accumulation",
+            "pass": true,
+            "score": 6,
+            "detail": "OBV 36% vs price 8%"
+          },
+          {
+            "key": "tight_range",
+            "label": "Tight Range b/f Blast",
+            "pass": false,
+            "score": 0,
+            "detail": "ATR contraction 147% · BB-w 12.3%"
+          },
+          {
+            "key": "oi_buildup",
+            "label": "OI Buildup direction",
+            "pass": false,
+            "score": 0,
+            "detail": "no OI snapshot for RADICO"
+          },
+          {
+            "key": "market_regime",
+            "label": "Market Regime",
+            "pass": true,
+            "score": 6,
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
+          },
+          {
+            "key": "vix",
+            "label": "VIX Context",
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
+          },
+          {
+            "key": "rr_floor",
+            "label": "R:R ≥ 2.5",
+            "pass": false,
+            "score": 0,
+            "detail": "1.00:1 reward:risk"
+          },
+          {
+            "key": "bulk_deals",
+            "label": "Bulk-deals confirm",
+            "pass": false,
+            "score": 0,
+            "detail": "no recent named buyer/seller"
+          },
+          {
+            "key": "rs_z",
+            "label": "RS-z vs NIFTY",
+            "pass": true,
+            "score": 7,
+            "detail": "stock 20d 7.5% vs NIFTY 0.7% · z=1.96"
+          },
+          {
+            "key": "smc",
+            "label": "SMC (FVG/OB/BoS/Sweep)",
+            "pass": false,
+            "score": 3,
+            "detail": "FVG: bullish FVG ₹4201.0–4270.0"
+          },
+          {
+            "key": "stage_analysis",
+            "label": "Stage Analysis (30W lifecycle)",
+            "pass": false,
+            "score": 0,
+            "detail": "<160 bars (need ~30 weeks)"
+          },
+          {
+            "key": "kp_astro",
+            "label": "KP sub-lord alignment",
+            "pass": false,
+            "score": -3,
+            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
+          },
+          {
+            "key": "bradley",
+            "label": "Bradley siderograph",
+            "pass": false,
+            "score": 0,
+            "detail": "compute failed: undefined"
+          }
+        ]
+      },
+      "asOf": "2026-08-03T07:38:58.081Z"
+    },
+    {
+      "symbol": "AMBUJACEM",
+      "side": "LONG",
+      "price": 443,
+      "entry": 443,
+      "stopLoss": 423.06,
+      "target1": 469.58,
+      "target2": 496.16,
+      "target3": 531.6,
+      "target1Date": "2026-08-12",
+      "target2Date": "2026-08-21",
+      "target3Date": "2026-09-01",
+      "expectedMovePct": 20,
+      "score": 81,
+      "confidence": "HIGH",
+      "grade": "A",
+      "features": {
+        "ret5d": 2.7961451332271587,
+        "ret20d": 0.36248439638421315,
+        "rsi14": 59.620995014871745,
+        "bbWidthPct": 4.943565213653358,
+        "distFromHigh20": 0,
+        "distFromLow20": 5.20066340039446,
+        "volRatio": 1.6389181189941069,
+        "emaStackBull": true,
+        "emaStackBear": false
+      },
+      "confluences": [
+        {
+          "name": "EMA 9>21>50 stack",
+          "pass": true,
+          "detail": "9=434.0 21=432.4 50=431.7"
+        },
+        {
+          "name": "At 20d high",
+          "pass": true,
+          "detail": "0.0% off"
+        },
+        {
+          "name": "Tight coil (BB <12%)",
+          "pass": true,
+          "detail": "4.9%"
+        },
+        {
+          "name": "Vol 5d/20d rising >1.3×",
+          "pass": true,
+          "detail": "1.64×"
         },
         {
           "name": "RSI 50–70 productive",
@@ -2255,19 +3466,19 @@
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=434.1 21=432.4 50=431.7",
+        "EMA 9>21>50 stack: 9=434.0 21=432.4 50=431.7",
         "At 20d high: 0.0% off",
-        "Tight coil (BB <12%): 5.0%",
-        "Vol 5d/20d rising >1.3×: 1.63×",
+        "Tight coil (BB <12%): 4.9%",
+        "Vol 5d/20d rising >1.3×: 1.64×",
         "RSI 50–70 productive: 60"
       ],
       "fiiDelta": -0.2400000000000002,
       "diiDelta": -0.41999999999999815,
       "promoterDelta": -0.3500000000000085,
-      "marketCapCr": 110077,
+      "marketCapCr": 110065,
       "twelveCriteria": {
-        "total": 48,
-        "passCount": 6,
+        "total": 40,
+        "passCount": 5,
         "results": [
           {
             "key": "seasonality",
@@ -2288,7 +3499,7 @@
             "label": "Volume Increase (today / 20d)",
             "pass": false,
             "score": 0,
-            "detail": "1.18× 20d avg"
+            "detail": "1.29× 20d avg"
           },
           {
             "key": "stakes",
@@ -2344,14 +3555,14 @@
             "label": "Big-hands Accumulation",
             "pass": true,
             "score": 6,
-            "detail": "OBV 9% vs price 2%"
+            "detail": "OBV 14% vs price 2%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 129% · BB-w 5.7%"
+            "detail": "ATR contraction 129% · BB-w 5.6%"
           },
           {
             "key": "oi_buildup",
@@ -2365,14 +3576,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -2393,7 +3604,7 @@
             "label": "RS-z vs NIFTY",
             "pass": false,
             "score": 0,
-            "detail": "stock 20d 0.4% vs NIFTY 0.7% · z=-0.08"
+            "detail": "stock 20d 0.4% vs NIFTY 0.7% · z=-0.09"
           },
           {
             "key": "smc",
@@ -2425,32 +3636,32 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
-      "symbol": "CHOLAFIN",
+      "symbol": "SHREECEM",
       "side": "LONG",
-      "price": 1882.5,
-      "entry": 1882.5,
-      "stopLoss": 1769.55,
-      "target1": 1995.45,
-      "target2": 2108.4,
-      "target3": 2259,
+      "price": 26755,
+      "entry": 26755,
+      "stopLoss": 25551.02,
+      "target1": 28360.3,
+      "target2": 29965.6,
+      "target3": 32106,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
       "expectedMovePct": 20,
-      "score": 82.2,
+      "score": 81,
       "confidence": "HIGH",
       "grade": "A",
       "features": {
-        "ret5d": 5.4503725907147516,
-        "ret20d": 1.7292623615239124,
-        "rsi14": 62.6596743528657,
-        "bbWidthPct": 8.775561815239044,
-        "distFromHigh20": 0,
-        "distFromLow20": 9.619748819352008,
-        "volRatio": 1.5452315660699032,
+        "ret5d": -0.39091586001489204,
+        "ret20d": 0.4693954187007135,
+        "rsi14": 55.51684088269454,
+        "bbWidthPct": 4.989721547374323,
+        "distFromHigh20": 1.7984951367223345,
+        "distFromLow20": 3.261289077576225,
+        "volRatio": 1.7432932869370856,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -2458,58 +3669,58 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=1805.0 21=1780.7 50=1720.7"
+          "detail": "9=26624.2 21=26485.5 50=25943.0"
         },
         {
           "name": "At 20d high",
           "pass": true,
-          "detail": "0.0% off"
+          "detail": "1.8% off"
         },
         {
           "name": "Tight coil (BB <12%)",
           "pass": true,
-          "detail": "8.8%"
+          "detail": "5.0%"
         },
         {
           "name": "Vol 5d/20d rising >1.3×",
           "pass": true,
-          "detail": "1.55×"
+          "detail": "1.74×"
         },
         {
           "name": "RSI 50–70 productive",
           "pass": true,
-          "detail": "63"
+          "detail": "56"
         },
         {
           "name": "20d return 5–25% (not extended)",
           "pass": false,
-          "detail": "1.7%"
+          "detail": "0.5%"
         },
         {
           "name": "FII stake ↑",
           "pass": false,
-          "detail": "-0.41pp QoQ"
+          "detail": "unavailable"
         },
         {
           "name": "Promoter stable/buying",
           "pass": false,
-          "detail": "-0.02pp"
+          "detail": "unavailable"
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=1805.0 21=1780.7 50=1720.7",
-        "At 20d high: 0.0% off",
-        "Tight coil (BB <12%): 8.8%",
-        "Vol 5d/20d rising >1.3×: 1.55×",
-        "RSI 50–70 productive: 63"
+        "EMA 9>21>50 stack: 9=26624.2 21=26485.5 50=25943.0",
+        "At 20d high: 1.8% off",
+        "Tight coil (BB <12%): 5.0%",
+        "Vol 5d/20d rising >1.3×: 1.74×",
+        "RSI 50–70 productive: 56"
       ],
-      "fiiDelta": -0.41000000000000014,
-      "diiDelta": 0.7100000000000009,
-      "promoterDelta": -0.020000000000003126,
-      "marketCapCr": 160607,
+      "fiiDelta": null,
+      "diiDelta": null,
+      "promoterDelta": null,
+      "marketCapCr": null,
       "twelveCriteria": {
-        "total": 50.5,
-        "passCount": 6,
+        "total": 42.5,
+        "passCount": 5,
         "results": [
           {
             "key": "seasonality",
@@ -2530,28 +3741,28 @@
             "label": "Volume Increase (today / 20d)",
             "pass": false,
             "score": 0,
-            "detail": "0.96× 20d avg"
+            "detail": "1.15× 20d avg"
           },
           {
             "key": "stakes",
             "label": "FII/DII/Promoter ↑",
-            "pass": true,
-            "score": 7.5,
-            "detail": "FII 24.5% (-0.41%) · DII 20.6% (+0.71%) · P 49.2% · Pledge 0.0%"
+            "pass": false,
+            "score": 0,
+            "detail": "no shareholding data"
           },
           {
             "key": "vol5d20d",
             "label": "Last 5-day Vol Formula (5d/20d)",
             "pass": true,
             "score": 8,
-            "detail": "1.52× — sustained accumulation"
+            "detail": "1.71× — sustained accumulation"
           },
           {
             "key": "technical",
             "label": "Technical (EMA+RSI+ADX+MACD)",
-            "pass": false,
-            "score": 5,
-            "detail": "EMA✓ · RSI 63✓ · ADX 8✗ · MACD✗"
+            "pass": true,
+            "score": 7.5,
+            "detail": "EMA✓ · RSI 56✓ · ADX 6✗ · MACD✓"
           },
           {
             "key": "harmonic",
@@ -2563,9 +3774,9 @@
           {
             "key": "elliott",
             "label": "Elliott W1/W3/W4",
-            "pass": false,
-            "score": 0,
-            "detail": "impulse 9.6% · no wave"
+            "pass": true,
+            "score": 10,
+            "detail": "impulse 7.9% · W3 start"
           },
           {
             "key": "darvas",
@@ -2584,44 +3795,44 @@
           {
             "key": "accumulation",
             "label": "Big-hands Accumulation",
-            "pass": true,
-            "score": 6,
-            "detail": "OBV 12% vs price 2%"
+            "pass": false,
+            "score": 0,
+            "detail": "OBV -20% vs price 0%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 160% · BB-w 11.7%"
+            "detail": "ATR contraction 109% · BB-w 4.4%"
           },
           {
             "key": "oi_buildup",
             "label": "OI Buildup direction",
             "pass": false,
             "score": 0,
-            "detail": "no OI snapshot for CHOLAFIN"
+            "detail": "no OI snapshot for SHREECEM"
           },
           {
             "key": "market_regime",
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
             "label": "R:R ≥ 2.5",
             "pass": false,
             "score": 0,
-            "detail": "1.00:1 reward:risk"
+            "detail": "1.33:1 reward:risk"
           },
           {
             "key": "bulk_deals",
@@ -2635,14 +3846,14 @@
             "label": "RS-z vs NIFTY",
             "pass": false,
             "score": 0,
-            "detail": "stock 20d 1.7% vs NIFTY 0.7% · z=0.31"
+            "detail": "stock 20d 0.5% vs NIFTY 0.7% · z=-0.06"
           },
           {
             "key": "smc",
             "label": "SMC (FVG/OB/BoS/Sweep)",
             "pass": false,
-            "score": 3,
-            "detail": "BoS: bullish BoS — close 1882.5 > 20d swing high 1875.0"
+            "score": 4,
+            "detail": "LiquiditySweep: bullish sweep — wick 1.2% below 25805.0 then reclaimed"
           },
           {
             "key": "stage_analysis",
@@ -2667,32 +3878,32 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
-      "symbol": "AUROPHARMA",
+      "symbol": "GAIL",
       "side": "LONG",
-      "price": 1568,
-      "entry": 1568,
-      "stopLoss": 1497.44,
-      "target1": 1662.08,
-      "target2": 1756.16,
-      "target3": 1881.6,
+      "price": 173.75,
+      "entry": 173.75,
+      "stopLoss": 165.93,
+      "target1": 184.18,
+      "target2": 194.6,
+      "target3": 208.5,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
       "expectedMovePct": 20,
-      "score": 79.8,
-      "confidence": "MED",
-      "grade": "B",
+      "score": 80.8,
+      "confidence": "HIGH",
+      "grade": "A",
       "features": {
-        "ret5d": 2.3498694516971277,
-        "ret20d": -3.2397408207343417,
-        "rsi14": 54.330699312244576,
-        "bbWidthPct": 4.5408132124920275,
-        "distFromHigh20": 1.6681284330362107,
-        "distFromLow20": 2.9276601595888616,
-        "volRatio": 0.9487206703133335,
+        "ret5d": -0.27549545962778993,
+        "ret20d": -0.7313025128400318,
+        "rsi14": 53.448284771886236,
+        "bbWidthPct": 7.021580977405575,
+        "distFromHigh20": 4.238316985191641,
+        "distFromLow20": 2.6648513120132846,
+        "volRatio": 1.9191777123764424,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -2700,57 +3911,57 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=1561.2 21=1552.2 50=1518.9"
+          "detail": "9=174.8 21=173.7 50=170.6"
         },
         {
           "name": "At 20d high",
-          "pass": true,
-          "detail": "1.7% off"
+          "pass": false,
+          "detail": "4.2% off"
         },
         {
           "name": "Tight coil (BB <12%)",
           "pass": true,
-          "detail": "4.5%"
+          "detail": "7.0%"
         },
         {
           "name": "Vol 5d/20d rising >1.3×",
-          "pass": false,
-          "detail": "0.95×"
+          "pass": true,
+          "detail": "1.92×"
         },
         {
           "name": "RSI 50–70 productive",
           "pass": true,
-          "detail": "54"
+          "detail": "53"
         },
         {
           "name": "20d return 5–25% (not extended)",
           "pass": false,
-          "detail": "-3.2%"
+          "detail": "-0.7%"
         },
         {
           "name": "FII stake ↑",
           "pass": true,
-          "detail": "+1.14pp QoQ"
+          "detail": "+1.96pp QoQ"
         },
         {
           "name": "Promoter stable/buying",
-          "pass": true,
-          "detail": "+0.06pp"
+          "pass": false,
+          "detail": "-0.09pp"
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=1561.2 21=1552.2 50=1518.9",
-        "At 20d high: 1.7% off",
-        "Tight coil (BB <12%): 4.5%",
-        "RSI 50–70 productive: 54"
+        "EMA 9>21>50 stack: 9=174.8 21=173.7 50=170.6",
+        "Tight coil (BB <12%): 7.0%",
+        "Vol 5d/20d rising >1.3×: 1.92×",
+        "RSI 50–70 productive: 53"
       ],
-      "fiiDelta": 1.1399999999999988,
-      "diiDelta": -0.7699999999999996,
-      "promoterDelta": 0.060000000000002274,
-      "marketCapCr": 91029,
+      "fiiDelta": 1.9600000000000009,
+      "diiDelta": -1.4100000000000001,
+      "promoterDelta": -0.09000000000000341,
+      "marketCapCr": 114177,
       "twelveCriteria": {
-        "total": 28.5,
-        "passCount": 4,
+        "total": 64.5,
+        "passCount": 9,
         "results": [
           {
             "key": "seasonality",
@@ -2769,9 +3980,492 @@
           {
             "key": "volume_increase",
             "label": "Volume Increase (today / 20d)",
+            "pass": true,
+            "score": 8,
+            "detail": "2.96× 20d avg"
+          },
+          {
+            "key": "stakes",
+            "label": "FII/DII/Promoter ↑",
+            "pass": true,
+            "score": 7.5,
+            "detail": "FII 15.0% (+1.96%) · DII 19.1% (-1.41%) · P 51.8% · Pledge 0.0%"
+          },
+          {
+            "key": "vol5d20d",
+            "label": "Last 5-day Vol Formula (5d/20d)",
+            "pass": true,
+            "score": 8,
+            "detail": "1.82× — sustained accumulation"
+          },
+          {
+            "key": "technical",
+            "label": "Technical (EMA+RSI+ADX+MACD)",
+            "pass": true,
+            "score": 10,
+            "detail": "EMA✓ · RSI 53✓ · ADX 38✓ · MACD✓"
+          },
+          {
+            "key": "harmonic",
+            "label": "Harmonic / Fib PRZ",
+            "pass": true,
+            "score": 7,
+            "detail": "near 50% retrace of 50d range"
+          },
+          {
+            "key": "elliott",
+            "label": "Elliott W1/W3/W4",
+            "pass": true,
+            "score": 8,
+            "detail": "impulse 7.2% · W2 complete (W3 imminent)"
+          },
+          {
+            "key": "darvas",
+            "label": "Darvas Box",
             "pass": false,
             "score": 0,
-            "detail": "0.88× 20d avg"
+            "detail": "no box pattern"
+          },
+          {
+            "key": "news",
+            "label": "News-Driven",
+            "pass": true,
+            "score": 7,
+            "detail": "news-bar in last 3d (4.0% on 5.3× vol)"
+          },
+          {
+            "key": "accumulation",
+            "label": "Big-hands Accumulation",
+            "pass": false,
+            "score": 0,
+            "detail": "OBV -2% vs price -0%"
+          },
+          {
+            "key": "tight_range",
+            "label": "Tight Range b/f Blast",
+            "pass": false,
+            "score": 0,
+            "detail": "ATR contraction 150% · BB-w 6.4%"
+          },
+          {
+            "key": "oi_buildup",
+            "label": "OI Buildup direction",
+            "pass": false,
+            "score": 0,
+            "detail": "no OI snapshot for GAIL"
+          },
+          {
+            "key": "market_regime",
+            "label": "Market Regime",
+            "pass": true,
+            "score": 6,
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
+          },
+          {
+            "key": "vix",
+            "label": "VIX Context",
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
+          },
+          {
+            "key": "rr_floor",
+            "label": "R:R ≥ 2.5",
+            "pass": false,
+            "score": 0,
+            "detail": "1.33:1 reward:risk"
+          },
+          {
+            "key": "bulk_deals",
+            "label": "Bulk-deals confirm",
+            "pass": false,
+            "score": 0,
+            "detail": "no recent named buyer/seller"
+          },
+          {
+            "key": "rs_z",
+            "label": "RS-z vs NIFTY",
+            "pass": false,
+            "score": 0,
+            "detail": "stock 20d -0.7% vs NIFTY 0.7% · z=-0.40"
+          },
+          {
+            "key": "smc",
+            "label": "SMC (FVG/OB/BoS/Sweep)",
+            "pass": true,
+            "score": 6,
+            "detail": "FVG: bullish FVG ₹171.2–172.6 · OB: bullish OB zone ₹173.6–175.1"
+          },
+          {
+            "key": "stage_analysis",
+            "label": "Stage Analysis (30W lifecycle)",
+            "pass": false,
+            "score": 0,
+            "detail": "<160 bars (need ~30 weeks)"
+          },
+          {
+            "key": "kp_astro",
+            "label": "KP sub-lord alignment",
+            "pass": false,
+            "score": -3,
+            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
+          },
+          {
+            "key": "bradley",
+            "label": "Bradley siderograph",
+            "pass": false,
+            "score": 0,
+            "detail": "compute failed: undefined"
+          }
+        ]
+      },
+      "asOf": "2026-08-03T07:38:58.081Z"
+    },
+    {
+      "symbol": "CHOLAFIN",
+      "side": "LONG",
+      "price": 1878.5999755859375,
+      "entry": 1878.5999755859375,
+      "stopLoss": 1765.88,
+      "target1": 1991.32,
+      "target2": 2104.03,
+      "target3": 2254.32,
+      "target1Date": "2026-08-12",
+      "target2Date": "2026-08-21",
+      "target3Date": "2026-09-01",
+      "expectedMovePct": 20,
+      "score": 79.8,
+      "confidence": "MED",
+      "grade": "B",
+      "features": {
+        "ret5d": 5.231908299837846,
+        "ret20d": 1.5185071918907052,
+        "rsi14": 62.324511585164224,
+        "bbWidthPct": 8.586177411585608,
+        "distFromHigh20": 0,
+        "distFromLow20": 9.392646722853272,
+        "volRatio": 1.5472672287482727,
+        "emaStackBull": true,
+        "emaStackBear": false
+      },
+      "confluences": [
+        {
+          "name": "EMA 9>21>50 stack",
+          "pass": true,
+          "detail": "9=1804.2 21=1780.4 50=1720.6"
+        },
+        {
+          "name": "At 20d high",
+          "pass": true,
+          "detail": "0.0% off"
+        },
+        {
+          "name": "Tight coil (BB <12%)",
+          "pass": true,
+          "detail": "8.6%"
+        },
+        {
+          "name": "Vol 5d/20d rising >1.3×",
+          "pass": true,
+          "detail": "1.55×"
+        },
+        {
+          "name": "RSI 50–70 productive",
+          "pass": true,
+          "detail": "62"
+        },
+        {
+          "name": "20d return 5–25% (not extended)",
+          "pass": false,
+          "detail": "1.5%"
+        },
+        {
+          "name": "FII stake ↑",
+          "pass": false,
+          "detail": "unavailable"
+        },
+        {
+          "name": "Promoter stable/buying",
+          "pass": false,
+          "detail": "unavailable"
+        }
+      ],
+      "reasons": [
+        "EMA 9>21>50 stack: 9=1804.2 21=1780.4 50=1720.6",
+        "At 20d high: 0.0% off",
+        "Tight coil (BB <12%): 8.6%",
+        "Vol 5d/20d rising >1.3×: 1.55×",
+        "RSI 50–70 productive: 62"
+      ],
+      "fiiDelta": null,
+      "diiDelta": null,
+      "promoterDelta": null,
+      "marketCapCr": null,
+      "twelveCriteria": {
+        "total": 35,
+        "passCount": 4,
+        "results": [
+          {
+            "key": "seasonality",
+            "label": "Seasonality",
+            "pass": false,
+            "score": 0,
+            "detail": "Month 8 not in LONG seasonal sweet spot"
+          },
+          {
+            "key": "cycle",
+            "label": "Cycle (Gann 90d)",
+            "pass": true,
+            "score": 10,
+            "detail": "near 90d HIGH — inflection cycle window"
+          },
+          {
+            "key": "volume_increase",
+            "label": "Volume Increase (today / 20d)",
+            "pass": false,
+            "score": 0,
+            "detail": "0.97× 20d avg"
+          },
+          {
+            "key": "stakes",
+            "label": "FII/DII/Promoter ↑",
+            "pass": false,
+            "score": 0,
+            "detail": "no shareholding data"
+          },
+          {
+            "key": "vol5d20d",
+            "label": "Last 5-day Vol Formula (5d/20d)",
+            "pass": true,
+            "score": 8,
+            "detail": "1.52× — sustained accumulation"
+          },
+          {
+            "key": "technical",
+            "label": "Technical (EMA+RSI+ADX+MACD)",
+            "pass": false,
+            "score": 5,
+            "detail": "EMA✓ · RSI 62✓ · ADX 8✗ · MACD✗"
+          },
+          {
+            "key": "harmonic",
+            "label": "Harmonic / Fib PRZ",
+            "pass": false,
+            "score": 0,
+            "detail": "near none retrace of 50d range"
+          },
+          {
+            "key": "elliott",
+            "label": "Elliott W1/W3/W4",
+            "pass": false,
+            "score": 0,
+            "detail": "impulse 9.4% · no wave"
+          },
+          {
+            "key": "darvas",
+            "label": "Darvas Box",
+            "pass": false,
+            "score": 0,
+            "detail": "no box pattern"
+          },
+          {
+            "key": "news",
+            "label": "News-Driven",
+            "pass": false,
+            "score": 0,
+            "detail": "no news-driven bar"
+          },
+          {
+            "key": "accumulation",
+            "label": "Big-hands Accumulation",
+            "pass": true,
+            "score": 6,
+            "detail": "OBV 12% vs price 1%"
+          },
+          {
+            "key": "tight_range",
+            "label": "Tight Range b/f Blast",
+            "pass": false,
+            "score": 0,
+            "detail": "ATR contraction 160% · BB-w 11.5%"
+          },
+          {
+            "key": "oi_buildup",
+            "label": "OI Buildup direction",
+            "pass": false,
+            "score": 0,
+            "detail": "no OI snapshot for CHOLAFIN"
+          },
+          {
+            "key": "market_regime",
+            "label": "Market Regime",
+            "pass": true,
+            "score": 6,
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
+          },
+          {
+            "key": "vix",
+            "label": "VIX Context",
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
+          },
+          {
+            "key": "rr_floor",
+            "label": "R:R ≥ 2.5",
+            "pass": false,
+            "score": 0,
+            "detail": "1.00:1 reward:risk"
+          },
+          {
+            "key": "bulk_deals",
+            "label": "Bulk-deals confirm",
+            "pass": false,
+            "score": 0,
+            "detail": "no recent named buyer/seller"
+          },
+          {
+            "key": "rs_z",
+            "label": "RS-z vs NIFTY",
+            "pass": false,
+            "score": 0,
+            "detail": "stock 20d 1.5% vs NIFTY 0.7% · z=0.25"
+          },
+          {
+            "key": "smc",
+            "label": "SMC (FVG/OB/BoS/Sweep)",
+            "pass": false,
+            "score": 3,
+            "detail": "BoS: bullish BoS — close 1878.6 > 20d swing high 1875.0"
+          },
+          {
+            "key": "stage_analysis",
+            "label": "Stage Analysis (30W lifecycle)",
+            "pass": false,
+            "score": 0,
+            "detail": "<160 bars (need ~30 weeks)"
+          },
+          {
+            "key": "kp_astro",
+            "label": "KP sub-lord alignment",
+            "pass": false,
+            "score": -3,
+            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
+          },
+          {
+            "key": "bradley",
+            "label": "Bradley siderograph",
+            "pass": false,
+            "score": 0,
+            "detail": "compute failed: undefined"
+          }
+        ]
+      },
+      "asOf": "2026-08-03T07:38:58.081Z"
+    },
+    {
+      "symbol": "AUROPHARMA",
+      "side": "LONG",
+      "price": 1567.0999755859375,
+      "entry": 1567.0999755859375,
+      "stopLoss": 1496.58,
+      "target1": 1661.13,
+      "target2": 1755.15,
+      "target3": 1880.52,
+      "target1Date": "2026-08-12",
+      "target2Date": "2026-08-21",
+      "target3Date": "2026-09-01",
+      "expectedMovePct": 20,
+      "score": 78.6,
+      "confidence": "MED",
+      "grade": "B",
+      "features": {
+        "ret5d": 1.1423745251694184,
+        "ret20d": -1.7245704515889697,
+        "rsi14": 53.23381821052766,
+        "bbWidthPct": 4.294552217872961,
+        "distFromHigh20": 1.4836220726951872,
+        "distFromLow20": 2.868580180618225,
+        "volRatio": 0.8710590735743736,
+        "emaStackBull": true,
+        "emaStackBear": false
+      },
+      "confluences": [
+        {
+          "name": "EMA 9>21>50 stack",
+          "pass": true,
+          "detail": "9=1564.3 21=1554.6 50=1522.0"
+        },
+        {
+          "name": "At 20d high",
+          "pass": true,
+          "detail": "1.5% off"
+        },
+        {
+          "name": "Tight coil (BB <12%)",
+          "pass": true,
+          "detail": "4.3%"
+        },
+        {
+          "name": "Vol 5d/20d rising >1.3×",
+          "pass": false,
+          "detail": "0.87×"
+        },
+        {
+          "name": "RSI 50–70 productive",
+          "pass": true,
+          "detail": "53"
+        },
+        {
+          "name": "20d return 5–25% (not extended)",
+          "pass": false,
+          "detail": "-1.7%"
+        },
+        {
+          "name": "FII stake ↑",
+          "pass": true,
+          "detail": "+1.14pp QoQ"
+        },
+        {
+          "name": "Promoter stable/buying",
+          "pass": true,
+          "detail": "+0.06pp"
+        }
+      ],
+      "reasons": [
+        "EMA 9>21>50 stack: 9=1564.3 21=1554.6 50=1522.0",
+        "At 20d high: 1.5% off",
+        "Tight coil (BB <12%): 4.3%",
+        "RSI 50–70 productive: 53"
+      ],
+      "fiiDelta": 1.1399999999999988,
+      "diiDelta": -0.7699999999999996,
+      "promoterDelta": 0.060000000000002274,
+      "marketCapCr": 91134,
+      "twelveCriteria": {
+        "total": 20.5,
+        "passCount": 3,
+        "results": [
+          {
+            "key": "seasonality",
+            "label": "Seasonality",
+            "pass": false,
+            "score": 0,
+            "detail": "Month 8 not in LONG seasonal sweet spot"
+          },
+          {
+            "key": "cycle",
+            "label": "Cycle (Gann 90d)",
+            "pass": false,
+            "score": 0,
+            "detail": "mid-range 81% of 90d band — no cycle edge"
+          },
+          {
+            "key": "volume_increase",
+            "label": "Volume Increase (today / 20d)",
+            "pass": false,
+            "score": 0,
+            "detail": "1.00× 20d avg"
           },
           {
             "key": "stakes",
@@ -2785,14 +4479,14 @@
             "label": "Last 5-day Vol Formula (5d/20d)",
             "pass": false,
             "score": 0,
-            "detail": "0.80× — no consistent build"
+            "detail": "0.88× — no consistent build"
           },
           {
             "key": "technical",
             "label": "Technical (EMA+RSI+ADX+MACD)",
             "pass": true,
             "score": 10,
-            "detail": "EMA✓ · RSI 54✓ · ADX 22✓ · MACD✓"
+            "detail": "EMA✓ · RSI 53✓ · ADX 22✓ · MACD✓"
           },
           {
             "key": "harmonic",
@@ -2827,14 +4521,14 @@
             "label": "Big-hands Accumulation",
             "pass": false,
             "score": 0,
-            "detail": "OBV -28% vs price -2%"
+            "detail": "OBV -26% vs price -1%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 103% · BB-w 5.5%"
+            "detail": "ATR contraction 100% · BB-w 5.8%"
           },
           {
             "key": "oi_buildup",
@@ -2848,14 +4542,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -2876,7 +4570,7 @@
             "label": "RS-z vs NIFTY",
             "pass": false,
             "score": 0,
-            "detail": "stock 20d -3.2% vs NIFTY 0.7% · z=-1.13"
+            "detail": "stock 20d -1.7% vs NIFTY 0.7% · z=-0.69"
           },
           {
             "key": "smc",
@@ -2908,65 +4602,65 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
-      "symbol": "DABUR",
-      "side": "SHORT",
-      "price": 423.54998779296875,
-      "entry": 423.54998779296875,
-      "stopLoss": 442.61,
-      "target1": 398.14,
-      "target2": 372.72,
-      "target3": 338.84,
+      "symbol": "MARUTI",
+      "side": "LONG",
+      "price": 14153,
+      "entry": 14153,
+      "stopLoss": 13303.82,
+      "target1": 15002.18,
+      "target2": 15851.36,
+      "target3": 16983.6,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
       "expectedMovePct": 20,
-      "score": 79.8,
+      "score": 78.6,
       "confidence": "MED",
       "grade": "B",
       "features": {
-        "ret5d": 0.08269744230685193,
-        "ret20d": -4.680998767827474,
-        "rsi14": 32.04678930322173,
-        "bbWidthPct": 7.165625540839517,
-        "distFromHigh20": 6.604192327901047,
-        "distFromLow20": 0.09452768575065273,
-        "volRatio": 1.4995337603476522,
-        "emaStackBull": false,
-        "emaStackBear": true
+        "ret5d": 3.0808448652585576,
+        "ret20d": -2.096015495296071,
+        "rsi14": 68.52678571428572,
+        "bbWidthPct": 8.019501165830565,
+        "distFromHigh20": 2.6482322190122436,
+        "distFromLow20": 5.59576214280385,
+        "volRatio": 1.3074850081332396,
+        "emaStackBull": true,
+        "emaStackBear": false
       },
       "confluences": [
         {
-          "name": "EMA 9<21<50 stack",
+          "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=427.1 21=429.6 50=432.6"
+          "detail": "9=13944.7 21=13828.8 50=13652.8"
         },
         {
-          "name": "At 20d low",
+          "name": "At 20d high",
           "pass": true,
-          "detail": "0.1% off"
+          "detail": "2.6% off"
         },
         {
           "name": "Tight coil (BB <12%)",
           "pass": true,
-          "detail": "7.2%"
+          "detail": "8.0%"
         },
         {
-          "name": "Vol 5d/20d distribution >1.3×",
+          "name": "Vol 5d/20d rising >1.3×",
           "pass": true,
-          "detail": "1.50×"
+          "detail": "1.31×"
         },
         {
-          "name": "RSI 30–50 weak",
+          "name": "RSI 50–70 productive",
           "pass": true,
-          "detail": "32"
+          "detail": "69"
         },
         {
-          "name": "20d return -25–-5% (breakdown)",
+          "name": "20d return 5–25% (not extended)",
           "pass": false,
-          "detail": "-4.7%"
+          "detail": "-2.1%"
         },
         {
           "name": "FII stake ↑",
@@ -2980,40 +4674,40 @@
         }
       ],
       "reasons": [
-        "EMA 9<21<50 stack: 9=427.1 21=429.6 50=432.6",
-        "At 20d low: 0.1% off",
-        "Tight coil (BB <12%): 7.2%",
-        "Vol 5d/20d distribution >1.3×: 1.50×",
-        "RSI 30–50 weak: 32"
+        "EMA 9>21>50 stack: 9=13944.7 21=13828.8 50=13652.8",
+        "At 20d high: 2.6% off",
+        "Tight coil (BB <12%): 8.0%",
+        "Vol 5d/20d rising >1.3×: 1.31×",
+        "RSI 50–70 productive: 69"
       ],
       "fiiDelta": null,
       "diiDelta": null,
       "promoterDelta": null,
       "marketCapCr": null,
       "twelveCriteria": {
-        "total": 32,
-        "passCount": 4,
+        "total": 23,
+        "passCount": 3,
         "results": [
           {
             "key": "seasonality",
             "label": "Seasonality",
             "pass": false,
             "score": 0,
-            "detail": "Month 8 not in SHORT seasonal sweet spot"
+            "detail": "Month 8 not in LONG seasonal sweet spot"
           },
           {
             "key": "cycle",
             "label": "Cycle (Gann 90d)",
             "pass": false,
             "score": 0,
-            "detail": "mid-range 23% of 90d band — no cycle edge"
+            "detail": "mid-range 81% of 90d band — no cycle edge"
           },
           {
             "key": "volume_increase",
             "label": "Volume Increase (today / 20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.58× 20d avg"
+            "pass": true,
+            "score": 6,
+            "detail": "1.74× 20d avg"
           },
           {
             "key": "stakes",
@@ -3025,16 +4719,16 @@
           {
             "key": "vol5d20d",
             "label": "Last 5-day Vol Formula (5d/20d)",
-            "pass": true,
-            "score": 6,
-            "detail": "1.41× — sustained accumulation"
+            "pass": false,
+            "score": 0,
+            "detail": "1.20× — no consistent build"
           },
           {
             "key": "technical",
             "label": "Technical (EMA+RSI+ADX+MACD)",
-            "pass": true,
-            "score": 10,
-            "detail": "EMA✓ · RSI 32✓ · ADX 35✓ · MACD✓"
+            "pass": false,
+            "score": 5,
+            "detail": "EMA✓ · RSI 69✓ · ADX 14✗ · MACD✗"
           },
           {
             "key": "harmonic",
@@ -3045,10 +4739,10 @@
           },
           {
             "key": "elliott",
-            "label": "Elliott W1/W3/W4",
+            "label": "Elliott Wave 1/3/4",
             "pass": false,
             "score": 0,
-            "detail": "impulse 7.4% · no wave"
+            "detail": "no impulse pattern"
           },
           {
             "key": "darvas",
@@ -3067,44 +4761,44 @@
           {
             "key": "accumulation",
             "label": "Big-hands Accumulation",
-            "pass": false,
-            "score": 0,
-            "detail": "OBV -80% vs price -6%"
+            "pass": true,
+            "score": 6,
+            "detail": "OBV 17% vs price -3%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 98% · BB-w 2.7%"
+            "detail": "ATR contraction 89% · BB-w 8.6%"
           },
           {
             "key": "oi_buildup",
             "label": "OI Buildup direction",
             "pass": false,
             "score": 0,
-            "detail": "no OI snapshot for DABUR"
+            "detail": "no OI snapshot for MARUTI"
           },
           {
             "key": "market_regime",
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
             "pass": false,
             "score": 0,
-            "detail": "VIX 11.9 (LOW) ✗ not aligned"
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
             "label": "R:R ≥ 2.5",
             "pass": false,
             "score": 0,
-            "detail": "1.33:1 reward:risk"
+            "detail": "1.00:1 reward:risk"
           },
           {
             "key": "bulk_deals",
@@ -3118,14 +4812,14 @@
             "label": "RS-z vs NIFTY",
             "pass": false,
             "score": 0,
-            "detail": "stock 20d -4.7% vs NIFTY 0.7% · z=-1.54"
+            "detail": "stock 20d -2.1% vs NIFTY 0.7% · z=-0.80"
           },
           {
             "key": "smc",
             "label": "SMC (FVG/OB/BoS/Sweep)",
             "pass": false,
-            "score": 0,
-            "detail": "no aligned SMC primitives"
+            "score": 3,
+            "detail": "FVG: bullish FVG ₹13495.0–13669.0"
           },
           {
             "key": "stage_analysis",
@@ -3137,8 +4831,8 @@
           {
             "key": "kp_astro",
             "label": "KP sub-lord alignment",
-            "pass": true,
-            "score": 10,
+            "pass": false,
+            "score": -3,
             "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
           },
           {
@@ -3150,32 +4844,32 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
       "symbol": "APLAPOLLO",
       "side": "LONG",
-      "price": 1930.300048828125,
-      "entry": 1930.300048828125,
-      "stopLoss": 1843.44,
-      "target1": 2046.12,
-      "target2": 2161.94,
-      "target3": 2316.36,
+      "price": 1930,
+      "entry": 1930,
+      "stopLoss": 1843.15,
+      "target1": 2045.8,
+      "target2": 2161.6,
+      "target3": 2316,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
       "expectedMovePct": 20,
-      "score": 79.6,
+      "score": 78.4,
       "confidence": "MED",
       "grade": "B",
       "features": {
-        "ret5d": 4.346182137033509,
-        "ret20d": 6.971462944201995,
-        "rsi14": 68.73039212954708,
-        "bbWidthPct": 7.480703557031301,
+        "ret5d": 4.329962404930957,
+        "ret20d": 6.954835134386257,
+        "rsi14": 68.70360055186106,
+        "bbWidthPct": 7.466319978545985,
         "distFromHigh20": 0,
-        "distFromLow20": 8.08556035836546,
-        "volRatio": 1.8141337934426642,
+        "distFromLow20": 8.068759371522791,
+        "volRatio": 1.8204973027174145,
         "emaStackBull": false,
         "emaStackBear": false
       },
@@ -3183,7 +4877,7 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": false,
-          "detail": "9=1859.9 21=1839.6 50=1844.2"
+          "detail": "9=1859.8 21=1839.5 50=1844.2"
         },
         {
           "name": "At 20d high",
@@ -3198,7 +4892,7 @@
         {
           "name": "Vol 5d/20d rising >1.3×",
           "pass": true,
-          "detail": "1.81×"
+          "detail": "1.82×"
         },
         {
           "name": "RSI 50–70 productive",
@@ -3224,17 +4918,17 @@
       "reasons": [
         "At 20d high: 0.0% off",
         "Tight coil (BB <12%): 7.5%",
-        "Vol 5d/20d rising >1.3×: 1.81×",
+        "Vol 5d/20d rising >1.3×: 1.82×",
         "RSI 50–70 productive: 69",
         "20d return 5–25% (not extended): 7.0%"
       ],
       "fiiDelta": -2.4000000000000057,
       "diiDelta": 2.5299999999999976,
       "promoterDelta": 0,
-      "marketCapCr": 53577,
+      "marketCapCr": 53559,
       "twelveCriteria": {
-        "total": 59.5,
-        "passCount": 8,
+        "total": 51.5,
+        "passCount": 7,
         "results": [
           {
             "key": "seasonality",
@@ -3255,7 +4949,7 @@
             "label": "Volume Increase (today / 20d)",
             "pass": true,
             "score": 10,
-            "detail": "7.02× 20d avg"
+            "detail": "7.10× 20d avg"
           },
           {
             "key": "stakes",
@@ -3304,7 +4998,7 @@
             "label": "News-Driven",
             "pass": true,
             "score": 7,
-            "detail": "news-bar in last 3d (6.0% on 7.5× vol)"
+            "detail": "news-bar in last 3d (6.0% on 7.6× vol)"
           },
           {
             "key": "accumulation",
@@ -3332,14 +5026,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -3367,7 +5061,7 @@
             "label": "SMC (FVG/OB/BoS/Sweep)",
             "pass": true,
             "score": 6,
-            "detail": "OB: bullish OB zone ₹1819.5–1908.0 · BoS: bullish BoS — close 1930.3 > 20d swing high 1908.0"
+            "detail": "OB: bullish OB zone ₹1819.5–1908.0 · BoS: bullish BoS — close 1930.0 > 20d swing high 1908.0"
           },
           {
             "key": "stage_analysis",
@@ -3392,32 +5086,32 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
       "symbol": "NYKAA",
       "side": "LONG",
-      "price": 340.5,
-      "entry": 340.5,
-      "stopLoss": 325.18,
-      "target1": 360.93,
-      "target2": 381.36,
-      "target3": 408.6,
+      "price": 340.6,
+      "entry": 340.6,
+      "stopLoss": 325.27,
+      "target1": 361.04,
+      "target2": 381.47,
+      "target3": 408.72,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
       "expectedMovePct": 20,
-      "score": 79.6,
+      "score": 78.4,
       "confidence": "MED",
       "grade": "B",
       "features": {
-        "ret5d": 5.483275364428868,
-        "ret20d": 9.73252123592754,
-        "rsi14": 62.98282046194117,
-        "bbWidthPct": 7.929515418502203,
+        "ret5d": 4.238714613618981,
+        "ret20d": 8.644338118022336,
+        "rsi14": 68.58457997698503,
+        "bbWidthPct": 7.4574280681151,
         "distFromHigh20": 0,
-        "distFromLow20": 8.61244019138756,
-        "volRatio": 0.8546717141694469,
+        "distFromLow20": 8.058375634517779,
+        "volRatio": 0.9867189425286917,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -3425,7 +5119,7 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=330.1 21=322.9 50=305.8"
+          "detail": "9=331.1 21=323.8 50=306.4"
         },
         {
           "name": "At 20d high",
@@ -3435,22 +5129,22 @@
         {
           "name": "Tight coil (BB <12%)",
           "pass": true,
-          "detail": "7.9%"
+          "detail": "7.5%"
         },
         {
           "name": "Vol 5d/20d rising >1.3×",
           "pass": false,
-          "detail": "0.85×"
+          "detail": "0.99×"
         },
         {
           "name": "RSI 50–70 productive",
           "pass": true,
-          "detail": "63"
+          "detail": "69"
         },
         {
           "name": "20d return 5–25% (not extended)",
           "pass": true,
-          "detail": "9.7%"
+          "detail": "8.6%"
         },
         {
           "name": "FII stake ↑",
@@ -3464,19 +5158,19 @@
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=330.1 21=322.9 50=305.8",
+        "EMA 9>21>50 stack: 9=331.1 21=323.8 50=306.4",
         "At 20d high: 0.0% off",
-        "Tight coil (BB <12%): 7.9%",
-        "RSI 50–70 productive: 63",
-        "20d return 5–25% (not extended): 9.7%"
+        "Tight coil (BB <12%): 7.5%",
+        "RSI 50–70 productive: 69",
+        "20d return 5–25% (not extended): 8.6%"
       ],
       "fiiDelta": null,
       "diiDelta": null,
       "promoterDelta": null,
       "marketCapCr": null,
       "twelveCriteria": {
-        "total": 61,
-        "passCount": 8,
+        "total": 53,
+        "passCount": 7,
         "results": [
           {
             "key": "seasonality",
@@ -3497,7 +5191,7 @@
             "label": "Volume Increase (today / 20d)",
             "pass": false,
             "score": 0,
-            "detail": "0.67× 20d avg"
+            "detail": "0.69× 20d avg"
           },
           {
             "key": "stakes",
@@ -3511,14 +5205,14 @@
             "label": "Last 5-day Vol Formula (5d/20d)",
             "pass": false,
             "score": 0,
-            "detail": "0.78× — no consistent build"
+            "detail": "0.91× — no consistent build"
           },
           {
             "key": "technical",
             "label": "Technical (EMA+RSI+ADX+MACD)",
             "pass": true,
             "score": 10,
-            "detail": "EMA✓ · RSI 63✓ · ADX 27✓ · MACD✓"
+            "detail": "EMA✓ · RSI 69✓ · ADX 42✓ · MACD✓"
           },
           {
             "key": "harmonic",
@@ -3532,7 +5226,7 @@
             "label": "Elliott W1/W3/W4",
             "pass": false,
             "score": 0,
-            "detail": "impulse 12.7% · no wave"
+            "detail": "impulse 10.4% · no wave"
           },
           {
             "key": "darvas",
@@ -3553,14 +5247,14 @@
             "label": "Big-hands Accumulation",
             "pass": true,
             "score": 6,
-            "detail": "OBV 27% vs price 9%"
+            "detail": "OBV 16% vs price 8%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 96% · BB-w 6.1%"
+            "detail": "ATR contraction 92% · BB-w 6.0%"
           },
           {
             "key": "oi_buildup",
@@ -3574,14 +5268,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -3602,14 +5296,14 @@
             "label": "RS-z vs NIFTY",
             "pass": true,
             "score": 10,
-            "detail": "stock 20d 9.7% vs NIFTY 0.7% · z=2.62"
+            "detail": "stock 20d 8.6% vs NIFTY 0.7% · z=2.30"
           },
           {
             "key": "smc",
             "label": "SMC (FVG/OB/BoS/Sweep)",
             "pass": true,
             "score": 6,
-            "detail": "FVG: bullish FVG ₹323.5–325.9 · BoS: bullish BoS — close 340.5 > 20d swing high 335.0"
+            "detail": "FVG: bullish FVG ₹323.6–325.9 · BoS: bullish BoS — close 340.6 > 20d swing high 338.0"
           },
           {
             "key": "stage_analysis",
@@ -3634,273 +5328,32 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
-    },
-    {
-      "symbol": "ALKEM",
-      "side": "LONG",
-      "price": 5719,
-      "entry": 5719,
-      "stopLoss": 5461.64,
-      "target1": 6062.14,
-      "target2": 6405.28,
-      "target3": 6862.8,
-      "target1Date": "2026-08-12",
-      "target2Date": "2026-08-21",
-      "target3Date": "2026-09-01",
-      "expectedMovePct": 20,
-      "score": 78.4,
-      "confidence": "MED",
-      "grade": "B",
-      "features": {
-        "ret5d": 1.5177065767284992,
-        "ret20d": 2.8134831460674157,
-        "rsi14": 58.70561282932417,
-        "bbWidthPct": 4.432593110683686,
-        "distFromHigh20": 1.6762657955815354,
-        "distFromLow20": 2.8042423152975013,
-        "volRatio": 0.931869186307734,
-        "emaStackBull": true,
-        "emaStackBear": false
-      },
-      "confluences": [
-        {
-          "name": "EMA 9>21>50 stack",
-          "pass": true,
-          "detail": "9=5681.2 21=5627.7 50=5543.7"
-        },
-        {
-          "name": "At 20d high",
-          "pass": true,
-          "detail": "1.7% off"
-        },
-        {
-          "name": "Tight coil (BB <12%)",
-          "pass": true,
-          "detail": "4.4%"
-        },
-        {
-          "name": "Vol 5d/20d rising >1.3×",
-          "pass": false,
-          "detail": "0.93×"
-        },
-        {
-          "name": "RSI 50–70 productive",
-          "pass": true,
-          "detail": "59"
-        },
-        {
-          "name": "20d return 5–25% (not extended)",
-          "pass": false,
-          "detail": "2.8%"
-        },
-        {
-          "name": "FII stake ↑",
-          "pass": true,
-          "detail": "+0.27pp QoQ"
-        },
-        {
-          "name": "Promoter stable/buying",
-          "pass": false,
-          "detail": "-1.50pp"
-        }
-      ],
-      "reasons": [
-        "EMA 9>21>50 stack: 9=5681.2 21=5627.7 50=5543.7",
-        "At 20d high: 1.7% off",
-        "Tight coil (BB <12%): 4.4%",
-        "RSI 50–70 productive: 59"
-      ],
-      "fiiDelta": 0.2699999999999996,
-      "diiDelta": 1.25,
-      "promoterDelta": -1.5,
-      "marketCapCr": 68250,
-      "twelveCriteria": {
-        "total": 47,
-        "passCount": 7,
-        "results": [
-          {
-            "key": "seasonality",
-            "label": "Seasonality",
-            "pass": false,
-            "score": 0,
-            "detail": "Month 8 not in LONG seasonal sweet spot"
-          },
-          {
-            "key": "cycle",
-            "label": "Cycle (Gann 90d)",
-            "pass": false,
-            "score": 0,
-            "detail": "mid-range 80% of 90d band — no cycle edge"
-          },
-          {
-            "key": "volume_increase",
-            "label": "Volume Increase (today / 20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.48× 20d avg"
-          },
-          {
-            "key": "stakes",
-            "label": "FII/DII/Promoter ↑",
-            "pass": true,
-            "score": 7.5,
-            "detail": "FII 10.4% (+0.27%) · DII 22.6% (+1.25%) · P 49.7% · Pledge 0.0%"
-          },
-          {
-            "key": "vol5d20d",
-            "label": "Last 5-day Vol Formula (5d/20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.76× — no consistent build"
-          },
-          {
-            "key": "technical",
-            "label": "Technical (EMA+RSI+ADX+MACD)",
-            "pass": true,
-            "score": 7.5,
-            "detail": "EMA✓ · RSI 59✓ · ADX 13✗ · MACD✓"
-          },
-          {
-            "key": "harmonic",
-            "label": "Harmonic / Fib PRZ",
-            "pass": false,
-            "score": 0,
-            "detail": "near none retrace of 50d range"
-          },
-          {
-            "key": "elliott",
-            "label": "Elliott W1/W3/W4",
-            "pass": true,
-            "score": 7,
-            "detail": "impulse 7.4% · W4 pullback"
-          },
-          {
-            "key": "darvas",
-            "label": "Darvas Box",
-            "pass": true,
-            "score": 8,
-            "detail": "3x box top"
-          },
-          {
-            "key": "news",
-            "label": "News-Driven",
-            "pass": false,
-            "score": 0,
-            "detail": "no news-driven bar"
-          },
-          {
-            "key": "accumulation",
-            "label": "Big-hands Accumulation",
-            "pass": true,
-            "score": 6,
-            "detail": "OBV 55% vs price 2%"
-          },
-          {
-            "key": "tight_range",
-            "label": "Tight Range b/f Blast",
-            "pass": false,
-            "score": 0,
-            "detail": "ATR contraction 99% · BB-w 4.5%"
-          },
-          {
-            "key": "oi_buildup",
-            "label": "OI Buildup direction",
-            "pass": false,
-            "score": 0,
-            "detail": "no OI snapshot for ALKEM"
-          },
-          {
-            "key": "market_regime",
-            "label": "Market Regime",
-            "pass": true,
-            "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
-          },
-          {
-            "key": "vix",
-            "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
-          },
-          {
-            "key": "rr_floor",
-            "label": "R:R ≥ 2.5",
-            "pass": false,
-            "score": 0,
-            "detail": "1.33:1 reward:risk"
-          },
-          {
-            "key": "bulk_deals",
-            "label": "Bulk-deals confirm",
-            "pass": false,
-            "score": 0,
-            "detail": "no recent named buyer/seller"
-          },
-          {
-            "key": "rs_z",
-            "label": "RS-z vs NIFTY",
-            "pass": false,
-            "score": 0,
-            "detail": "stock 20d 2.8% vs NIFTY 0.7% · z=0.62"
-          },
-          {
-            "key": "smc",
-            "label": "SMC (FVG/OB/BoS/Sweep)",
-            "pass": false,
-            "score": 0,
-            "detail": "no aligned SMC primitives"
-          },
-          {
-            "key": "stage_analysis",
-            "label": "Stage Analysis (30W lifecycle)",
-            "pass": false,
-            "score": 0,
-            "detail": "<160 bars (need ~30 weeks)"
-          },
-          {
-            "key": "kp_astro",
-            "label": "KP sub-lord alignment",
-            "pass": false,
-            "score": -3,
-            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
-          },
-          {
-            "key": "bradley",
-            "label": "Bradley siderograph",
-            "pass": false,
-            "score": 0,
-            "detail": "compute failed: undefined"
-          }
-        ]
-      },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
       "symbol": "ETERNAL",
       "side": "LONG",
-      "price": 308.70001220703125,
-      "entry": 308.70001220703125,
-      "stopLoss": 290.18,
-      "target1": 327.22,
-      "target2": 345.74,
-      "target3": 370.44,
+      "price": 308.79998779296875,
+      "entry": 308.79998779296875,
+      "stopLoss": 290.27,
+      "target1": 327.33,
+      "target2": 345.86,
+      "target3": 370.56,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
       "expectedMovePct": 20,
-      "score": 78.4,
+      "score": 77.2,
       "confidence": "MED",
       "grade": "B",
       "features": {
-        "ret5d": 4.343419245703685,
-        "ret20d": 8.927317874180352,
-        "rsi14": 64.59548687309068,
-        "bbWidthPct": 10.301259000806882,
-        "distFromHigh20": 0.9942192775183316,
-        "distFromLow20": 10.250004359654017,
-        "volRatio": 1.0441123105699972,
+        "ret5d": 4.377211905455234,
+        "ret20d": 8.962595075341484,
+        "rsi14": 64.6412475642142,
+        "bbWidthPct": 10.297923915168244,
+        "distFromHigh20": 0.9621552653786383,
+        "distFromLow20": 10.285709926060267,
+        "volRatio": 1.0457945723598916,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -3908,7 +5361,7 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=301.2 21=291.8 50=277.1"
+          "detail": "9=301.2 21=291.9 50=277.1"
         },
         {
           "name": "At 20d high",
@@ -3923,7 +5376,7 @@
         {
           "name": "Vol 5d/20d rising >1.3×",
           "pass": false,
-          "detail": "1.04×"
+          "detail": "1.05×"
         },
         {
           "name": "RSI 50–70 productive",
@@ -3933,7 +5386,7 @@
         {
           "name": "20d return 5–25% (not extended)",
           "pass": true,
-          "detail": "8.9%"
+          "detail": "9.0%"
         },
         {
           "name": "FII stake ↑",
@@ -3947,19 +5400,19 @@
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=301.2 21=291.8 50=277.1",
+        "EMA 9>21>50 stack: 9=301.2 21=291.9 50=277.1",
         "At 20d high: 1.0% off",
         "Tight coil (BB <12%): 10.3%",
         "RSI 50–70 productive: 65",
-        "20d return 5–25% (not extended): 8.9%"
+        "20d return 5–25% (not extended): 9.0%"
       ],
       "fiiDelta": null,
       "diiDelta": null,
       "promoterDelta": null,
       "marketCapCr": null,
       "twelveCriteria": {
-        "total": 60,
-        "passCount": 7,
+        "total": 52,
+        "passCount": 6,
         "results": [
           {
             "key": "seasonality",
@@ -3980,7 +5433,7 @@
             "label": "Volume Increase (today / 20d)",
             "pass": false,
             "score": 0,
-            "detail": "0.43× 20d avg"
+            "detail": "0.44× 20d avg"
           },
           {
             "key": "stakes",
@@ -4057,14 +5510,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -4085,7 +5538,7 @@
             "label": "RS-z vs NIFTY",
             "pass": true,
             "score": 10,
-            "detail": "stock 20d 8.9% vs NIFTY 0.7% · z=2.38"
+            "detail": "stock 20d 9.0% vs NIFTY 0.7% · z=2.40"
           },
           {
             "key": "smc",
@@ -4117,32 +5570,32 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
       "symbol": "ICICIPRULI",
       "side": "LONG",
-      "price": 518,
-      "entry": 518,
-      "stopLoss": 486.92,
-      "target1": 549.08,
-      "target2": 580.16,
-      "target3": 621.6,
+      "price": 518.5,
+      "entry": 518.5,
+      "stopLoss": 487.39,
+      "target1": 549.61,
+      "target2": 580.72,
+      "target3": 622.2,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
       "expectedMovePct": 20,
-      "score": 78.4,
+      "score": 77.2,
       "confidence": "MED",
       "grade": "B",
       "features": {
-        "ret5d": 1.608476344326885,
-        "ret20d": 6.782105438577099,
-        "rsi14": 59.23732989621221,
-        "bbWidthPct": 8.706570776272924,
-        "distFromHigh20": 1.3615203430753258,
-        "distFromLow20": 7.905429261962185,
-        "volRatio": 0.46391162352999527,
+        "ret5d": 1.7065540241959265,
+        "ret20d": 6.885176968923217,
+        "rsi14": 59.503578388066934,
+        "bbWidthPct": 8.698174854598602,
+        "distFromHigh20": 1.2663094553755914,
+        "distFromLow20": 8.009585081713114,
+        "volRatio": 0.4772013371855222,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -4150,12 +5603,12 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=510.5 21=505.6 50=505.3"
+          "detail": "9=510.6 21=505.7 50=505.4"
         },
         {
           "name": "At 20d high",
           "pass": true,
-          "detail": "1.4% off"
+          "detail": "1.3% off"
         },
         {
           "name": "Tight coil (BB <12%)",
@@ -4165,17 +5618,17 @@
         {
           "name": "Vol 5d/20d rising >1.3×",
           "pass": false,
-          "detail": "0.46×"
+          "detail": "0.48×"
         },
         {
           "name": "RSI 50–70 productive",
           "pass": true,
-          "detail": "59"
+          "detail": "60"
         },
         {
           "name": "20d return 5–25% (not extended)",
           "pass": true,
-          "detail": "6.8%"
+          "detail": "6.9%"
         },
         {
           "name": "FII stake ↑",
@@ -4189,19 +5642,19 @@
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=510.5 21=505.6 50=505.3",
-        "At 20d high: 1.4% off",
+        "EMA 9>21>50 stack: 9=510.6 21=505.7 50=505.4",
+        "At 20d high: 1.3% off",
         "Tight coil (BB <12%): 8.7%",
-        "RSI 50–70 productive: 59",
-        "20d return 5–25% (not extended): 6.8%"
+        "RSI 50–70 productive: 60",
+        "20d return 5–25% (not extended): 6.9%"
       ],
       "fiiDelta": -0.6699999999999999,
       "diiDelta": 0.7599999999999998,
       "promoterDelta": -0.06999999999999318,
-      "marketCapCr": 75166,
+      "marketCapCr": 75079,
       "twelveCriteria": {
-        "total": 57,
-        "passCount": 7,
+        "total": 49,
+        "passCount": 6,
         "results": [
           {
             "key": "seasonality",
@@ -4222,7 +5675,7 @@
             "label": "Volume Increase (today / 20d)",
             "pass": false,
             "score": 0,
-            "detail": "0.56× 20d avg"
+            "detail": "0.63× 20d avg"
           },
           {
             "key": "stakes",
@@ -4243,7 +5696,7 @@
             "label": "Technical (EMA+RSI+ADX+MACD)",
             "pass": true,
             "score": 7.5,
-            "detail": "EMA✓ · RSI 59✓ · ADX 41✓ · MACD✗"
+            "detail": "EMA✓ · RSI 60✓ · ADX 41✓ · MACD✗"
           },
           {
             "key": "harmonic",
@@ -4278,14 +5731,14 @@
             "label": "Big-hands Accumulation",
             "pass": true,
             "score": 6,
-            "detail": "OBV 120% vs price 6%"
+            "detail": "OBV 123% vs price 6%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 5,
-            "detail": "ATR contraction 58% · BB-w 5.0%"
+            "detail": "ATR contraction 58% · BB-w 5.1%"
           },
           {
             "key": "oi_buildup",
@@ -4299,14 +5752,14 @@
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -4327,7 +5780,7 @@
             "label": "RS-z vs NIFTY",
             "pass": true,
             "score": 7,
-            "detail": "stock 20d 6.8% vs NIFTY 0.7% · z=1.77"
+            "detail": "stock 20d 6.9% vs NIFTY 0.7% · z=1.80"
           },
           {
             "key": "smc",
@@ -4359,32 +5812,32 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     },
     {
-      "symbol": "MPHASIS",
+      "symbol": "NAUKRI",
       "side": "LONG",
-      "price": 2411.800048828125,
-      "entry": 2411.800048828125,
-      "stopLoss": 2303.27,
-      "target1": 2556.51,
-      "target2": 2701.22,
-      "target3": 2894.16,
+      "price": 1252.0999755859375,
+      "entry": 1252.0999755859375,
+      "stopLoss": 1195.76,
+      "target1": 1327.23,
+      "target2": 1402.35,
+      "target3": 1502.52,
       "target1Date": "2026-08-12",
       "target2Date": "2026-08-21",
       "target3Date": "2026-09-01",
       "expectedMovePct": 20,
-      "score": 78.4,
+      "score": 76,
       "confidence": "MED",
       "grade": "B",
       "features": {
-        "ret5d": 5.4062298803528535,
-        "ret20d": 5.0161084330458765,
-        "rsi14": 51.72748962087264,
-        "bbWidthPct": 7.508918400770625,
-        "distFromHigh20": 0.07043510138284649,
-        "distFromLow20": 8.036201143712045,
-        "volRatio": 1.2071675672685995,
+        "ret5d": 4.83964869753854,
+        "ret20d": 22.138218384337563,
+        "rsi14": 63.63444371971915,
+        "bbWidthPct": 7.3995708186724976,
+        "distFromHigh20": 0,
+        "distFromLow20": 7.990860176450015,
+        "volRatio": 0.5820054560322772,
         "emaStackBull": true,
         "emaStackBear": false
       },
@@ -4392,32 +5845,32 @@
         {
           "name": "EMA 9>21>50 stack",
           "pass": true,
-          "detail": "9=2356.6 21=2334.3 50=2302.4"
+          "detail": "9=1221.5 21=1179.9 50=1109.6"
         },
         {
           "name": "At 20d high",
           "pass": true,
-          "detail": "0.1% off"
+          "detail": "0.0% off"
         },
         {
           "name": "Tight coil (BB <12%)",
           "pass": true,
-          "detail": "7.5%"
+          "detail": "7.4%"
         },
         {
           "name": "Vol 5d/20d rising >1.3×",
           "pass": false,
-          "detail": "1.21×"
+          "detail": "0.58×"
         },
         {
           "name": "RSI 50–70 productive",
           "pass": true,
-          "detail": "52"
+          "detail": "64"
         },
         {
           "name": "20d return 5–25% (not extended)",
           "pass": true,
-          "detail": "5.0%"
+          "detail": "22.1%"
         },
         {
           "name": "FII stake ↑",
@@ -4431,19 +5884,19 @@
         }
       ],
       "reasons": [
-        "EMA 9>21>50 stack: 9=2356.6 21=2334.3 50=2302.4",
-        "At 20d high: 0.1% off",
-        "Tight coil (BB <12%): 7.5%",
-        "RSI 50–70 productive: 52",
-        "20d return 5–25% (not extended): 5.0%"
+        "EMA 9>21>50 stack: 9=1221.5 21=1179.9 50=1109.6",
+        "At 20d high: 0.0% off",
+        "Tight coil (BB <12%): 7.4%",
+        "RSI 50–70 productive: 64",
+        "20d return 5–25% (not extended): 22.1%"
       ],
       "fiiDelta": null,
       "diiDelta": null,
       "promoterDelta": null,
       "marketCapCr": null,
       "twelveCriteria": {
-        "total": 58,
-        "passCount": 7,
+        "total": 42,
+        "passCount": 5,
         "results": [
           {
             "key": "seasonality",
@@ -4464,7 +5917,7 @@
             "label": "Volume Increase (today / 20d)",
             "pass": false,
             "score": 0,
-            "detail": "0.30× 20d avg"
+            "detail": "0.11× 20d avg"
           },
           {
             "key": "stakes",
@@ -4476,16 +5929,16 @@
           {
             "key": "vol5d20d",
             "label": "Last 5-day Vol Formula (5d/20d)",
-            "pass": true,
-            "score": 8,
-            "detail": "1.62× — sustained accumulation"
+            "pass": false,
+            "score": 0,
+            "detail": "0.70× — no consistent build"
           },
           {
             "key": "technical",
             "label": "Technical (EMA+RSI+ADX+MACD)",
-            "pass": false,
-            "score": 5,
-            "detail": "EMA✓ · RSI 52✓ · ADX 2✗ · MACD✗"
+            "pass": true,
+            "score": 10,
+            "detail": "EMA✓ · RSI 64✓ · ADX 27✓ · MACD✓"
           },
           {
             "key": "harmonic",
@@ -4497,9 +5950,9 @@
           {
             "key": "elliott",
             "label": "Elliott W1/W3/W4",
-            "pass": true,
-            "score": 10,
-            "detail": "impulse 13.5% · W3 start"
+            "pass": false,
+            "score": 0,
+            "detail": "impulse 28.0% · no wave"
           },
           {
             "key": "darvas",
@@ -4520,35 +5973,35 @@
             "label": "Big-hands Accumulation",
             "pass": true,
             "score": 6,
-            "detail": "OBV 53% vs price 5%"
+            "detail": "OBV 1546% vs price 8%"
           },
           {
             "key": "tight_range",
             "label": "Tight Range b/f Blast",
             "pass": false,
             "score": 0,
-            "detail": "ATR contraction 137% · BB-w 10.3%"
+            "detail": "ATR contraction 99% · BB-w 10.1%"
           },
           {
             "key": "oi_buildup",
             "label": "OI Buildup direction",
             "pass": false,
             "score": 0,
-            "detail": "no OI snapshot for MPHASIS"
+            "detail": "no OI snapshot for NAUKRI"
           },
           {
             "key": "market_regime",
             "label": "Market Regime",
             "pass": true,
             "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
+            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24777"
           },
           {
             "key": "vix",
             "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
+            "pass": false,
+            "score": 0,
+            "detail": "VIX unavailable"
           },
           {
             "key": "rr_floor",
@@ -4568,15 +6021,15 @@
             "key": "rs_z",
             "label": "RS-z vs NIFTY",
             "pass": true,
-            "score": 5,
-            "detail": "stock 20d 5.0% vs NIFTY 0.7% · z=1.26"
+            "score": 10,
+            "detail": "stock 20d 22.1% vs NIFTY 0.7% · z=6.20"
           },
           {
             "key": "smc",
             "label": "SMC (FVG/OB/BoS/Sweep)",
             "pass": false,
             "score": 3,
-            "detail": "FVG: bullish FVG ₹2285.9–2316.4"
+            "detail": "FVG: bullish FVG ₹1203.0–1237.2"
           },
           {
             "key": "stage_analysis",
@@ -4601,1457 +6054,7 @@
           }
         ]
       },
-      "asOf": "2026-08-03T07:31:08.870Z"
-    },
-    {
-      "symbol": "PGEL",
-      "side": "LONG",
-      "price": 622.4000244140625,
-      "entry": 622.4000244140625,
-      "stopLoss": 585.06,
-      "target1": 659.74,
-      "target2": 697.09,
-      "target3": 746.88,
-      "target1Date": "2026-08-12",
-      "target2Date": "2026-08-21",
-      "target3Date": "2026-09-01",
-      "expectedMovePct": 20,
-      "score": 77.2,
-      "confidence": "MED",
-      "grade": "B",
-      "features": {
-        "ret5d": 7.365880853523525,
-        "ret20d": 9.116409146969525,
-        "rsi14": 58.19232647235577,
-        "bbWidthPct": 9.591903898659679,
-        "distFromHigh20": 0,
-        "distFromLow20": 10.609562984168933,
-        "volRatio": 0.7047777932065427,
-        "emaStackBull": true,
-        "emaStackBear": false
-      },
-      "confluences": [
-        {
-          "name": "EMA 9>21>50 stack",
-          "pass": true,
-          "detail": "9=604.2 21=590.6 50=563.2"
-        },
-        {
-          "name": "At 20d high",
-          "pass": true,
-          "detail": "0.0% off"
-        },
-        {
-          "name": "Tight coil (BB <12%)",
-          "pass": true,
-          "detail": "9.6%"
-        },
-        {
-          "name": "Vol 5d/20d rising >1.3×",
-          "pass": false,
-          "detail": "0.70×"
-        },
-        {
-          "name": "RSI 50–70 productive",
-          "pass": true,
-          "detail": "58"
-        },
-        {
-          "name": "20d return 5–25% (not extended)",
-          "pass": true,
-          "detail": "9.1%"
-        },
-        {
-          "name": "FII stake ↑",
-          "pass": false,
-          "detail": "unavailable"
-        },
-        {
-          "name": "Promoter stable/buying",
-          "pass": false,
-          "detail": "unavailable"
-        }
-      ],
-      "reasons": [
-        "EMA 9>21>50 stack: 9=604.2 21=590.6 50=563.2",
-        "At 20d high: 0.0% off",
-        "Tight coil (BB <12%): 9.6%",
-        "RSI 50–70 productive: 58",
-        "20d return 5–25% (not extended): 9.1%"
-      ],
-      "fiiDelta": null,
-      "diiDelta": null,
-      "promoterDelta": null,
-      "marketCapCr": null,
-      "twelveCriteria": {
-        "total": 47.5,
-        "passCount": 6,
-        "results": [
-          {
-            "key": "seasonality",
-            "label": "Seasonality",
-            "pass": false,
-            "score": 0,
-            "detail": "Month 8 not in LONG seasonal sweet spot"
-          },
-          {
-            "key": "cycle",
-            "label": "Cycle (Gann 90d)",
-            "pass": true,
-            "score": 10,
-            "detail": "near 90d HIGH — inflection cycle window"
-          },
-          {
-            "key": "volume_increase",
-            "label": "Volume Increase (today / 20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.41× 20d avg"
-          },
-          {
-            "key": "stakes",
-            "label": "FII/DII/Promoter ↑",
-            "pass": false,
-            "score": 0,
-            "detail": "no shareholding data"
-          },
-          {
-            "key": "vol5d20d",
-            "label": "Last 5-day Vol Formula (5d/20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.68× — no consistent build"
-          },
-          {
-            "key": "technical",
-            "label": "Technical (EMA+RSI+ADX+MACD)",
-            "pass": true,
-            "score": 7.5,
-            "detail": "EMA✓ · RSI 58✓ · ADX 22✓ · MACD✗"
-          },
-          {
-            "key": "harmonic",
-            "label": "Harmonic / Fib PRZ",
-            "pass": false,
-            "score": 0,
-            "detail": "near none retrace of 50d range"
-          },
-          {
-            "key": "elliott",
-            "label": "Elliott W1/W3/W4",
-            "pass": false,
-            "score": 0,
-            "detail": "impulse 16.7% · no wave"
-          },
-          {
-            "key": "darvas",
-            "label": "Darvas Box",
-            "pass": false,
-            "score": 0,
-            "detail": "no box pattern"
-          },
-          {
-            "key": "news",
-            "label": "News-Driven",
-            "pass": false,
-            "score": 0,
-            "detail": "no news-driven bar"
-          },
-          {
-            "key": "accumulation",
-            "label": "Big-hands Accumulation",
-            "pass": true,
-            "score": 6,
-            "detail": "OBV 34% vs price 8%"
-          },
-          {
-            "key": "tight_range",
-            "label": "Tight Range b/f Blast",
-            "pass": false,
-            "score": 0,
-            "detail": "ATR contraction 115% · BB-w 12.5%"
-          },
-          {
-            "key": "oi_buildup",
-            "label": "OI Buildup direction",
-            "pass": false,
-            "score": 0,
-            "detail": "no OI snapshot for PGEL"
-          },
-          {
-            "key": "market_regime",
-            "label": "Market Regime",
-            "pass": true,
-            "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
-          },
-          {
-            "key": "vix",
-            "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
-          },
-          {
-            "key": "rr_floor",
-            "label": "R:R ≥ 2.5",
-            "pass": false,
-            "score": 0,
-            "detail": "1.00:1 reward:risk"
-          },
-          {
-            "key": "bulk_deals",
-            "label": "Bulk-deals confirm",
-            "pass": false,
-            "score": 0,
-            "detail": "no recent named buyer/seller"
-          },
-          {
-            "key": "rs_z",
-            "label": "RS-z vs NIFTY",
-            "pass": true,
-            "score": 10,
-            "detail": "stock 20d 9.1% vs NIFTY 0.7% · z=2.44"
-          },
-          {
-            "key": "smc",
-            "label": "SMC (FVG/OB/BoS/Sweep)",
-            "pass": false,
-            "score": 3,
-            "detail": "FVG: bullish FVG ₹588.5–606.3"
-          },
-          {
-            "key": "stage_analysis",
-            "label": "Stage Analysis (30W lifecycle)",
-            "pass": false,
-            "score": 0,
-            "detail": "<160 bars (need ~30 weeks)"
-          },
-          {
-            "key": "kp_astro",
-            "label": "KP sub-lord alignment",
-            "pass": false,
-            "score": -3,
-            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
-          },
-          {
-            "key": "bradley",
-            "label": "Bradley siderograph",
-            "pass": false,
-            "score": 0,
-            "detail": "compute failed: undefined"
-          }
-        ]
-      },
-      "asOf": "2026-08-03T07:31:08.870Z"
-    },
-    {
-      "symbol": "SBILIFE",
-      "side": "LONG",
-      "price": 1906.800048828125,
-      "entry": 1906.800048828125,
-      "stopLoss": 1820.99,
-      "target1": 2021.21,
-      "target2": 2135.62,
-      "target3": 2288.16,
-      "target1Date": "2026-08-12",
-      "target2Date": "2026-08-21",
-      "target3Date": "2026-09-01",
-      "expectedMovePct": 20,
-      "score": 77.2,
-      "confidence": "MED",
-      "grade": "B",
-      "features": {
-        "ret5d": 2.5933538079915266,
-        "ret20d": 6.602566158671619,
-        "rsi14": 59.87581717612919,
-        "bbWidthPct": 6.246071670149482,
-        "distFromHigh20": 0,
-        "distFromLow20": 6.662197287535718,
-        "volRatio": 1.1386646596595595,
-        "emaStackBull": true,
-        "emaStackBear": false
-      },
-      "confluences": [
-        {
-          "name": "EMA 9>21>50 stack",
-          "pass": true,
-          "detail": "9=1872.2 21=1847.2 50=1829.8"
-        },
-        {
-          "name": "At 20d high",
-          "pass": true,
-          "detail": "0.0% off"
-        },
-        {
-          "name": "Tight coil (BB <12%)",
-          "pass": true,
-          "detail": "6.2%"
-        },
-        {
-          "name": "Vol 5d/20d rising >1.3×",
-          "pass": false,
-          "detail": "1.14×"
-        },
-        {
-          "name": "RSI 50–70 productive",
-          "pass": true,
-          "detail": "60"
-        },
-        {
-          "name": "20d return 5–25% (not extended)",
-          "pass": true,
-          "detail": "6.6%"
-        },
-        {
-          "name": "FII stake ↑",
-          "pass": false,
-          "detail": "unavailable"
-        },
-        {
-          "name": "Promoter stable/buying",
-          "pass": false,
-          "detail": "unavailable"
-        }
-      ],
-      "reasons": [
-        "EMA 9>21>50 stack: 9=1872.2 21=1847.2 50=1829.8",
-        "At 20d high: 0.0% off",
-        "Tight coil (BB <12%): 6.2%",
-        "RSI 50–70 productive: 60",
-        "20d return 5–25% (not extended): 6.6%"
-      ],
-      "fiiDelta": null,
-      "diiDelta": null,
-      "promoterDelta": null,
-      "marketCapCr": null,
-      "twelveCriteria": {
-        "total": 39.5,
-        "passCount": 6,
-        "results": [
-          {
-            "key": "seasonality",
-            "label": "Seasonality",
-            "pass": false,
-            "score": 0,
-            "detail": "Month 8 not in LONG seasonal sweet spot"
-          },
-          {
-            "key": "cycle",
-            "label": "Cycle (Gann 90d)",
-            "pass": false,
-            "score": 0,
-            "detail": "mid-range 71% of 90d band — no cycle edge"
-          },
-          {
-            "key": "volume_increase",
-            "label": "Volume Increase (today / 20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.51× 20d avg"
-          },
-          {
-            "key": "stakes",
-            "label": "FII/DII/Promoter ↑",
-            "pass": false,
-            "score": 0,
-            "detail": "no shareholding data"
-          },
-          {
-            "key": "vol5d20d",
-            "label": "Last 5-day Vol Formula (5d/20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "1.25× — no consistent build"
-          },
-          {
-            "key": "technical",
-            "label": "Technical (EMA+RSI+ADX+MACD)",
-            "pass": true,
-            "score": 7.5,
-            "detail": "EMA✓ · RSI 60✓ · ADX 21✓ · MACD✗"
-          },
-          {
-            "key": "harmonic",
-            "label": "Harmonic / Fib PRZ",
-            "pass": false,
-            "score": 0,
-            "detail": "near none retrace of 50d range"
-          },
-          {
-            "key": "elliott",
-            "label": "Elliott W1/W3/W4",
-            "pass": false,
-            "score": 0,
-            "detail": "impulse 8.6% · no wave"
-          },
-          {
-            "key": "darvas",
-            "label": "Darvas Box",
-            "pass": true,
-            "score": 8,
-            "detail": "3x box top"
-          },
-          {
-            "key": "news",
-            "label": "News-Driven",
-            "pass": false,
-            "score": 0,
-            "detail": "no news-driven bar"
-          },
-          {
-            "key": "accumulation",
-            "label": "Big-hands Accumulation",
-            "pass": true,
-            "score": 6,
-            "detail": "OBV 47% vs price 7%"
-          },
-          {
-            "key": "tight_range",
-            "label": "Tight Range b/f Blast",
-            "pass": false,
-            "score": 0,
-            "detail": "ATR contraction 99% · BB-w 6.7%"
-          },
-          {
-            "key": "oi_buildup",
-            "label": "OI Buildup direction",
-            "pass": false,
-            "score": 0,
-            "detail": "no OI snapshot for SBILIFE"
-          },
-          {
-            "key": "market_regime",
-            "label": "Market Regime",
-            "pass": true,
-            "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
-          },
-          {
-            "key": "vix",
-            "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
-          },
-          {
-            "key": "rr_floor",
-            "label": "R:R ≥ 2.5",
-            "pass": false,
-            "score": 0,
-            "detail": "1.33:1 reward:risk"
-          },
-          {
-            "key": "bulk_deals",
-            "label": "Bulk-deals confirm",
-            "pass": false,
-            "score": 0,
-            "detail": "no recent named buyer/seller"
-          },
-          {
-            "key": "rs_z",
-            "label": "RS-z vs NIFTY",
-            "pass": true,
-            "score": 7,
-            "detail": "stock 20d 6.6% vs NIFTY 0.7% · z=1.71"
-          },
-          {
-            "key": "smc",
-            "label": "SMC (FVG/OB/BoS/Sweep)",
-            "pass": false,
-            "score": 0,
-            "detail": "no aligned SMC primitives"
-          },
-          {
-            "key": "stage_analysis",
-            "label": "Stage Analysis (30W lifecycle)",
-            "pass": false,
-            "score": 0,
-            "detail": "<160 bars (need ~30 weeks)"
-          },
-          {
-            "key": "kp_astro",
-            "label": "KP sub-lord alignment",
-            "pass": false,
-            "score": -3,
-            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
-          },
-          {
-            "key": "bradley",
-            "label": "Bradley siderograph",
-            "pass": false,
-            "score": 0,
-            "detail": "compute failed: undefined"
-          }
-        ]
-      },
-      "asOf": "2026-08-03T07:31:08.870Z"
-    },
-    {
-      "symbol": "ABB",
-      "side": "LONG",
-      "price": 7535,
-      "entry": 7535,
-      "stopLoss": 7082.9,
-      "target1": 7987.1,
-      "target2": 8439.2,
-      "target3": 9042,
-      "target1Date": "2026-08-12",
-      "target2Date": "2026-08-21",
-      "target3Date": "2026-09-01",
-      "expectedMovePct": 20,
-      "score": 75.8,
-      "confidence": "MED",
-      "grade": "B",
-      "features": {
-        "ret5d": 2.162565249813572,
-        "ret20d": 8.409466944824114,
-        "rsi14": 71.28654970760235,
-        "bbWidthPct": 11.891174518911745,
-        "distFromHigh20": 1.728073035539615,
-        "distFromLow20": 11.275197519013512,
-        "volRatio": 1.0928414515419098,
-        "emaStackBull": true,
-        "emaStackBear": false
-      },
-      "confluences": [
-        {
-          "name": "EMA 9>21>50 stack",
-          "pass": true,
-          "detail": "9=7369.5 21=7274.5 50=7114.6"
-        },
-        {
-          "name": "At 20d high",
-          "pass": true,
-          "detail": "1.7% off"
-        },
-        {
-          "name": "Tight coil (BB <12%)",
-          "pass": true,
-          "detail": "11.9%"
-        },
-        {
-          "name": "Vol 5d/20d rising >1.3×",
-          "pass": false,
-          "detail": "1.09×"
-        },
-        {
-          "name": "RSI 50–70 productive",
-          "pass": false,
-          "detail": "71"
-        },
-        {
-          "name": "20d return 5–25% (not extended)",
-          "pass": true,
-          "detail": "8.4%"
-        },
-        {
-          "name": "FII stake ↑",
-          "pass": false,
-          "detail": "-0.52pp QoQ"
-        },
-        {
-          "name": "Promoter stable/buying",
-          "pass": true,
-          "detail": "+0.00pp"
-        }
-      ],
-      "reasons": [
-        "EMA 9>21>50 stack: 9=7369.5 21=7274.5 50=7114.6",
-        "At 20d high: 1.7% off",
-        "Tight coil (BB <12%): 11.9%",
-        "20d return 5–25% (not extended): 8.4%"
-      ],
-      "fiiDelta": -0.5199999999999996,
-      "diiDelta": 0.6100000000000012,
-      "promoterDelta": 0,
-      "marketCapCr": 159588,
-      "twelveCriteria": {
-        "total": 68,
-        "passCount": 9,
-        "results": [
-          {
-            "key": "seasonality",
-            "label": "Seasonality",
-            "pass": false,
-            "score": 0,
-            "detail": "Month 8 not in LONG seasonal sweet spot"
-          },
-          {
-            "key": "cycle",
-            "label": "Cycle (Gann 90d)",
-            "pass": false,
-            "score": 0,
-            "detail": "mid-range 81% of 90d band — no cycle edge"
-          },
-          {
-            "key": "volume_increase",
-            "label": "Volume Increase (today / 20d)",
-            "pass": true,
-            "score": 8,
-            "detail": "2.09× 20d avg"
-          },
-          {
-            "key": "stakes",
-            "label": "FII/DII/Promoter ↑",
-            "pass": true,
-            "score": 7.5,
-            "detail": "FII 7.7% (-0.52%) · DII 9.9% (+0.61%) · P 75.0% · Pledge 0.0%"
-          },
-          {
-            "key": "vol5d20d",
-            "label": "Last 5-day Vol Formula (5d/20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.87× — no consistent build"
-          },
-          {
-            "key": "technical",
-            "label": "Technical (EMA+RSI+ADX+MACD)",
-            "pass": true,
-            "score": 7.5,
-            "detail": "EMA✓ · RSI 71✗ · ADX 61✓ · MACD✓"
-          },
-          {
-            "key": "harmonic",
-            "label": "Harmonic / Fib PRZ",
-            "pass": true,
-            "score": 5,
-            "detail": "near 38.2% retrace of 50d range"
-          },
-          {
-            "key": "elliott",
-            "label": "Elliott W1/W3/W4",
-            "pass": true,
-            "score": 10,
-            "detail": "impulse 13.2% · W3 start"
-          },
-          {
-            "key": "darvas",
-            "label": "Darvas Box",
-            "pass": false,
-            "score": 0,
-            "detail": "no box pattern"
-          },
-          {
-            "key": "news",
-            "label": "News-Driven",
-            "pass": false,
-            "score": 0,
-            "detail": "no news-driven bar"
-          },
-          {
-            "key": "accumulation",
-            "label": "Big-hands Accumulation",
-            "pass": true,
-            "score": 6,
-            "detail": "OBV 60% vs price 7%"
-          },
-          {
-            "key": "tight_range",
-            "label": "Tight Range b/f Blast",
-            "pass": false,
-            "score": 0,
-            "detail": "ATR contraction 102% · BB-w 6.0%"
-          },
-          {
-            "key": "oi_buildup",
-            "label": "OI Buildup direction",
-            "pass": false,
-            "score": 0,
-            "detail": "no OI snapshot for ABB"
-          },
-          {
-            "key": "market_regime",
-            "label": "Market Regime",
-            "pass": true,
-            "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
-          },
-          {
-            "key": "vix",
-            "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
-          },
-          {
-            "key": "rr_floor",
-            "label": "R:R ≥ 2.5",
-            "pass": false,
-            "score": 0,
-            "detail": "1.00:1 reward:risk"
-          },
-          {
-            "key": "bulk_deals",
-            "label": "Bulk-deals confirm",
-            "pass": false,
-            "score": 0,
-            "detail": "no recent named buyer/seller"
-          },
-          {
-            "key": "rs_z",
-            "label": "RS-z vs NIFTY",
-            "pass": true,
-            "score": 10,
-            "detail": "stock 20d 8.4% vs NIFTY 0.7% · z=2.24"
-          },
-          {
-            "key": "smc",
-            "label": "SMC (FVG/OB/BoS/Sweep)",
-            "pass": false,
-            "score": 3,
-            "detail": "OB: bullish OB zone ₹6771.5–6908.5"
-          },
-          {
-            "key": "stage_analysis",
-            "label": "Stage Analysis (30W lifecycle)",
-            "pass": false,
-            "score": 0,
-            "detail": "<160 bars (need ~30 weeks)"
-          },
-          {
-            "key": "kp_astro",
-            "label": "KP sub-lord alignment",
-            "pass": false,
-            "score": -3,
-            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
-          },
-          {
-            "key": "bradley",
-            "label": "Bradley siderograph",
-            "pass": false,
-            "score": 0,
-            "detail": "compute failed: undefined"
-          }
-        ]
-      },
-      "asOf": "2026-08-03T07:31:08.870Z"
-    },
-    {
-      "symbol": "BPCL",
-      "side": "LONG",
-      "price": 323.8500061035156,
-      "entry": 323.8500061035156,
-      "stopLoss": 309.28,
-      "target1": 343.28,
-      "target2": 362.71,
-      "target3": 388.62,
-      "target1Date": "2026-08-12",
-      "target2Date": "2026-08-21",
-      "target3Date": "2026-09-01",
-      "expectedMovePct": 20,
-      "score": 75.8,
-      "confidence": "MED",
-      "grade": "B",
-      "features": {
-        "ret5d": 2.4031639853013833,
-        "ret20d": 5.09492536686705,
-        "rsi14": 70.1086956521739,
-        "bbWidthPct": 6.2683396411788745,
-        "distFromHigh20": 0,
-        "distFromLow20": 6.687537185602579,
-        "volRatio": 0.7068860232845973,
-        "emaStackBull": true,
-        "emaStackBear": false
-      },
-      "confluences": [
-        {
-          "name": "EMA 9>21>50 stack",
-          "pass": true,
-          "detail": "9=317.6 21=314.1 50=308.7"
-        },
-        {
-          "name": "At 20d high",
-          "pass": true,
-          "detail": "0.0% off"
-        },
-        {
-          "name": "Tight coil (BB <12%)",
-          "pass": true,
-          "detail": "6.3%"
-        },
-        {
-          "name": "Vol 5d/20d rising >1.3×",
-          "pass": false,
-          "detail": "0.71×"
-        },
-        {
-          "name": "RSI 50–70 productive",
-          "pass": false,
-          "detail": "70"
-        },
-        {
-          "name": "20d return 5–25% (not extended)",
-          "pass": true,
-          "detail": "5.1%"
-        },
-        {
-          "name": "FII stake ↑",
-          "pass": false,
-          "detail": "-2.73pp QoQ"
-        },
-        {
-          "name": "Promoter stable/buying",
-          "pass": true,
-          "detail": "+0.00pp"
-        }
-      ],
-      "reasons": [
-        "EMA 9>21>50 stack: 9=317.6 21=314.1 50=308.7",
-        "At 20d high: 0.0% off",
-        "Tight coil (BB <12%): 6.3%",
-        "20d return 5–25% (not extended): 5.1%"
-      ],
-      "fiiDelta": -2.7300000000000004,
-      "diiDelta": 2.5500000000000007,
-      "promoterDelta": 0,
-      "marketCapCr": 140568,
-      "twelveCriteria": {
-        "total": 61,
-        "passCount": 9,
-        "results": [
-          {
-            "key": "seasonality",
-            "label": "Seasonality",
-            "pass": false,
-            "score": 0,
-            "detail": "Month 8 not in LONG seasonal sweet spot"
-          },
-          {
-            "key": "cycle",
-            "label": "Cycle (Gann 90d)",
-            "pass": true,
-            "score": 10,
-            "detail": "near 90d HIGH — inflection cycle window"
-          },
-          {
-            "key": "volume_increase",
-            "label": "Volume Increase (today / 20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.51× 20d avg"
-          },
-          {
-            "key": "stakes",
-            "label": "FII/DII/Promoter ↑",
-            "pass": true,
-            "score": 7.5,
-            "detail": "FII 16.8% (-2.73%) · DII 21.1% (+2.55%) · P 53.0% · Pledge 0.0%"
-          },
-          {
-            "key": "vol5d20d",
-            "label": "Last 5-day Vol Formula (5d/20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.77× — no consistent build"
-          },
-          {
-            "key": "technical",
-            "label": "Technical (EMA+RSI+ADX+MACD)",
-            "pass": true,
-            "score": 7.5,
-            "detail": "EMA✓ · RSI 70✗ · ADX 41✓ · MACD✓"
-          },
-          {
-            "key": "harmonic",
-            "label": "Harmonic / Fib PRZ",
-            "pass": false,
-            "score": 0,
-            "detail": "near none retrace of 50d range"
-          },
-          {
-            "key": "elliott",
-            "label": "Elliott Wave 1/3/4",
-            "pass": false,
-            "score": 0,
-            "detail": "weak impulse 6.7%"
-          },
-          {
-            "key": "darvas",
-            "label": "Darvas Box",
-            "pass": true,
-            "score": 8,
-            "detail": "7x box top"
-          },
-          {
-            "key": "news",
-            "label": "News-Driven",
-            "pass": false,
-            "score": 0,
-            "detail": "no news-driven bar"
-          },
-          {
-            "key": "accumulation",
-            "label": "Big-hands Accumulation",
-            "pass": true,
-            "score": 6,
-            "detail": "OBV 11% vs price 3%"
-          },
-          {
-            "key": "tight_range",
-            "label": "Tight Range b/f Blast",
-            "pass": false,
-            "score": 0,
-            "detail": "ATR contraction 101% · BB-w 5.3%"
-          },
-          {
-            "key": "oi_buildup",
-            "label": "OI Buildup direction",
-            "pass": false,
-            "score": 0,
-            "detail": "no OI snapshot for BPCL"
-          },
-          {
-            "key": "market_regime",
-            "label": "Market Regime",
-            "pass": true,
-            "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
-          },
-          {
-            "key": "vix",
-            "label": "VIX Context",
-            "pass": true,
-            "score": 8,
-            "detail": "VIX 11.9 (LOW) ✓ favourable"
-          },
-          {
-            "key": "rr_floor",
-            "label": "R:R ≥ 2.5",
-            "pass": false,
-            "score": 0,
-            "detail": "1.33:1 reward:risk"
-          },
-          {
-            "key": "bulk_deals",
-            "label": "Bulk-deals confirm",
-            "pass": false,
-            "score": 0,
-            "detail": "no recent named buyer/seller"
-          },
-          {
-            "key": "rs_z",
-            "label": "RS-z vs NIFTY",
-            "pass": true,
-            "score": 5,
-            "detail": "stock 20d 5.1% vs NIFTY 0.7% · z=1.28"
-          },
-          {
-            "key": "smc",
-            "label": "SMC (FVG/OB/BoS/Sweep)",
-            "pass": true,
-            "score": 6,
-            "detail": "FVG: bullish FVG ₹311.8–315.8 · BoS: bullish BoS — close 323.9 > 20d swing high 321.9"
-          },
-          {
-            "key": "stage_analysis",
-            "label": "Stage Analysis (30W lifecycle)",
-            "pass": false,
-            "score": 0,
-            "detail": "<160 bars (need ~30 weeks)"
-          },
-          {
-            "key": "kp_astro",
-            "label": "KP sub-lord alignment",
-            "pass": false,
-            "score": -3,
-            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
-          },
-          {
-            "key": "bradley",
-            "label": "Bradley siderograph",
-            "pass": false,
-            "score": 0,
-            "detail": "compute failed: undefined"
-          }
-        ]
-      },
-      "asOf": "2026-08-03T07:31:08.870Z"
-    },
-    {
-      "symbol": "AXISBANK",
-      "side": "SHORT",
-      "price": 1250.9000244140625,
-      "entry": 1250.9000244140625,
-      "stopLoss": 1325.95,
-      "target1": 1175.85,
-      "target2": 1100.79,
-      "target3": 1000.72,
-      "target1Date": "2026-08-12",
-      "target2Date": "2026-08-21",
-      "target3Date": "2026-09-01",
-      "expectedMovePct": 20,
-      "score": 74.8,
-      "confidence": "MED",
-      "grade": "B",
-      "features": {
-        "ret5d": 1.9063156345468433,
-        "ret20d": -6.621375991969384,
-        "rsi14": 32.419618255082625,
-        "bbWidthPct": 9.433207906065292,
-        "distFromHigh20": 6.718864696937919,
-        "distFromLow20": 2.281277548165372,
-        "volRatio": 0.8527785824331022,
-        "emaStackBull": false,
-        "emaStackBear": true
-      },
-      "confluences": [
-        {
-          "name": "EMA 9<21<50 stack",
-          "pass": true,
-          "detail": "9=1242.9 21=1268.0 50=1288.5"
-        },
-        {
-          "name": "At 20d low",
-          "pass": true,
-          "detail": "2.3% off"
-        },
-        {
-          "name": "Tight coil (BB <12%)",
-          "pass": true,
-          "detail": "9.4%"
-        },
-        {
-          "name": "Vol 5d/20d distribution >1.3×",
-          "pass": false,
-          "detail": "0.85×"
-        },
-        {
-          "name": "RSI 30–50 weak",
-          "pass": true,
-          "detail": "32"
-        },
-        {
-          "name": "20d return -25–-5% (breakdown)",
-          "pass": true,
-          "detail": "-6.6%"
-        },
-        {
-          "name": "FII stake ↑",
-          "pass": false,
-          "detail": "-2.13pp QoQ"
-        },
-        {
-          "name": "Promoter stable/buying",
-          "pass": false,
-          "detail": "-0.27pp"
-        }
-      ],
-      "reasons": [
-        "EMA 9<21<50 stack: 9=1242.9 21=1268.0 50=1288.5",
-        "At 20d low: 2.3% off",
-        "Tight coil (BB <12%): 9.4%",
-        "RSI 30–50 weak: 32",
-        "20d return -25–-5% (breakdown): -6.6%"
-      ],
-      "fiiDelta": -2.1300000000000026,
-      "diiDelta": -0.6600000000000037,
-      "promoterDelta": -0.27000000000000046,
-      "marketCapCr": 389076,
-      "twelveCriteria": {
-        "total": 44,
-        "passCount": 4,
-        "results": [
-          {
-            "key": "seasonality",
-            "label": "Seasonality",
-            "pass": false,
-            "score": 0,
-            "detail": "Month 8 not in SHORT seasonal sweet spot"
-          },
-          {
-            "key": "cycle",
-            "label": "Cycle (Gann 90d)",
-            "pass": false,
-            "score": 0,
-            "detail": "mid-range 40% of 90d band — no cycle edge"
-          },
-          {
-            "key": "volume_increase",
-            "label": "Volume Increase (today / 20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.52× 20d avg"
-          },
-          {
-            "key": "stakes",
-            "label": "FII/DII/Promoter ↑",
-            "pass": false,
-            "score": 5,
-            "detail": "FII 39.9% (-2.13%) · DII 42.7% (-0.66%) · P 7.9% · Pledge 0.0%"
-          },
-          {
-            "key": "vol5d20d",
-            "label": "Last 5-day Vol Formula (5d/20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.89× — no consistent build"
-          },
-          {
-            "key": "technical",
-            "label": "Technical (EMA+RSI+ADX+MACD)",
-            "pass": true,
-            "score": 10,
-            "detail": "EMA✓ · RSI 32✓ · ADX 23✓ · MACD✓"
-          },
-          {
-            "key": "harmonic",
-            "label": "Harmonic / Fib PRZ",
-            "pass": false,
-            "score": 0,
-            "detail": "near none retrace of 50d range"
-          },
-          {
-            "key": "elliott",
-            "label": "Elliott Wave 1/3/4",
-            "pass": false,
-            "score": 0,
-            "detail": "no impulse pattern"
-          },
-          {
-            "key": "darvas",
-            "label": "Darvas Box",
-            "pass": false,
-            "score": 0,
-            "detail": "no box pattern"
-          },
-          {
-            "key": "news",
-            "label": "News-Driven",
-            "pass": false,
-            "score": 0,
-            "detail": "no news-driven bar"
-          },
-          {
-            "key": "accumulation",
-            "label": "Big-hands Accumulation",
-            "pass": false,
-            "score": 0,
-            "detail": "OBV -263% vs price -7%"
-          },
-          {
-            "key": "tight_range",
-            "label": "Tight Range b/f Blast",
-            "pass": true,
-            "score": 10,
-            "detail": "ATR contraction 65% · BB-w 3.6%"
-          },
-          {
-            "key": "oi_buildup",
-            "label": "OI Buildup direction",
-            "pass": false,
-            "score": 0,
-            "detail": "no OI snapshot for AXISBANK"
-          },
-          {
-            "key": "market_regime",
-            "label": "Market Regime",
-            "pass": true,
-            "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
-          },
-          {
-            "key": "vix",
-            "label": "VIX Context",
-            "pass": false,
-            "score": 0,
-            "detail": "VIX 11.9 (LOW) ✗ not aligned"
-          },
-          {
-            "key": "rr_floor",
-            "label": "R:R ≥ 2.5",
-            "pass": false,
-            "score": 0,
-            "detail": "1.00:1 reward:risk"
-          },
-          {
-            "key": "bulk_deals",
-            "label": "Bulk-deals confirm",
-            "pass": false,
-            "score": 0,
-            "detail": "no recent named buyer/seller"
-          },
-          {
-            "key": "rs_z",
-            "label": "RS-z vs NIFTY",
-            "pass": false,
-            "score": 0,
-            "detail": "stock 20d -6.6% vs NIFTY 0.7% · z=-2.10"
-          },
-          {
-            "key": "smc",
-            "label": "SMC (FVG/OB/BoS/Sweep)",
-            "pass": false,
-            "score": 3,
-            "detail": "FVG: bearish FVG ₹1267.7–1305.0"
-          },
-          {
-            "key": "stage_analysis",
-            "label": "Stage Analysis (30W lifecycle)",
-            "pass": false,
-            "score": 0,
-            "detail": "<160 bars (need ~30 weeks)"
-          },
-          {
-            "key": "kp_astro",
-            "label": "KP sub-lord alignment",
-            "pass": true,
-            "score": 10,
-            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
-          },
-          {
-            "key": "bradley",
-            "label": "Bradley siderograph",
-            "pass": false,
-            "score": 0,
-            "detail": "compute failed: undefined"
-          }
-        ]
-      },
-      "asOf": "2026-08-03T07:31:08.870Z"
-    },
-    {
-      "symbol": "HDFCAMC",
-      "side": "SHORT",
-      "price": 2568.199951171875,
-      "entry": 2568.199951171875,
-      "stopLoss": 2722.29,
-      "target1": 2414.11,
-      "target2": 2260.02,
-      "target3": 2054.56,
-      "target1Date": "2026-08-12",
-      "target2Date": "2026-08-21",
-      "target3Date": "2026-09-01",
-      "expectedMovePct": 20,
-      "score": 74.8,
-      "confidence": "MED",
-      "grade": "B",
-      "features": {
-        "ret5d": 0.6190271678672511,
-        "ret20d": -7.398859104251941,
-        "rsi14": 42.25041474989425,
-        "bbWidthPct": 10.813019097097948,
-        "distFromHigh20": 7.7315498570890515,
-        "distFromLow20": 2.4943130150427537,
-        "volRatio": 0.5206896469487773,
-        "emaStackBull": false,
-        "emaStackBear": true
-      },
-      "confluences": [
-        {
-          "name": "EMA 9<21<50 stack",
-          "pass": true,
-          "detail": "9=2572.0 21=2603.3 50=2622.8"
-        },
-        {
-          "name": "At 20d low",
-          "pass": true,
-          "detail": "2.5% off"
-        },
-        {
-          "name": "Tight coil (BB <12%)",
-          "pass": true,
-          "detail": "10.8%"
-        },
-        {
-          "name": "Vol 5d/20d distribution >1.3×",
-          "pass": false,
-          "detail": "0.52×"
-        },
-        {
-          "name": "RSI 30–50 weak",
-          "pass": true,
-          "detail": "42"
-        },
-        {
-          "name": "20d return -25–-5% (breakdown)",
-          "pass": true,
-          "detail": "-7.4%"
-        },
-        {
-          "name": "FII stake ↑",
-          "pass": false,
-          "detail": "unavailable"
-        },
-        {
-          "name": "Promoter stable/buying",
-          "pass": false,
-          "detail": "unavailable"
-        }
-      ],
-      "reasons": [
-        "EMA 9<21<50 stack: 9=2572.0 21=2603.3 50=2622.8",
-        "At 20d low: 2.5% off",
-        "Tight coil (BB <12%): 10.8%",
-        "RSI 30–50 weak: 42",
-        "20d return -25–-5% (breakdown): -7.4%"
-      ],
-      "fiiDelta": null,
-      "diiDelta": null,
-      "promoterDelta": null,
-      "marketCapCr": null,
-      "twelveCriteria": {
-        "total": 41.5,
-        "passCount": 4,
-        "results": [
-          {
-            "key": "seasonality",
-            "label": "Seasonality",
-            "pass": false,
-            "score": 0,
-            "detail": "Month 8 not in SHORT seasonal sweet spot"
-          },
-          {
-            "key": "cycle",
-            "label": "Cycle (Gann 90d)",
-            "pass": false,
-            "score": 0,
-            "detail": "mid-range 54% of 90d band — no cycle edge"
-          },
-          {
-            "key": "volume_increase",
-            "label": "Volume Increase (today / 20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.34× 20d avg"
-          },
-          {
-            "key": "stakes",
-            "label": "FII/DII/Promoter ↑",
-            "pass": false,
-            "score": 0,
-            "detail": "no shareholding data"
-          },
-          {
-            "key": "vol5d20d",
-            "label": "Last 5-day Vol Formula (5d/20d)",
-            "pass": false,
-            "score": 0,
-            "detail": "0.57× — no consistent build"
-          },
-          {
-            "key": "technical",
-            "label": "Technical (EMA+RSI+ADX+MACD)",
-            "pass": true,
-            "score": 7.5,
-            "detail": "EMA✓ · RSI 42✓ · ADX 5✗ · MACD✓"
-          },
-          {
-            "key": "harmonic",
-            "label": "Harmonic / Fib PRZ",
-            "pass": true,
-            "score": 10,
-            "detail": "near 61.8% (golden) retrace of 50d range"
-          },
-          {
-            "key": "elliott",
-            "label": "Elliott Wave 1/3/4",
-            "pass": false,
-            "score": 0,
-            "detail": "no impulse pattern"
-          },
-          {
-            "key": "darvas",
-            "label": "Darvas Box",
-            "pass": false,
-            "score": 0,
-            "detail": "no box pattern"
-          },
-          {
-            "key": "news",
-            "label": "News-Driven",
-            "pass": false,
-            "score": 0,
-            "detail": "no news-driven bar"
-          },
-          {
-            "key": "accumulation",
-            "label": "Big-hands Accumulation",
-            "pass": false,
-            "score": 0,
-            "detail": "OBV -201% vs price -8%"
-          },
-          {
-            "key": "tight_range",
-            "label": "Tight Range b/f Blast",
-            "pass": false,
-            "score": 5,
-            "detail": "ATR contraction 72% · BB-w 4.9%"
-          },
-          {
-            "key": "oi_buildup",
-            "label": "OI Buildup direction",
-            "pass": false,
-            "score": 0,
-            "detail": "no OI snapshot for HDFCAMC"
-          },
-          {
-            "key": "market_regime",
-            "label": "Market Regime",
-            "pass": true,
-            "score": 6,
-            "detail": "MIXED regime · NIFTY ₹24580 · 50DMA ₹23922 · 200DMA ₹24775"
-          },
-          {
-            "key": "vix",
-            "label": "VIX Context",
-            "pass": false,
-            "score": 0,
-            "detail": "VIX 11.9 (LOW) ✗ not aligned"
-          },
-          {
-            "key": "rr_floor",
-            "label": "R:R ≥ 2.5",
-            "pass": false,
-            "score": 0,
-            "detail": "1.00:1 reward:risk"
-          },
-          {
-            "key": "bulk_deals",
-            "label": "Bulk-deals confirm",
-            "pass": false,
-            "score": 0,
-            "detail": "no recent named buyer/seller"
-          },
-          {
-            "key": "rs_z",
-            "label": "RS-z vs NIFTY",
-            "pass": false,
-            "score": 0,
-            "detail": "stock 20d -7.4% vs NIFTY 0.7% · z=-2.33"
-          },
-          {
-            "key": "smc",
-            "label": "SMC (FVG/OB/BoS/Sweep)",
-            "pass": false,
-            "score": 3,
-            "detail": "OB: bearish OB zone ₹2681.7–2729.2"
-          },
-          {
-            "key": "stage_analysis",
-            "label": "Stage Analysis (30W lifecycle)",
-            "pass": false,
-            "score": 0,
-            "detail": "<160 bars (need ~30 weeks)"
-          },
-          {
-            "key": "kp_astro",
-            "label": "KP sub-lord alignment",
-            "pass": true,
-            "score": 10,
-            "detail": "Moon 286.9° sidereal · Shravana (lord Moon) · sub-lord Saturn → BEARISH"
-          },
-          {
-            "key": "bradley",
-            "label": "Bradley siderograph",
-            "pass": false,
-            "score": 0,
-            "detail": "compute failed: undefined"
-          }
-        ]
-      },
-      "asOf": "2026-08-03T07:31:08.870Z"
+      "asOf": "2026-08-03T07:38:58.081Z"
     }
   ]
 }
