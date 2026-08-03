@@ -426,6 +426,50 @@ export async function buildHighQualitySetups(): Promise<{
 
 export async function writeHighQualitySetups(): Promise<void> {
   const out = await buildHighQualitySetups()
+  // ─── Pattern-memory bonus (3 Aug 2026) ────────────────────────────
+  // For each candidate, fingerprint-match against winning-patterns +
+  // losing-patterns memory. Winner match → +5 conviction + 🧠 tag.
+  // Loser match → −10 conviction + ⚠ tag. Symmetric reinforcement so
+  // the system learns from both wins and losses.
+  try {
+    const { matchesKnownWinner, matchesKnownLoser } = await import('./patternMemory')
+    const dataMod = await import('../data')
+    const enrich = async (rows: any[]) => {
+      let hits = 0, misses = 0
+      const CONC = 8
+      let cursor = 0
+      await Promise.all(Array.from({ length: CONC }, async () => {
+        while (cursor < rows.length) {
+          const r = rows[cursor++]
+          try {
+            const dir = String(r.direction ?? r.side ?? 'BUY').toUpperCase() === 'SHORT' ? 'SHORT' : 'BUY'
+            const cs = await dataMod.getCandles(r.symbol, '1D' as any, 60).catch(() => null)
+            if (!cs || cs.length < 30) continue
+            const w = await matchesKnownWinner({ candles: cs, direction: dir as 'BUY' | 'SHORT' })
+            const l = await matchesKnownLoser({ candles: cs, direction: dir as 'BUY' | 'SHORT' })
+            if (w?.match) {
+              r.conviction = Math.min(100, (r.conviction ?? r.score ?? 60) + 5)
+              r.patternMatchWinner = w.winnerSymbol
+              r.patternTag = '🧠 winner-match'
+              hits++
+            }
+            if (l?.match) {
+              r.conviction = Math.max(0, (r.conviction ?? r.score ?? 60) - 10)
+              r.patternMatchLoser = l.loserSymbol
+              r.patternTag = (r.patternTag ?? '') + ' ⚠ loser-match'
+              misses++
+            }
+          } catch { /* skip on error */ }
+        }
+      }))
+      return { hits, misses }
+    }
+    const fnoStats = await enrich(out.fno)
+    const cashStats = await enrich(out.cash)
+    log.info('HQS', `pattern-memory: FNO ${fnoStats.hits}🧠 ${fnoStats.misses}⚠ · CASH ${cashStats.hits}🧠 ${cashStats.misses}⚠`)
+  } catch (e) {
+    log.warn('HQS', `pattern-memory enrich failed: ${(e as Error).message}`)
+  }
   const p = path.resolve(process.cwd(), 'data', 'public-snapshots', 'high-quality-setups.json')
   fs.writeFileSync(p, JSON.stringify(out, null, 2), 'utf-8')
   log.info('HQS', `wrote ${p} · ${out.fno.length} FNO · ${out.cash.length} CASH`)

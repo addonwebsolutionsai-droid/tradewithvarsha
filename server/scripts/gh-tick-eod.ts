@@ -287,6 +287,29 @@ async function main() {
     //     source from both. Marks all open positions to market, processes
     //     T1/T2/T3/SL exits, opens new positions across CASH (60%) / FNO
     //     (20%) / MCX (20%) segments per tier + quality gates.
+    // ─── Position-Review Sweep (3 Aug 2026) — re-grade every open trade
+    //     against current strict rules. Grade D (matches losing pattern) or
+    //     Grade C (fails majority of pillars) get marked for early exit at
+    //     next tick — purges legacy bad-quality holdings so book converges
+    //     on the new stricter regime faster.
+    ['position-review', async () => {
+      const m = await import('../src/engine/positionReviewSweep')
+      const r = await m.runPositionReviewSweep()
+      return `${r.reviewed} reviewed · A:${r.gradeA} B:${r.gradeB} C:${r.gradeC} D:${r.gradeD} · marked-exit:${r.markedForExit}`
+    }],
+    // ─── Daily Core-Engine Improvisation (3 Aug 2026 · user directive:
+    //     "OUR CORE ENGINE SHOULD BE IMPROVISED EVERYDAY"). Reads the day's
+    //     closed trades + miss report + engine outputs, computes per-source
+    //     WR + repeated-loss symbols, auto-applies gate tunes and blacklist
+    //     extensions. Emits daily-improve.json for /improve visibility.
+    //     Runs AFTER paper-trading so it sees today's fresh journal, but
+    //     BEFORE the auto-tune commit so today's tunes persist.
+    ['daily-improve', async () => {
+      const m = await import('../src/engine/dailyCoreImprovise')
+      const r = await m.runDailyCoreImprovise()
+      const applied = r.improvements.filter(i => i.applied).length
+      return `${applied} tunes applied · WR ${r.bookWinRate}% · MASTER ${r.masterEmitted} · MP ${r.moneyPrinterEmitted}`
+    }],
     ['paper-trading', async () => {
       const m = await import('../src/engine/paperTradingBook')
       const book = await m.runPaperTradingDailyTick()

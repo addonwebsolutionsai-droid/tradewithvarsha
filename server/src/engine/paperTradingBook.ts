@@ -1290,6 +1290,24 @@ async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
     if (trade.remainingQty <= 0) break
     const barDate = new Date(bar.time + 5.5 * 3600_000).toISOString().slice(0, 10)
 
+    // ─── Position-review early-exit (3 Aug 2026) ─────────────────────
+    // Position-review sweep marks trades that don't pass current strict
+    // rules with `reviewEarlyExit=true`. Exit at market on next bar
+    // rather than waiting for SL. Preserves capital + refreshes book
+    // for stricter-gate entries.
+    if ((trade as any).reviewEarlyExit && !trade.exits.some(e => e.reason === 'MANUAL')) {
+      const targetPx = (trade as any).reviewTargetExitPrice ?? bar.close
+      const exitPx = isShort ? Math.min(targetPx, bar.high) : Math.max(targetPx, bar.low)
+      const pnl = (isShort ? (trade.entryPrice - exitPx) : (exitPx - trade.entryPrice)) * trade.remainingQty
+      trade.exits.push({ date: barDate, price: exitPx, qty: trade.remainingQty, reason: 'MANUAL' as any, pnl })
+      trade.totalRealisedPnl += pnl
+      trade.remainingQty = 0
+      trade.status = 'CLOSED'
+      trade.trapNotes = [...(trade.trapNotes ?? []), `🧹 EARLY EXIT via position-review sweep (grade ${(trade as any).reviewGrade}) @ ₹${exitPx.toFixed(2)}`]
+      log.info('PAPER', `${trade.symbol} · early-exit grade-${(trade as any).reviewGrade} @ ₹${exitPx.toFixed(2)}`)
+      break
+    }
+
     // ─── SL touch (direction-aware) ─────────────────────────────────
     // NEW 2026-07-29: don't blindly exit. Check for SL-hunt trap first.
     // If the setup is structurally intact (higher-TF trend + wick reclaim
