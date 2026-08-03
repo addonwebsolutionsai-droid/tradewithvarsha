@@ -1994,8 +1994,9 @@ async function runOptionsFastCron(tag: string): Promise<void> {
   // (4+ conditions), LIVE on confirmed range break. Solves the recurring
   // "signal fires after 300pt move" problem.
   const { optionsPreBreakoutSignal } = await import('./strategies/optionsPreBreakout')
-  // BANKNIFTY excluded per user standing directive — see memory project_banknifty_excluded.
-  const indexes = ['NIFTY', 'FINNIFTY'] as const
+  // BANKNIFTY re-enabled 3 Aug 2026 per user directive covering the ₹10L
+  // F&O expansion ("Call and Puts of Nifty 50 and Bank nifty").
+  const indexes = ['NIFTY', 'BANKNIFTY', 'FINNIFTY'] as const
   const fired: Signal[] = []
   for (const sym of indexes) {
     try {
@@ -2073,8 +2074,8 @@ cron.schedule('0 17 * * 1-5', async () => {
   log.info('CRON', 'F&O Positional advisor (daily) starting...')
   try {
     const { futuresOptionsAdvisor } = await import('./strategies/futuresOptionsAdvisor')
-    // BANKNIFTY excluded per user standing directive.
-    const indexes = ['NIFTY', 'FINNIFTY']
+    // BANKNIFTY re-enabled 3 Aug 2026 per user F&O expansion directive.
+    const indexes = ['NIFTY', 'BANKNIFTY', 'FINNIFTY']
     const out: Signal[] = []
     for (const sym of indexes) {
       try {

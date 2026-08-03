@@ -1484,6 +1484,28 @@ async function markToMarketAndExit(trade: TradeEntry): Promise<void> {
       log.info('PAPER', `${trade.symbol} · ${exitNote}`)
       break
     }
+    // ─── Early profit booking (3 Aug 2026 · user: "keep taking and
+    //     booking profits as you think") — if position is up ≥ 5%
+    //     BEFORE T1 hits, book 25% partial + trail remaining SL to
+    //     breakeven. Locks in a small win even if the setup fades.
+    const earlyProfitPct = isShort
+      ? ((trade.entryPrice - bar.close) / trade.entryPrice) * 100
+      : ((bar.close - trade.entryPrice) / trade.entryPrice) * 100
+    if (earlyProfitPct >= 5 && !trade.exits.some(e => e.reason === 'MANUAL') && !trade.exits.some(e => e.reason === 'T1_HIT') && trade.remainingQty === trade.qty) {
+      const earlyQty = Math.max(1, Math.floor(trade.qty * 0.25))
+      const earlyPx = bar.close
+      const earlyPnl = (isShort ? (trade.entryPrice - earlyPx) : (earlyPx - trade.entryPrice)) * earlyQty
+      trade.exits.push({ date: barDate, price: earlyPx, qty: earlyQty, reason: 'MANUAL' as any, pnl: earlyPnl })
+      trade.remainingQty -= earlyQty
+      trade.totalRealisedPnl += earlyPnl
+      trade.trapNotes = [...(trade.trapNotes ?? []), `💰 EARLY PROFIT: booked ${earlyQty} @ ₹${earlyPx.toFixed(2)} (+${earlyProfitPct.toFixed(1)}%) · trailed SL to entry ₹${trade.entryPrice.toFixed(2)}`]
+      // Trail SL to breakeven immediately
+      const beSL = trade.originalEntry ?? trade.entryPrice
+      const wouldWiden = isShort ? beSL > trade.stopLoss : beSL < trade.stopLoss
+      if (!wouldWiden) trade.stopLoss = beSL
+      log.info('PAPER', `${trade.symbol} · early-profit +${earlyProfitPct.toFixed(1)}% booked 25%`)
+    }
+
     // T1 partial (direction-aware) + trail SL to breakeven on remaining qty.
     // 2026-07-30: the single largest driver of the 28% WR was "T1 hit, then
     // gave back to SL" — turning locked wins into losses. Moving SL to entry

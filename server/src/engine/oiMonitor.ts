@@ -169,10 +169,10 @@ function buildSignalFromFlow(
 /** One-tick scan — returns signals generated this tick. */
 export async function tickOiMonitor(): Promise<Signal[]> {
   const out: Signal[] = []
-  // BANKNIFTY deliberately excluded per user directive. Only NIFTY OI flow
-  // generates actionable signals. BANKNIFTY chain still fetched elsewhere
-  // if needed (e.g. for the Options chain page), but doesn't emit signals.
-  for (const underlying of ['NIFTY'] as const) {
+  // BANKNIFTY RE-ENABLED (3 Aug 2026 · user directive: "Call and Puts of
+  // Nifty 50 and Bank nifty" as part of the ₹10L F&O expansion). Both
+  // indices now generate OI-flow signals routed to the OPT segment.
+  for (const underlying of ['NIFTY', 'BANKNIFTY'] as const) {
     try {
       let chain: OptionChain | null = null
       if (angel.hasAngelCreds()) chain = await angel.getOptionChain(underlying).catch(() => null)

@@ -83,11 +83,11 @@ function countMet(s: SetupCheck): number {
  *   - WATCH signal if 4+ conditions met (anticipation, no break yet)
  *   - null otherwise
  *
- * BANKNIFTY is excluded per user standing directive.
+ * BANKNIFTY re-enabled 3 Aug 2026 per user F&O expansion directive.
  */
 export function optionsPreBreakoutSignal(ctx: StrategyContext): Signal | null {
   const { symbol, candles } = ctx
-  if (symbol !== 'NIFTY' && symbol !== 'FINNIFTY') return null
+  if (symbol !== 'NIFTY' && symbol !== 'FINNIFTY' && symbol !== 'BANKNIFTY') return null
   if (candles.length < 60) return null
   const last = candles[candles.length - 1]
   const now = new Date()

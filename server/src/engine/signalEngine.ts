@@ -51,7 +51,13 @@ const ANCHORS: UniverseItem[] = [
     'commodity', 'options-mtf', 'harmonic',
     'confluence-weekly', 'confluence-monthly', 'confluence-quarterly',
   ], higherTf: true },
-  // BANKNIFTY excluded per directive.
+  // BANKNIFTY re-enabled 3 Aug 2026 per user F&O expansion directive:
+  // "Call and Puts of Nifty 50 and Bank nifty" — signals route to OPT
+  // segment of the ₹20L book (₹2L OPT bucket).
+  { key: 'BANKNIFTY', strategies: [
+    'intraday', 'swing', 'options-mtf',
+    'confluence-weekly', 'confluence-monthly', 'harmonic',
+  ], higherTf: true, withOptionChain: 'BANKNIFTY' },
 ]
 
 // F&O-eligible stocks (subset of NSE F&O list — known liquid names)
