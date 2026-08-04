@@ -1,37 +1,17 @@
 {
-  "generatedAt": "2026-08-04T05:49:01.594Z",
-  "status": "OK_FROM_BIAS_COMPOSER",
-  "spot": 24595.650390625,
+  "generatedAt": "2026-08-04T05:57:02.536Z",
+  "status": "NO_DATA",
+  "note": "NIFTY foresight engine returned null — likely one of: (a) option-chain fetch from NSE returned no expiries (rate-limited or 404), (b) NIFTY daily candles < 60 (Yahoo NIFTY key mismatch or Angel session down). Next tick (~5 min) will retry. See engine logs for the specific line that fired.",
+  "spot": 0,
   "direction": "NEUTRAL",
   "confidence": "LOW",
-  "netScore": 10,
-  "bullScore": 10,
+  "bullScore": 0,
   "bearScore": 0,
+  "netScore": 0,
   "sessionState": "MARKET_CLOSED",
-  "tradePlan": {
-    "action": "BUY NIFTY 24550 PE",
-    "instrument": "NIFTY 24550 PE",
-    "entry": 32.85,
-    "stopLoss": 23,
-    "target1": 45.99,
-    "target2": 59.13,
-    "spotEntry": 24595.650390625,
-    "spotSL": 24841.61,
-    "spotT1": 24349.69,
-    "spotT2": 24103.74,
-    "expectedMoveDays": 5,
-    "reason": "NEUTRAL composite (TREND-5D BULL)"
-  },
-  "reasoning": {
-    "OI-BUILDUP": "NEUTRAL · PCR 0.91 · max-pain 24600 (+0.02%) · flows 3↑ 3↓",
-    "LONG-HORIZON": "NEUTRAL · nearest ↑ 26373 (+1778) · ↓ 23070 (-1526) · 2↑ 4↓ waypoints",
-    "TREND-5D": "BULL · +2.50%"
-  },
-  "smartMoneyLevel": 24600,
+  "tradePlan": null,
+  "reasoning": {},
+  "smartMoneyLevel": 0,
   "smartMoneyDirection": "NEUTRAL",
-  "playbookDetected": [
-    "TREND-5D-BULL"
-  ],
-  "composedFallback": true,
-  "note": "Composed by niftyBiasComposer.ts — foresight engine returned no data (NSE option-chain likely 404 from GH IPs). This synthesis uses OI-buildup + long-horizon + trend so /nifty-outlook renders a live call."
+  "playbookDetected": []
 }
