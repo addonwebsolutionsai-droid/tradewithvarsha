@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-07T09:08:54.796Z",
+  "generatedAt": "2026-08-07T09:17:25.465Z",
   "candidatesEvaluated": 99,
-  "emitted": 0,
+  "emitted": 1,
   "filteredOut": [
     {
       "reason": "gate-A-mtf-or-wave3",
@@ -14,11 +14,56 @@
     {
       "reason": "pre-move-extended",
       "count": 6
-    },
-    {
-      "reason": "gate-C-tight-base",
-      "count": 1
     }
   ],
-  "rows": []
+  "rows": [
+    {
+      "symbol": "BRITANNIA",
+      "direction": "BUY",
+      "score": 36,
+      "ltp": 5544.5,
+      "entry": 5544.5,
+      "stopLoss": 5211.83,
+      "target1": 5988.06,
+      "target2": 6376.174999999999,
+      "target3": 6930.625,
+      "rrT1": 1.3333333333333341,
+      "rrT2": 2.4999999999999973,
+      "rrT3": 4.166666666666666,
+      "pillars": {
+        "mtfHarmonic": {
+          "pass": false,
+          "timeframes": [],
+          "patterns": [],
+          "detail": "single-TF or absent"
+        },
+        "elliottWave": {
+          "pass": true,
+          "setup": "WAVE_2_PULLBACK",
+          "detail": "WAVE_2_PULLBACK conf 75"
+        },
+        "volumeAccumulation": {
+          "pass": true,
+          "vol5d20dRatio": 1.58,
+          "upDownVolRatio": 1.36,
+          "detail": "5d/20d vol 1.58× · up/down vol 1.36×"
+        },
+        "tightBase": {
+          "pass": true,
+          "range10dPct": 5.72,
+          "detail": "10-bar range 5.7%"
+        }
+      },
+      "reasoning": [
+        "Elliott WAVE_2_PULLBACK — sharpest impulsive wave",
+        "Volume accumulation: 5d/20d 1.58× · up/down 1.36×",
+        "Tight base: last 10 bars range 5.7% — coiled for break"
+      ],
+      "humanExplain": "💰 MONEY-PRINTER · score 36 · BUY @ ₹5544.50\nSetup: — + WAVE_2_PULLBACK\nVolume: 5d/20d 1.58× · up/down 1.36× (accumulation)\nBase: 5.7% coil over 10 bars — breakout-ready\nTrade plan: SL ₹5211.83 · T1 ₹5988.06 (R:R 1.3) · T2 ₹6376.17 · T3 ₹6930.63",
+      "sources": [
+        "ELLIOTT-WAVE_2_PULLBACK",
+        "VOL-ACCUM"
+      ]
+    }
+  ]
 }
