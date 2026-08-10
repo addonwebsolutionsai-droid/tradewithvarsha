@@ -1,35 +1,37 @@
 {
-  "generatedAt": "2026-08-10T09:31:56.561Z",
+  "generatedAt": "2026-08-10T09:40:25.488Z",
   "status": "OK_FROM_BIAS_COMPOSER",
-  "spot": 24552.05078125,
-  "direction": "NEUTRAL",
+  "spot": 24551.69921875,
+  "direction": "BEARISH",
   "confidence": "LOW",
-  "netScore": 0,
+  "netScore": -15,
   "bullScore": 0,
-  "bearScore": 0,
+  "bearScore": 15,
   "sessionState": "MARKET_CLOSED",
   "tradePlan": {
     "action": "BUY NIFTY 24500 PE",
     "instrument": "NIFTY 24500 PE",
-    "entry": 104.5,
-    "stopLoss": 73.15,
-    "target1": 146.3,
-    "target2": 188.1,
-    "spotEntry": 24552.05078125,
-    "spotSL": 24797.57,
-    "spotT1": 24306.53,
-    "spotT2": 24061.01,
+    "entry": 55.5,
+    "stopLoss": 38.85,
+    "target1": 77.7,
+    "target2": 99.9,
+    "spotEntry": 24551.69921875,
+    "spotSL": 24797.22,
+    "spotT1": 24306.18,
+    "spotT2": 24060.67,
     "expectedMoveDays": 5,
-    "reason": "NEUTRAL composite ()"
+    "reason": "BEARISH composite (LONG-HORIZON BEAR)"
   },
   "reasoning": {
-    "OI-BUILDUP": "NEUTRAL · PCR 0.96 · max-pain 24600 (+0.20%) · flows 3↑ 3↓",
-    "LONG-HORIZON": "NEUTRAL · nearest ↑ 26373 (+1821) · ↓ 23070 (-1482) · 2↑ 4↓ waypoints",
+    "OI-BUILDUP": "NEUTRAL · PCR 0.95 · max-pain 24600 (+0.20%) · flows 3↑ 3↓",
+    "LONG-HORIZON": "BEAR · nearest ↑ 26373 (+1822) · ↓ 24338 (-214) · 2↑ 5↓ waypoints",
     "TREND-5D": "NEUTRAL · -0.90%"
   },
   "smartMoneyLevel": 24600,
-  "smartMoneyDirection": "NEUTRAL",
-  "playbookDetected": [],
+  "smartMoneyDirection": "BEARISH",
+  "playbookDetected": [
+    "LONG-HORIZON-BEAR"
+  ],
   "composedFallback": true,
   "note": "Composed by niftyBiasComposer.ts — foresight engine returned no data (NSE option-chain likely 404 from GH IPs). This synthesis uses OI-buildup + long-horizon + trend so /nifty-outlook renders a live call."
 }
