@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-11T06:55:40.233Z",
+  "generatedAt": "2026-08-11T07:04:30.256Z",
   "candidatesEvaluated": 99,
-  "emitted": 0,
+  "emitted": 1,
   "filteredOut": [
     {
       "reason": "gate-A-mtf-or-wave3",
@@ -13,8 +13,57 @@
     },
     {
       "reason": "pre-move-extended",
-      "count": 9
+      "count": 8
     }
   ],
-  "rows": []
+  "rows": [
+    {
+      "symbol": "BRITANNIA",
+      "direction": "BUY",
+      "score": 44,
+      "ltp": 5642,
+      "entry": 5642,
+      "stopLoss": 5303.48,
+      "target1": 6093.360000000001,
+      "target2": 6488.299999999999,
+      "target3": 7052.5,
+      "rrT1": 1.3333333333333333,
+      "rrT2": 2.4999999999999947,
+      "rrT3": 4.166666666666662,
+      "pillars": {
+        "mtfHarmonic": {
+          "pass": false,
+          "timeframes": [],
+          "patterns": [],
+          "detail": "single-TF or absent"
+        },
+        "elliottWave": {
+          "pass": true,
+          "setup": "WAVE_2_PULLBACK",
+          "detail": "WAVE_2_PULLBACK conf 75"
+        },
+        "volumeAccumulation": {
+          "pass": true,
+          "vol5d20dRatio": 1.65,
+          "upDownVolRatio": 2.01,
+          "detail": "5d/20d vol 1.65× · up/down vol 2.01×"
+        },
+        "tightBase": {
+          "pass": true,
+          "range10dPct": 5.26,
+          "detail": "10-bar range 5.3%"
+        }
+      },
+      "reasoning": [
+        "Elliott WAVE_2_PULLBACK — sharpest impulsive wave",
+        "Volume accumulation: 5d/20d 1.65× · up/down 2.01×",
+        "Tight base: last 10 bars range 5.3% — coiled for break"
+      ],
+      "humanExplain": "💰 MONEY-PRINTER · score 44 · BUY @ ₹5642.00\nSetup: — + WAVE_2_PULLBACK\nVolume: 5d/20d 1.65× · up/down 2.01× (accumulation)\nBase: 5.3% coil over 10 bars — breakout-ready\nTrade plan: SL ₹5303.48 · T1 ₹6093.36 (R:R 1.3) · T2 ₹6488.30 · T3 ₹7052.50",
+      "sources": [
+        "ELLIOTT-WAVE_2_PULLBACK",
+        "VOL-ACCUM"
+      ]
+    }
+  ]
 }
