@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-08-11T05:23:53.271Z",
+  "generatedAt": "2026-08-11T05:32:43.149Z",
   "candidatesEvaluated": 99,
-  "emitted": 0,
+  "emitted": 1,
   "filteredOut": [
     {
       "reason": "gate-A-mtf-or-wave3",
@@ -9,12 +9,61 @@
     },
     {
       "reason": "gate-B-volume",
-      "count": 12
+      "count": 13
     },
     {
       "reason": "pre-move-extended",
-      "count": 9
+      "count": 7
     }
   ],
-  "rows": []
+  "rows": [
+    {
+      "symbol": "BRITANNIA",
+      "direction": "BUY",
+      "score": 42,
+      "ltp": 5636.5,
+      "entry": 5636.5,
+      "stopLoss": 5298.3099999999995,
+      "target1": 6087.42,
+      "target2": 6481.974999999999,
+      "target3": 7045.625,
+      "rrT1": 1.3333333333333315,
+      "rrT2": 2.4999999999999947,
+      "rrT3": 4.166666666666661,
+      "pillars": {
+        "mtfHarmonic": {
+          "pass": false,
+          "timeframes": [],
+          "patterns": [],
+          "detail": "single-TF or absent"
+        },
+        "elliottWave": {
+          "pass": true,
+          "setup": "WAVE_2_PULLBACK",
+          "detail": "WAVE_2_PULLBACK conf 75"
+        },
+        "volumeAccumulation": {
+          "pass": true,
+          "vol5d20dRatio": 1.59,
+          "upDownVolRatio": 1.88,
+          "detail": "5d/20d vol 1.59× · up/down vol 1.88×"
+        },
+        "tightBase": {
+          "pass": true,
+          "range10dPct": 5.26,
+          "detail": "10-bar range 5.3%"
+        }
+      },
+      "reasoning": [
+        "Elliott WAVE_2_PULLBACK — sharpest impulsive wave",
+        "Volume accumulation: 5d/20d 1.59× · up/down 1.88×",
+        "Tight base: last 10 bars range 5.3% — coiled for break"
+      ],
+      "humanExplain": "💰 MONEY-PRINTER · score 42 · BUY @ ₹5636.50\nSetup: — + WAVE_2_PULLBACK\nVolume: 5d/20d 1.59× · up/down 1.88× (accumulation)\nBase: 5.3% coil over 10 bars — breakout-ready\nTrade plan: SL ₹5298.31 · T1 ₹6087.42 (R:R 1.3) · T2 ₹6481.97 · T3 ₹7045.63",
+      "sources": [
+        "ELLIOTT-WAVE_2_PULLBACK",
+        "VOL-ACCUM"
+      ]
+    }
+  ]
 }
