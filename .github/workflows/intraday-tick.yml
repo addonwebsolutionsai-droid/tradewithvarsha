@@ -72,18 +72,19 @@ jobs:
           ALERT_ON_NEW_SIGNAL: 'true'
         run: npm run tick:intraday
 
-      - name: Commit refreshed snapshots
+      - name: Commit refreshed snapshots + auto-tune state
         if: success()
         run: |
           git config user.name  'tradewithvarsha-bot'
           git config user.email 'bot@tradewithvarsha.local'
-          if git diff --quiet server/data/public-snapshots/ ; then
-            echo "No snapshot changes — skipping commit."
+          # Bulletproof commit block: -A add + status porcelain check.
+          # Includes untracked files (daily-improve.json, mtf-harmonic.json)
+          # that would otherwise be missed by simple diff-cached checks.
+          git add -A server/data/public-snapshots/ server/data/auto-tune.json server/data/losing-patterns.json server/data/winning-patterns.json 2>/dev/null || true
+          if [ -z "$(git status --porcelain server/data/)" ] && git diff --cached --quiet ; then
+            echo "No changes — skipping commit."
           else
-            git add server/data/public-snapshots/
-            git commit -m "snapshot: intraday tick $(TZ=Asia/Kolkata date '+%d/%-m/%Y, %H:%M:%S')"
-            # Retry push once on non-fast-forward — another concurrent tick
-            # may have pushed while we were computing.
+            git commit -m "snapshot: intraday tick $(TZ=Asia/Kolkata date '+%d/%-m/%Y, %H:%M:%S')" || echo "commit-nothing"
             git push || (git pull --rebase && git push) || echo "Push failed — will retry next tick."
           fi
 

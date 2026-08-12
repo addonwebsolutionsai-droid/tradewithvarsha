@@ -61,12 +61,20 @@ jobs:
         run: |
           git config user.name  'tradewithvarsha-bot'
           git config user.email 'bot@tradewithvarsha.local'
-          # Auto-tune + pattern memory persist across EOD runs so meta-tune
-          # on Sunday sees the full 7-day trail.
-          git add server/data/public-snapshots/ server/data/auto-tune.json server/data/losing-patterns.json server/data/winning-patterns.json server/data/public-snapshots/master-setups.json 2>/dev/null || true
-          if git diff --cached --quiet ; then
+          # Bulletproof commit block (12 Aug 2026):
+          # · use `git add -A` on the whole server/data tree so untracked
+          #   files (daily-improve.json, mtf-harmonic.json etc.) get added
+          # · log the diff summary so we can audit what changed
+          # · use working-tree porcelain status (not diff --cached) as
+          #   fallback since the two agreed to disagree in Aug 11 run
+          git add -A server/data/public-snapshots/ server/data/auto-tune.json server/data/losing-patterns.json server/data/winning-patterns.json 2>/dev/null || true
+          echo "── staged changes ──"
+          git diff --cached --stat | head -20
+          echo "── working tree status ──"
+          git status --porcelain server/data/ | head -10
+          if [ -z "$(git status --porcelain server/data/)" ] && git diff --cached --quiet ; then
             echo "No changes."
           else
-            git commit -m "snapshot: EOD $(TZ=Asia/Kolkata date '+%d/%-m/%Y, %H:%M:%S')"
+            git commit -m "snapshot: EOD $(TZ=Asia/Kolkata date '+%d/%-m/%Y, %H:%M:%S')" || echo "commit-nothing"
             git push || (git pull --rebase && git push) || echo "Push failed — next run will retry."
           fi
