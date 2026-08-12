@@ -378,7 +378,12 @@ async function evaluatePillars(
   const latestFresh = c.freshDates.reduce((max, d) => d.getTime() > max ? d.getTime() : max, 0)
   const oldestFresh = c.freshDates.reduce((min, d) => d.getTime() < min ? d.getTime() : min, Infinity)
   const spanDays = Number.isFinite(latestFresh) && Number.isFinite(oldestFresh) ? (latestFresh - oldestFresh) / 86400_000 : 0
-  const p1Pass = sourceCount >= 3 && spanDays <= 5
+  // 12 Aug 2026: loosened from (≥3 sources within 5d) to (≥2 sources within 10d)
+  // after Aug-11 EOD showed pillar-1 killing 587/692 candidates. The strict
+  // rule was starving the funnel to just 2 MASTER emissions per day. New
+  // rule preserves the confluence spirit (still requires multi-source
+  // agreement) but tolerates realistic snapshot cadences.
+  const p1Pass = sourceCount >= 2 && spanDays <= 10
   pillars.push({ name: 'multi-source-fresh', pass: p1Pass, detail: `${sourceCount} sources within ${spanDays.toFixed(1)}d` })
   if (!p1Pass) return { reason: `pillar-1-multi-source (${sourceCount} sources, ${spanDays.toFixed(1)}d span)` }
 

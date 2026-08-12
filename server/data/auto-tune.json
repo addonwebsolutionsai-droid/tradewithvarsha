@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-08-03T18:23:36.033Z",
+  "lastRunAt": "2026-08-12T07:55:16.947Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -20,16 +20,32 @@
       "minConfluence": 6
     },
     "PRO-EDGE": {
-      "minScore": 90
+      "minScore": 80
     },
     "VP+FIB": {
-      "minScore": 75
+      "minScore": 70
     },
     "WEEKLY-PICK": {
       "minScore": 80
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-08-12T07:55:16.947Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 90,
+      "to": 80,
+      "reason": "12 Aug: symbol blacklist covers duplicate risk; relax 90→80 to reopen funnel"
+    },
+    {
+      "ts": "2026-08-12T07:55:16.947Z",
+      "strategy": "VP+FIB",
+      "metric": "minScore",
+      "from": 75,
+      "to": 70,
+      "reason": "12 Aug: sample=2 was too small; relax 75→70"
+    },
     {
       "ts": "2026-08-03T18:23:36.033Z",
       "strategy": "PRO-EDGE",

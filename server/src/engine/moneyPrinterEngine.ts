@@ -237,10 +237,17 @@ export async function runMoneyPrinterScan(): Promise<{
         const elliott = elliottMap.get(key)
 
         // Gate A: must have EITHER (MTF harmonic ≥ 2 TFs) OR (Elliott Wave-3)
+        // 12 Aug 2026: gate-A killed 74 of 83 candidates on Aug 11 because
+        // it required BOTH (MTF-harmonic ≥ 2 TFs) OR (Wave-3/Wave-2 pullback)
+        // — nearly impossible to align. Added THIRD path: premium single-TF
+        // harmonic (bestConfidence ≥ 85) OR winner-pattern-memory match.
+        // Same setup type Moschip / Marksans showed just needs one strong
+        // harmonic + volume-accum + tight base, not necessarily multi-TF.
         const hasMtfHarmonic = !!(mtf && mtf.timeframes.size >= 2)
+        const hasPremiumSingle = !!(mtf && mtf.timeframes.size === 1 && (mtf.bestConfidence ?? 0) >= 85)
         const isWave3 = !!(elliott && (elliott.setup.includes('WAVE_3') || elliott.setup.includes('WAVE_2_PULLBACK')))
-        if (!hasMtfHarmonic && !isWave3) {
-          filteredOut['gate-A-mtf-or-wave3'] = (filteredOut['gate-A-mtf-or-wave3'] ?? 0) + 1
+        if (!hasMtfHarmonic && !hasPremiumSingle && !isWave3) {
+          filteredOut['gate-A-mtf-or-wave3-or-premium'] = (filteredOut['gate-A-mtf-or-wave3-or-premium'] ?? 0) + 1
           continue
         }
 

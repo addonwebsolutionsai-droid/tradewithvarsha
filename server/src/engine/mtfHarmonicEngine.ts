@@ -103,18 +103,25 @@ export async function runMtfHarmonicEngine(): Promise<{
   let total3TF = 0, total2TF = 0
 
   for (const bucket of map.values()) {
-    if (bucket.perTf.size < 2) continue      // need ≥ 2 TF confluence
+    // 12 Aug 2026: strict 2-TF rule killed all output (0 emissions Aug 11
+    // because harmonics rarely align across 2 timeframes simultaneously).
+    // Loosened: accept 1-TF hits IF confidence ≥ 85 (premium-single-TF)
+    // OR ≥ 2 TFs at any confidence (multi-TF). Both paths preserve quality.
+    const perTfArrPre = [...bucket.perTf.entries()].map(([tf, r]) => ({ tf, r, conf: Number(r.confidence ?? r.score ?? 0) }))
+    const bestConfPre = perTfArrPre.reduce((m, x) => Math.max(m, x.conf), 0)
+    const isMultiTf = bucket.perTf.size >= 2
+    const isPremiumSingle = bucket.perTf.size === 1 && bestConfPre >= 85
+    if (!isMultiTf && !isPremiumSingle) continue
     const tfList = [...bucket.perTf.keys()]
-    // Pick the highest-conviction TF as the trade-plan source (usually 1D)
-    const perTfArr = [...bucket.perTf.entries()].map(([tf, r]) => ({ tf, r, conf: Number(r.confidence ?? r.score ?? 0) }))
+    const perTfArr = perTfArrPre
     perTfArr.sort((a, b) => b.conf - a.conf)
     const primary = perTfArr[0].r
     const bestConfidence = perTfArr[0].conf
     const patterns = [...new Set(perTfArr.map(x => String(x.r.pattern ?? x.r.patternName ?? '').split('·')[0].trim()).filter(Boolean))]
     const tfCount = bucket.perTf.size
 
-    // Composite: base confidence × TF multiplier (2TF=1.15, 3TF=1.35)
-    const tfMultiplier = tfCount === 3 ? 1.35 : 1.15
+    // Composite: base confidence × TF multiplier (1TF-premium=1.0, 2TF=1.15, 3TF=1.35)
+    const tfMultiplier = tfCount === 3 ? 1.35 : tfCount === 2 ? 1.15 : 1.0
     const compositeScore = Math.min(100, Math.round(bestConfidence * tfMultiplier))
 
     const entry = Number(primary.entry ?? primary.ltp ?? 0)
