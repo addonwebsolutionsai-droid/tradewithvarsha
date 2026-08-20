@@ -61,18 +61,26 @@ jobs:
         run: |
           git config user.name  'tradewithvarsha-bot'
           git config user.email 'bot@tradewithvarsha.local'
-          # Bulletproof commit block (12 Aug 2026):
-          # · use `git add -A` on the whole server/data tree so untracked
-          #   files (daily-improve.json, mtf-harmonic.json etc.) get added
-          # · log the diff summary so we can audit what changed
-          # · use working-tree porcelain status (not diff --cached) as
-          #   fallback since the two agreed to disagree in Aug 11 run
-          git add -A server/data/public-snapshots/ server/data/auto-tune.json server/data/losing-patterns.json server/data/winning-patterns.json 2>/dev/null || true
+          # Bulletproof commit block (20 Aug 2026 · CRITICAL bug-fix):
+          # Previous version listed 4 paths after `-A` including losing-
+          # patterns.json + winning-patterns.json which may not exist on
+          # the runner yet. `git add -A <existing> <missing>` returns 128
+          # and adds NOTHING. `2>/dev/null || true` masked this silently
+          # → snapshots frozen at Aug 12 despite EOD runs succeeding daily
+          # since (verified from Aug 19 EOD log: "── working tree status ──"
+          # showed 20+ modified files, "── staged changes ──" was empty).
+          # Fix: single existing path (server/data/) — .gitignore already
+          # scopes what gets tracked. Add each optional state file with
+          # its own `|| true` afterward so missing files don't crash.
+          git add -A server/data/
+          git add server/data/auto-tune.json 2>/dev/null || true
+          git add server/data/winning-patterns.json 2>/dev/null || true
+          git add server/data/losing-patterns.json 2>/dev/null || true
           echo "── staged changes ──"
-          git diff --cached --stat | head -20
+          git diff --cached --stat | head -30
           echo "── working tree status ──"
           git status --porcelain server/data/ | head -10
-          if [ -z "$(git status --porcelain server/data/)" ] && git diff --cached --quiet ; then
+          if git diff --cached --quiet ; then
             echo "No changes."
           else
             git commit -m "snapshot: EOD $(TZ=Asia/Kolkata date '+%d/%-m/%Y, %H:%M:%S')" || echo "commit-nothing"
