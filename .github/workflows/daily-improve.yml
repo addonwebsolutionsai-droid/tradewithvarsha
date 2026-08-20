@@ -1,0 +1,81 @@
+name: Daily Improvise (3× daily · 8 AM / 12 PM / 6 PM IST)
+
+# User directive 20 Aug 2026:
+#   "keep it running 3 times a day, 8 AM IST / 12 PM IST / 6 PM IST"
+#   "I disabled Claude Code routines because they were expensive.
+#    How will you run it without Claude Code routine?"
+# Answer: GitHub Actions cron is FREE + runs the same routine every
+# time without any token cost.
+#
+# What runs at each fire (from feedback_daily_routine_mandatory memory):
+#   1. Read every engine snapshot's freshness + row count
+#   2. Per-source WR analysis on last 7d closed paper-book trades
+#   3. Auto-tune gate adjustments (raise minScore for <30% WR sources,
+#      relax for >70% WR sources)
+#   4. Persistent symbol blacklist for ≥ 2 SL_HITs in 15d
+#   5. Append findings to server/data/daily-routine-log.md
+#   6. Commit + push (bulletproof commit block from eod.yml fix d35f5c0)
+
+on:
+  schedule:
+    # 08:00 IST = 02:30 UTC
+    - cron: '30 2 * * *'
+    # 12:00 IST = 06:30 UTC
+    - cron: '30 6 * * *'
+    # 18:00 IST = 12:30 UTC
+    - cron: '30 12 * * *'
+  workflow_dispatch: {}
+
+concurrency:
+  group: daily-improve
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  improve:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          fetch-depth: 1
+
+      - name: Setup Node 20
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: server/package-lock.json
+
+      - name: Install server deps
+        working-directory: server
+        run: npm ci --no-audit --no-fund --prefer-offline
+
+      - name: Run daily-improve routine
+        working-directory: server
+        env:
+          NODE_ENV: production
+          TZ: Asia/Kolkata
+        run: npm run tick:daily-improve
+
+      - name: Commit + push auto-tune + log
+        if: success()
+        run: |
+          git config user.name  'tradewithvarsha-bot'
+          git config user.email 'bot@tradewithvarsha.local'
+          # Same bulletproof pattern as eod.yml (single existing path
+          # + per-file optional adds so missing files don't crash).
+          git add -A server/data/
+          git add server/data/auto-tune.json 2>/dev/null || true
+          git add server/data/daily-routine-log.md 2>/dev/null || true
+          git add server/data/winning-patterns.json 2>/dev/null || true
+          git add server/data/losing-patterns.json 2>/dev/null || true
+          if git diff --cached --quiet ; then
+            echo "No changes — no-op run"
+          else
+            git commit -m "routine(daily-improve): $(TZ=Asia/Kolkata date '+%H:%M IST %d-%b') auto-run" || echo "commit-nothing"
+            git push origin main || (git pull --rebase origin main && git push origin main) || echo "Push failed — next run will retry."
+          fi
