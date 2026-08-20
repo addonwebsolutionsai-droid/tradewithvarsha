@@ -318,6 +318,20 @@ async function main() {
     log.err('TICK', `pro-setups: ${(e as Error).message}`)
   }
 
+  // ─── 3a-0. Ichimoku Cloud (20 Aug 2026) — the SILVERM +68% CE
+  //           setup pattern. Runs on 1D/1h/15m across indices + commodities
+  //           + top F&O leaders. Emits ichimoku-cloud.json. Runs BEFORE
+  //           NIFTY-Bias so composer can reference it.
+  try {
+    const t = Date.now()
+    const { runIchimokuScan } = await import('../src/engine/ichimokuCloudEngine')
+    const r = await runIchimokuScan()
+    results['ichimoku-cloud'] = `${r.hits.length} setups · ${r.scanned} scans · ${((Date.now() - t) / 1000).toFixed(1)}s`
+  } catch (e) {
+    results['ichimoku-cloud'] = `ERR ${(e as Error).message}`
+    log.err('TICK', `ichimoku-cloud: ${(e as Error).message}`)
+  }
+
   // ─── 3a-1a. NIFTY Bias Composer (31 Jul 2026) — the Jul-25 miss fix.
   //           Composes OI-buildup + long-horizon + foresight + trend into
   //           ONE unified BULLISH/BEARISH call with trade plan. Also

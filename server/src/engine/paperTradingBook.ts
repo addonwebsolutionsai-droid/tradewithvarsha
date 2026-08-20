@@ -353,6 +353,7 @@ const FNO_FORECAST_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots'
 const MONEY_PRINTER_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'money-printer.json')
 const MTF_HARMONIC_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'mtf-harmonic.json')
 const MASTER_SETUPS_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'master-setups.json')
+const ICHIMOKU_FILE = path.resolve(process.cwd(), 'data', 'public-snapshots', 'ichimoku-cloud.json')
 
 /**
  * Gather candidate signals across all three segments, tag them with the
@@ -578,6 +579,25 @@ async function gatherCandidates(): Promise<Array<any & { _segment: 'CASH' | 'FNO
       }
       if (added > 0) log.info('PAPER', `+${added} MTF-HARMONIC candidates`)
     } catch (e) { log.warn('PAPER', `mtf-harmonic read failed: ${(e as Error).message}`) }
+  }
+  // ─── Ichimoku Cloud (20 Aug 2026) — the SILVERM +68% CE setup pattern.
+  //     Only 4/5 or 5/5 signal setups (score ≥ 80). Routes indices to OPT
+  //     bucket (options play), stocks to FNO/CASH by eligibility.
+  if (fs.existsSync(ICHIMOKU_FILE)) {
+    try {
+      const ic = JSON.parse(fs.readFileSync(ICHIMOKU_FILE, 'utf-8'))
+      let added = 0
+      for (const r of (ic.rows ?? [])) {
+        if ((r.score ?? 0) < 80) continue
+        const isIdx = r.symbol === 'NIFTY' || r.symbol === 'BANKNIFTY' || r.symbol === 'FINNIFTY'
+        const norm = normaliseCandidate({ ...r, source: 'ICHIMOKU' }, 'ICHIMOKU')
+        if (norm) {
+          const seg = isIdx ? 'OPT' : (await isFnoEligible(norm.symbol) ? 'FNO' : 'CASH')
+          await push(norm, seg); added++
+        }
+      }
+      if (added > 0) log.info('PAPER', `+${added} ICHIMOKU candidates`)
+    } catch (e) { log.warn('PAPER', `ichimoku read failed: ${(e as Error).message}`) }
   }
   // ─── MASTER Setups (3 Aug 2026) — 7-pillar composite. Any MASTER with
   //     score ≥ 75 gets priority; force ELITE tier for these.

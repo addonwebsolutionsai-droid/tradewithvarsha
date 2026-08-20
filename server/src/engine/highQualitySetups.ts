@@ -44,6 +44,9 @@ export interface UnifiedSetup {
   rrT2?: number
   rrT3?: number
   entryDate: string
+  entryTime?: string         // 20 Aug 2026 — HH:MM IST when this signal was first seen
+  entrySignal?: string       // short label of the exact setup ("MTF harmonic + Ichimoku green cloud")
+  lastUpdatedAt?: string     // ISO timestamp of last snapshot refresh — consumers refresh their view based on this
   target1Date?: string
   target2Date?: string
   target3Date?: string
@@ -313,6 +316,40 @@ export async function buildHighQualitySetups(): Promise<{
     track(daily.rows.map(fromWeeklyPick).filter(Boolean) as UnifiedSetup[], 'DAILY-PICK')
   }
 
+  // 5. Ichimoku Cloud (20 Aug 2026) — the SILVERM +68% CE setup pattern
+  const ichimoku = readSnapshot('ichimoku-cloud.json')
+  if (ichimoku && Array.isArray(ichimoku.rows)) {
+    const rows: UnifiedSetup[] = ichimoku.rows
+      .filter((r: any) => (r.score ?? 0) >= 80)
+      .map((r: any): UnifiedSetup => ({
+        symbol: r.symbol,
+        segment: 'CASH',        // reassigned later after F&O eligibility check
+        side: r.direction === 'BUY' ? 'LONG' : 'SHORT',
+        source: 'ICHIMOKU',
+        tier: r.score === 100 ? 'ELITE' : 'STRONG',
+        stars: r.score === 100 ? 5 : 3,
+        score: r.score,
+        confluencesHit: (r.signals ?? []).length,
+        ltp: r.ltp,
+        entry: r.entry,
+        stopLoss: r.stopLoss,
+        target1: r.target1,
+        target2: r.target2,
+        target3: r.target3,
+        riskPct: Math.abs((r.entry - r.stopLoss) / r.entry) * 100,
+        rewardT1Pct: Math.abs((r.target1 - r.entry) / r.entry) * 100,
+        rrT1: r.rrT1,
+        entryDate: r.entryDate,
+        target1Date: r.target1Date,
+        target2Date: r.target2Date,
+        target3Date: r.target3Date,
+        reasoning: r.reasoning ?? [],
+        unifiedReason: `Ichimoku ${r.direction} · ${r.signals?.length ?? 0}/5 signals · ${r.timeframe} · ${r.optionsHint ?? ''}`.trim(),
+        entrySignal: `Ichimoku ${r.timeframe} ${r.direction} · Kumo ${r.cloudColour} · price ${r.priceVsCloud}`,
+      }))
+    track(rows, 'ICHIMOKU')
+  }
+
   // Split ETFs into their own bucket BEFORE dedup — ETFs are structurally
   // different (basket products, no earnings, long-term horizon) and
   // shouldn't compete with individual stocks for the "strongest signal"
@@ -470,9 +507,40 @@ export async function writeHighQualitySetups(): Promise<void> {
   } catch (e) {
     log.warn('HQS', `pattern-memory enrich failed: ${(e as Error).message}`)
   }
+  // 20 Aug 2026 — stamp entryTime + lastUpdatedAt on EVERY row for the
+  // /v2 platform per user directive. Also add top-level updateCadence so
+  // consumers know how often to poll.
+  const nowIso = new Date().toISOString()
+  const istTime = new Date(Date.now() + 5.5 * 3600_000).toISOString().slice(11, 16)  // HH:MM IST
+  const stampRow = (r: UnifiedSetup) => {
+    r.lastUpdatedAt = nowIso
+    if (!r.entryTime) r.entryTime = istTime
+    if (!r.entrySignal) {
+      // Fallback entrySignal label composed from source + tier + top-1 reason
+      const topReason = (r.reasoning ?? [])[0] ?? r.unifiedReason ?? ''
+      r.entrySignal = `${r.source} ${r.tier} · ${topReason}`.slice(0, 140)
+    }
+    return r
+  }
+  out.fno = out.fno.map(stampRow)
+  out.cash = out.cash.map(stampRow)
+  out.etf = out.etf.map(stampRow)
+  const enriched = {
+    ...out,
+    lastUpdatedAt: nowIso,
+    updateCadence: '5min-intraday · 1x-eod',
+    fieldsExplained: {
+      entryDate: 'ISO YYYY-MM-DD when signal first fired',
+      entryTime: 'HH:MM IST when this snapshot regenerated (constant refresh)',
+      entrySignal: 'Human-readable label of the exact setup that triggered',
+      lastUpdatedAt: 'ISO timestamp of last snapshot refresh — consumers refresh their view based on this',
+      target1Date: 'Expected T1 hit-by date',
+      unifiedReason: 'Multi-line rationale',
+    },
+  }
   const p = path.resolve(process.cwd(), 'data', 'public-snapshots', 'high-quality-setups.json')
-  fs.writeFileSync(p, JSON.stringify(out, null, 2), 'utf-8')
-  log.info('HQS', `wrote ${p} · ${out.fno.length} FNO · ${out.cash.length} CASH`)
+  fs.writeFileSync(p, JSON.stringify(enriched, null, 2), 'utf-8')
+  log.info('HQS', `wrote ${p} · ${enriched.fno.length} FNO · ${enriched.cash.length} CASH · lastUpdatedAt=${nowIso.slice(11,19)}`)
 }
 
 // ─── Fallback F&O list (used only if ScripMaster hasn't loaded yet) ─

@@ -237,6 +237,15 @@ async function main() {
       const r = await m.runCommodityScan()
       return `${r.rows.length} MCX setups (${r.eliteCount} elite · ${r.strongCount} strong)`
     }],
+    // ─── Ichimoku Cloud (20 Aug 2026) — the SILVERM +68% CE setup.
+    //     5-signal Ichimoku (Tenkan/Kijun/SenkouA/SenkouB/Chikou) + EMA
+    //     overlay across indices + commodities + top F&O leaders on 1D/1h/15m.
+    //     Emits ichimoku-cloud.json read by paper-book as premium source.
+    ['ichimoku-cloud', async () => {
+      const m = await import('../src/engine/ichimokuCloudEngine')
+      const r = await m.runIchimokuScan()
+      return `${r.hits.length} setups from ${r.scanned} scans`
+    }],
     // ─── NIFTY Bias Composer (31 Jul 2026) — the Jul-25 miss fix.
     //     Runs AFTER oi-buildup + nifty-outlook + nifty-long-horizon so it
     //     has fresh inputs. Emits nifty-bias.json + hydrates nifty-outlook

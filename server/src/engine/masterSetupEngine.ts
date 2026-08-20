@@ -213,6 +213,8 @@ export async function runMasterSetupScan(): Promise<{
     // count as 2, but their weight in score is heavier via boost below).
     ['mtf-harmonic.json', 'MTF-HARMONIC'],
     ['money-printer.json', 'MONEY-PRINTER'],
+    // 20 Aug 2026 — Ichimoku Cloud (the SILVERM +68% CE setup)
+    ['ichimoku-cloud.json', 'ICHIMOKU'],
   ]
   for (const [file, tag] of sources) {
     const snap = await readSnap(file)
