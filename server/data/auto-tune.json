@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-08-12T07:55:16.947Z",
+  "lastRunAt": "2026-08-20T07:07:11.069Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -20,16 +20,32 @@
       "minConfluence": 6
     },
     "PRO-EDGE": {
-      "minScore": 80
+      "minScore": 85
     },
     "VP+FIB": {
       "minScore": 70
     },
     "WEEKLY-PICK": {
-      "minScore": 80
+      "minScore": 85
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-08-20T07:07:11.220Z",
+      "strategy": "WEEKLY-PICK",
+      "metric": "minScore",
+      "from": 80,
+      "to": 85,
+      "reason": "PAPER-BOOK wr 38% over 8 closed — raised score bar"
+    },
+    {
+      "ts": "2026-08-20T07:07:11.220Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 80,
+      "to": 85,
+      "reason": "PAPER-BOOK wr 29% over 17 closed — raised score bar"
+    },
     {
       "ts": "2026-08-12T07:55:16.947Z",
       "strategy": "PRO-EDGE",
@@ -192,83 +208,16 @@
     }
   ],
   "lastPerf": {
-    "totalSignals": 107216,
-    "closedSignals": 3230,
-    "pending": 103986,
-    "wins": 120,
-    "losses": 113,
-    "expired": 2997,
-    "winRatePct": 3.7,
-    "avgWinPct": 40407.83,
-    "avgLossPct": -87.68,
-    "byStrategy": {
-      "unknown": {
-        "trades": 2722,
-        "wins": 49,
-        "losses": 70,
-        "winRatePct": 1.8
-      },
-      "intraday": {
-        "trades": 9,
-        "wins": 4,
-        "losses": 5,
-        "winRatePct": 44.4
-      },
-      "oi-flow": {
-        "trades": 33,
-        "wins": 33,
-        "losses": 0,
-        "winRatePct": 100
-      },
-      "commodity": {
-        "trades": 14,
-        "wins": 6,
-        "losses": 7,
-        "winRatePct": 42.9
-      },
-      "intraday-reversal": {
-        "trades": 17,
-        "wins": 7,
-        "losses": 10,
-        "winRatePct": 41.2
-      },
-      "swing": {
-        "trades": 33,
-        "wins": 16,
-        "losses": 15,
-        "winRatePct": 48.5
-      },
-      "harmonic": {
-        "trades": 11,
-        "wins": 5,
-        "losses": 6,
-        "winRatePct": 45.5
-      },
-      "options-mtf": {
-        "trades": 180,
-        "wins": 0,
-        "losses": 0,
-        "winRatePct": 0
-      },
-      "confluence-monthly": {
-        "trades": 84,
-        "wins": 0,
-        "losses": 0,
-        "winRatePct": 0
-      },
-      "confluence-weekly": {
-        "trades": 126,
-        "wins": 0,
-        "losses": 0,
-        "winRatePct": 0
-      },
-      "confluence-quarterly": {
-        "trades": 1,
-        "wins": 0,
-        "losses": 0,
-        "winRatePct": 0
-      }
-    }
+    "totalSignals": 0,
+    "closedSignals": 0,
+    "pending": 0,
+    "wins": 0,
+    "losses": 0,
+    "expired": 0,
+    "winRatePct": 0,
+    "avgWinPct": 0,
+    "avgLossPct": 0,
+    "byStrategy": {}
   },
   "symbolBlacklist": {
     "GODREJIND": 1788373416060,
