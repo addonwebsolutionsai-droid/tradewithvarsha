@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-08-21T13:26:28.787Z",
+  "lastRunAt": "2026-08-21T13:48:04.691Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -29,19 +29,67 @@
       "minScore": 90
     },
     "HQS": {
-      "minScore": 57
+      "minScore": 55
     },
     "VP-FIB": {
-      "minScore": 57
+      "minScore": 55
     },
     "CROSS-CONF": {
-      "minScore": 57
+      "minScore": 55
     },
     "EARLY-MOM": {
-      "minScore": 57
+      "minScore": 55
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-08-21T13:48:04.781Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 87,
+      "to": 90,
+      "reason": "PAPER-BOOK wr 33% over 18 closed — raised score bar"
+    },
+    {
+      "ts": "2026-08-21T13:41:01.113Z",
+      "strategy": "EARLY-MOM",
+      "metric": "minScore",
+      "from": 57,
+      "to": 55,
+      "reason": "MISS-DIGEST auto-apply: 15 misses attributed to vol_too_low — relaxed"
+    },
+    {
+      "ts": "2026-08-21T13:41:01.113Z",
+      "strategy": "CROSS-CONF",
+      "metric": "minScore",
+      "from": 57,
+      "to": 55,
+      "reason": "MISS-DIGEST auto-apply: 15 misses attributed to not_in_universe — relaxed"
+    },
+    {
+      "ts": "2026-08-21T13:41:01.113Z",
+      "strategy": "VP-FIB",
+      "metric": "minScore",
+      "from": 57,
+      "to": 55,
+      "reason": "MISS-DIGEST auto-apply: 15 misses attributed to not_in_universe — relaxed"
+    },
+    {
+      "ts": "2026-08-21T13:41:01.113Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 90,
+      "to": 87,
+      "reason": "MISS-DIGEST auto-apply: 15 misses attributed to not_in_universe — relaxed"
+    },
+    {
+      "ts": "2026-08-21T13:41:01.113Z",
+      "strategy": "HQS",
+      "metric": "minScore",
+      "from": 57,
+      "to": 55,
+      "reason": "MISS-DIGEST auto-apply: 15 misses attributed to not_in_universe — relaxed"
+    },
     {
       "ts": "2026-08-20T13:47:33.486Z",
       "strategy": "PRO-EDGE",
