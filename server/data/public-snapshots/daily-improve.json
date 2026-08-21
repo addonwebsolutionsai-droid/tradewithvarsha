@@ -1,9 +1,19 @@
 {
-  "generatedAt": "2026-08-21T07:24:14.650Z",
+  "generatedAt": "2026-08-21T13:26:28.967Z",
   "windowDays": 7,
-  "bookWinRate": 31.03,
-  "bookRealisedPnl": -46773.31,
+  "bookWinRate": 35.48,
+  "bookRealisedPnl": 138825.92,
   "perSourceStats": [
+    {
+      "source": "WEEKLY-PICK",
+      "trades": 3,
+      "wins": 3,
+      "losses": 0,
+      "winRatePct": 100,
+      "avgReturnPct": 11.21,
+      "worstSymbol": null,
+      "repeatedLosses": 0
+    },
     {
       "source": "PRO-EDGE",
       "trades": 2,
@@ -13,16 +23,6 @@
       "avgReturnPct": -4.68,
       "worstSymbol": "NHPC",
       "repeatedLosses": 1
-    },
-    {
-      "source": "WEEKLY-PICK",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "winRatePct": 100,
-      "avgReturnPct": 4.07,
-      "worstSymbol": null,
-      "repeatedLosses": 0
     },
     {
       "source": "VP+FIB",
@@ -41,20 +41,20 @@
   "improvements": [
     {
       "type": "INFO",
+      "target": "WEEKLY-PICK",
+      "metric": "sample-size",
+      "from": 3,
+      "to": 5,
+      "reason": "WEEKLY-PICK: only 3 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "PRO-EDGE",
       "metric": "sample-size",
       "from": 2,
       "to": 5,
       "reason": "PRO-EDGE: only 2 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "WEEKLY-PICK",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "WEEKLY-PICK: only 1 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -71,8 +71,8 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources, 0.0d span)",
-      "to": "82%",
-      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 560 candidates (82% of filtered)",
+      "to": "81%",
+      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 561 candidates (81% of filtered)",
       "applied": false
     },
     {
@@ -80,19 +80,19 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (2 sources, 40.9d span)",
-      "to": "4%",
-      "reason": "pillar-1-multi-source (2 sources, 40.9d span) killed 29 candidates (4% of filtered)",
+      "to": "3%",
+      "reason": "pillar-1-multi-source (2 sources, 40.9d span) killed 19 candidates (3% of filtered)",
       "applied": false
     },
     {
       "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
-      "from": "pillar-smart-money (none)",
+      "from": "pillar-rr (1.00)",
       "to": "2%",
-      "reason": "pillar-smart-money (none) killed 11 candidates (2% of filtered)",
+      "reason": "pillar-rr (1.00) killed 13 candidates (2% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-08-21\nBook WR 31.03% · realised ₹-46773 · book ₹1026127\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  PRO-EDGE             · trades   2 · WR   0% · avgRet -4.68%\n  WEEKLY-PICK          · trades   1 · WR 100% · avgRet +4.07%\n  VP+FIB               · trades   1 · WR 100% · avgRet +0.03%\n\nImprovements applied: 0 · flagged for review: 6"
+  "humanExplain": "Daily improvisation · 2026-08-21\nBook WR 35.48% · realised ₹138826 · book ₹1166039\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   3 · WR 100% · avgRet +11.21%\n  PRO-EDGE             · trades   2 · WR   0% · avgRet -4.68%\n  VP+FIB               · trades   1 · WR 100% · avgRet +0.03%\n\nImprovements applied: 0 · flagged for review: 6"
 }
