@@ -1,14 +1,72 @@
 {
-  "generatedAt": "2026-08-24T07:59:41.501Z",
-  "status": "NO_DATA",
-  "note": "NIFTY intraday candles unavailable on this tick. Common causes: Angel session not established on the GH Actions runner, or Yahoo intraday feed empty. Next tick (~4 min during market hours) will retry.",
-  "spot": 0,
+  "generatedAt": "2026-08-24T08:08:47.647Z",
+  "spot": 24169.94921875,
   "compositeBias": "NEUTRAL",
   "confidence": "LOW",
   "bullTfCount": 0,
-  "bearTfCount": 0,
-  "agreementScore": 0,
-  "timeframes": [],
-  "strongestSetup": null,
-  "tradeRecommendation": null
+  "bearTfCount": 1,
+  "agreementScore": 100,
+  "timeframes": [
+    {
+      "tf": "1D",
+      "profile": {
+        "poc": 23984.529609375,
+        "vah": 25702.69546875,
+        "val": 23272.119375,
+        "hvn": [
+          25912.227890625
+        ],
+        "lvn": [
+          22894.961015625
+        ],
+        "ibH": 25021.55078125,
+        "ibL": 24894.349609375,
+        "totalVolume": 89696100
+      },
+      "signals": [
+        {
+          "setup": "IB_BREAK_DOWN",
+          "side": "BEARISH",
+          "strength": 55,
+          "entry": 24169.94921875,
+          "stopLoss": 24949.015290178573,
+          "target1": 23964.95291573661,
+          "target2": 23759.956612723214,
+          "target3": 23486.62820870536,
+          "keyLevel": 24894.349609375,
+          "reason": "IB low 24894.35 broken decisively — trend-day signature"
+        }
+      ]
+    }
+  ],
+  "strongestSetup": {
+    "tf": "1D",
+    "setup": "IB_BREAK_DOWN",
+    "side": "BEARISH",
+    "strength": 55,
+    "reason": "IB low 24894.35 broken decisively — trend-day signature",
+    "entry": 24169.94921875,
+    "stopLoss": 24949.015290178573,
+    "target1": 23964.95291573661,
+    "target2": 23759.956612723214,
+    "target3": 23486.62820870536,
+    "keyLevel": 24894.349609375
+  },
+  "tradeRecommendation": {
+    "side": "WAIT",
+    "instrument": "NIFTY SPOT (reference)",
+    "optionStrike": 24150,
+    "optionType": null,
+    "entry": 24169.95,
+    "stopLoss": 24169.95,
+    "target1": 24169.95,
+    "target2": 24169.95,
+    "target3": 24169.95,
+    "entryDate": "2026-08-24",
+    "target1Date": "2026-08-25",
+    "target2Date": "2026-08-26",
+    "target3Date": "2026-08-27",
+    "slDate": "2026-08-27",
+    "rationale": "No decisive Volume Profile setup — wait for cleaner rejection or breakout."
+  }
 }
