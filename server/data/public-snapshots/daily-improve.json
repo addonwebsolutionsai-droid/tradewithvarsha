@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-08-25T03:27:43.569Z",
+  "generatedAt": "2026-08-25T07:26:06.136Z",
   "windowDays": 7,
-  "bookWinRate": 34.38,
-  "bookRealisedPnl": 138820.92,
+  "bookWinRate": 34.29,
+  "bookRealisedPnl": 137142.96,
   "perSourceStats": [
     {
       "source": "WEEKLY-PICK",
-      "trades": 4,
+      "trades": 5,
       "wins": 3,
-      "losses": 1,
-      "winRatePct": 75,
-      "avgReturnPct": 8.33,
+      "losses": 2,
+      "winRatePct": 60,
+      "avgReturnPct": 6.5,
       "worstSymbol": "AUROPHARMA",
       "repeatedLosses": 1
     },
@@ -33,21 +33,32 @@
       "avgReturnPct": 0.03,
       "worstSymbol": null,
       "repeatedLosses": 0
+    },
+    {
+      "source": "ELLIOTT-WAVE",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "winRatePct": 100,
+      "avgReturnPct": 0.59,
+      "worstSymbol": null,
+      "repeatedLosses": 0
+    },
+    {
+      "source": "CHART-PATTERN",
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "winRatePct": 0,
+      "avgReturnPct": -1.32,
+      "worstSymbol": "BAJAJFINSV",
+      "repeatedLosses": 1
     }
   ],
   "masterEmitted": 1,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
-    {
-      "type": "INFO",
-      "target": "WEEKLY-PICK",
-      "metric": "sample-size",
-      "from": 4,
-      "to": 5,
-      "reason": "WEEKLY-PICK: only 4 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
     {
       "type": "INFO",
       "target": "PRO-EDGE",
@@ -68,11 +79,29 @@
     },
     {
       "type": "INFO",
+      "target": "ELLIOTT-WAVE",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "ELLIOTT-WAVE: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "CHART-PATTERN",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "CHART-PATTERN: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources, 0.0d span)",
-      "to": "84%",
-      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 595 candidates (84% of filtered)",
+      "to": "85%",
+      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 571 candidates (85% of filtered)",
       "applied": false
     },
     {
@@ -80,8 +109,8 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (2 sources, 44.9d span)",
-      "to": "4%",
-      "reason": "pillar-1-multi-source (2 sources, 44.9d span) killed 26 candidates (4% of filtered)",
+      "to": "2%",
+      "reason": "pillar-1-multi-source (2 sources, 44.9d span) killed 14 candidates (2% of filtered)",
       "applied": false
     },
     {
@@ -90,9 +119,9 @@
       "metric": "pillar-kill",
       "from": "pillar-rr (1.00)",
       "to": "2%",
-      "reason": "pillar-rr (1.00) killed 11 candidates (2% of filtered)",
+      "reason": "pillar-rr (1.00) killed 12 candidates (2% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-08-25\nBook WR 34.38% · realised ₹138821 · book ₹1166514\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   4 · WR  75% · avgRet +8.33%\n  PRO-EDGE             · trades   2 · WR   0% · avgRet -4.68%\n  VP+FIB               · trades   1 · WR 100% · avgRet +0.03%\n\nImprovements applied: 0 · flagged for review: 6"
+  "humanExplain": "Daily improvisation · 2026-08-25\nBook WR 34.29% · realised ₹137143 · book ₹1162398\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   5 · WR  60% · avgRet +6.50%\n  PRO-EDGE             · trades   2 · WR   0% · avgRet -4.68%\n  VP+FIB               · trades   1 · WR 100% · avgRet +0.03%\n  ELLIOTT-WAVE         · trades   1 · WR 100% · avgRet +0.59%\n  CHART-PATTERN        · trades   1 · WR   0% · avgRet -1.32%\n\nImprovements applied: 0 · flagged for review: 7"
 }
