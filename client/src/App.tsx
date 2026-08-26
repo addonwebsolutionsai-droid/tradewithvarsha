@@ -151,7 +151,11 @@ function Shell() {
             <Route path="/intraday"     element={<PublicIntradayPage />} />
             {/* 26 Aug 2026 — new /desk Command Center goes LIVE as the
                 default landing per user directive. All old routes stay
-                available for bookmarks (each still resolves directly). */}
+                available for bookmarks (each still resolves directly).
+                CRITICAL: /desk route MUST be defined here for PUBLIC_MODE;
+                otherwise the `/` → /desk redirect + `*` catch-all forms
+                an infinite loop and the page renders blank. */}
+            <Route path="/desk/*" element={<DeskApp />} />
             <Route path="/" element={<Navigate to="/desk" replace />} />
             <Route path="*" element={<Navigate to="/desk" replace />} />
           </Routes>
