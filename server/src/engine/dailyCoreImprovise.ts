@@ -175,6 +175,24 @@ export async function runDailyCoreImprovise(): Promise<DailyImproveReport> {
     }
     const cur = tune.overrides[s.source] ?? {}
     const currentMinScore = cur.minScore ?? 60
+    // 26 Aug 2026 — 6-hour cooldown per source. PRO-EDGE was ping-ponging
+    // 87↔90↔87↔90 on same-day back-to-back runs because sub-hour windows
+    // gave wildly different WR readings. Debounce prevents oscillation:
+    // once we tune a source, hold that decision for at least 6 hours so
+    // outcomes have time to prove out.
+    const lastTune = (tune.adjustments ?? []).find((a: any) => a.strategy === s.source && a.metric === 'minScore')
+    if (lastTune) {
+      const hoursSince = (Date.now() - Date.parse(lastTune.ts)) / 3600_000
+      if (hoursSince < 6) {
+        improvements.push({
+          type: 'INFO', target: s.source, metric: 'cooldown-active',
+          from: `${hoursSince.toFixed(1)}h`, to: '6h',
+          reason: `${s.source}: tuned ${hoursSince.toFixed(1)}h ago — cooldown holds until 6h`,
+          applied: false,
+        })
+        continue
+      }
+    }
     if (s.winRatePct < 30) {
       const newMin = Math.min(95, currentMinScore + 5)
       if (newMin !== currentMinScore) {

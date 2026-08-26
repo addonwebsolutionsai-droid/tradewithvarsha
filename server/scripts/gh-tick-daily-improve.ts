@@ -32,7 +32,13 @@ dotenv.config({ path: path.resolve(__dirname, '../.env') })
 
 import { log } from '../src/util/logger'
 
-const LOG_FILE = path.resolve(__dirname, '../data/daily-routine-log.md')
+// 26 Aug 2026 — moved into public-snapshots/ so it lands in the git-
+// whitelisted directory. Previously written to server/data/ which is
+// covered by .gitignore's `server/data/*` block; runs succeeded but the
+// commit block silently dropped the file → user never saw the log grow.
+// Public-snapshots dir is already git-tracked + also served via
+// raw.githubusercontent so the log is readable in a browser too.
+const LOG_FILE = path.resolve(__dirname, '../data/public-snapshots/daily-routine-log.md')
 const SNAP_DIR = path.resolve(__dirname, '../data/public-snapshots')
 
 interface StepResult { name: string; ok: boolean; summary: string; elapsedMs: number }
