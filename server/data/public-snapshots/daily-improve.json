@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-08-26T03:33:29.305Z",
+  "generatedAt": "2026-08-26T07:25:36.525Z",
   "windowDays": 7,
-  "bookWinRate": 34.29,
-  "bookRealisedPnl": 137142.96,
+  "bookWinRate": 37.84,
+  "bookRealisedPnl": 141562.65,
   "perSourceStats": [
     {
       "source": "WEEKLY-PICK",
@@ -26,11 +26,11 @@
     },
     {
       "source": "VP+FIB",
-      "trades": 1,
-      "wins": 1,
+      "trades": 2,
+      "wins": 2,
       "losses": 0,
       "winRatePct": 100,
-      "avgReturnPct": 0.03,
+      "avgReturnPct": 2.97,
       "worstSymbol": null,
       "repeatedLosses": 0
     },
@@ -53,6 +53,16 @@
       "avgReturnPct": -1.32,
       "worstSymbol": "BAJAJFINSV",
       "repeatedLosses": 1
+    },
+    {
+      "source": "CROSS-CONFLUENCE",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "winRatePct": 100,
+      "avgReturnPct": 2.27,
+      "worstSymbol": null,
+      "repeatedLosses": 0
     }
   ],
   "masterEmitted": 1,
@@ -72,9 +82,9 @@
       "type": "INFO",
       "target": "VP+FIB",
       "metric": "sample-size",
-      "from": 1,
+      "from": 2,
       "to": 5,
-      "reason": "VP+FIB: only 1 closed trades — need ≥ 5 for gate tuning",
+      "reason": "VP+FIB: only 2 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -97,11 +107,20 @@
     },
     {
       "type": "INFO",
+      "target": "CROSS-CONFLUENCE",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "CROSS-CONFLUENCE: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources, 0.0d span)",
-      "to": "81%",
-      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 572 candidates (81% of filtered)",
+      "to": "85%",
+      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 553 candidates (85% of filtered)",
       "applied": false
     },
     {
@@ -109,19 +128,19 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (2 sources, 45.9d span)",
-      "to": "3%",
-      "reason": "pillar-1-multi-source (2 sources, 45.9d span) killed 18 candidates (3% of filtered)",
+      "to": "2%",
+      "reason": "pillar-1-multi-source (2 sources, 45.9d span) killed 15 candidates (2% of filtered)",
       "applied": false
     },
     {
       "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
-      "from": "pillar-winner-pattern (no match)",
+      "from": "pillar-rr (1.00)",
       "to": "2%",
-      "reason": "pillar-winner-pattern (no match) killed 11 candidates (2% of filtered)",
+      "reason": "pillar-rr (1.00) killed 12 candidates (2% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-08-26\nBook WR 34.29% · realised ₹137143 · book ₹1166881\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   5 · WR  60% · avgRet +6.50%\n  PRO-EDGE             · trades   2 · WR   0% · avgRet -4.68%\n  VP+FIB               · trades   1 · WR 100% · avgRet +0.03%\n  ELLIOTT-WAVE         · trades   1 · WR 100% · avgRet +0.59%\n  CHART-PATTERN        · trades   1 · WR   0% · avgRet -1.32%\n\nImprovements applied: 0 · flagged for review: 7"
+  "humanExplain": "Daily improvisation · 2026-08-26\nBook WR 37.84% · realised ₹141563 · book ₹1170940\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   5 · WR  60% · avgRet +6.50%\n  PRO-EDGE             · trades   2 · WR   0% · avgRet -4.68%\n  VP+FIB               · trades   2 · WR 100% · avgRet +2.97%\n  ELLIOTT-WAVE         · trades   1 · WR 100% · avgRet +0.59%\n  CHART-PATTERN        · trades   1 · WR   0% · avgRet -1.32%\n  CROSS-CONFLUENCE     · trades   1 · WR 100% · avgRet +2.27%\n\nImprovements applied: 0 · flagged for review: 8"
 }
