@@ -149,8 +149,11 @@ function Shell() {
             <Route path="/weekly-pick"  element={<PublicWeeklyPickPage />} />
             <Route path="/daily-pick"   element={<PublicDailyPickPage />} />
             <Route path="/intraday"     element={<PublicIntradayPage />} />
-            <Route path="/" element={<Navigate to="/picks" replace />} />
-            <Route path="*" element={<Navigate to="/picks" replace />} />
+            {/* 26 Aug 2026 — new /desk Command Center goes LIVE as the
+                default landing per user directive. All old routes stay
+                available for bookmarks (each still resolves directly). */}
+            <Route path="/" element={<Navigate to="/desk" replace />} />
+            <Route path="*" element={<Navigate to="/desk" replace />} />
           </Routes>
         ) : (
         <Routes>

@@ -295,7 +295,7 @@ export default function DeskApp(): JSX.Element {
             <div className="desk-brand-mark">tv</div>
             <div>
               <span className="desk-brand-1">tradewithvarsha</span>
-              <span className="desk-brand-2">Command Center · preview</span>
+              <span className="desk-brand-2">Command Center</span>
             </div>
           </div>
           <nav className="desk-nav">
