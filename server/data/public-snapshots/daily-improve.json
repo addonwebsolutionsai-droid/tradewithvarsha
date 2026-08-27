@@ -1,38 +1,18 @@
 {
-  "generatedAt": "2026-08-26T14:03:35.341Z",
+  "generatedAt": "2026-08-27T12:59:10.308Z",
   "windowDays": 7,
   "bookWinRate": 37.84,
   "bookRealisedPnl": 141562.65,
   "perSourceStats": [
     {
       "source": "WEEKLY-PICK",
-      "trades": 5,
-      "wins": 3,
+      "trades": 4,
+      "wins": 2,
       "losses": 2,
-      "winRatePct": 60,
-      "avgReturnPct": 6.5,
+      "winRatePct": 50,
+      "avgReturnPct": 7.11,
       "worstSymbol": "AUROPHARMA",
       "repeatedLosses": 1
-    },
-    {
-      "source": "PRO-EDGE",
-      "trades": 2,
-      "wins": 0,
-      "losses": 2,
-      "winRatePct": 0,
-      "avgReturnPct": -4.68,
-      "worstSymbol": "NHPC",
-      "repeatedLosses": 1
-    },
-    {
-      "source": "VP+FIB",
-      "trades": 2,
-      "wins": 2,
-      "losses": 0,
-      "winRatePct": 100,
-      "avgReturnPct": 2.97,
-      "worstSymbol": null,
-      "repeatedLosses": 0
     },
     {
       "source": "ELLIOTT-WAVE",
@@ -63,6 +43,16 @@
       "avgReturnPct": 2.27,
       "worstSymbol": null,
       "repeatedLosses": 0
+    },
+    {
+      "source": "VP+FIB",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "winRatePct": 100,
+      "avgReturnPct": 5.91,
+      "worstSymbol": null,
+      "repeatedLosses": 0
     }
   ],
   "masterEmitted": 1,
@@ -71,20 +61,11 @@
   "improvements": [
     {
       "type": "INFO",
-      "target": "PRO-EDGE",
+      "target": "WEEKLY-PICK",
       "metric": "sample-size",
-      "from": 2,
+      "from": 4,
       "to": 5,
-      "reason": "PRO-EDGE: only 2 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "VP+FIB",
-      "metric": "sample-size",
-      "from": 2,
-      "to": 5,
-      "reason": "VP+FIB: only 2 closed trades — need ≥ 5 for gate tuning",
+      "reason": "WEEKLY-PICK: only 4 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -116,6 +97,15 @@
     },
     {
       "type": "INFO",
+      "target": "VP+FIB",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "VP+FIB: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources, 0.0d span)",
@@ -142,5 +132,5 @@
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-08-26\nBook WR 37.84% · realised ₹141563 · book ₹1172420\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   5 · WR  60% · avgRet +6.50%\n  PRO-EDGE             · trades   2 · WR   0% · avgRet -4.68%\n  VP+FIB               · trades   2 · WR 100% · avgRet +2.97%\n  ELLIOTT-WAVE         · trades   1 · WR 100% · avgRet +0.59%\n  CHART-PATTERN        · trades   1 · WR   0% · avgRet -1.32%\n  CROSS-CONFLUENCE     · trades   1 · WR 100% · avgRet +2.27%\n\nImprovements applied: 0 · flagged for review: 8"
+  "humanExplain": "Daily improvisation · 2026-08-27\nBook WR 37.84% · realised ₹141563 · book ₹1171928\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   4 · WR  50% · avgRet +7.11%\n  ELLIOTT-WAVE         · trades   1 · WR 100% · avgRet +0.59%\n  CHART-PATTERN        · trades   1 · WR   0% · avgRet -1.32%\n  CROSS-CONFLUENCE     · trades   1 · WR 100% · avgRet +2.27%\n  VP+FIB               · trades   1 · WR 100% · avgRet +5.91%\n\nImprovements applied: 0 · flagged for review: 8"
 }
