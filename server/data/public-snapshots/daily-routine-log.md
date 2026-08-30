@@ -738,3 +738,70 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
 
 **Total elapsed:** 54.0s
+
+
+## 2026-08-30T12:07:19.286Z — 17:37 IST
+
+**Book:** WR 37.84% · realised ₹141563
+**Miss catch-rate:** 0% (0/101)
+**Engine emit:** MASTER 2 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · TEMPSENS +95.5%
+  · NIRAJISPAT +20.0%
+  · PRECWIRE +20.0%
+  · SHAHALLOYS +20.0%
+  · XTRANET +20.0%
+  · SECMARK +19.2%
+  · MASTEK +18.0%
+  · SUNSHINE +16.8%
+  · OMAXE +16.2%
+  · SONAMLTD +15.7%
+
+### Why we missed them (postmortem)
+  · not_in_universe: 13
+  · rule_fired_but_not_emitted: 4
+  · not_coil_pattern: 18
+  · ema_not_stacked: 5
+  · scanner_gap: 3
+  · vol_already_elevated: 5
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 31
+  · wyckoff-accumulation: 13
+  · vcp: 3
+
+### Engine health
+  · ⚠STALE trading-journal: age 37.0h, rows 0
+  · ⚠STALE master-setups: age 37.2h, rows 2
+  · ⚠STALE money-printer: age 37.2h, rows 0
+  · ⚠STALE mtf-harmonic: age 37.2h, rows 4
+  · ⚠STALE ichimoku-cloud: age 37.2h, rows 55
+  · ⚠STALE nifty-bias: age 37.2h, rows 0
+  · ⚠STALE harmonic: age 37.2h, rows 73
+  · ⚠STALE elliott-wave: age 37.3h, rows 26
+  · ⚠STALE sector-rotation: age 37.0h, rows 13
+  · ⚠STALE high-quality-setups: age 37.2h, rows 131
+  · ⚠STALE pro-edge: age 37.0h, rows 1
+  · ⚠STALE vp-fib: age 37.2h, rows 201
+  · ✓ miss-analysis: age -0.0h, rows 101
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · WEEKLY-PICK: 2 trades, WR 0%, avgRet -0.56%
+  · ELLIOTT-WAVE: 1 trades, WR 100%, avgRet +0.59%
+  · CHART-PATTERN: 1 trades, WR 0%, avgRet -1.32%
+  · CROSS-CONFLUENCE: 1 trades, WR 100%, avgRet +2.27%
+  · VP+FIB: 1 trades, WR 100%, avgRet +5.91%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/101 caught (0%) · 28.8s
+  ✓ gainer-postmortem: 4/60 would've been caught with tuning · 1.9s
+  ✓ pattern-learner: 83 new fingerprints (store 83) · 20.8s
+  ✓ self-improve: 13 strategy overrides · +0 new adjustments · 0.3s
+  ✓ daily-core-improvise: 0 tunes applied · WR 37.84% · MASTER 2 · MP 0 · 0.0s
+  ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
+
+**Total elapsed:** 51.9s
