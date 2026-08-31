@@ -1,19 +1,9 @@
 {
-  "generatedAt": "2026-08-31T08:49:34.438Z",
+  "generatedAt": "2026-08-31T14:16:32.103Z",
   "windowDays": 7,
   "bookWinRate": 39.47,
   "bookRealisedPnl": 147994.53,
   "perSourceStats": [
-    {
-      "source": "WEEKLY-PICK",
-      "trades": 2,
-      "wins": 0,
-      "losses": 2,
-      "winRatePct": 0,
-      "avgReturnPct": -0.56,
-      "worstSymbol": "AUROPHARMA",
-      "repeatedLosses": 1
-    },
     {
       "source": "PRO-EDGE",
       "trades": 1,
@@ -35,6 +25,16 @@
       "repeatedLosses": 0
     },
     {
+      "source": "WEEKLY-PICK",
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "winRatePct": 0,
+      "avgReturnPct": -0.81,
+      "worstSymbol": "ZYDUSLIFE",
+      "repeatedLosses": 1
+    },
+    {
       "source": "CHART-PATTERN",
       "trades": 1,
       "wins": 0,
@@ -53,31 +53,12 @@
       "avgReturnPct": 2.27,
       "worstSymbol": null,
       "repeatedLosses": 0
-    },
-    {
-      "source": "VP+FIB",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "winRatePct": 100,
-      "avgReturnPct": 5.91,
-      "worstSymbol": null,
-      "repeatedLosses": 0
     }
   ],
-  "masterEmitted": 3,
+  "masterEmitted": 2,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
-    {
-      "type": "INFO",
-      "target": "WEEKLY-PICK",
-      "metric": "sample-size",
-      "from": 2,
-      "to": 5,
-      "reason": "WEEKLY-PICK: only 2 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
     {
       "type": "INFO",
       "target": "PRO-EDGE",
@@ -94,6 +75,15 @@
       "from": 1,
       "to": 5,
       "reason": "ELLIOTT-WAVE: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "WEEKLY-PICK",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "WEEKLY-PICK: only 1 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -116,20 +106,11 @@
     },
     {
       "type": "INFO",
-      "target": "VP+FIB",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "VP+FIB: only 1 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources, 0.0d span)",
-      "to": "80%",
-      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 546 candidates (80% of filtered)",
+      "to": "82%",
+      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 569 candidates (82% of filtered)",
       "applied": false
     },
     {
@@ -138,18 +119,18 @@
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (2 sources, 51.1d span)",
       "to": "3%",
-      "reason": "pillar-1-multi-source (2 sources, 51.1d span) killed 22 candidates (3% of filtered)",
+      "reason": "pillar-1-multi-source (2 sources, 51.1d span) killed 20 candidates (3% of filtered)",
       "applied": false
     },
     {
       "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
-      "from": "pillar-rr (1.00)",
-      "to": "2%",
-      "reason": "pillar-rr (1.00) killed 12 candidates (2% of filtered)",
+      "from": "pillar-1-multi-source (2 sources, 51.7d span)",
+      "to": "3%",
+      "reason": "pillar-1-multi-source (2 sources, 51.7d span) killed 19 candidates (3% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-08-31\nBook WR 39.47% · realised ₹147995 · book ₹1175911\nMiss catch-rate 0% · MASTER 3 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   2 · WR   0% · avgRet -0.56%\n  PRO-EDGE             · trades   1 · WR 100% · avgRet +14.09%\n  ELLIOTT-WAVE         · trades   1 · WR 100% · avgRet +0.59%\n  CHART-PATTERN        · trades   1 · WR   0% · avgRet -1.32%\n  CROSS-CONFLUENCE     · trades   1 · WR 100% · avgRet +2.27%\n  VP+FIB               · trades   1 · WR 100% · avgRet +5.91%\n\nImprovements applied: 0 · flagged for review: 9"
+  "humanExplain": "Daily improvisation · 2026-08-31\nBook WR 39.47% · realised ₹147995 · book ₹1171858\nMiss catch-rate 0% · MASTER 2 · Money-Printer 0\n\nPer-source stats (7d window):\n  PRO-EDGE             · trades   1 · WR 100% · avgRet +14.09%\n  ELLIOTT-WAVE         · trades   1 · WR 100% · avgRet +0.59%\n  WEEKLY-PICK          · trades   1 · WR   0% · avgRet -0.81%\n  CHART-PATTERN        · trades   1 · WR   0% · avgRet -1.32%\n  CROSS-CONFLUENCE     · trades   1 · WR 100% · avgRet +2.27%\n\nImprovements applied: 0 · flagged for review: 8"
 }
