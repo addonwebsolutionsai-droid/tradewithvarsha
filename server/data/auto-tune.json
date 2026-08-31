@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-08-31T19:12:08.648Z",
+  "lastRunAt": "2026-08-31T19:27:50.384Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -42,6 +42,22 @@
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-08-31T19:27:50.491Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 87,
+      "to": 90,
+      "reason": "PAPER-BOOK wr 33% over 18 closed — raised score bar"
+    },
+    {
+      "ts": "2026-08-31T19:21:14.354Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 90,
+      "to": 87,
+      "reason": "MISS-DIGEST auto-apply: 14 misses attributed to not_in_universe — relaxed"
+    },
     {
       "ts": "2026-08-30T17:50:56.586Z",
       "strategy": "PRO-EDGE",
@@ -425,22 +441,6 @@
       "from": 3,
       "to": 4,
       "reason": "Win-rate 100% > target+5 (80%) over 33 trades — relaxed to surface more setups"
-    },
-    {
-      "ts": "2026-06-24T06:45:45.387Z",
-      "strategy": "unknown",
-      "metric": "minConfluence",
-      "from": 4,
-      "to": 5,
-      "reason": "Win-rate 1.2% < target 60% over 2673 closed trades — raised confluence floor"
-    },
-    {
-      "ts": "2026-06-24T00:00:00.000Z",
-      "strategy": "*",
-      "metric": "RESET",
-      "from": 6,
-      "to": 0,
-      "reason": "PRO reset: prior auto-tune ratcheted EVERY strategy's minConfluence to 6/6 on noisy n=10-21 samples (±15% standard error). Headline 80% target was unrealistic for cash-equity swing/weekly. New regime: per-strategy realistic targets (60-75%), min n=30 closed before adjusting, and relax-asymmetry restored. Overrides cleared; strategies fall back to natural defaults."
     }
   ],
   "lastPerf": {
