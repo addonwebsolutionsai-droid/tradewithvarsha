@@ -1,6 +1,6 @@
 {
-  "generatedAt": "2026-09-01T08:06:42.838Z",
-  "spot": 24056.05078125,
+  "generatedAt": "2026-09-01T08:16:08.479Z",
+  "spot": 24030.099609375,
   "compositeBias": "NEUTRAL",
   "confidence": "LOW",
   "bullTfCount": 0,
@@ -10,10 +10,11 @@
     {
       "tf": "1D",
       "profile": {
-        "poc": 24152.155546875,
+        "poc": 23984.529609375,
         "vah": 25702.69546875,
         "val": 23104.4934375,
         "hvn": [
+          24152.155546875,
           25912.227890625
         ],
         "lvn": [
@@ -21,18 +22,30 @@
         ],
         "ibH": 24635.599609375,
         "ibL": 24432.69921875,
-        "totalVolume": 90131500
+        "totalVolume": 89835400
       },
       "signals": [
+        {
+          "setup": "HVN_REJECT_DOWN",
+          "side": "BEARISH",
+          "strength": 60,
+          "entry": 24030.099609375,
+          "stopLoss": 24206.0905078125,
+          "target1": 23984.529609375,
+          "target2": 23104.4934375,
+          "target3": 23027.443493303574,
+          "keyLevel": 24152.155546875,
+          "reason": "Rejection at HVN 24152.16 — institutions defending upper node"
+        },
         {
           "setup": "IB_BREAK_DOWN",
           "side": "BEARISH",
           "strength": 55,
-          "entry": 24056.05078125,
-          "stopLoss": 24492.940625,
-          "target1": 23830.1455078125,
-          "target2": 23604.240234375,
-          "target3": 23303.033203125,
+          "entry": 24030.099609375,
+          "stopLoss": 24494.339174107143,
+          "target1": 23798.949776785714,
+          "target2": 23567.799944196428,
+          "target3": 23259.600167410714,
           "keyLevel": 24432.69921875,
           "reason": "IB low 24432.70 broken decisively — trend-day signature"
         }
@@ -41,27 +54,27 @@
   ],
   "strongestSetup": {
     "tf": "1D",
-    "setup": "IB_BREAK_DOWN",
+    "setup": "HVN_REJECT_DOWN",
     "side": "BEARISH",
-    "strength": 55,
-    "reason": "IB low 24432.70 broken decisively — trend-day signature",
-    "entry": 24056.05078125,
-    "stopLoss": 24492.940625,
-    "target1": 23830.1455078125,
-    "target2": 23604.240234375,
-    "target3": 23303.033203125,
-    "keyLevel": 24432.69921875
+    "strength": 60,
+    "reason": "Rejection at HVN 24152.16 — institutions defending upper node",
+    "entry": 24030.099609375,
+    "stopLoss": 24206.0905078125,
+    "target1": 23984.529609375,
+    "target2": 23104.4934375,
+    "target3": 23027.443493303574,
+    "keyLevel": 24152.155546875
   },
   "tradeRecommendation": {
     "side": "WAIT",
     "instrument": "NIFTY SPOT (reference)",
     "optionStrike": 24050,
     "optionType": null,
-    "entry": 24056.05,
-    "stopLoss": 24056.05,
-    "target1": 24056.05,
-    "target2": 24056.05,
-    "target3": 24056.05,
+    "entry": 24030.1,
+    "stopLoss": 24030.1,
+    "target1": 24030.1,
+    "target2": 24030.1,
+    "target3": 24030.1,
     "entryDate": "2026-09-01",
     "target1Date": "2026-09-02",
     "target2Date": "2026-09-03",
