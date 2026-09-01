@@ -1205,3 +1205,67 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
 
 **Total elapsed:** 33.8s
+
+
+## 2026-09-01T16:49:08.886Z — 22:19 IST
+
+**Book:** WR 39.47% · realised ₹149696
+**Miss catch-rate:** 0% (0/59)
+**Engine emit:** MASTER 1 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · MBECL +2136.5%
+  · HTEL +48.6%
+  · ICDSLTD +20.0%
+  · TBZ +20.0%
+  · SRIKPRIND +20.0%
+  · PAR +19.8%
+  · KALYANIFRG +18.6%
+  · SSWL +16.9%
+  · PRAENG +13.7%
+  · SGRL +12.8%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 22
+  · not_in_universe: 11
+  · rule_fired_but_not_emitted: 10
+  · extended_freshness_reject: 2
+  · vol_already_elevated: 3
+  · scanner_gap: 2
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 36
+  · wyckoff-accumulation: 10
+  · vcp: 2
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 6.7h, rows 0
+  · ✓ master-setups: age 6.8h, rows 1
+  · ⚠EMPTY money-printer: age 6.8h, rows 0
+  · ✓ mtf-harmonic: age 21.3h, rows 4
+  · ✓ ichimoku-cloud: age 6.8h, rows 54
+  · ⚠EMPTY nifty-bias: age 6.8h, rows 0
+  · ✓ harmonic: age 21.4h, rows 69
+  · ✓ elliott-wave: age 21.5h, rows 25
+  · ✓ sector-rotation: age 21.2h, rows 13
+  · ✓ high-quality-setups: age 6.8h, rows 136
+  · ✓ pro-edge: age 6.8h, rows 1
+  · ✓ vp-fib: age 6.8h, rows 216
+  · ✓ miss-analysis: age -0.0h, rows 59
+  · ✓ gainer-postmortem: age -0.0h, rows 59
+
+### Per-source WR (last 7d closed trades)
+  · PRO-EDGE: 1 trades, WR 100%, avgRet +14.09%
+  · CROSS-CONFLUENCE: 1 trades, WR 100%, avgRet +2.27%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/59 caught (0%) · 29.3s
+  ✓ gainer-postmortem: 10/59 would've been caught with tuning · 1.9s
+  ✓ pattern-learner: 48 new fingerprints (store 48) · 4.4s
+  ✓ self-improve: 13 strategy overrides · +2 new adjustments · 0.3s
+  ✓ daily-core-improvise: 0 tunes applied · WR 39.47% · MASTER 1 · MP 0 · 0.0s
+  ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
+
+**Total elapsed:** 36.0s
