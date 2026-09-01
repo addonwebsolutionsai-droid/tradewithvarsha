@@ -1,14 +1,85 @@
 {
-  "generatedAt": "2026-09-01T09:28:38.528Z",
-  "status": "NO_DATA",
-  "note": "NIFTY intraday candles unavailable on this tick. Common causes: Angel session not established on the GH Actions runner, or Yahoo intraday feed empty. Next tick (~4 min during market hours) will retry.",
-  "spot": 0,
+  "generatedAt": "2026-09-01T09:37:27.096Z",
+  "spot": 23978.349609375,
   "compositeBias": "NEUTRAL",
   "confidence": "LOW",
   "bullTfCount": 0,
-  "bearTfCount": 0,
-  "agreementScore": 0,
-  "timeframes": [],
-  "strongestSetup": null,
-  "tradeRecommendation": null
+  "bearTfCount": 1,
+  "agreementScore": 100,
+  "timeframes": [
+    {
+      "tf": "1D",
+      "profile": {
+        "poc": 23984.529609375,
+        "vah": 25702.69546875,
+        "val": 23104.4934375,
+        "hvn": [
+          24152.155546875,
+          25912.227890625
+        ],
+        "lvn": [
+          22894.961015625
+        ],
+        "ibH": 24635.599609375,
+        "ibL": 24432.69921875,
+        "totalVolume": 89835400
+      },
+      "signals": [
+        {
+          "setup": "HVN_REJECT_DOWN",
+          "side": "BEARISH",
+          "strength": 60,
+          "entry": 23978.349609375,
+          "stopLoss": 24207.514238281252,
+          "target1": 23984.529609375,
+          "target2": 23104.4934375,
+          "target3": 23025.40959263393,
+          "keyLevel": 24152.155546875,
+          "reason": "Rejection at HVN 24152.16 — institutions defending upper node"
+        },
+        {
+          "setup": "IB_BREAK_DOWN",
+          "side": "BEARISH",
+          "strength": 55,
+          "entry": 23978.349609375,
+          "stopLoss": 24495.966294642858,
+          "target1": 23741.098074776786,
+          "target2": 23503.846540178572,
+          "target3": 23187.511160714286,
+          "keyLevel": 24432.69921875,
+          "reason": "IB low 24432.70 broken decisively — trend-day signature"
+        }
+      ]
+    }
+  ],
+  "strongestSetup": {
+    "tf": "1D",
+    "setup": "HVN_REJECT_DOWN",
+    "side": "BEARISH",
+    "strength": 60,
+    "reason": "Rejection at HVN 24152.16 — institutions defending upper node",
+    "entry": 23978.349609375,
+    "stopLoss": 24207.514238281252,
+    "target1": 23984.529609375,
+    "target2": 23104.4934375,
+    "target3": 23025.40959263393,
+    "keyLevel": 24152.155546875
+  },
+  "tradeRecommendation": {
+    "side": "WAIT",
+    "instrument": "NIFTY SPOT (reference)",
+    "optionStrike": 24000,
+    "optionType": null,
+    "entry": 23978.35,
+    "stopLoss": 23978.35,
+    "target1": 23978.35,
+    "target2": 23978.35,
+    "target3": 23978.35,
+    "entryDate": "2026-09-01",
+    "target1Date": "2026-09-02",
+    "target2Date": "2026-09-03",
+    "target3Date": "2026-09-04",
+    "slDate": "2026-09-04",
+    "rationale": "No decisive Volume Profile setup — wait for cleaner rejection or breakout."
+  }
 }
