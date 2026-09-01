@@ -1,21 +1,21 @@
 {
-  "generatedAt": "2026-09-01T16:49:38.238Z",
+  "generatedAt": "2026-09-01T17:21:22.309Z",
   "totalGainers": 59,
   "caughtCount": 6,
   "wouldHaveCaughtCount": 10,
   "patternBreakdown": {
     "unknown": 36,
-    "wyckoff-accumulation": 10,
+    "wyckoff-accumulation": 9,
     "vcp": 2
   },
   "topMissReasons": {
     "not_coil_pattern": 22,
-    "not_in_universe": 11,
+    "not_in_universe": 12,
     "rule_fired_but_not_emitted": 10,
     "extended_freshness_reject": 2,
     "vol_already_elevated": 3,
     "scanner_gap": 2,
-    "ema_not_stacked": 3
+    "ema_not_stacked": 2
   },
   "rows": [
     {
@@ -727,10 +727,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
+      "patternDetected": "no-data",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Not in scanner universe (no candle history available)",
+      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
     },
     {
       "symbol": "IMPAL",
