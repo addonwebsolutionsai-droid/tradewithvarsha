@@ -1,7 +1,7 @@
 {
-  "generatedAt": "2026-09-03T08:42:58.101Z",
+  "generatedAt": "2026-09-03T08:52:12.070Z",
   "candidatesEvaluated": 81,
-  "emitted": 0,
+  "emitted": 1,
   "filteredOut": [
     {
       "reason": "gate-A-mtf-or-wave3-or-premium",
@@ -9,12 +9,61 @@
     },
     {
       "reason": "gate-B-volume",
-      "count": 10
+      "count": 9
     },
     {
       "reason": "pre-move-extended",
       "count": 7
     }
   ],
-  "rows": []
+  "rows": [
+    {
+      "symbol": "MPHASIS",
+      "direction": "BUY",
+      "score": 37,
+      "ltp": 2462.89990234375,
+      "entry": 2462.89990234375,
+      "stopLoss": 2315.1259082031247,
+      "target1": 2659.9318945312502,
+      "target2": 2832.3348876953123,
+      "target3": 3078.6248779296875,
+      "rrT1": 1.3333333333333324,
+      "rrT2": 2.499999999999994,
+      "rrT3": 4.166666666666658,
+      "pillars": {
+        "mtfHarmonic": {
+          "pass": false,
+          "timeframes": [],
+          "patterns": [],
+          "detail": "single-TF or absent"
+        },
+        "elliottWave": {
+          "pass": true,
+          "setup": "WAVE_2_PULLBACK",
+          "detail": "WAVE_2_PULLBACK conf 70"
+        },
+        "volumeAccumulation": {
+          "pass": true,
+          "vol5d20dRatio": 1.53,
+          "upDownVolRatio": 1.55,
+          "detail": "5d/20d vol 1.53× · up/down vol 1.55×"
+        },
+        "tightBase": {
+          "pass": true,
+          "range10dPct": 5.59,
+          "detail": "10-bar range 5.6%"
+        }
+      },
+      "reasoning": [
+        "Elliott WAVE_2_PULLBACK — sharpest impulsive wave",
+        "Volume accumulation: 5d/20d 1.53× · up/down 1.55×",
+        "Tight base: last 10 bars range 5.6% — coiled for break"
+      ],
+      "humanExplain": "💰 MONEY-PRINTER · score 37 · BUY @ ₹2462.90\nSetup: — + WAVE_2_PULLBACK\nVolume: 5d/20d 1.53× · up/down 1.55× (accumulation)\nBase: 5.6% coil over 10 bars — breakout-ready\nTrade plan: SL ₹2315.13 · T1 ₹2659.93 (R:R 1.3) · T2 ₹2832.33 · T3 ₹3078.62",
+      "sources": [
+        "ELLIOTT-WAVE_2_PULLBACK",
+        "VOL-ACCUM"
+      ]
+    }
+  ]
 }
