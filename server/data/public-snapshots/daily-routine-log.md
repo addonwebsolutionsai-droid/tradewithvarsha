@@ -1459,3 +1459,65 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
 
 **Total elapsed:** 13.4s
+
+
+## 2026-09-03T07:18:57.591Z — 12:48 IST
+
+**Book:** WR 39.47% · realised ₹149696
+**Miss catch-rate:** 0% (0/61)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · ANTELOPUS +20.0%
+  · SRIKPRIND +20.0%
+  · ICDSLTD +20.0%
+  · PAR +19.7%
+  · BODALCHEM +14.7%
+  · SAHLIBHFI +14.3%
+  · TBZ +14.0%
+  · ZIMLAB +13.6%
+  · XPROINDIA +13.2%
+  · IFCI +12.7%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 21
+  · not_in_universe: 13
+  · rule_fired_but_not_emitted: 7
+  · vol_already_elevated: 4
+  · extended_freshness_reject: 1
+  · scanner_gap: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 37
+  · wyckoff-accumulation: 7
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 14.1h, rows 0
+  · ✓ master-setups: age 14.2h, rows 15
+  · ⚠EMPTY money-printer: age 14.2h, rows 0
+  · ✓ mtf-harmonic: age 14.2h, rows 2
+  · ✓ ichimoku-cloud: age 14.2h, rows 55
+  · ⚠EMPTY nifty-bias: age 14.2h, rows 0
+  · ✓ harmonic: age 14.3h, rows 63
+  · ✓ elliott-wave: age 14.3h, rows 18
+  · ✓ sector-rotation: age 14.1h, rows 13
+  · ✓ high-quality-setups: age 14.2h, rows 138
+  · ✓ pro-edge: age 14.1h, rows 3
+  · ✓ vp-fib: age 14.2h, rows 232
+  · ✓ miss-analysis: age -0.0h, rows 61
+  · ✓ gainer-postmortem: age -0.0h, rows 57
+
+### Per-source WR (last 7d closed trades)
+  · PRO-EDGE: 1 trades, WR 100%, avgRet +14.09%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/61 caught (0%) · 8.5s
+  ✓ gainer-postmortem: 7/57 would've been caught with tuning · 0.7s
+  ✓ pattern-learner: 44 new fingerprints (store 44) · 3.8s
+  ✓ self-improve: 13 strategy overrides · +2 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 39.47% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
+
+**Total elapsed:** 13.4s
