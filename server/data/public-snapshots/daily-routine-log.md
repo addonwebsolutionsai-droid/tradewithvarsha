@@ -1521,3 +1521,65 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
 
 **Total elapsed:** 13.4s
+
+
+## 2026-09-03T11:30:32.606Z — 17:00 IST
+
+**Book:** WR 39.47% · realised ₹149696
+**Miss catch-rate:** 0% (0/61)
+**Engine emit:** MASTER 1 · Money-Printer 1
+
+### Top misses today (10-20% movers we didn't catch)
+  · ANTELOPUS +20.0%
+  · SRIKPRIND +20.0%
+  · ICDSLTD +20.0%
+  · PAR +19.7%
+  · BODALCHEM +14.7%
+  · SAHLIBHFI +14.3%
+  · TBZ +14.0%
+  · ZIMLAB +13.6%
+  · XPROINDIA +13.2%
+  · IFCI +12.7%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 20
+  · not_in_universe: 13
+  · rule_fired_but_not_emitted: 8
+  · vol_already_elevated: 5
+  · scanner_gap: 1
+  · ema_not_stacked: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 36
+  · wyckoff-accumulation: 8
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 1.6h, rows 0
+  · ✓ master-setups: age 1.6h, rows 1
+  · ✓ money-printer: age 1.6h, rows 1
+  · ✓ mtf-harmonic: age 18.4h, rows 2
+  · ✓ ichimoku-cloud: age 1.6h, rows 48
+  · ⚠EMPTY nifty-bias: age 1.6h, rows 0
+  · ✓ harmonic: age 18.5h, rows 63
+  · ✓ elliott-wave: age 18.5h, rows 18
+  · ✓ sector-rotation: age 18.3h, rows 13
+  · ✓ high-quality-setups: age 1.6h, rows 134
+  · ✓ pro-edge: age 1.6h, rows 2
+  · ✓ vp-fib: age 1.6h, rows 212
+  · ✓ miss-analysis: age -0.0h, rows 61
+  · ✓ gainer-postmortem: age -0.0h, rows 57
+
+### Per-source WR (last 7d closed trades)
+  · PRO-EDGE: 1 trades, WR 100%, avgRet +14.09%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/61 caught (0%) · 12.7s
+  ✓ gainer-postmortem: 8/57 would've been caught with tuning · 0.2s
+  ✓ pattern-learner: 44 new fingerprints (store 44) · 3.9s
+  ✓ self-improve: 13 strategy overrides · +2 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 39.47% · MASTER 1 · MP 1 · 0.0s
+  ✓ engine-health: 12 fresh · 0 stale · 2 empty · 0 missing · 0.0s
+
+**Total elapsed:** 17.0s
