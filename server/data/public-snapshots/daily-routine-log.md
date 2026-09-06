@@ -2061,3 +2061,62 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
 
 **Total elapsed:** 32.6s
+
+
+## 2026-09-06T11:12:54.153Z — 16:42 IST
+
+**Book:** WR 39.47% · realised ₹149696
+**Miss catch-rate:** 0% (0/93)
+**Engine emit:** MASTER 1 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · ESDS +111.8%
+  · PRIORITY +20.8%
+  · XTRANET +20.0%
+  · KAVDEFENCE +19.6%
+  · JINDWORLD +19.4%
+  · NRAIL +17.7%
+  · NIACL +17.7%
+  · RADHIKAJWE +16.6%
+  · LANCORHOL +16.1%
+  · RML +14.9%
+
+### Why we missed them (postmortem)
+  · not_in_universe: 6
+  · not_coil_pattern: 30
+  · rule_fired_but_not_emitted: 9
+  · extended_freshness_reject: 3
+  · vol_already_elevated: 6
+  · ema_not_stacked: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 39
+  · wyckoff-accumulation: 15
+
+### Engine health
+  · ⚠STALE trading-journal: age 42.2h, rows 0
+  · ⚠STALE master-setups: age 42.4h, rows 1
+  · ⚠STALE money-printer: age 42.4h, rows 0
+  · ⚠STALE mtf-harmonic: age 42.4h, rows 2
+  · ⚠STALE ichimoku-cloud: age 42.4h, rows 48
+  · ⚠STALE nifty-bias: age 42.4h, rows 0
+  · ⚠STALE harmonic: age 42.5h, rows 65
+  · ⚠STALE elliott-wave: age 42.5h, rows 6
+  · ⚠STALE sector-rotation: age 42.3h, rows 13
+  · ⚠STALE high-quality-setups: age 42.4h, rows 136
+  · ⚠STALE pro-edge: age 42.2h, rows 3
+  · ⚠STALE vp-fib: age 42.4h, rows 213
+  · ✓ miss-analysis: age -0.0h, rows 93
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/93 caught (0%) · 12.1s
+  ✓ gainer-postmortem: 9/60 would've been caught with tuning · 0.2s
+  ✓ pattern-learner: 82 new fingerprints (store 82) · 20.7s
+  ✓ self-improve: 13 strategy overrides · +0 new adjustments · 0.4s
+  ✓ daily-core-improvise: 0 tunes applied · WR 39.47% · MASTER 1 · MP 0 · 0.0s
+  ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
+
+**Total elapsed:** 33.4s
