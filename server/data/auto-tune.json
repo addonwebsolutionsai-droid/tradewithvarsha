@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-09-09T16:49:39.497Z",
+  "lastRunAt": "2026-09-09T17:05:35.774Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -42,6 +42,22 @@
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-09-09T17:05:35.904Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 87,
+      "to": 90,
+      "reason": "PAPER-BOOK wr 33% over 18 closed — raised score bar"
+    },
+    {
+      "ts": "2026-09-09T16:59:25.568Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 90,
+      "to": 87,
+      "reason": "MISS-DIGEST auto-apply: 10 misses attributed to not_in_universe — relaxed"
+    },
     {
       "ts": "2026-09-08T17:03:04.450Z",
       "strategy": "PRO-EDGE",
@@ -425,22 +441,6 @@
       "from": 75,
       "to": 70,
       "reason": "12 Aug: sample=2 was too small; relax 75→70"
-    },
-    {
-      "ts": "2026-08-03T18:23:36.033Z",
-      "strategy": "PRO-EDGE",
-      "metric": "minScore",
-      "from": 60,
-      "to": 90,
-      "reason": "DAILY-IMPROVE routine: 18% WR / 11 closed trades (GODREJIND×5+WABAG×3 duplicates already blacklisted). Require score 90+ for confluence."
-    },
-    {
-      "ts": "2026-08-03T18:23:36.033Z",
-      "strategy": "VP+FIB",
-      "metric": "minScore",
-      "from": 60,
-      "to": 75,
-      "reason": "DAILY-IMPROVE routine: 0/2 WR — tighten while sample builds"
     }
   ],
   "lastPerf": {
