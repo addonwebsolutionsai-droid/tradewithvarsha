@@ -2653,3 +2653,66 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
 
 **Total elapsed:** 33.5s
+
+
+## 2026-09-09T16:49:01.686Z — 22:19 IST
+
+**Book:** WR 38.46% · realised ₹143278
+**Miss catch-rate:** 0% (0/83)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · GOACARBON +20.0%
+  · NOVARTIND +20.0%
+  · SHIVALIK +20.0%
+  · SREEL +20.0%
+  · BALPHARMA +20.0%
+  · CFEL +20.0%
+  · MEDICAPQ +20.0%
+  · ANMOL +19.8%
+  · BIL +18.3%
+  · INDNIPPON +17.0%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 28
+  · not_in_universe: 9
+  · extended_freshness_reject: 2
+  · vol_already_elevated: 7
+  · rule_fired_but_not_emitted: 7
+  · ema_not_stacked: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 39
+  · wyckoff-accumulation: 11
+  · vcp: 1
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 6.8h, rows 0
+  · ✓ master-setups: age 6.8h, rows 15
+  · ⚠EMPTY money-printer: age 6.8h, rows 0
+  · ✓ mtf-harmonic: age 23.8h, rows 4
+  · ✓ ichimoku-cloud: age 6.8h, rows 65
+  · ⚠EMPTY nifty-bias: age 6.8h, rows 0
+  · ✓ harmonic: age 23.8h, rows 66
+  · ✓ elliott-wave: age 23.9h, rows 3
+  · ✓ sector-rotation: age 23.6h, rows 13
+  · ✓ high-quality-setups: age 6.8h, rows 132
+  · ⚠EMPTY pro-edge: age 6.8h, rows 0
+  · ✓ vp-fib: age 6.8h, rows 224
+  · ✓ miss-analysis: age -0.0h, rows 83
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · ICHIMOKU: 1 trades, WR 0%, avgRet -4.47%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/83 caught (0%) · 17.6s
+  ✓ gainer-postmortem: 7/60 would've been caught with tuning · 0.2s
+  ✓ pattern-learner: 71 new fingerprints (store 71) · 19.9s
+  ✓ self-improve: 13 strategy overrides · +2 new adjustments · 0.3s
+  ✓ daily-core-improvise: 0 tunes applied · WR 38.46% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
+
+**Total elapsed:** 38.1s
