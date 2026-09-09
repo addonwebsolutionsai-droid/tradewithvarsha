@@ -1,20 +1,40 @@
 {
-  "generatedAt": "2026-09-09T07:31:25.331Z",
+  "generatedAt": "2026-09-09T11:42:17.684Z",
   "windowDays": 7,
-  "bookWinRate": 39.47,
-  "bookRealisedPnl": 150412.69,
-  "perSourceStats": [],
-  "masterEmitted": 1,
+  "bookWinRate": 38.46,
+  "bookRealisedPnl": 143277.54,
+  "perSourceStats": [
+    {
+      "source": "ICHIMOKU",
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "winRatePct": 0,
+      "avgReturnPct": -4.47,
+      "worstSymbol": "SBIN",
+      "repeatedLosses": 1
+    }
+  ],
+  "masterEmitted": 15,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
     {
       "type": "INFO",
+      "target": "ICHIMOKU",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "ICHIMOKU: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources, 0.0d span)",
-      "to": "84%",
-      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 571 candidates (84% of filtered)",
+      "to": "83%",
+      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 571 candidates (83% of filtered)",
       "applied": false
     },
     {
@@ -23,18 +43,18 @@
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (2 sources, 60.0d span)",
       "to": "3%",
-      "reason": "pillar-1-multi-source (2 sources, 60.0d span) killed 21 candidates (3% of filtered)",
+      "reason": "pillar-1-multi-source (2 sources, 60.0d span) killed 22 candidates (3% of filtered)",
       "applied": false
     },
     {
       "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
-      "from": "pillar-1-multi-source (3 sources, 60.0d span)",
+      "from": "pillar-rr (1.00)",
       "to": "2%",
-      "reason": "pillar-1-multi-source (3 sources, 60.0d span) killed 11 candidates (2% of filtered)",
+      "reason": "pillar-rr (1.00) killed 15 candidates (2% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-09-09\nBook WR 39.47% · realised ₹150413 · book ₹1167218\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n\nImprovements applied: 0 · flagged for review: 3"
+  "humanExplain": "Daily improvisation · 2026-09-09\nBook WR 38.46% · realised ₹143278 · book ₹1166779\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  ICHIMOKU             · trades   1 · WR   0% · avgRet -4.47%\n\nImprovements applied: 0 · flagged for review: 4"
 }
