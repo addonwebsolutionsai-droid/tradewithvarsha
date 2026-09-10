@@ -165,14 +165,29 @@ export async function runSelfImprove(): Promise<AutoTune> {
         if (total < 8) continue    // n<8 too noisy
         const wr = (s.wins / total) * 100
         const currentMinScore = tune.overrides[src]?.minScore ?? 60
-        // Under-performing: raise minScore bar; over-performing: lower it
-        if (wr < 40 && currentMinScore < 90) {
-          const newMin = Math.min(90, currentMinScore + 5)
+        // 10 Sep 2026 — 24-hour cooldown per source. This engine used to
+        // ping-pong PRO-EDGE 82↔87↔90 on same-day runs; dailyCoreImprovise
+        // already respects a 6h cooldown but this one had none and would
+        // keep raising the gate every EOD tick.
+        const lastTune = (tune.adjustments ?? []).find(a => a.strategy === src && a.metric === 'minScore')
+        const hoursSince = lastTune ? (Date.now() - Date.parse(lastTune.ts)) / 3600_000 : Infinity
+        if (hoursSince < 24) {
+          log.info('IMPROVE', `[paper] ${src}: cooldown (${hoursSince.toFixed(1)}h < 24h) — hold`)
+          continue
+        }
+        // Under-performing: raise minScore bar; over-performing: lower it.
+        // 10 Sep 2026 — tightened threshold from wr<40 to wr<30 to match
+        // dailyCoreImprovise (was double-tightening at 40%). Ceiling
+        // capped at 85 (was 90) — a source at 90 emits ~zero, that's
+        // "kill" not "tighten". Verified after PRO-EDGE strangled the
+        // whole funnel for 5 weeks.
+        if (wr < 30 && currentMinScore < 85) {
+          const newMin = Math.min(85, currentMinScore + 5)
           tune.overrides[src] = { ...(tune.overrides[src] ?? {}), minScore: newMin }
           tune.adjustments.unshift({
             ts: new Date().toISOString(), strategy: src, metric: 'minScore',
             from: currentMinScore, to: newMin,
-            reason: `PAPER-BOOK wr ${wr.toFixed(0)}% over ${total} closed — raised score bar`,
+            reason: `PAPER-BOOK wr ${wr.toFixed(0)}% over ${total} closed — raised score bar (cap 85)`,
           })
           log.ok('IMPROVE', `[paper] ${src}: wr ${wr.toFixed(0)}% (${s.wins}/${total}) → minScore ${currentMinScore}→${newMin}`)
         } else if (wr > 75 && currentMinScore > 60) {

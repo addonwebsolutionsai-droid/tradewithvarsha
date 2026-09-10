@@ -20,7 +20,7 @@
       "minConfluence": 6
     },
     "PRO-EDGE": {
-      "minScore": 90
+      "minScore": 82
     },
     "VP+FIB": {
       "minScore": 65
@@ -42,6 +42,22 @@
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-09-10T12:04:19.500Z",
+      "strategy": "WEEKLY-PICK",
+      "metric": "minScore",
+      "from": 90,
+      "to": 78,
+      "reason": "Manual re-relax; ceiling cap now in code"
+    },
+    {
+      "ts": "2026-09-10T12:04:19.488Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 90,
+      "to": 82,
+      "reason": "Manual re-relax after selfImprove raised again; ceiling cap now in code"
+    },
     {
       "ts": "2026-09-10T11:44:46.977Z",
       "strategy": "PRO-EDGE",
