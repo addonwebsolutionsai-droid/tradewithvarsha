@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-09-10T07:27:11.598Z",
+  "lastRunAt": "2026-09-10T11:44:20.449Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -20,13 +20,13 @@
       "minConfluence": 6
     },
     "PRO-EDGE": {
-      "minScore": 90
+      "minScore": 82
     },
     "VP+FIB": {
       "minScore": 70
     },
     "WEEKLY-PICK": {
-      "minScore": 90
+      "minScore": 78
     },
     "HQS": {
       "minScore": 55
@@ -42,6 +42,46 @@
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-09-10T11:44:20.449Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 90,
+      "to": 82,
+      "reason": "Manual: AETHER T3 (+13K) proves source works; 90 was over-tune. Reopen funnel."
+    },
+    {
+      "ts": "2026-09-10T11:44:20.449Z",
+      "strategy": "WEEKLY-PICK",
+      "metric": "minScore",
+      "from": 90,
+      "to": 78,
+      "reason": "Manual: 90 muted swing sizing to zero; 78 is realistic bar for weekly."
+    },
+    {
+      "ts": "2026-09-10T11:44:20.449Z",
+      "strategy": "GODREJIND",
+      "metric": "blacklist-expired",
+      "from": "active",
+      "to": "cleared",
+      "reason": "auto-cleanup: expired 8d ago"
+    },
+    {
+      "ts": "2026-09-10T11:44:20.449Z",
+      "strategy": "WABAG",
+      "metric": "blacklist-expired",
+      "from": "active",
+      "to": "cleared",
+      "reason": "auto-cleanup: expired 8d ago"
+    },
+    {
+      "ts": "2026-09-10T11:44:20.449Z",
+      "strategy": "SPANDANA",
+      "metric": "blacklist-expired",
+      "from": "active",
+      "to": "cleared",
+      "reason": "auto-cleanup: expired 8d ago"
+    },
     {
       "ts": "2026-09-09T17:05:35.904Z",
       "strategy": "PRO-EDGE",
@@ -455,9 +495,5 @@
     "avgLossPct": 0,
     "byStrategy": {}
   },
-  "symbolBlacklist": {
-    "GODREJIND": 1788373416060,
-    "WABAG": 1788373416060,
-    "SPANDANA": 1788373416060
-  }
+  "symbolBlacklist": {}
 }

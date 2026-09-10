@@ -159,6 +159,37 @@ export async function runDailyCoreImprovise(): Promise<DailyImproveReport> {
   const tune = loadTune()
   const nowIso = new Date().toISOString()
 
+  // ─── Rule 0: reactivate silent sources (10 Sep 2026) ──────────
+  // If a source has an override AND hasn't traded in 3+ days, its
+  // gate is likely strangling emission. Relax minScore by 5. This
+  // prevents auto-tune from permanently muting a source that had a
+  // bad streak but might now be able to work.
+  const activeSourceSet = new Set(perSourceStats.map(s => s.source))
+  for (const [source, ov] of Object.entries(tune.overrides ?? {})) {
+    if (!ov || typeof (ov as any).minScore !== 'number') continue
+    if (activeSourceSet.has(source)) continue           // still emitting closed trades
+    const currentMinScore = (ov as any).minScore
+    if (currentMinScore <= 60) continue                 // already at floor
+    // Check when last tuned — respect the 6h cooldown
+    const lastTune = (tune.adjustments ?? []).find((a: any) => a.strategy === source && a.metric === 'minScore')
+    const hoursSince = lastTune ? (Date.now() - Date.parse(lastTune.ts)) / 3600_000 : Infinity
+    if (hoursSince < 24) continue                       // need 24h since last change before relaxing silent source
+    const newMin = Math.max(60, currentMinScore - 5)
+    if (newMin === currentMinScore) continue
+    ;(ov as any).minScore = newMin
+    tune.adjustments = tune.adjustments ?? []
+    tune.adjustments.unshift({
+      ts: nowIso, strategy: source, metric: 'minScore', from: currentMinScore, to: newMin,
+      reason: `SILENCE-RELAX: no closed trades in 7d — relax gate so source can emit again`,
+    })
+    improvements.push({
+      type: 'GATE_RELAX', target: source, metric: 'minScore',
+      from: currentMinScore, to: newMin,
+      reason: `silent source (no closed trades in 7d) — relaxed to reactivate`,
+      applied: true,
+    })
+  }
+
   // ─── Rule 1: per-source WR tuning ──────────────────────────────
   for (const s of perSourceStats) {
     if (s.trades < 5) {
@@ -194,7 +225,11 @@ export async function runDailyCoreImprovise(): Promise<DailyImproveReport> {
       }
     }
     if (s.winRatePct < 30) {
-      const newMin = Math.min(95, currentMinScore + 5)
+      // 10 Sep 2026 — cap ceiling at 85 (was 95). Ceiling at 95 muted
+      // PRO-EDGE + WEEKLY-PICK entirely; AETHER T3 (+₹13,337) proved
+      // PRO-EDGE CAN win — the funnel just needs room to breathe. 85 is
+      // "strict quality-only" without going full silent.
+      const newMin = Math.min(85, currentMinScore + 5)
       if (newMin !== currentMinScore) {
         cur.minScore = newMin
         tune.overrides[s.source] = cur
