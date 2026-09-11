@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-09-11T16:41:02.101Z",
+  "lastRunAt": "2026-09-11T16:59:41.065Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -20,7 +20,7 @@
       "minConfluence": 6
     },
     "PRO-EDGE": {
-      "minScore": 79
+      "minScore": 76
     },
     "VP+FIB": {
       "minScore": 60
@@ -42,6 +42,14 @@
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-09-11T16:52:30.584Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 79,
+      "to": 76,
+      "reason": "MISS-DIGEST auto-apply: 5 misses attributed to not_in_universe — relaxed"
+    },
     {
       "ts": "2026-09-11T11:40:51.393Z",
       "strategy": "VP+FIB",
@@ -432,14 +440,6 @@
       "metric": "minScore",
       "from": 90,
       "to": 87,
-      "reason": "MISS-DIGEST auto-apply: 15 misses attributed to not_in_universe — relaxed"
-    },
-    {
-      "ts": "2026-08-21T13:41:01.113Z",
-      "strategy": "HQS",
-      "metric": "minScore",
-      "from": 57,
-      "to": 55,
       "reason": "MISS-DIGEST auto-apply: 15 misses attributed to not_in_universe — relaxed"
     }
   ],
