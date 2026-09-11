@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-09-11T07:25:52.759Z",
+  "lastRunAt": "2026-09-11T11:40:51.179Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -23,7 +23,7 @@
       "minScore": 79
     },
     "VP+FIB": {
-      "minScore": 65
+      "minScore": 60
     },
     "WEEKLY-PICK": {
       "minScore": 78
@@ -42,6 +42,14 @@
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-09-11T11:40:51.393Z",
+      "strategy": "VP+FIB",
+      "metric": "minScore",
+      "from": 65,
+      "to": 60,
+      "reason": "SILENCE-RELAX: no closed trades in 7d — relax gate so source can emit again"
+    },
     {
       "ts": "2026-09-10T16:47:56.517Z",
       "strategy": "PRO-EDGE",
