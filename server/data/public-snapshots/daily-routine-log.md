@@ -3160,3 +3160,68 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
 
 **Total elapsed:** 52.4s
+
+
+## 2026-09-12T07:17:27.263Z — 12:47 IST
+
+**Book:** WR 37.21% · realised ₹139878
+**Miss catch-rate:** 0% (0/65)
+**Engine emit:** MASTER 1 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · LADDERUP +20.0%
+  · GRAVISSHO +20.0%
+  · STLSTRINF +20.0%
+  · ASHOKAMET +19.9%
+  · AWFIS +17.5%
+  · RAYMOND +17.4%
+  · PINELABS +16.8%
+  · VGL +15.7%
+  · FILATEX +14.6%
+  · AMDIND +14.3%
+
+### Why we missed them (postmortem)
+  · not_in_universe: 14
+  · extended_freshness_reject: 2
+  · vol_already_elevated: 5
+  · rule_fired_but_not_emitted: 10
+  · not_coil_pattern: 16
+  · ema_not_stacked: 8
+
+### Patterns detected in the missed movers (for future signal generation)
+  · wyckoff-accumulation: 16
+  · unknown: 30
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 14.1h, rows 0
+  · ✓ master-setups: age 14.3h, rows 1
+  · ⚠EMPTY money-printer: age 14.3h, rows 0
+  · ✓ mtf-harmonic: age 14.3h, rows 3
+  · ✓ ichimoku-cloud: age 14.3h, rows 51
+  · ⚠EMPTY nifty-bias: age 14.3h, rows 0
+  · ✓ harmonic: age 14.4h, rows 65
+  · ✓ elliott-wave: age 14.4h, rows 11
+  · ✓ sector-rotation: age 14.1h, rows 13
+  · ✓ high-quality-setups: age 14.3h, rows 132
+  · ✓ pro-edge: age 14.1h, rows 2
+  · ✓ vp-fib: age 14.3h, rows 215
+  · ✓ miss-analysis: age -0.0h, rows 65
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · WEEKLY-PICK: 2 trades, WR 50%, avgRet +0.04%
+  · PRO-EDGE: 1 trades, WR 0%, avgRet -3.85%
+  · ICHIMOKU: 1 trades, WR 0%, avgRet -4.47%
+  · STOCK-FNO-VP: 1 trades, WR 0%, avgRet -4.43%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/65 caught (0%) · 41.5s
+  ✓ gainer-postmortem: 10/60 would've been caught with tuning · 20.8s
+  ✓ pattern-learner: 49 new fingerprints (store 49) · 39.4s
+  ✓ self-improve: 13 strategy overrides · +2 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 37.21% · MASTER 1 · MP 0 · 0.0s
+  ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
+
+**Total elapsed:** 102.0s
