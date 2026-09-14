@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-09-13T17:17:51.339Z",
+  "generatedAt": "2026-09-14T08:02:32.611Z",
   "totalGainers": 60,
   "caughtCount": 5,
   "wouldHaveCaughtCount": 10,
   "patternBreakdown": {
     "unknown": 32,
-    "wyckoff-accumulation": 13
+    "wyckoff-accumulation": 14
   },
   "topMissReasons": {
-    "not_in_universe": 15,
+    "not_in_universe": 14,
     "not_coil_pattern": 16,
     "vol_already_elevated": 10,
     "rule_fired_but_not_emitted": 10,
     "extended_freshness_reject": 2,
-    "ema_not_stacked": 2
+    "ema_not_stacked": 3
   },
   "rows": [
     {
@@ -738,10 +738,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "no-data",
+      "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Not in scanner universe (no candle history available)",
-      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
+      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
+      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
     },
     {
       "symbol": "PTCIL",
