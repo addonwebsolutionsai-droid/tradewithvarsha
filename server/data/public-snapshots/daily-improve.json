@@ -1,16 +1,16 @@
 {
-  "generatedAt": "2026-09-16T07:50:21.702Z",
+  "generatedAt": "2026-09-16T11:55:06.676Z",
   "windowDays": 7,
-  "bookWinRate": 37.78,
-  "bookRealisedPnl": 145213.78,
+  "bookWinRate": 37.5,
+  "bookRealisedPnl": 143667.6,
   "perSourceStats": [
     {
       "source": "WEEKLY-PICK",
-      "trades": 2,
+      "trades": 4,
       "wins": 1,
-      "losses": 1,
-      "winRatePct": 50,
-      "avgReturnPct": 0.04,
+      "losses": 3,
+      "winRatePct": 25,
+      "avgReturnPct": -1.08,
       "worstSymbol": "MOMIDMTM",
       "repeatedLosses": 1
     },
@@ -25,16 +25,6 @@
       "repeatedLosses": 1
     },
     {
-      "source": "ICHIMOKU",
-      "trades": 1,
-      "wins": 0,
-      "losses": 1,
-      "winRatePct": 0,
-      "avgReturnPct": -4.47,
-      "worstSymbol": "SBIN",
-      "repeatedLosses": 1
-    },
-    {
       "source": "STOCK-FNO-VP",
       "trades": 1,
       "wins": 0,
@@ -43,9 +33,19 @@
       "avgReturnPct": -4.43,
       "worstSymbol": "SUZLON",
       "repeatedLosses": 1
+    },
+    {
+      "source": "ICHIMOKU",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "winRatePct": 100,
+      "avgReturnPct": 2.57,
+      "worstSymbol": null,
+      "repeatedLosses": 0
     }
   ],
-  "masterEmitted": 3,
+  "masterEmitted": 1,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
@@ -53,9 +53,9 @@
       "type": "INFO",
       "target": "WEEKLY-PICK",
       "metric": "sample-size",
-      "from": 2,
+      "from": 4,
       "to": 5,
-      "reason": "WEEKLY-PICK: only 2 closed trades — need ≥ 5 for gate tuning",
+      "reason": "WEEKLY-PICK: only 4 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -69,15 +69,6 @@
     },
     {
       "type": "INFO",
-      "target": "ICHIMOKU",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "ICHIMOKU: only 1 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
       "target": "STOCK-FNO-VP",
       "metric": "sample-size",
       "from": 1,
@@ -87,11 +78,29 @@
     },
     {
       "type": "INFO",
+      "target": "ICHIMOKU",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "ICHIMOKU: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources, 0.0d span)",
-      "to": "81%",
-      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 584 candidates (81% of filtered)",
+      "to": "86%",
+      "reason": "pillar-1-multi-source (1 sources, 0.0d span) killed 624 candidates (86% of filtered)",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "MASTER",
+      "metric": "pillar-kill",
+      "from": "pillar-1-multi-source (2 sources, 67.7d span)",
+      "to": "2%",
+      "reason": "pillar-1-multi-source (2 sources, 67.7d span) killed 14 candidates (2% of filtered)",
       "applied": false
     },
     {
@@ -99,19 +108,10 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (2 sources, 67.0d span)",
-      "to": "3%",
-      "reason": "pillar-1-multi-source (2 sources, 67.0d span) killed 25 candidates (3% of filtered)",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "MASTER",
-      "metric": "pillar-kill",
-      "from": "pillar-rr (1.50)",
-      "to": "1%",
-      "reason": "pillar-rr (1.50) killed 10 candidates (1% of filtered)",
+      "to": "2%",
+      "reason": "pillar-1-multi-source (2 sources, 67.0d span) killed 14 candidates (2% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-09-16\nBook WR 37.78% · realised ₹145214 · book ₹1143491\nMiss catch-rate 0% · MASTER 3 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   2 · WR  50% · avgRet +0.04%\n  PRO-EDGE             · trades   1 · WR   0% · avgRet -3.85%\n  ICHIMOKU             · trades   1 · WR   0% · avgRet -4.47%\n  STOCK-FNO-VP         · trades   1 · WR   0% · avgRet -4.43%\n\nImprovements applied: 0 · flagged for review: 7"
+  "humanExplain": "Daily improvisation · 2026-09-16\nBook WR 37.5% · realised ₹143668 · book ₹1135356\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   4 · WR  25% · avgRet -1.08%\n  PRO-EDGE             · trades   1 · WR   0% · avgRet -3.85%\n  STOCK-FNO-VP         · trades   1 · WR   0% · avgRet -4.43%\n  ICHIMOKU             · trades   1 · WR 100% · avgRet +2.57%\n\nImprovements applied: 0 · flagged for review: 7"
 }
