@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-09-16T17:12:53.921Z",
+  "lastRunAt": "2026-09-16T17:32:55.345Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -20,7 +20,7 @@
       "minConfluence": 6
     },
     "PRO-EDGE": {
-      "minScore": 67
+      "minScore": 64
     },
     "VP+FIB": {
       "minScore": 60
@@ -42,6 +42,14 @@
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-09-16T17:25:53.993Z",
+      "strategy": "PRO-EDGE",
+      "metric": "minScore",
+      "from": 67,
+      "to": 64,
+      "reason": "MISS-DIGEST auto-apply: 3 misses attributed to not_in_universe — relaxed"
+    },
     {
       "ts": "2026-09-15T17:26:17.314Z",
       "strategy": "PRO-EDGE",
@@ -433,14 +441,6 @@
       "from": 87,
       "to": 90,
       "reason": "PAPER-BOOK wr 33% over 18 closed — raised score bar"
-    },
-    {
-      "ts": "2026-08-21T13:41:01.113Z",
-      "strategy": "EARLY-MOM",
-      "metric": "minScore",
-      "from": 57,
-      "to": 55,
-      "reason": "MISS-DIGEST auto-apply: 15 misses attributed to vol_too_low — relaxed"
     }
   ],
   "lastPerf": {
