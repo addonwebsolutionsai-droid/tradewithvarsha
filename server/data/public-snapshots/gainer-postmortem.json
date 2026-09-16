@@ -1,19 +1,19 @@
 {
-  "generatedAt": "2026-09-15T17:42:26.870Z",
+  "generatedAt": "2026-09-16T07:50:18.396Z",
   "totalGainers": 35,
   "caughtCount": 1,
-  "wouldHaveCaughtCount": 5,
+  "wouldHaveCaughtCount": 4,
   "patternBreakdown": {
-    "unknown": 16,
+    "unknown": 15,
     "wyckoff-accumulation": 13,
     "vcp": 1
   },
   "topMissReasons": {
-    "rule_fired_but_not_emitted": 5,
+    "rule_fired_but_not_emitted": 4,
+    "not_in_universe": 6,
     "not_coil_pattern": 12,
-    "not_in_universe": 5,
-    "vol_already_elevated": 9,
-    "ema_not_stacked": 2,
+    "vol_already_elevated": 8,
+    "ema_not_stacked": 3,
     "extended_freshness_reject": 1
   },
   "rows": [
@@ -46,10 +46,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "unknown",
+      "patternDetected": "no-data",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 25%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "missReason": "Not in scanner universe (no candle history available)",
+      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
     },
     {
       "symbol": "STLSTRINF",
@@ -74,7 +74,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 17.94%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 19.96%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -87,8 +87,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (2.01× 20d) before the move — fails our dry-up filter",
-      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
+      "missReason": "Too wide a range (BB-w 15.21%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
       "symbol": "FSL",
@@ -100,7 +100,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (2.84× 20d) before the move — fails our dry-up filter",
+      "missReason": "Volume was already elevated (3.08× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
@@ -113,7 +113,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (3.74× 20d) before the move — fails our dry-up filter",
+      "missReason": "Volume was already elevated (3.78× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
@@ -139,7 +139,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 48.18%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 43.8%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -165,7 +165,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 18.37%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 16.26%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -175,18 +175,18 @@
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": 2,
+      "wouldHaveFiredDaysAgo": 3,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": {
-        "ret5d": -1.81,
-        "ret20d": 3.04,
+        "ret5d": -0.16,
+        "ret20d": 5.5,
         "bbWidthPct": 9.4,
-        "volRatio5_20": 0.41,
-        "rsi14": 62.2,
+        "volRatio5_20": 0.32,
+        "rsi14": 62.5,
         "distFromHigh20": 3.33,
         "emaStackBull": true
       },
-      "missReason": "Rule WOULD have fired 2d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "missReason": "Rule WOULD have fired 3d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
       "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
     },
     {
@@ -199,7 +199,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (2.71× 20d) before the move — fails our dry-up filter",
+      "missReason": "Volume was already elevated (3.05× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
@@ -212,7 +212,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (2.83× 20d) before the move — fails our dry-up filter",
+      "missReason": "Volume was already elevated (2.91× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
@@ -225,7 +225,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 24.78%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 22.97%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -251,7 +251,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 26.42%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 29.51%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -264,7 +264,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 18.64%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 16.29%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -277,8 +277,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (2.47× 20d) before the move — fails our dry-up filter",
-      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
+      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
+      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
     },
     {
       "symbol": "VMSTMT",
@@ -290,7 +290,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Stock was already extended (5d 6.46%, 20d -4.79%) — hit our freshness reject",
+      "missReason": "Stock was already extended (5d 11.93%, 20d 0.1%) — hit our freshness reject",
       "recommendation": "For wave-2 continuation candidates, extend wave2 scanner to micro/small caps"
     },
     {
@@ -300,19 +300,11 @@
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": 9,
+      "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
-      "preMoveFeatures": {
-        "ret5d": -2.18,
-        "ret20d": -6.85,
-        "bbWidthPct": 9.54,
-        "volRatio5_20": 0.47,
-        "rsi14": 58.9,
-        "distFromHigh20": 2.18,
-        "emaStackBull": true
-      },
-      "missReason": "Rule WOULD have fired 9d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
-      "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
+      "preMoveFeatures": null,
+      "missReason": "Volume was already elevated (1.55× 20d) before the move — fails our dry-up filter",
+      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
       "symbol": "PRANAV",
@@ -358,7 +350,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 22.97%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 28.27%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -371,7 +363,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 38.31%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 47.24%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -397,7 +389,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 17.54%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 17.86%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -410,7 +402,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (3.78× 20d) before the move — fails our dry-up filter",
+      "missReason": "Volume was already elevated (3.81× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
@@ -423,7 +415,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 24.88%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 27.07%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -433,7 +425,7 @@
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": 7,
+      "wouldHaveFiredDaysAgo": 9,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": {
         "ret5d": -0.94,
@@ -444,7 +436,7 @@
         "distFromHigh20": 4.73,
         "emaStackBull": true
       },
-      "missReason": "Rule WOULD have fired 7d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "missReason": "Rule WOULD have fired 9d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
       "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
     },
     {
@@ -457,7 +449,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (1.76× 20d) before the move — fails our dry-up filter",
+      "missReason": "Volume was already elevated (1.77× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
@@ -483,7 +475,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 81.15%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 82.05%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
