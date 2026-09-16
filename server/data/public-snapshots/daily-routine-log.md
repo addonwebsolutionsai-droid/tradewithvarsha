@@ -4070,3 +4070,69 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
 
 **Total elapsed:** 16.1s
+
+
+## 2026-09-16T17:12:04.610Z — 22:42 IST
+
+**Book:** WR 37.5% · realised ₹143668
+**Miss catch-rate:** 0% (0/61)
+**Engine emit:** MASTER 1 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · QUINT +20.0%
+  · MONQ50 +19.8%
+  · KANOHAR +18.9%
+  · GLASSWALL +18.1%
+  · VTMLTD +15.8%
+  · ATAM +13.7%
+  · NPST +11.9%
+  · CSBBANK +10.9%
+  · ANTELOPUS +10.7%
+  · KMCSHIL +10.6%
+
+### Why we missed them (postmortem)
+  · not_in_universe: 8
+  · not_coil_pattern: 24
+  · vol_already_elevated: 5
+  · rule_fired_but_not_emitted: 10
+  · scanner_gap: 3
+  · ema_not_stacked: 4
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 36
+  · wyckoff-accumulation: 14
+  · vcp: 2
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 7.2h, rows 0
+  · ✓ master-setups: age 7.3h, rows 1
+  · ⚠EMPTY money-printer: age 7.3h, rows 0
+  · ✓ mtf-harmonic: age 23.6h, rows 4
+  · ✓ ichimoku-cloud: age 7.3h, rows 55
+  · ⚠EMPTY nifty-bias: age 7.3h, rows 0
+  · ✓ harmonic: age 23.7h, rows 68
+  · ✓ elliott-wave: age 23.8h, rows 6
+  · ✓ sector-rotation: age 23.5h, rows 13
+  · ✓ high-quality-setups: age 7.3h, rows 132
+  · ⚠EMPTY pro-edge: age 7.3h, rows 0
+  · ✓ vp-fib: age 7.3h, rows 238
+  · ✓ miss-analysis: age -0.0h, rows 61
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · WEEKLY-PICK: 4 trades, WR 25%, avgRet -1.08%
+  · PRO-EDGE: 1 trades, WR 0%, avgRet -3.85%
+  · STOCK-FNO-VP: 1 trades, WR 0%, avgRet -4.43%
+  · ICHIMOKU: 1 trades, WR 100%, avgRet +2.57%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/61 caught (0%) · 20.7s
+  ✓ gainer-postmortem: 10/60 would've been caught with tuning · 12.4s
+  ✓ pattern-learner: 51 new fingerprints (store 51) · 16.0s
+  ✓ self-improve: 13 strategy overrides · +1 new adjustments · 0.3s
+  ✓ daily-core-improvise: 0 tunes applied · WR 37.5% · MASTER 1 · MP 0 · 0.0s
+  ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
+
+**Total elapsed:** 49.5s
