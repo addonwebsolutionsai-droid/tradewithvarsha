@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-19T15:59:49.298Z",
-  "totalGainers": 128,
+  "generatedAt": "2026-09-20T07:52:12.138Z",
+  "totalGainers": 129,
   "caughtCount": 0,
-  "missedCount": 128,
+  "missedCount": 129,
   "catchRate": 0,
   "rows": [
     {
@@ -60,8 +60,8 @@
         "OptionsPro": false
       },
       "diagnosis": [
-        "Pre-breakout filter rejected: prior-day |ret5d|=37.7% > 6% threshold",
-        "Pre-breakout filter rejected: prior-day |ret20d|=85.0% > 25% threshold"
+        "Pre-breakout filter rejected: prior-day |ret5d|=52.6% > 6% threshold",
+        "Pre-breakout filter rejected: prior-day |ret20d|=122.0% > 25% threshold"
       ]
     },
     {
@@ -80,7 +80,7 @@
         "OptionsPro": false
       },
       "diagnosis": [
-        "Volume too low: 5d/20d=0.61× (need ≥1.3 for fno-futures pass)"
+        "Passed all filters but no engine flagged it — possible conviction floor too high"
       ]
     },
     {
@@ -99,7 +99,8 @@
         "OptionsPro": false
       },
       "diagnosis": [
-        "Passed all filters but no engine flagged it — possible conviction floor too high"
+        "Pre-breakout filter rejected: prior-day |ret5d|=10.5% > 6% threshold",
+        "Pre-breakout filter rejected: prior-day |ret20d|=29.1% > 25% threshold"
       ]
     },
     {
@@ -252,7 +253,7 @@
         "OptionsPro": false
       },
       "diagnosis": [
-        "Passed all filters but no engine flagged it — possible conviction floor too high"
+        "Pre-breakout filter rejected: prior-day |ret5d|=-8.7% > 6% threshold"
       ]
     },
     {
@@ -965,7 +966,7 @@
         "OptionsPro": false
       },
       "diagnosis": [
-        "Volume too low: 5d/20d=0.81× (need ≥1.3 for fno-futures pass)"
+        "Volume too low: 5d/20d=0.99× (need ≥1.3 for fno-futures pass)"
       ]
     },
     {
@@ -1195,6 +1196,25 @@
       "diagnosis": [
         "Pre-breakout filter rejected: prior-day |ret5d|=-6.3% > 6% threshold",
         "Volume too low: 5d/20d=0.51× (need ≥1.3 for fno-futures pass)"
+      ]
+    },
+    {
+      "symbol": "CARBORUNIV",
+      "gainPct": 6.92,
+      "caught": false,
+      "caughtBy": {
+        "Weekly": false,
+        "PreMove": false,
+        "Daily": false,
+        "FnoFut": false,
+        "UltraPicks": false,
+        "SmartMoney": false,
+        "PROEdge": false,
+        "OldWeekly": false,
+        "OptionsPro": false
+      },
+      "diagnosis": [
+        "Passed all filters but no engine flagged it — possible conviction floor too high"
       ]
     },
     {
@@ -2467,9 +2487,9 @@
     }
   ],
   "diagnoses": {
-    "prebreakout_ret5d>6%": 40,
-    "vol_too_low": 65,
-    "prebreakout_ret20d>25%": 10,
+    "prebreakout_ret5d>6%": 42,
+    "vol_too_low": 64,
+    "prebreakout_ret20d>25%": 11,
     "conviction_floor": 37,
     "not_in_universe": 4
   }
