@@ -1,38 +1,44 @@
 {
-  "generatedAt": "2026-09-21T09:16:25.561Z",
-  "spot": 23451.25,
-  "direction": "NEUTRAL",
+  "generatedAt": "2026-09-21T09:25:11.544Z",
+  "spot": 23450.099609375,
+  "direction": "BEARISH",
   "confidence": "LOW",
-  "netScore": 0,
+  "netScore": -15,
   "bullScore": 0,
-  "bearScore": 0,
+  "bearScore": 15,
   "sources": [
     {
       "name": "OI-BUILDUP",
       "vote": "NEUTRAL",
       "weight": 25,
-      "detail": "PCR 1.54 · max-pain 23450 (-0.01%) · flows 3↑ 3↓"
+      "detail": "PCR 1.52 · max-pain 23450 (-0.00%) · flows 3↑ 3↓"
     },
     {
       "name": "LONG-HORIZON",
-      "vote": "NEUTRAL",
+      "vote": "BEAR",
       "weight": 15,
-      "detail": "nearest ↑ — (+—) · ↓ — (-—) · 0↑ 0↓ waypoints"
+      "detail": "nearest ↑ 24774 (+1324) · ↓ 23070 (-380) · 1↑ 3↓ waypoints"
+    },
+    {
+      "name": "TREND-5D",
+      "vote": "NEUTRAL",
+      "weight": 0,
+      "detail": "0.23%"
     }
   ],
   "tradePlan": {
     "action": "BUY NIFTY 23400 PE",
     "instrument": "NIFTY 23400 PE",
-    "entry": 64.05,
-    "stopLoss": 44.83,
-    "target1": 89.67,
-    "target2": 115.29,
-    "spotEntry": 23451.25,
-    "spotSL": 23685.76,
-    "spotT1": 23216.74,
-    "spotT2": 22982.22,
+    "entry": 66.3,
+    "stopLoss": 46.41,
+    "target1": 92.82,
+    "target2": 119.34,
+    "spotEntry": 23450.099609375,
+    "spotSL": 23684.6,
+    "spotT1": 23215.6,
+    "spotT2": 22981.1,
     "expectedMoveDays": 5,
-    "reason": "NEUTRAL composite ()"
+    "reason": "BEARISH composite (LONG-HORIZON BEAR)"
   },
-  "humanExplain": "NIFTY BIAS: NEUTRAL · LOW confidence · net +0\nSpot: ₹23451.25   Bull score: 0   Bear score: 0\n\nSource votes:\n  ⚪ OI-BUILDUP (+25) — PCR 1.54 · max-pain 23450 (-0.01%) · flows 3↑ 3↓\n  ⚪ LONG-HORIZON (+15) — nearest ↑ — (+—) · ↓ — (-—) · 0↑ 0↓ waypoints\n\nTrade: BUY NIFTY 23400 PE @ ₹64.05\nSL ₹44.83 · T1 ₹89.67 · T2 ₹115.29\nSpot band: entry ₹23451.25 · T1 ₹23216.74 · T2 ₹22982.22 · SL ₹23685.76"
+  "humanExplain": "NIFTY BIAS: BEARISH · LOW confidence · net -15\nSpot: ₹23450.10   Bull score: 0   Bear score: 15\n\nSource votes:\n  ⚪ OI-BUILDUP (+25) — PCR 1.52 · max-pain 23450 (-0.00%) · flows 3↑ 3↓\n  🔴 LONG-HORIZON (+15) — nearest ↑ 24774 (+1324) · ↓ 23070 (-380) · 1↑ 3↓ waypoints\n  ⚪ TREND-5D (+0) — 0.23%\n\nTrade: BUY NIFTY 23400 PE @ ₹66.3\nSL ₹46.41 · T1 ₹92.82 · T2 ₹119.34\nSpot band: entry ₹23450.099609375 · T1 ₹23215.6 · T2 ₹22981.1 · SL ₹23684.6"
 }
