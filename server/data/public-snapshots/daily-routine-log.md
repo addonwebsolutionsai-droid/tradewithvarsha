@@ -4972,3 +4972,66 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
 
 **Total elapsed:** 53.0s
+
+
+## 2026-09-21T13:08:05.547Z — 18:38 IST
+
+**Book:** WR 36% · realised ₹139249
+**Miss catch-rate:** 0% (0/100)
+**Engine emit:** MASTER 1 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · ARVEE +20.0%
+  · PROTEAN +20.0%
+  · SRHHYPOLTD +20.0%
+  · TANAA +20.0%
+  · INDORAMA +17.0%
+  · FEDDERSHOL +16.2%
+  · AHCL +14.6%
+  · ASHIANA +14.3%
+  · GAJA +14.2%
+  · KPIGREEN +13.0%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 29
+  · not_in_universe: 9
+  · rule_fired_but_not_emitted: 7
+  · vol_already_elevated: 7
+  · scanner_gap: 1
+  · ema_not_stacked: 2
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 40
+  · wyckoff-accumulation: 11
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 3.1h, rows 0
+  · ✓ master-setups: age 3.1h, rows 1
+  · ⚠EMPTY money-printer: age 3.1h, rows 0
+  · ✓ mtf-harmonic: age 20.1h, rows 2
+  · ✓ ichimoku-cloud: age 3.1h, rows 48
+  · ⚠EMPTY nifty-bias: age 3.1h, rows 0
+  · ✓ harmonic: age 20.1h, rows 66
+  · ✓ elliott-wave: age 20.2h, rows 10
+  · ✓ sector-rotation: age 19.9h, rows 13
+  · ✓ high-quality-setups: age 3.1h, rows 131
+  · ✓ pro-edge: age 3.1h, rows 3
+  · ✓ vp-fib: age 3.1h, rows 229
+  · ✓ miss-analysis: age -0.0h, rows 100
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · WEEKLY-PICK: 3 trades, WR 0%, avgRet -3.13%
+  · ICHIMOKU: 2 trades, WR 50%, avgRet +0.14%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/100 caught (0%) · 21.0s
+  ✓ gainer-postmortem: 7/60 would've been caught with tuning · 0.2s
+  ✓ pattern-learner: 82 new fingerprints (store 82) · 20.4s
+  ✓ self-improve: 13 strategy overrides · +1 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 36% · MASTER 1 · MP 0 · 0.0s
+  ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
+
+**Total elapsed:** 41.9s
