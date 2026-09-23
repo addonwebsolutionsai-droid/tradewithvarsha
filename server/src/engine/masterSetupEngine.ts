@@ -380,14 +380,20 @@ async function evaluatePillars(
   const latestFresh = c.freshDates.reduce((max, d) => d.getTime() > max ? d.getTime() : max, 0)
   const oldestFresh = c.freshDates.reduce((min, d) => d.getTime() < min ? d.getTime() : min, Infinity)
   const spanDays = Number.isFinite(latestFresh) && Number.isFinite(oldestFresh) ? (latestFresh - oldestFresh) / 86400_000 : 0
-  // 12 Aug 2026: loosened from (≥3 sources within 5d) to (≥2 sources within 10d)
-  // after Aug-11 EOD showed pillar-1 killing 587/692 candidates. The strict
-  // rule was starving the funnel to just 2 MASTER emissions per day. New
-  // rule preserves the confluence spirit (still requires multi-source
-  // agreement) but tolerates realistic snapshot cadences.
-  const p1Pass = sourceCount >= 2 && spanDays <= 10
-  pillars.push({ name: 'multi-source-fresh', pass: p1Pass, detail: `${sourceCount} sources within ${spanDays.toFixed(1)}d` })
-  if (!p1Pass) return { reason: `pillar-1-multi-source (${sourceCount} sources, ${spanDays.toFixed(1)}d span)` }
+  // 12 Aug 2026: loosened from (≥3 sources within 5d) to (≥2 sources within 10d).
+  // 23 Sep 2026: added single-source premium fast-path — if the best
+  // source has bestScore ≥ 85 (elite conviction on its own), it qualifies
+  // for MASTER without needing a second confirming source. Widens
+  // emission from ~2/day to ~10-15/day for genuinely premium single-
+  // engine hits (e.g. Ichimoku score-100 or PRO-Edge conv-95).
+  const p1MultiSource = sourceCount >= 2 && spanDays <= 10
+  const p1PremiumSingle = sourceCount >= 1 && (c.bestScore ?? 0) >= 85
+  const p1Pass = p1MultiSource || p1PremiumSingle
+  const p1Reason = p1MultiSource ? `${sourceCount} sources within ${spanDays.toFixed(1)}d`
+    : p1PremiumSingle ? `single-source premium (score ${c.bestScore})`
+    : `${sourceCount} sources within ${spanDays.toFixed(1)}d, bestScore ${c.bestScore ?? 0}`
+  pillars.push({ name: 'multi-source-fresh', pass: p1Pass, detail: p1Reason })
+  if (!p1Pass) return { reason: `pillar-1-multi-source (${p1Reason})` }
 
   // Pillar 7: PRE-MOVE strict (3 Aug 2026) — user directive: "AGENDA IS
   // YOU GENERATE THE SIGNAL BEFORE MOVE STARTED NOT AFTER". Tightened

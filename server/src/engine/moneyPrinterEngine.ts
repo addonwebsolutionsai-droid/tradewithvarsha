@@ -246,13 +246,25 @@ export async function runMoneyPrinterScan(): Promise<{
         const hasMtfHarmonic = !!(mtf && mtf.timeframes.size >= 2)
         const hasPremiumSingle = !!(mtf && mtf.timeframes.size === 1 && (mtf.bestConfidence ?? 0) >= 85)
         const isWave3 = !!(elliott && (elliott.setup.includes('WAVE_3') || elliott.setup.includes('WAVE_2_PULLBACK')))
-        if (!hasMtfHarmonic && !hasPremiumSingle && !isWave3) {
-          filteredOut['gate-A-mtf-or-wave3-or-premium'] = (filteredOut['gate-A-mtf-or-wave3-or-premium'] ?? 0) + 1
+        // 23 Sep 2026 — 4th path: pattern-memory winner-match alone.
+        // If the setup's fingerprint matches a proven T-hit winner, it
+        // qualifies for Money-Printer consideration even without harmonic
+        // or Wave-3. Since pattern-learner adds ~70 new fingerprints per
+        // day, this path meaningfully widens emission.
+        const candles = await data.getCandles(symbol, '1D' as any, 60).catch(() => [] as Candle[])
+        let hasWinnerMatch = false
+        if (!hasMtfHarmonic && !hasPremiumSingle && !isWave3 && candles && candles.length >= 30) {
+          try {
+            const { matchesKnownWinner } = await import('./patternMemory')
+            const patternDir = dir === 'SELL' ? 'SHORT' as const : 'BUY' as const
+            const w = await matchesKnownWinner({ candles, direction: patternDir })
+            if (w?.match) hasWinnerMatch = true
+          } catch { /* silent */ }
+        }
+        if (!hasMtfHarmonic && !hasPremiumSingle && !isWave3 && !hasWinnerMatch) {
+          filteredOut['gate-A-no-signal'] = (filteredOut['gate-A-no-signal'] ?? 0) + 1
           continue
         }
-
-        // Fetch daily candles for volume + base validation
-        const candles = await data.getCandles(symbol, '1D' as any, 60).catch(() => [] as Candle[])
         if (!candles || candles.length < 25) {
           filteredOut['no-candles'] = (filteredOut['no-candles'] ?? 0) + 1
           continue

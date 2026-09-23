@@ -191,12 +191,16 @@ const SEGMENT_TARGET_PCT = {
 const RULES = {
   // Per-tier weight within the trade's segment allocation
   tierAlloc: { ELITE: 0.15, STRONG: 0.08 },
-  positionCapPct: 0.10,           // 2026-07-28: was 20%. WABAG double-fire
+  positionCapPct: 0.06,           // 23 Sep 2026: 10% → 6%. Halving the
                                   // put 30% of book on one symbol → -₹24K
                                   // loss in 2 days. 10% cap prevents that.
   riskPerTradePct: 0.01,          // 1% of book per trade
-  maxConcurrentPositions: 25,     // 3 Aug: raised from 20 to accommodate F&O expansion
-  maxPerSegment: { CASH: 8, FNO: 10, MCX: 4, OPT: 6 },   // FNO raised for +₹10L
+  // 23 Sep 2026 — funnel widening: 25 → 45 max positions + 6% cap (was
+  // 10%) means average position size 25% smaller so total book risk
+  // stays same. Root fix for "less signals" — 21/25 was leaving only
+  // 4 slots for 131 HQS candidates every tick.
+  maxConcurrentPositions: 45,
+  maxPerSegment: { CASH: 15, FNO: 18, MCX: 5, OPT: 8 },
   minMarketCapCr: 500,
   maxPledgePct: 20,
   segmentTargetPct: SEGMENT_TARGET_PCT,
