@@ -5351,3 +5351,65 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
 
 **Total elapsed:** 39.1s
+
+
+## 2026-09-23T11:56:03.803Z — 17:26 IST
+
+**Book:** WR 36% · realised ₹139249
+**Miss catch-rate:** 0% (0/119)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · SSRETAIL +76.6%
+  · JSIPL +35.5%
+  · WHIRLPOOL +20.0%
+  · CUBEXTUB +20.0%
+  · FRONTSP +20.0%
+  · EKI +20.0%
+  · PREMIERPOL +19.4%
+  · PRIORITY +17.8%
+  · HEROMOTORS +17.1%
+  · OPTIEMUS +16.9%
+
+### Why we missed them (postmortem)
+  · not_in_universe: 6
+  · not_coil_pattern: 26
+  · vol_already_elevated: 12
+  · extended_freshness_reject: 6
+  · rule_fired_but_not_emitted: 3
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 34
+  · wyckoff-accumulation: 20
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 2.0h, rows 0
+  · ✓ master-setups: age 2.0h, rows 15
+  · ⚠EMPTY money-printer: age 2.0h, rows 0
+  · ✓ mtf-harmonic: age 4.4h, rows 3
+  · ✓ ichimoku-cloud: age 2.0h, rows 60
+  · ⚠EMPTY nifty-bias: age 2.0h, rows 0
+  · ✓ harmonic: age 4.4h, rows 52
+  · ✓ elliott-wave: age 4.5h, rows 22
+  · ✓ sector-rotation: age 4.2h, rows 13
+  · ✓ high-quality-setups: age 2.0h, rows 131
+  · ⚠EMPTY pro-edge: age 2.0h, rows 0
+  · ✓ vp-fib: age 2.0h, rows 220
+  · ✓ miss-analysis: age -0.0h, rows 119
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · ICHIMOKU: 1 trades, WR 0%, avgRet -2.28%
+  · WEEKLY-PICK: 1 trades, WR 0%, avgRet -5%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/119 caught (0%) · 22.3s
+  ✓ gainer-postmortem: 3/60 would've been caught with tuning · 0.6s
+  ✓ pattern-learner: 102 new fingerprints (store 102) · 21.6s
+  ✓ self-improve: 13 strategy overrides · +0 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 36% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
+
+**Total elapsed:** 44.8s
