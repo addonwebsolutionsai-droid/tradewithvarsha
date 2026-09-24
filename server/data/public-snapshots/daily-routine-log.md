@@ -5475,3 +5475,67 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
 
 **Total elapsed:** 48.8s
+
+
+## 2026-09-24T07:44:18.810Z — 13:14 IST
+
+**Book:** WR 36% · realised ₹139249
+**Miss catch-rate:** 0% (0/125)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · SSRETAIL +76.6%
+  · JSIPL +35.5%
+  · CUBEXTUB +20.0%
+  · FRONTSP +20.0%
+  · WHIRLPOOL +20.0%
+  · EKI +20.0%
+  · PREMIERPOL +19.4%
+  · PRIORITY +17.8%
+  · HEROMOTORS +17.1%
+  · OPTIEMUS +16.9%
+
+### Why we missed them (postmortem)
+  · not_in_universe: 6
+  · not_coil_pattern: 30
+  · vol_already_elevated: 9
+  · extended_freshness_reject: 4
+  · rule_fired_but_not_emitted: 3
+  · ema_not_stacked: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 35
+  · wyckoff-accumulation: 18
+  · vcp: 1
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 13.8h, rows 0
+  · ✓ master-setups: age 14.0h, rows 15
+  · ⚠EMPTY money-printer: age 14.0h, rows 0
+  · ✓ mtf-harmonic: age 14.0h, rows 3
+  · ✓ ichimoku-cloud: age 14.0h, rows 59
+  · ⚠EMPTY nifty-bias: age 14.0h, rows 0
+  · ✓ harmonic: age 14.1h, rows 58
+  · ✓ elliott-wave: age 14.1h, rows 24
+  · ✓ sector-rotation: age 13.9h, rows 13
+  · ✓ high-quality-setups: age 14.0h, rows 131
+  · ⚠EMPTY pro-edge: age 13.8h, rows 0
+  · ✓ vp-fib: age 14.0h, rows 211
+  · ✓ miss-analysis: age -0.0h, rows 125
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · ICHIMOKU: 1 trades, WR 0%, avgRet -2.28%
+  · WEEKLY-PICK: 1 trades, WR 0%, avgRet -5%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/125 caught (0%) · 26.9s
+  ✓ gainer-postmortem: 3/60 would've been caught with tuning · 1.0s
+  ✓ pattern-learner: 102 new fingerprints (store 102) · 21.5s
+  ✓ self-improve: 13 strategy overrides · +0 new adjustments · 0.3s
+  ✓ daily-core-improvise: 0 tunes applied · WR 36% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
+
+**Total elapsed:** 49.7s
