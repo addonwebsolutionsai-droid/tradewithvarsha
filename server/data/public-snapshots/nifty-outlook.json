@@ -1,37 +1,37 @@
 {
-  "generatedAt": "2026-09-24T08:30:49.311Z",
+  "generatedAt": "2026-09-24T08:41:56.758Z",
   "status": "OK_FROM_BIAS_COMPOSER",
-  "spot": 23056.650390625,
-  "direction": "BULLISH",
-  "confidence": "MEDIUM",
-  "netScore": 25,
-  "bullScore": 25,
-  "bearScore": 0,
+  "spot": 23070.8,
+  "direction": "NEUTRAL",
+  "confidence": "LOW",
+  "netScore": -5,
+  "bullScore": 10,
+  "bearScore": 15,
   "sessionState": "MARKET_CLOSED",
   "tradePlan": {
-    "action": "BUY NIFTY 23100 CE",
-    "instrument": "NIFTY 23100 CE",
-    "entry": 146.9,
-    "stopLoss": 102.83,
-    "target1": 205.66,
-    "target2": 264.42,
-    "spotEntry": 23056.650390625,
-    "spotSL": 22826.08,
-    "spotT1": 23287.22,
-    "spotT2": 23517.78,
+    "action": "BUY NIFTY 23000 PE",
+    "instrument": "NIFTY 23000 PE",
+    "entry": 138.65,
+    "stopLoss": 97.05,
+    "target1": 194.11,
+    "target2": 249.57,
+    "spotEntry": 23070.8,
+    "spotSL": 23301.51,
+    "spotT1": 22840.09,
+    "spotT2": 22609.38,
     "expectedMoveDays": 5,
-    "reason": "BULLISH composite (OI-BUILDUP BULL · LONG-HORIZON BULL)"
+    "reason": "NEUTRAL composite (OI-BUILDUP BULL · LONG-HORIZON BEAR)"
   },
   "reasoning": {
-    "OI-BUILDUP": "BULL · PCR 0.66 · max-pain 23300 (+1.06%) · flows 3↑ 3↓",
-    "LONG-HORIZON": "BULL · nearest ↑ 23070 (+14) · ↓ 22183 (-874) · 4↑ 1↓ waypoints",
-    "TREND-5D": "NEUTRAL · -0.69%"
+    "OI-BUILDUP": "BULL · PCR 0.65 · max-pain 23300 (+0.99%) · flows 3↑ 3↓",
+    "LONG-HORIZON": "BEAR · nearest ↑ 24774 (+1704) · ↓ 23070 (-1) · 2↑ 3↓ waypoints",
+    "TREND-5D": "NEUTRAL · -0.86%"
   },
   "smartMoneyLevel": 23300,
-  "smartMoneyDirection": "BULLISH",
+  "smartMoneyDirection": "NEUTRAL",
   "playbookDetected": [
     "OI-BUILDUP-BULL",
-    "LONG-HORIZON-BULL"
+    "LONG-HORIZON-BEAR"
   ],
   "composedFallback": true,
   "note": "Composed by niftyBiasComposer.ts — foresight engine returned no data (NSE option-chain likely 404 from GH IPs). This synthesis uses OI-buildup + long-horizon + trend so /nifty-outlook renders a live call."
