@@ -5602,3 +5602,65 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
 
 **Total elapsed:** 16.6s
+
+
+## 2026-09-24T17:26:01.275Z — 22:56 IST
+
+**Book:** WR 36.54% · realised ₹138905
+**Miss catch-rate:** 0% (0/42)
+**Engine emit:** MASTER 1 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · AERONEU +20.0%
+  · HEROMOTORS +20.0%
+  · EKI +20.0%
+  · RKEC +20.0%
+  · CRESTO +19.8%
+  · INDIAGLYCO +18.7%
+  · LAMBODHARA +16.3%
+  · PRIORITY +15.4%
+  · DCI +12.6%
+  · REMSONSIND +11.3%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 17
+  · not_in_universe: 5
+  · rule_fired_but_not_emitted: 3
+  · vol_already_elevated: 8
+  · extended_freshness_reject: 1
+  · ema_not_stacked: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 26
+  · wyckoff-accumulation: 11
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 7.4h, rows 0
+  · ✓ master-setups: age 7.4h, rows 1
+  · ⚠EMPTY money-printer: age 7.4h, rows 0
+  · ✓ mtf-harmonic: age 23.7h, rows 3
+  · ✓ ichimoku-cloud: age 7.4h, rows 63
+  · ⚠EMPTY nifty-bias: age 7.4h, rows 0
+  · ✓ harmonic: age 23.8h, rows 58
+  · ✓ elliott-wave: age 23.8h, rows 24
+  · ✓ sector-rotation: age 23.5h, rows 13
+  · ✓ high-quality-setups: age 7.4h, rows 133
+  · ✓ pro-edge: age 7.4h, rows 2
+  · ✓ vp-fib: age 7.4h, rows 211
+  · ✓ miss-analysis: age -0.0h, rows 42
+  · ✓ gainer-postmortem: age -0.0h, rows 42
+
+### Per-source WR (last 7d closed trades)
+  · PRO-EDGE: 1 trades, WR 0%, avgRet -3.33%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/42 caught (0%) · 20.3s
+  ✓ gainer-postmortem: 3/42 would've been caught with tuning · 0.6s
+  ✓ pattern-learner: 33 new fingerprints (store 33) · 3.2s
+  ✓ self-improve: 13 strategy overrides · +1 new adjustments · 0.3s
+  ✓ daily-core-improvise: 0 tunes applied · WR 36.54% · MASTER 1 · MP 0 · 0.0s
+  ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
+
+**Total elapsed:** 24.4s
