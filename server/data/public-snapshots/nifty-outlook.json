@@ -1,37 +1,37 @@
 {
-  "generatedAt": "2026-09-24T09:53:09.947Z",
+  "generatedAt": "2026-09-24T10:02:12.763Z",
   "status": "OK_FROM_BIAS_COMPOSER",
-  "spot": 23083.45,
-  "direction": "NEUTRAL",
-  "confidence": "LOW",
-  "netScore": -5,
-  "bullScore": 10,
-  "bearScore": 15,
+  "spot": 23063.099609375,
+  "direction": "BULLISH",
+  "confidence": "MEDIUM",
+  "netScore": 25,
+  "bullScore": 25,
+  "bearScore": 0,
   "sessionState": "MARKET_CLOSED",
   "tradePlan": {
-    "action": "BUY NIFTY 23050 PE",
-    "instrument": "NIFTY 23050 PE",
-    "entry": 140.05,
-    "stopLoss": 98.03,
-    "target1": 196.07,
-    "target2": 252.09,
-    "spotEntry": 23083.45,
-    "spotSL": 23314.28,
-    "spotT1": 22852.62,
-    "spotT2": 22621.78,
+    "action": "BUY NIFTY 23100 CE",
+    "instrument": "NIFTY 23100 CE",
+    "entry": 132.55,
+    "stopLoss": 92.78,
+    "target1": 185.57,
+    "target2": 238.59,
+    "spotEntry": 23063.099609375,
+    "spotSL": 22832.47,
+    "spotT1": 23293.73,
+    "spotT2": 23524.36,
     "expectedMoveDays": 5,
-    "reason": "NEUTRAL composite (OI-BUILDUP BULL · LONG-HORIZON BEAR)"
+    "reason": "BULLISH composite (OI-BUILDUP BULL · LONG-HORIZON BULL)"
   },
   "reasoning": {
-    "OI-BUILDUP": "BULL · PCR 0.67 · max-pain 23250 (+0.72%) · flows 3↑ 3↓",
-    "LONG-HORIZON": "BEAR · nearest ↑ 24774 (+1691) · ↓ 23070 (-13) · 2↑ 3↓ waypoints",
-    "TREND-5D": "NEUTRAL · -0.80%"
+    "OI-BUILDUP": "BULL · PCR 0.71 · max-pain 23300 (+1.03%) · flows 3↑ 3↓",
+    "LONG-HORIZON": "BULL · nearest ↑ 23070 (+7) · ↓ 22183 (-881) · 4↑ 1↓ waypoints",
+    "TREND-5D": "NEUTRAL · -0.67%"
   },
-  "smartMoneyLevel": 23250,
-  "smartMoneyDirection": "NEUTRAL",
+  "smartMoneyLevel": 23300,
+  "smartMoneyDirection": "BULLISH",
   "playbookDetected": [
     "OI-BUILDUP-BULL",
-    "LONG-HORIZON-BEAR"
+    "LONG-HORIZON-BULL"
   ],
   "composedFallback": true,
   "note": "Composed by niftyBiasComposer.ts — foresight engine returned no data (NSE option-chain likely 404 from GH IPs). This synthesis uses OI-buildup + long-horizon + trend so /nifty-outlook renders a live call."
