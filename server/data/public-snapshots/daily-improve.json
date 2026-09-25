@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-25T08:04:49.647Z",
+  "generatedAt": "2026-09-25T12:04:47.775Z",
   "windowDays": 7,
-  "bookWinRate": 36.54,
-  "bookRealisedPnl": 138904.51,
+  "bookWinRate": 35.19,
+  "bookRealisedPnl": 125506.35,
   "perSourceStats": [
     {
       "source": "PRO-EDGE",
@@ -13,12 +13,41 @@
       "avgReturnPct": -3.33,
       "worstSymbol": "RAINBOW",
       "repeatedLosses": 1
+    },
+    {
+      "source": "VP+FIB",
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "winRatePct": 0,
+      "avgReturnPct": -8.81,
+      "worstSymbol": "BEEYU",
+      "repeatedLosses": 1
+    },
+    {
+      "source": "ICHIMOKU",
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "winRatePct": 0,
+      "avgReturnPct": -9.98,
+      "worstSymbol": "CRUDE",
+      "repeatedLosses": 1
     }
   ],
-  "masterEmitted": 3,
+  "masterEmitted": 2,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
+    {
+      "type": "GATE_RELAX",
+      "target": "WEEKLY-PICK",
+      "metric": "minScore",
+      "from": 80,
+      "to": 75,
+      "reason": "silent source (no closed trades in 7d) — relaxed to reactivate",
+      "applied": true
+    },
     {
       "type": "INFO",
       "target": "PRO-EDGE",
@@ -30,11 +59,38 @@
     },
     {
       "type": "INFO",
+      "target": "VP+FIB",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "VP+FIB: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "ICHIMOKU",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "ICHIMOKU: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
-      "to": "23%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 153 candidates (23% of filtered)",
+      "to": "27%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 177 candidates (27% of filtered)",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "MASTER",
+      "metric": "pillar-kill",
+      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
+      "to": "7%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 45 candidates (7% of filtered)",
       "applied": false
     },
     {
@@ -45,16 +101,7 @@
       "to": "6%",
       "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 42 candidates (6% of filtered)",
       "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "MASTER",
-      "metric": "pillar-kill",
-      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
-      "to": "6%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 40 candidates (6% of filtered)",
-      "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-09-25\nBook WR 36.54% · realised ₹138905 · book ₹1077260\nMiss catch-rate 0% · MASTER 3 · Money-Printer 0\n\nPer-source stats (7d window):\n  PRO-EDGE             · trades   1 · WR   0% · avgRet -3.33%\n\nImprovements applied: 0 · flagged for review: 4"
+  "humanExplain": "Daily improvisation · 2026-09-25\nBook WR 35.19% · realised ₹125506 · book ₹1131602\nMiss catch-rate 0% · MASTER 2 · Money-Printer 0\n\nPer-source stats (7d window):\n  PRO-EDGE             · trades   1 · WR   0% · avgRet -3.33%\n  VP+FIB               · trades   1 · WR   0% · avgRet -8.81%\n  ICHIMOKU             · trades   1 · WR   0% · avgRet -9.98%\n\nImprovements applied: 1 · flagged for review: 6\n  🔓 WEEKLY-PICK/minScore: 80 → 75 — silent source (no closed trades in 7d) — relaxed to reactivate"
 }
