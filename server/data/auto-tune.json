@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-09-26T11:40:18.514Z",
+  "lastRunAt": "2026-09-26T16:35:18.692Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -26,7 +26,7 @@
       "minScore": 60
     },
     "WEEKLY-PICK": {
-      "minScore": 75
+      "minScore": 70
     },
     "HQS": {
       "minScore": 55
@@ -42,6 +42,14 @@
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-09-26T16:35:18.822Z",
+      "strategy": "WEEKLY-PICK",
+      "metric": "minScore",
+      "from": 75,
+      "to": 70,
+      "reason": "SILENCE-RELAX: no closed trades in 7d — relax gate so source can emit again"
+    },
     {
       "ts": "2026-09-25T12:04:47.775Z",
       "strategy": "WEEKLY-PICK",
