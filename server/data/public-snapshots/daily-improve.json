@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-09-28T08:53:01.865Z",
+  "generatedAt": "2026-09-28T14:18:55.412Z",
   "windowDays": 7,
-  "bookWinRate": 35.19,
-  "bookRealisedPnl": 125506.35,
+  "bookWinRate": 34.55,
+  "bookRealisedPnl": 125037.97,
   "perSourceStats": [
     {
       "source": "PRO-EDGE",
@@ -12,6 +12,16 @@
       "winRatePct": 0,
       "avgReturnPct": -3.33,
       "worstSymbol": "RAINBOW",
+      "repeatedLosses": 1
+    },
+    {
+      "source": "WEEKLY-PICK",
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "winRatePct": 0,
+      "avgReturnPct": -5,
+      "worstSymbol": "J&KBANK",
       "repeatedLosses": 1
     },
     {
@@ -50,6 +60,15 @@
     },
     {
       "type": "INFO",
+      "target": "WEEKLY-PICK",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "WEEKLY-PICK: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "VP+FIB",
       "metric": "sample-size",
       "from": 1,
@@ -71,8 +90,17 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
-      "to": "25%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 169 candidates (25% of filtered)",
+      "to": "26%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 175 candidates (26% of filtered)",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "MASTER",
+      "metric": "pillar-kill",
+      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55)",
+      "to": "8%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 53 candidates (8% of filtered)",
       "applied": false
     },
     {
@@ -81,18 +109,9 @@
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
       "to": "6%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 43 candidates (6% of filtered)",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "MASTER",
-      "metric": "pillar-kill",
-      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55)",
-      "to": "6%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 41 candidates (6% of filtered)",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 42 candidates (6% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-09-28\nBook WR 35.19% · realised ₹125506 · book ₹1131842\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  PRO-EDGE             · trades   1 · WR   0% · avgRet -3.33%\n  VP+FIB               · trades   1 · WR   0% · avgRet -8.81%\n  ICHIMOKU             · trades   1 · WR   0% · avgRet -9.98%\n\nImprovements applied: 0 · flagged for review: 6"
+  "humanExplain": "Daily improvisation · 2026-09-28\nBook WR 34.55% · realised ₹125038 · book ₹1135544\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  PRO-EDGE             · trades   1 · WR   0% · avgRet -3.33%\n  WEEKLY-PICK          · trades   1 · WR   0% · avgRet -5.00%\n  VP+FIB               · trades   1 · WR   0% · avgRet -8.81%\n  ICHIMOKU             · trades   1 · WR   0% · avgRet -9.98%\n\nImprovements applied: 0 · flagged for review: 7"
 }
