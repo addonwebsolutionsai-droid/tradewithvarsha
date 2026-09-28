@@ -1,36 +1,38 @@
 {
-  "generatedAt": "2026-09-27T18:04:12.797Z",
+  "generatedAt": "2026-09-28T09:19:27.539Z",
   "status": "OK_FROM_BIAS_COMPOSER",
-  "spot": 23140.5,
-  "direction": "BEARISH",
+  "spot": 22796.5,
+  "direction": "BULLISH",
   "confidence": "LOW",
-  "netScore": -15,
-  "bullScore": 0,
-  "bearScore": 15,
+  "netScore": 15,
+  "bullScore": 25,
+  "bearScore": 10,
   "sessionState": "MARKET_CLOSED",
   "tradePlan": {
-    "action": "BUY NIFTY 23100 PE",
-    "instrument": "NIFTY 23100 PE",
-    "entry": 76.75,
-    "stopLoss": 53.72,
-    "target1": 107.45,
-    "target2": 138.15,
-    "spotEntry": 23140.5,
-    "spotSL": 23371.9,
-    "spotT1": 22909.1,
-    "spotT2": 22677.69,
+    "action": "BUY NIFTY 22850 CE",
+    "instrument": "NIFTY 22850 CE",
+    "entry": 116.7,
+    "stopLoss": 81.69,
+    "target1": 163.38,
+    "target2": 210.06,
+    "spotEntry": 22796.5,
+    "spotSL": 22568.53,
+    "spotT1": 23024.47,
+    "spotT2": 23252.43,
     "expectedMoveDays": 5,
-    "reason": "BEARISH composite (LONG-HORIZON BEAR)"
+    "reason": "BULLISH composite (OI-BUILDUP BULL · LONG-HORIZON BULL · TREND-5D BEAR)"
   },
   "reasoning": {
-    "OI-BUILDUP": "NEUTRAL · PCR 0.92 · max-pain 23250 (+0.47%) · flows 3↑ 3↓",
-    "LONG-HORIZON": "BEAR · nearest ↑ 24774 (+1634) · ↓ 23070 (-70) · 2↑ 3↓ waypoints",
-    "TREND-5D": "NEUTRAL · -0.88%"
+    "OI-BUILDUP": "BULL · PCR 0.93 · max-pain 23250 (+1.99%) · flows 3↑ 3↓",
+    "LONG-HORIZON": "BULL · nearest ↑ 23070 (+274) · ↓ 22183 (-614) · 4↑ 2↓ waypoints",
+    "TREND-5D": "BEAR · -2.64%"
   },
   "smartMoneyLevel": 23250,
-  "smartMoneyDirection": "BEARISH",
+  "smartMoneyDirection": "BULLISH",
   "playbookDetected": [
-    "LONG-HORIZON-BEAR"
+    "OI-BUILDUP-BULL",
+    "LONG-HORIZON-BULL",
+    "TREND-5D-BEAR"
   ],
   "composedFallback": true,
   "note": "Composed by niftyBiasComposer.ts — foresight engine returned no data (NSE option-chain likely 404 from GH IPs). This synthesis uses OI-buildup + long-horizon + trend so /nifty-outlook renders a live call."
