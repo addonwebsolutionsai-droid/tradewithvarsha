@@ -1,9 +1,39 @@
 {
-  "generatedAt": "2026-09-29T08:52:31.302Z",
+  "generatedAt": "2026-09-29T13:12:59.703Z",
   "windowDays": 7,
-  "bookWinRate": 34.55,
-  "bookRealisedPnl": 125037.97,
+  "bookWinRate": 33.33,
+  "bookRealisedPnl": 118311,
   "perSourceStats": [
+    {
+      "source": "WEEKLY-PICK",
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "winRatePct": 0,
+      "avgReturnPct": -4.36,
+      "worstSymbol": "SELECTIPO",
+      "repeatedLosses": 1
+    },
+    {
+      "source": "VP+FIB",
+      "trades": 2,
+      "wins": 1,
+      "losses": 1,
+      "winRatePct": 50,
+      "avgReturnPct": 5.68,
+      "worstSymbol": "BEEYU",
+      "repeatedLosses": 1
+    },
+    {
+      "source": "ELLIOTT-WAVE",
+      "trades": 2,
+      "wins": 0,
+      "losses": 2,
+      "winRatePct": 0,
+      "avgReturnPct": -3.65,
+      "worstSymbol": "ADANIPOWER",
+      "repeatedLosses": 1
+    },
     {
       "source": "PRO-EDGE",
       "trades": 1,
@@ -15,26 +45,6 @@
       "repeatedLosses": 1
     },
     {
-      "source": "WEEKLY-PICK",
-      "trades": 1,
-      "wins": 0,
-      "losses": 1,
-      "winRatePct": 0,
-      "avgReturnPct": -5,
-      "worstSymbol": "J&KBANK",
-      "repeatedLosses": 1
-    },
-    {
-      "source": "VP+FIB",
-      "trades": 1,
-      "wins": 0,
-      "losses": 1,
-      "winRatePct": 0,
-      "avgReturnPct": -8.81,
-      "worstSymbol": "BEEYU",
-      "repeatedLosses": 1
-    },
-    {
       "source": "ICHIMOKU",
       "trades": 1,
       "wins": 0,
@@ -43,12 +53,49 @@
       "avgReturnPct": -9.98,
       "worstSymbol": "CRUDE",
       "repeatedLosses": 1
+    },
+    {
+      "source": "STOCK-FNO-VP",
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "winRatePct": 0,
+      "avgReturnPct": -3.88,
+      "worstSymbol": "MUTHOOTFIN",
+      "repeatedLosses": 1
     }
   ],
-  "masterEmitted": 15,
+  "masterEmitted": 1,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
+    {
+      "type": "INFO",
+      "target": "WEEKLY-PICK",
+      "metric": "sample-size",
+      "from": 2,
+      "to": 5,
+      "reason": "WEEKLY-PICK: only 2 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "VP+FIB",
+      "metric": "sample-size",
+      "from": 2,
+      "to": 5,
+      "reason": "VP+FIB: only 2 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "ELLIOTT-WAVE",
+      "metric": "sample-size",
+      "from": 2,
+      "to": 5,
+      "reason": "ELLIOTT-WAVE: only 2 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
     {
       "type": "INFO",
       "target": "PRO-EDGE",
@@ -56,24 +103,6 @@
       "from": 1,
       "to": 5,
       "reason": "PRO-EDGE: only 1 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "WEEKLY-PICK",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "WEEKLY-PICK: only 1 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "VP+FIB",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "VP+FIB: only 1 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -87,20 +116,20 @@
     },
     {
       "type": "INFO",
-      "target": "MASTER",
-      "metric": "pillar-kill",
-      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
-      "to": "25%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 170 candidates (25% of filtered)",
+      "target": "STOCK-FNO-VP",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "STOCK-FNO-VP: only 1 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
       "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
-      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
-      "to": "6%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 42 candidates (6% of filtered)",
+      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
+      "to": "26%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 189 candidates (26% of filtered)",
       "applied": false
     },
     {
@@ -109,9 +138,18 @@
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55)",
       "to": "6%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 40 candidates (6% of filtered)",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 46 candidates (6% of filtered)",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "MASTER",
+      "metric": "pillar-kill",
+      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
+      "to": "6%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 46 candidates (6% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-09-29\nBook WR 34.55% · realised ₹125038 · book ₹1138919\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  PRO-EDGE             · trades   1 · WR   0% · avgRet -3.33%\n  WEEKLY-PICK          · trades   1 · WR   0% · avgRet -5.00%\n  VP+FIB               · trades   1 · WR   0% · avgRet -8.81%\n  ICHIMOKU             · trades   1 · WR   0% · avgRet -9.98%\n\nImprovements applied: 0 · flagged for review: 7"
+  "humanExplain": "Daily improvisation · 2026-09-29\nBook WR 33.33% · realised ₹118311 · book ₹1129106\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   2 · WR   0% · avgRet -4.36%\n  VP+FIB               · trades   2 · WR  50% · avgRet +5.68%\n  ELLIOTT-WAVE         · trades   2 · WR   0% · avgRet -3.65%\n  PRO-EDGE             · trades   1 · WR   0% · avgRet -3.33%\n  ICHIMOKU             · trades   1 · WR   0% · avgRet -9.98%\n  STOCK-FNO-VP         · trades   1 · WR   0% · avgRet -3.88%\n\nImprovements applied: 0 · flagged for review: 9"
 }
