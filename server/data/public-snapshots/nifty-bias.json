@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-09-30T09:45:48.926Z",
+  "generatedAt": "2026-09-30T09:55:02.802Z",
   "spot": 22614.9,
   "direction": "NEUTRAL",
   "confidence": "LOW",
-  "netScore": 0,
+  "netScore": -10,
   "bullScore": 0,
-  "bearScore": 0,
+  "bearScore": 10,
   "sources": [
     {
       "name": "OI-BUILDUP",
@@ -18,21 +18,27 @@
       "vote": "NEUTRAL",
       "weight": 15,
       "detail": "nearest ↑ 23070 (+455) · ↓ 22183 (-432) · 4↑ 2↓ waypoints"
+    },
+    {
+      "name": "TREND-5D",
+      "vote": "BEAR",
+      "weight": 10,
+      "detail": "-3.55%"
     }
   ],
   "tradePlan": {
     "action": "BUY NIFTY 22550 PE",
     "instrument": "NIFTY 22550 PE",
-    "entry": 141,
-    "stopLoss": 98.7,
-    "target1": 197.4,
-    "target2": 253.8,
+    "entry": 163.1,
+    "stopLoss": 114.17,
+    "target1": 228.34,
+    "target2": 293.58,
     "spotEntry": 22614.9,
     "spotSL": 22841.05,
     "spotT1": 22388.75,
     "spotT2": 22162.6,
     "expectedMoveDays": 5,
-    "reason": "NEUTRAL composite ()"
+    "reason": "NEUTRAL composite (TREND-5D BEAR)"
   },
-  "humanExplain": "NIFTY BIAS: NEUTRAL · LOW confidence · net +0\nSpot: ₹22614.90   Bull score: 0   Bear score: 0\n\nSource votes:\n  ⚪ OI-BUILDUP (+25) — PCR 0.64 · max-pain 22700 (+0.38%) · flows 3↑ 3↓\n  ⚪ LONG-HORIZON (+15) — nearest ↑ 23070 (+455) · ↓ 22183 (-432) · 4↑ 2↓ waypoints\n\nTrade: BUY NIFTY 22550 PE @ ₹141\nSL ₹98.7 · T1 ₹197.4 · T2 ₹253.8\nSpot band: entry ₹22614.9 · T1 ₹22388.75 · T2 ₹22162.6 · SL ₹22841.05"
+  "humanExplain": "NIFTY BIAS: NEUTRAL · LOW confidence · net -10\nSpot: ₹22614.90   Bull score: 0   Bear score: 10\n\nSource votes:\n  ⚪ OI-BUILDUP (+25) — PCR 0.64 · max-pain 22700 (+0.38%) · flows 3↑ 3↓\n  ⚪ LONG-HORIZON (+15) — nearest ↑ 23070 (+455) · ↓ 22183 (-432) · 4↑ 2↓ waypoints\n  🔴 TREND-5D (+10) — -3.55%\n\nTrade: BUY NIFTY 22550 PE @ ₹163.1\nSL ₹114.17 · T1 ₹228.34 · T2 ₹293.58\nSpot band: entry ₹22614.9 · T1 ₹22388.75 · T2 ₹22162.6 · SL ₹22841.05"
 }
