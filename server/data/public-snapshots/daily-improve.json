@@ -1,26 +1,26 @@
 {
-  "generatedAt": "2026-09-30T08:52:46.791Z",
+  "generatedAt": "2026-09-30T12:53:15.444Z",
   "windowDays": 7,
-  "bookWinRate": 33.33,
-  "bookRealisedPnl": 118311,
+  "bookWinRate": 33.87,
+  "bookRealisedPnl": 117617.88,
   "perSourceStats": [
     {
       "source": "WEEKLY-PICK",
-      "trades": 2,
+      "trades": 3,
       "wins": 0,
-      "losses": 2,
+      "losses": 3,
       "winRatePct": 0,
-      "avgReturnPct": -4.36,
-      "worstSymbol": "SELECTIPO",
+      "avgReturnPct": -3.5,
+      "worstSymbol": "GAIL",
       "repeatedLosses": 1
     },
     {
       "source": "VP+FIB",
-      "trades": 2,
-      "wins": 1,
+      "trades": 3,
+      "wins": 2,
       "losses": 1,
-      "winRatePct": 50,
-      "avgReturnPct": 5.68,
+      "winRatePct": 66.7,
+      "avgReturnPct": 7.49,
       "worstSymbol": "BEEYU",
       "repeatedLosses": 1
     },
@@ -65,7 +65,7 @@
       "repeatedLosses": 1
     }
   ],
-  "masterEmitted": 1,
+  "masterEmitted": 15,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
@@ -73,18 +73,18 @@
       "type": "INFO",
       "target": "WEEKLY-PICK",
       "metric": "sample-size",
-      "from": 2,
+      "from": 3,
       "to": 5,
-      "reason": "WEEKLY-PICK: only 2 closed trades — need ≥ 5 for gate tuning",
+      "reason": "WEEKLY-PICK: only 3 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
       "type": "INFO",
       "target": "VP+FIB",
       "metric": "sample-size",
-      "from": 2,
+      "from": 3,
       "to": 5,
-      "reason": "VP+FIB: only 2 closed trades — need ≥ 5 for gate tuning",
+      "reason": "VP+FIB: only 3 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -128,8 +128,8 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
-      "to": "25%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 180 candidates (25% of filtered)",
+      "to": "24%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 175 candidates (24% of filtered)",
       "applied": false
     },
     {
@@ -151,5 +151,5 @@
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-09-30\nBook WR 33.33% · realised ₹118311 · book ₹1127024\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   2 · WR   0% · avgRet -4.36%\n  VP+FIB               · trades   2 · WR  50% · avgRet +5.68%\n  ELLIOTT-WAVE         · trades   2 · WR   0% · avgRet -3.65%\n  PRO-EDGE             · trades   1 · WR   0% · avgRet -3.33%\n  ICHIMOKU             · trades   1 · WR   0% · avgRet -9.98%\n  STOCK-FNO-VP         · trades   1 · WR   0% · avgRet -3.88%\n\nImprovements applied: 0 · flagged for review: 9"
+  "humanExplain": "Daily improvisation · 2026-09-30\nBook WR 33.87% · realised ₹117618 · book ₹-194814264\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   3 · WR   0% · avgRet -3.50%\n  VP+FIB               · trades   3 · WR  67% · avgRet +7.49%\n  ELLIOTT-WAVE         · trades   2 · WR   0% · avgRet -3.65%\n  PRO-EDGE             · trades   1 · WR   0% · avgRet -3.33%\n  ICHIMOKU             · trades   1 · WR   0% · avgRet -9.98%\n  STOCK-FNO-VP         · trades   1 · WR   0% · avgRet -3.88%\n\nImprovements applied: 0 · flagged for review: 9"
 }
