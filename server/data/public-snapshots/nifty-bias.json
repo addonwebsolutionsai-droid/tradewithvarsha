@@ -1,11 +1,11 @@
 {
-  "generatedAt": "2026-10-02T09:45:09.702Z",
-  "spot": 22421.95,
-  "direction": "NEUTRAL",
+  "generatedAt": "2026-10-02T09:53:41.851Z",
+  "spot": 22421.94921875,
+  "direction": "BEARISH",
   "confidence": "LOW",
-  "netScore": -5,
+  "netScore": -15,
   "bullScore": 10,
-  "bearScore": 15,
+  "bearScore": 25,
   "sources": [
     {
       "name": "OI-BUILDUP",
@@ -18,21 +18,27 @@
       "vote": "BEAR",
       "weight": 15,
       "detail": "nearest ↑ 23070 (+648) · ↓ 22183 (-239) · 4↑ 2↓ waypoints"
+    },
+    {
+      "name": "TREND-5D",
+      "vote": "BEAR",
+      "weight": 10,
+      "detail": "-2.78%"
     }
   ],
   "tradePlan": {
     "action": "BUY NIFTY 22350 PE",
     "instrument": "NIFTY 22350 PE",
-    "entry": 161.5,
-    "stopLoss": 113.05,
-    "target1": 226.1,
-    "target2": 290.7,
-    "spotEntry": 22421.95,
+    "entry": 99.3,
+    "stopLoss": 69.51,
+    "target1": 139.02,
+    "target2": 178.74,
+    "spotEntry": 22421.94921875,
     "spotSL": 22646.17,
     "spotT1": 22197.73,
     "spotT2": 21973.51,
     "expectedMoveDays": 5,
-    "reason": "NEUTRAL composite (OI-BUILDUP BULL · LONG-HORIZON BEAR)"
+    "reason": "BEARISH composite (OI-BUILDUP BULL · LONG-HORIZON BEAR · TREND-5D BEAR)"
   },
-  "humanExplain": "NIFTY BIAS: NEUTRAL · LOW confidence · net -5\nSpot: ₹22421.95   Bull score: 10   Bear score: 15\n\nSource votes:\n  🟢 OI-BUILDUP (+10) — PCR 0.69 · max-pain 22550 (+0.57%) · flows 3↑ 3↓\n  🔴 LONG-HORIZON (+15) — nearest ↑ 23070 (+648) · ↓ 22183 (-239) · 4↑ 2↓ waypoints\n\nTrade: BUY NIFTY 22350 PE @ ₹161.5\nSL ₹113.05 · T1 ₹226.1 · T2 ₹290.7\nSpot band: entry ₹22421.95 · T1 ₹22197.73 · T2 ₹21973.51 · SL ₹22646.17"
+  "humanExplain": "NIFTY BIAS: BEARISH · LOW confidence · net -15\nSpot: ₹22421.95   Bull score: 10   Bear score: 25\n\nSource votes:\n  🟢 OI-BUILDUP (+10) — PCR 0.69 · max-pain 22550 (+0.57%) · flows 3↑ 3↓\n  🔴 LONG-HORIZON (+15) — nearest ↑ 23070 (+648) · ↓ 22183 (-239) · 4↑ 2↓ waypoints\n  🔴 TREND-5D (+10) — -2.78%\n\nTrade: BUY NIFTY 22350 PE @ ₹99.3\nSL ₹69.51 · T1 ₹139.02 · T2 ₹178.74\nSpot band: entry ₹22421.94921875 · T1 ₹22197.73 · T2 ₹21973.51 · SL ₹22646.17"
 }
