@@ -7445,3 +7445,69 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 12 fresh · 0 stale · 2 empty · 0 missing · 0.0s
 
 **Total elapsed:** 11.5s
+
+
+## 2026-10-04T08:39:20.848Z — 14:09 IST
+
+**Book:** WR 34.38% · realised ₹116809
+**Miss catch-rate:** 0% (0/35)
+**Engine emit:** MASTER 15 · Money-Printer 1
+
+### Top misses today (10-20% movers we didn't catch)
+  · MONEYVIEW +58.5%
+  · SMLT +20.0%
+  · XELPMOC +16.7%
+  · RVTH +16.0%
+  · MOLBIO +15.6%
+  · KREBSBIO +13.0%
+  · THOMASCOTT +12.3%
+  · AUGMONT +10.0%
+  · EUROTEXIND +10.0%
+  · HEROMOTORS +10.0%
+
+### Why we missed them (postmortem)
+  · not_in_universe: 5
+  · not_coil_pattern: 13
+  · rule_fired_but_not_emitted: 4
+  · extended_freshness_reject: 4
+  · vol_already_elevated: 4
+  · scanner_gap: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 18
+  · wyckoff-accumulation: 11
+  · vcp: 1
+
+### Engine health
+  · ⚠STALE trading-journal: age 38.2h, rows 0
+  · ⚠STALE master-setups: age 38.4h, rows 15
+  · ⚠STALE money-printer: age 38.4h, rows 1
+  · ⚠STALE mtf-harmonic: age 38.4h, rows 2
+  · ⚠STALE ichimoku-cloud: age 38.4h, rows 65
+  · ⚠STALE nifty-bias: age 38.4h, rows 0
+  · ⚠STALE harmonic: age 38.4h, rows 69
+  · ⚠STALE elliott-wave: age 38.5h, rows 5
+  · ⚠STALE sector-rotation: age 38.2h, rows 13
+  · ⚠STALE high-quality-setups: age 38.4h, rows 133
+  · ⚠STALE pro-edge: age 38.2h, rows 1
+  · ⚠STALE vp-fib: age 38.4h, rows 237
+  · ✓ miss-analysis: age -0.0h, rows 35
+  · ✓ gainer-postmortem: age -0.0h, rows 35
+
+### Per-source WR (last 7d closed trades)
+  · WEEKLY-PICK: 3 trades, WR 0%, avgRet -3.5%
+  · VP+FIB: 3 trades, WR 66.7%, avgRet +8.26%
+  · ELLIOTT-WAVE: 2 trades, WR 0%, avgRet -3.65%
+  · STOCK-FNO-VP: 1 trades, WR 0%, avgRet -3.88%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/35 caught (0%) · 8.0s
+  ✓ gainer-postmortem: 4/35 would've been caught with tuning · 0.1s
+  ✓ pattern-learner: 29 new fingerprints (store 29) · 2.6s
+  ✓ self-improve: 13 strategy overrides · +0 new adjustments · 0.3s
+  ✓ daily-core-improvise: 0 tunes applied · WR 34.38% · MASTER 15 · MP 1 · 0.0s
+  ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
+
+**Total elapsed:** 11.1s
