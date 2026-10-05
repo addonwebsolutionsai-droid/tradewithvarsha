@@ -1,24 +1,26 @@
 {
-  "generatedAt": "2026-10-05T09:28:16.029Z",
-  "totalGainers": 35,
-  "caughtCount": 3,
-  "wouldHaveCaughtCount": 4,
+  "generatedAt": "2026-10-05T15:06:45.051Z",
+  "totalGainers": 60,
+  "caughtCount": 9,
+  "wouldHaveCaughtCount": 7,
   "patternBreakdown": {
-    "unknown": 19,
-    "wyckoff-accumulation": 11,
-    "vcp": 1
+    "unknown": 39,
+    "wyckoff-accumulation": 16,
+    "vcp": 3
   },
   "topMissReasons": {
-    "not_in_universe": 4,
-    "not_coil_pattern": 16,
-    "rule_fired_but_not_emitted": 4,
+    "not_in_universe": 2,
+    "not_coil_pattern": 28,
+    "rule_fired_but_not_emitted": 7,
     "vol_already_elevated": 5,
-    "ema_not_stacked": 3
+    "scanner_gap": 2,
+    "extended_freshness_reject": 1,
+    "ema_not_stacked": 6
   },
   "rows": [
     {
-      "symbol": "MONEYVIEW",
-      "gainPct": 58.47,
+      "symbol": "ORIENTCABL",
+      "gainPct": 48.9,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -30,21 +32,47 @@
       "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
     },
     {
-      "symbol": "SMLT",
+      "symbol": "DPWIRES",
+      "gainPct": 20,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 27.08%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "HBESD",
+      "gainPct": 20,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 16.66%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "KRISHNADEF",
       "gainPct": 19.99,
       "sources": [
         "nse-bhavcopy"
       ],
-      "caughtTodayByOurTabs": false,
+      "caughtTodayByOurTabs": true,
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 24.9%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "missReason": "— (caught)",
+      "recommendation": "No action needed"
     },
     {
-      "symbol": "XELPMOC",
-      "gainPct": 16.74,
+      "symbol": "DELTACORP",
+      "gainPct": 16.26,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -52,12 +80,33 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 22.47%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 37.04%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
-      "symbol": "RVTH",
-      "gainPct": 15.96,
+      "symbol": "SMCGLOBAL",
+      "gainPct": 15.59,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": 6,
+      "patternDetected": "unknown",
+      "preMoveFeatures": {
+        "ret5d": 5.76,
+        "ret20d": 8.08,
+        "bbWidthPct": 9.18,
+        "volRatio5_20": 0.35,
+        "rsi14": 51.5,
+        "distFromHigh20": 1.77,
+        "emaStackBull": true
+      },
+      "missReason": "Rule WOULD have fired 6d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
+    },
+    {
+      "symbol": "DCMSHRIRAM",
+      "gainPct": 15.18,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -65,12 +114,12 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 20.99%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "missReason": "Volume was already elevated (2.97× 20d) before the move — fails our dry-up filter",
+      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
-      "symbol": "MOLBIO",
-      "gainPct": 15.6,
+      "symbol": "5PAISA",
+      "gainPct": 14.08,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -78,33 +127,12 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 26.21%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 15.52%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
-      "symbol": "KREBSBIO",
-      "gainPct": 13.04,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": 3,
-      "patternDetected": "unknown",
-      "preMoveFeatures": {
-        "ret5d": 4.62,
-        "ret20d": 9.63,
-        "bbWidthPct": 11.58,
-        "volRatio5_20": 0.67,
-        "rsi14": 46.2,
-        "distFromHigh20": 2.07,
-        "emaStackBull": true
-      },
-      "missReason": "Rule WOULD have fired 3d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
-      "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
-    },
-    {
-      "symbol": "THOMASCOTT",
-      "gainPct": 12.29,
+      "symbol": "SHUKRAPHAR",
+      "gainPct": 14.06,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -112,38 +140,25 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 23.67%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 24.71%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
-      "symbol": "AUGMONT",
-      "gainPct": 10,
+      "symbol": "DPABHUSHAN",
+      "gainPct": 13.69,
       "sources": [
         "nse-bhavcopy"
       ],
-      "caughtTodayByOurTabs": false,
+      "caughtTodayByOurTabs": true,
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 33.2%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "missReason": "— (caught)",
+      "recommendation": "No action needed"
     },
     {
-      "symbol": "EUROTEXIND",
-      "gainPct": 10,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "unknown",
-      "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 29.44%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
-    },
-    {
-      "symbol": "HEROMOTORS",
-      "gainPct": 10,
+      "symbol": "KANOHAR",
+      "gainPct": 12.57,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -155,60 +170,42 @@
       "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
     },
     {
-      "symbol": "GTECJAINX",
-      "gainPct": 9.99,
+      "symbol": "PREMIERPOL",
+      "gainPct": 12.03,
       "sources": [
         "nse-bhavcopy"
       ],
-      "caughtTodayByOurTabs": false,
+      "caughtTodayByOurTabs": true,
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 29.94%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "missReason": "— (caught)",
+      "recommendation": "No action needed"
     },
     {
-      "symbol": "RETAIL",
-      "gainPct": 9.98,
+      "symbol": "MANALIPETC",
+      "gainPct": 11.57,
       "sources": [
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
+      "wouldHaveFiredDaysAgo": 6,
       "patternDetected": "unknown",
-      "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 55.26%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
-    },
-    {
-      "symbol": "VIVIANA",
-      "gainPct": 9.96,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
-      "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (1.57× 20d) before the move — fails our dry-up filter",
-      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
-    },
-    {
-      "symbol": "LGHL",
-      "gainPct": 9.71,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "unknown",
-      "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 22.02%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "preMoveFeatures": {
+        "ret5d": 2.09,
+        "ret20d": 15.39,
+        "bbWidthPct": 11.68,
+        "volRatio5_20": 0.19,
+        "rsi14": 47.6,
+        "distFromHigh20": 6.03,
+        "emaStackBull": true
+      },
+      "missReason": "Rule WOULD have fired 6d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
     },
     {
       "symbol": "LOKESHMACH",
-      "gainPct": 9.54,
+      "gainPct": 11.34,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -228,8 +225,8 @@
       "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
     },
     {
-      "symbol": "GKSL",
-      "gainPct": 8.5,
+      "symbol": "HALDER",
+      "gainPct": 10.87,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -237,25 +234,12 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (3.3× 20d) before the move — fails our dry-up filter",
-      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
-    },
-    {
-      "symbol": "UNIDT",
-      "gainPct": 7.92,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
-      "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 20.75%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 24.97%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
-      "symbol": "OMNI",
-      "gainPct": 7.91,
+      "symbol": "JAYKAY",
+      "gainPct": 10.18,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -263,12 +247,12 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 17.71%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 30.27%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
-      "symbol": "SHBAJRG",
-      "gainPct": 7.85,
+      "symbol": "ECORECO",
+      "gainPct": 9.96,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -276,50 +260,245 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (2.98× 20d) before the move — fails our dry-up filter",
-      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
+      "missReason": "Too wide a range (BB-w 16.56%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
-      "symbol": "MTNL",
-      "gainPct": 7.36,
+      "symbol": "AVADHSUGAR",
+      "gainPct": 9.91,
       "sources": [
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "vcp",
+      "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (3.36× 20d) before the move — fails our dry-up filter",
+      "missReason": "All features look fine — possible miss-miner sample bias or scanner universe gap",
+      "recommendation": "Add to next universe expansion; verify scanner ran for this name"
+    },
+    {
+      "symbol": "ATLANTAELE",
+      "gainPct": 9.69,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 18.64%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "TERASOFT",
+      "gainPct": 9.6,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 33.44%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "PWL",
+      "gainPct": 9.1,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": true,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": null,
+      "missReason": "— (caught)",
+      "recommendation": "No action needed"
+    },
+    {
+      "symbol": "BATLIBOI",
+      "gainPct": 9.02,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Stock was already extended (5d 7.41%, 20d -1.13%) — hit our freshness reject",
+      "recommendation": "For wave-2 continuation candidates, extend wave2 scanner to micro/small caps"
+    },
+    {
+      "symbol": "SCI",
+      "gainPct": 8.82,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": null,
+      "missReason": "Volume was already elevated (2.47× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
-      "symbol": "MEGASTAR",
+      "symbol": "RAYMOND",
+      "gainPct": 8.65,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 40.62%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "BIL",
+      "gainPct": 8.47,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 18.7%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "DALMIASUG",
+      "gainPct": 8.43,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": true,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "— (caught)",
+      "recommendation": "No action needed"
+    },
+    {
+      "symbol": "LUXIND",
+      "gainPct": 8.42,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
+      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+    },
+    {
+      "symbol": "SOUTHWEST",
+      "gainPct": 7.64,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 24.89%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "GEEKAYWIRE",
+      "gainPct": 7.57,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 17.92%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "MARINE",
+      "gainPct": 7.47,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 20.46%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "SGFIN",
+      "gainPct": 7.3,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": true,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": null,
+      "missReason": "— (caught)",
+      "recommendation": "No action needed"
+    },
+    {
+      "symbol": "KRYSTAL",
       "gainPct": 7.28,
       "sources": [
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "unknown",
+      "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 21.47%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
+      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
     },
     {
-      "symbol": "ELEVATE",
-      "gainPct": 6.77,
+      "symbol": "MVELECTRO",
+      "gainPct": 7.24,
       "sources": [
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "no-data",
+      "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Not in scanner universe (no candle history available)",
-      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
+      "missReason": "Too wide a range (BB-w 15.65%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
-      "symbol": "ATLANTAELE",
+      "symbol": "NUVAMA",
+      "gainPct": 7.02,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": null,
+      "missReason": "Volume was already elevated (2.51× 20d) before the move — fails our dry-up filter",
+      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
+    },
+    {
+      "symbol": "KILITCH",
+      "gainPct": 6.97,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 22.58%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "UTTAMSUGAR",
       "gainPct": 6.74,
       "sources": [
         "nse-bhavcopy"
@@ -328,12 +507,12 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 18.58%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "missReason": "All features look fine — possible miss-miner sample bias or scanner universe gap",
+      "recommendation": "Add to next universe expansion; verify scanner ran for this name"
     },
     {
-      "symbol": "MOREPENLAB",
-      "gainPct": 6.14,
+      "symbol": "RAYMONDREL",
+      "gainPct": 6.69,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -345,55 +524,8 @@
       "recommendation": "No action needed"
     },
     {
-      "symbol": "SHRIKRISH",
-      "gainPct": 6.11,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
-      "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 16.87%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
-    },
-    {
-      "symbol": "SCHNEIDER",
-      "gainPct": 5.98,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": true,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
-      "preMoveFeatures": null,
-      "missReason": "— (caught)",
-      "recommendation": "No action needed"
-    },
-    {
-      "symbol": "RAMRAT",
-      "gainPct": 5.86,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": 3,
-      "patternDetected": "unknown",
-      "preMoveFeatures": {
-        "ret5d": 4.25,
-        "ret20d": 2.14,
-        "bbWidthPct": 11.67,
-        "volRatio5_20": 0.82,
-        "rsi14": 68.7,
-        "distFromHigh20": 0.24,
-        "emaStackBull": true
-      },
-      "missReason": "Rule WOULD have fired 3d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
-      "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
-    },
-    {
-      "symbol": "DIFFNKG",
-      "gainPct": 5.85,
+      "symbol": "PARAGMILK",
+      "gainPct": 6.44,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -401,20 +533,20 @@
       "wouldHaveFiredDaysAgo": 1,
       "patternDetected": "unknown",
       "preMoveFeatures": {
-        "ret5d": 5.89,
-        "ret20d": -4.56,
-        "bbWidthPct": 10.45,
-        "volRatio5_20": 0.77,
-        "rsi14": 52.5,
-        "distFromHigh20": 4.02,
+        "ret5d": 4.5,
+        "ret20d": 12.58,
+        "bbWidthPct": 10.94,
+        "volRatio5_20": 0.82,
+        "rsi14": 55,
+        "distFromHigh20": 0,
         "emaStackBull": true
       },
       "missReason": "Rule WOULD have fired 1d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
       "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
     },
     {
-      "symbol": "SAICAPI",
-      "gainPct": 5.8,
+      "symbol": "SHRADDHA",
+      "gainPct": 6.25,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -422,64 +554,72 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
-    },
-    {
-      "symbol": "KANOHAR",
-      "gainPct": 5.79,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "no-data",
-      "preMoveFeatures": null,
-      "missReason": "Not in scanner universe (no candle history available)",
-      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
-    },
-    {
-      "symbol": "INOXINDIA",
-      "gainPct": 5.64,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
-      "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 15.14%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
-    },
-    {
-      "symbol": "MSL",
-      "gainPct": 5.52,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
-      "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
-    },
-    {
-      "symbol": "HILINFRA",
-      "gainPct": 5.4,
-      "sources": [
-        "nse-bhavcopy"
-      ],
-      "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
-      "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (1.96× 20d) before the move — fails our dry-up filter",
+      "missReason": "Volume was already elevated (2.64× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
-      "symbol": "IDBI",
-      "gainPct": 5.32,
+      "symbol": "IWP",
+      "gainPct": 6.23,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 18.38%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "PNGSREVA",
+      "gainPct": 6.13,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": 1,
+      "patternDetected": "vcp",
+      "preMoveFeatures": {
+        "ret5d": 1.99,
+        "ret20d": 3.67,
+        "bbWidthPct": 10.68,
+        "volRatio5_20": 0.98,
+        "rsi14": 58.4,
+        "distFromHigh20": 2.06,
+        "emaStackBull": true
+      },
+      "missReason": "Rule WOULD have fired 1d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
+    },
+    {
+      "symbol": "SMLT",
+      "gainPct": 6.12,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 25.29%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "SAPPL",
+      "gainPct": 6.03,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 16.8%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "SUMIT",
+      "gainPct": 6.03,
       "sources": [
         "nse-bhavcopy"
       ],
@@ -491,17 +631,236 @@
       "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
     },
     {
-      "symbol": "WELSPUNLIV",
-      "gainPct": 5.21,
+      "symbol": "SBC",
+      "gainPct": 5.98,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 24.61%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "BLKASHYAP",
+      "gainPct": 5.95,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": null,
+      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
+      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+    },
+    {
+      "symbol": "CYIENTDLM",
+      "gainPct": 5.92,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": true,
+      "wouldHaveFiredDaysAgo": 1,
+      "patternDetected": "unknown",
+      "preMoveFeatures": {
+        "ret5d": 1.65,
+        "ret20d": 10.48,
+        "bbWidthPct": 11.71,
+        "volRatio5_20": 0.65,
+        "rsi14": 56,
+        "distFromHigh20": 3.02,
+        "emaStackBull": true
+      },
+      "missReason": "— (caught)",
+      "recommendation": "No action needed"
+    },
+    {
+      "symbol": "SHYAMTEL",
+      "gainPct": 5.91,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
+      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+    },
+    {
+      "symbol": "BANG",
+      "gainPct": 5.85,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": 10,
+      "patternDetected": "vcp",
+      "preMoveFeatures": {
+        "ret5d": -4.76,
+        "ret20d": -1.73,
+        "bbWidthPct": 9.99,
+        "volRatio5_20": 0.19,
+        "rsi14": 46.4,
+        "distFromHigh20": 6.12,
+        "emaStackBull": true
+      },
+      "missReason": "Rule WOULD have fired 10d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
+    },
+    {
+      "symbol": "SHADOWFAX",
+      "gainPct": 5.82,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 16.57%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "ESCORTS",
+      "gainPct": 5.76,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": null,
+      "missReason": "Volume was already elevated (1.72× 20d) before the move — fails our dry-up filter",
+      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
+    },
+    {
+      "symbol": "MAANALU",
+      "gainPct": 5.68,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 15.17%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "RAMBHAJO",
+      "gainPct": 5.66,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 17.39%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "PATELRMART",
+      "gainPct": 5.64,
       "sources": [
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": true,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "unknown",
+      "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
       "missReason": "— (caught)",
       "recommendation": "No action needed"
+    },
+    {
+      "symbol": "ROSSTECH",
+      "gainPct": 5.58,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 28.56%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "MUKANDLTD",
+      "gainPct": 5.53,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 26.34%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "MASPTOP50",
+      "gainPct": 5.47,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 28.49%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "SALONA",
+      "gainPct": 5.46,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": 1,
+      "patternDetected": "wyckoff-accumulation",
+      "preMoveFeatures": {
+        "ret5d": -2.37,
+        "ret20d": 2.03,
+        "bbWidthPct": 7.6,
+        "volRatio5_20": 0.37,
+        "rsi14": 56.2,
+        "distFromHigh20": 2.37,
+        "emaStackBull": true
+      },
+      "missReason": "Rule WOULD have fired 1d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
+    },
+    {
+      "symbol": "DHOOTTRANS",
+      "gainPct": 5.43,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "unknown",
+      "preMoveFeatures": null,
+      "missReason": "Too wide a range (BB-w 18.75%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+    },
+    {
+      "symbol": "NETWEB",
+      "gainPct": 5.42,
+      "sources": [
+        "nse-bhavcopy"
+      ],
+      "caughtTodayByOurTabs": false,
+      "wouldHaveFiredDaysAgo": null,
+      "patternDetected": "vcp",
+      "preMoveFeatures": null,
+      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
+      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
     }
   ]
 }

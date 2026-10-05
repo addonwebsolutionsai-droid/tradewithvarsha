@@ -1,27 +1,17 @@
 {
-  "generatedAt": "2026-10-05T09:28:19.165Z",
+  "generatedAt": "2026-10-05T15:07:05.412Z",
   "windowDays": 7,
   "bookWinRate": 34.38,
-  "bookRealisedPnl": 116808.57,
+  "bookRealisedPnl": 118073.96,
   "perSourceStats": [
     {
       "source": "WEEKLY-PICK",
-      "trades": 3,
+      "trades": 2,
       "wins": 0,
-      "losses": 3,
+      "losses": 2,
       "winRatePct": 0,
-      "avgReturnPct": -3.5,
+      "avgReturnPct": -2.75,
       "worstSymbol": "GAIL",
-      "repeatedLosses": 1
-    },
-    {
-      "source": "VP+FIB",
-      "trades": 3,
-      "wins": 2,
-      "losses": 1,
-      "winRatePct": 66.7,
-      "avgReturnPct": 8.26,
-      "worstSymbol": "PASHUPATI",
       "repeatedLosses": 1
     },
     {
@@ -43,28 +33,29 @@
       "avgReturnPct": -3.88,
       "worstSymbol": "MUTHOOTFIN",
       "repeatedLosses": 1
+    },
+    {
+      "source": "VP+FIB",
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "winRatePct": 0,
+      "avgReturnPct": -6.5,
+      "worstSymbol": "PASHUPATI",
+      "repeatedLosses": 1
     }
   ],
   "masterEmitted": 1,
-  "moneyPrinterEmitted": 1,
+  "moneyPrinterEmitted": 2,
   "missCatchRate": 0,
   "improvements": [
     {
       "type": "INFO",
       "target": "WEEKLY-PICK",
       "metric": "sample-size",
-      "from": 3,
+      "from": 2,
       "to": 5,
-      "reason": "WEEKLY-PICK: only 3 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "VP+FIB",
-      "metric": "sample-size",
-      "from": 3,
-      "to": 5,
-      "reason": "VP+FIB: only 3 closed trades — need ≥ 5 for gate tuning",
+      "reason": "WEEKLY-PICK: only 2 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -87,11 +78,20 @@
     },
     {
       "type": "INFO",
+      "target": "VP+FIB",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "VP+FIB: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
-      "to": "24%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 174 candidates (24% of filtered)",
+      "to": "25%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 180 candidates (25% of filtered)",
       "applied": false
     },
     {
@@ -99,8 +99,8 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55)",
-      "to": "8%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 56 candidates (8% of filtered)",
+      "to": "6%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 47 candidates (6% of filtered)",
       "applied": false
     },
     {
@@ -108,10 +108,10 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
-      "to": "7%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 48 candidates (7% of filtered)",
+      "to": "5%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 39 candidates (5% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-10-05\nBook WR 34.38% · realised ₹116809 · book ₹1127128\nMiss catch-rate 0% · MASTER 1 · Money-Printer 1\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   3 · WR   0% · avgRet -3.50%\n  VP+FIB               · trades   3 · WR  67% · avgRet +8.26%\n  ELLIOTT-WAVE         · trades   2 · WR   0% · avgRet -3.65%\n  STOCK-FNO-VP         · trades   1 · WR   0% · avgRet -3.88%\n\nImprovements applied: 0 · flagged for review: 7"
+  "humanExplain": "Daily improvisation · 2026-10-05\nBook WR 34.38% · realised ₹118074 · book ₹1129659\nMiss catch-rate 0% · MASTER 1 · Money-Printer 2\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   2 · WR   0% · avgRet -2.75%\n  ELLIOTT-WAVE         · trades   2 · WR   0% · avgRet -3.65%\n  STOCK-FNO-VP         · trades   1 · WR   0% · avgRet -3.88%\n  VP+FIB               · trades   1 · WR   0% · avgRet -6.50%\n\nImprovements applied: 0 · flagged for review: 7"
 }
