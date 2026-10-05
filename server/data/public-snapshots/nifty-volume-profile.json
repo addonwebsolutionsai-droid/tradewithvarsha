@@ -1,14 +1,86 @@
 {
-  "generatedAt": "2026-10-05T09:56:23.864Z",
-  "status": "NO_DATA",
-  "note": "NIFTY intraday candles unavailable on this tick. Common causes: Angel session not established on the GH Actions runner, or Yahoo intraday feed empty. Next tick (~4 min during market hours) will retry.",
-  "spot": 0,
+  "generatedAt": "2026-10-05T21:00:34.006Z",
+  "spot": 22421.94921875,
   "compositeBias": "NEUTRAL",
   "confidence": "LOW",
   "bullTfCount": 0,
-  "bearTfCount": 0,
-  "agreementScore": 0,
-  "timeframes": [],
-  "strongestSetup": null,
-  "tradeRecommendation": null
+  "bearTfCount": 1,
+  "agreementScore": 100,
+  "timeframes": [
+    {
+      "tf": "1D",
+      "profile": {
+        "poc": 23984.529609375,
+        "vah": 25535.06953125,
+        "val": 22433.9896875,
+        "hvn": [
+          24152.155546875,
+          25912.227890625
+        ],
+        "lvn": [
+          22894.961015625,
+          24822.659296875
+        ],
+        "ibH": 25095.94921875,
+        "ibL": 24881.650390625,
+        "totalVolume": 90091400
+      },
+      "signals": [
+        {
+          "setup": "VA_BREAKOUT_DOWN",
+          "side": "BEARISH",
+          "strength": 70,
+          "entry": 22421.94921875,
+          "stopLoss": 22556.114757254465,
+          "target1": 22177.699079241072,
+          "target2": 21933.44893973214,
+          "target3": 21567.07373046875,
+          "keyLevel": 22433.9896875,
+          "reason": "Close 22421.95 below VAL 22433.99 on volume expansion — auction accepting lower value"
+        },
+        {
+          "setup": "IB_BREAK_DOWN",
+          "side": "BEARISH",
+          "strength": 55,
+          "entry": 22421.94921875,
+          "stopLoss": 24979.350446428572,
+          "target1": 22055.57400948661,
+          "target2": 21689.198800223214,
+          "target3": 21200.69852120536,
+          "keyLevel": 24881.650390625,
+          "reason": "IB low 24881.65 broken decisively — trend-day signature"
+        }
+      ]
+    }
+  ],
+  "strongestSetup": {
+    "tf": "1D",
+    "setup": "VA_BREAKOUT_DOWN",
+    "side": "BEARISH",
+    "strength": 70,
+    "reason": "Close 22421.95 below VAL 22433.99 on volume expansion — auction accepting lower value",
+    "entry": 22421.94921875,
+    "stopLoss": 22556.114757254465,
+    "target1": 22177.699079241072,
+    "target2": 21933.44893973214,
+    "target3": 21567.07373046875,
+    "keyLevel": 22433.9896875
+  },
+  "tradeRecommendation": {
+    "side": "WAIT",
+    "instrument": "NIFTY SPOT (reference)",
+    "optionStrike": 22400,
+    "optionType": null,
+    "entry": 22421.95,
+    "stopLoss": 22421.95,
+    "target1": 22421.95,
+    "target2": 22421.95,
+    "target3": 22421.95,
+    "entryDate": "2026-10-06",
+    "target1Date": "2026-10-07",
+    "target2Date": "2026-10-08",
+    "target3Date": "2026-10-09",
+    "slDate": "2026-10-09",
+    "rationale": "No decisive Volume Profile setup — wait for cleaner rejection or breakout."
+  }
 }
