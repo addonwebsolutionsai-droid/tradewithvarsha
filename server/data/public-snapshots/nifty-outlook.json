@@ -1,17 +1,38 @@
 {
-  "generatedAt": "2026-10-08T10:21:32.251Z",
-  "status": "NO_DATA",
-  "note": "NIFTY foresight engine returned null — likely one of: (a) option-chain fetch from NSE returned no expiries (rate-limited or 404), (b) NIFTY daily candles < 60 (Yahoo NIFTY key mismatch or Angel session down). Next tick (~5 min) will retry. See engine logs for the specific line that fired.",
-  "spot": 0,
-  "direction": "NEUTRAL",
-  "confidence": "LOW",
+  "generatedAt": "2026-10-08T19:12:56.228Z",
+  "status": "OK_FROM_BIAS_COMPOSER",
+  "spot": 22603.05078125,
+  "direction": "BEARISH",
+  "confidence": "MEDIUM",
+  "netScore": -20,
   "bullScore": 0,
-  "bearScore": 0,
-  "netScore": 0,
+  "bearScore": 20,
   "sessionState": "MARKET_CLOSED",
-  "tradePlan": null,
-  "reasoning": {},
-  "smartMoneyLevel": 0,
-  "smartMoneyDirection": "NEUTRAL",
-  "playbookDetected": []
+  "tradePlan": {
+    "action": "BUY NIFTY 22550 PE",
+    "instrument": "NIFTY 22550 PE",
+    "entry": 116.25,
+    "stopLoss": 81.38,
+    "target1": 162.75,
+    "target2": 209.25,
+    "spotEntry": 22603.05078125,
+    "spotSL": 22829.08,
+    "spotT1": 22377.02,
+    "spotT2": 22150.99,
+    "expectedMoveDays": 5,
+    "reason": "BEARISH composite (OI-BUILDUP BEAR · TREND-5D BEAR)"
+  },
+  "reasoning": {
+    "OI-BUILDUP": "BEAR · PCR 0.62 · max-pain 22400 (-0.90%) · flows 3↑ 3↓",
+    "LONG-HORIZON": "NEUTRAL · nearest ↑ 23070 (+467) · ↓ 22183 (-421) · 3↑ 2↓ waypoints",
+    "TREND-5D": "BEAR · -1.72%"
+  },
+  "smartMoneyLevel": 22400,
+  "smartMoneyDirection": "BEARISH",
+  "playbookDetected": [
+    "OI-BUILDUP-BEAR",
+    "TREND-5D-BEAR"
+  ],
+  "composedFallback": true,
+  "note": "Composed by niftyBiasComposer.ts — foresight engine returned no data (NSE option-chain likely 404 from GH IPs). This synthesis uses OI-buildup + long-horizon + trend so /nifty-outlook renders a live call."
 }
