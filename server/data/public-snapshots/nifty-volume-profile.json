@@ -1,14 +1,86 @@
 {
-  "generatedAt": "2026-10-08T19:06:52.385Z",
-  "status": "NO_DATA",
-  "note": "NIFTY intraday candles unavailable on this tick. Common causes: Angel session not established on the GH Actions runner, or Yahoo intraday feed empty. Next tick (~4 min during market hours) will retry.",
-  "spot": 0,
+  "generatedAt": "2026-10-09T09:47:52.930Z",
+  "spot": 22536.599609375,
   "compositeBias": "NEUTRAL",
   "confidence": "LOW",
-  "bullTfCount": 0,
+  "bullTfCount": 1,
   "bearTfCount": 0,
-  "agreementScore": 0,
-  "timeframes": [],
-  "strongestSetup": null,
-  "tradeRecommendation": null
+  "agreementScore": 100,
+  "timeframes": [
+    {
+      "tf": "1D",
+      "profile": {
+        "poc": 24066.88486328125,
+        "vah": 25450.6734765625,
+        "val": 22347.63234375,
+        "hvn": [
+          25911.93634765625
+        ],
+        "lvn": [
+          22976.62716796875,
+          24821.67865234375,
+          25073.27658203125
+        ],
+        "ibH": 25199.25,
+        "ibL": 25024.30078125,
+        "totalVolume": 90789200
+      },
+      "signals": [
+        {
+          "setup": "VA_ROTATION_FROM_VAL",
+          "side": "BULLISH",
+          "strength": 75,
+          "entry": 22536.599609375,
+          "stopLoss": 22215.7064453125,
+          "target1": 24066.88486328125,
+          "target2": 25450.6734765625,
+          "target3": 25582.412734375,
+          "keyLevel": 22347.63234375,
+          "reason": "Rejection wick at VAL 22347.63 → rotation back to POC 24066.88 / VAH 25450.67. Institutional long entry."
+        },
+        {
+          "setup": "IB_BREAK_DOWN",
+          "side": "BEARISH",
+          "strength": 55,
+          "entry": 22536.599609375,
+          "stopLoss": 25129.6921875,
+          "target1": 22141.3818359375,
+          "target2": 21746.1640625,
+          "target3": 21219.20703125,
+          "keyLevel": 25024.30078125,
+          "reason": "IB low 25024.30 broken decisively — trend-day signature"
+        }
+      ]
+    }
+  ],
+  "strongestSetup": {
+    "tf": "1D",
+    "setup": "VA_ROTATION_FROM_VAL",
+    "side": "BULLISH",
+    "strength": 75,
+    "reason": "Rejection wick at VAL 22347.63 → rotation back to POC 24066.88 / VAH 25450.67. Institutional long entry.",
+    "entry": 22536.599609375,
+    "stopLoss": 22215.7064453125,
+    "target1": 24066.88486328125,
+    "target2": 25450.6734765625,
+    "target3": 25582.412734375,
+    "keyLevel": 22347.63234375
+  },
+  "tradeRecommendation": {
+    "side": "WAIT",
+    "instrument": "NIFTY SPOT (reference)",
+    "optionStrike": 22550,
+    "optionType": null,
+    "entry": 22536.6,
+    "stopLoss": 22536.6,
+    "target1": 22536.6,
+    "target2": 22536.6,
+    "target3": 22536.6,
+    "entryDate": "2026-10-09",
+    "target1Date": "2026-10-12",
+    "target2Date": "2026-10-13",
+    "target3Date": "2026-10-14",
+    "slDate": "2026-10-14",
+    "rationale": "No decisive Volume Profile setup — wait for cleaner rejection or breakout."
+  }
 }
