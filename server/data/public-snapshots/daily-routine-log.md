@@ -9012,3 +9012,69 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
 
 **Total elapsed:** 20.7s
+
+
+## 2026-10-12T09:34:58.815Z — 15:04 IST
+
+**Book:** WR 38.03% · realised ₹137900
+**Miss catch-rate:** 0% (0/91)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · TERAI +20.0%
+  · VTMLTD +20.0%
+  · TARAPUR +20.0%
+  · BMWVENTLTD +16.6%
+  · NIACL +13.7%
+  · TRF +13.1%
+  · RSYSTEMS +12.9%
+  · WORTHPERI +12.9%
+  · INOXGREEN +12.0%
+  · ADSL +11.7%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 30
+  · vol_already_elevated: 9
+  · ema_not_stacked: 7
+  · not_in_universe: 2
+  · rule_fired_but_not_emitted: 6
+  · extended_freshness_reject: 4
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 37
+  · wyckoff-accumulation: 20
+  · vcp: 1
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 15.0h, rows 0
+  · ✓ master-setups: age 15.2h, rows 15
+  · ⚠EMPTY money-printer: age 15.2h, rows 0
+  · ⚠EMPTY mtf-harmonic: age 15.2h, rows 0
+  · ✓ ichimoku-cloud: age 15.2h, rows 61
+  · ⚠EMPTY nifty-bias: age 15.2h, rows 0
+  · ✓ harmonic: age 15.2h, rows 70
+  · ✓ elliott-wave: age 15.3h, rows 17
+  · ✓ sector-rotation: age 15.0h, rows 13
+  · ✓ high-quality-setups: age 15.2h, rows 135
+  · ✓ pro-edge: age 15.0h, rows 1
+  · ✓ vp-fib: age 15.2h, rows 230
+  · ✓ miss-analysis: age -0.0h, rows 91
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · WEEKLY-PICK: 2 trades, WR 50%, avgRet +11.86%
+  · ICHIMOKU: 1 trades, WR 100%, avgRet +1.97%
+  · CROSS-CONFLUENCE: 1 trades, WR 0%, avgRet -9.37%
+  · VP+FIB: 1 trades, WR 100%, avgRet +4.22%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/91 caught (0%) · 15.7s
+  ✓ gainer-postmortem: 6/60 would've been caught with tuning · 0.2s
+  ✓ pattern-learner: 73 new fingerprints (store 73) · 5.3s
+  ✓ self-improve: 13 strategy overrides · +0 new adjustments · 0.3s
+  ✓ daily-core-improvise: 0 tunes applied · WR 38.03% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
+
+**Total elapsed:** 21.5s
