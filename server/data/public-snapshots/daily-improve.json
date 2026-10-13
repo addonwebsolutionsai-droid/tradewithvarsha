@@ -1,29 +1,9 @@
 {
-  "generatedAt": "2026-10-13T09:39:32.744Z",
+  "generatedAt": "2026-10-13T14:28:23.335Z",
   "windowDays": 7,
   "bookWinRate": 38.03,
-  "bookRealisedPnl": 137899.75,
+  "bookRealisedPnl": 139177.93,
   "perSourceStats": [
-    {
-      "source": "WEEKLY-PICK",
-      "trades": 2,
-      "wins": 1,
-      "losses": 1,
-      "winRatePct": 50,
-      "avgReturnPct": 11.86,
-      "worstSymbol": "SPANDANA",
-      "repeatedLosses": 1
-    },
-    {
-      "source": "ICHIMOKU",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "winRatePct": 100,
-      "avgReturnPct": 1.97,
-      "worstSymbol": null,
-      "repeatedLosses": 0
-    },
     {
       "source": "CROSS-CONFLUENCE",
       "trades": 1,
@@ -33,30 +13,22 @@
       "avgReturnPct": -9.37,
       "worstSymbol": "TEXRAIL",
       "repeatedLosses": 1
+    },
+    {
+      "source": "WEEKLY-PICK",
+      "trades": 1,
+      "wins": 0,
+      "losses": 1,
+      "winRatePct": 0,
+      "avgReturnPct": -5,
+      "worstSymbol": "SPANDANA",
+      "repeatedLosses": 1
     }
   ],
-  "masterEmitted": 1,
+  "masterEmitted": 15,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
-    {
-      "type": "INFO",
-      "target": "WEEKLY-PICK",
-      "metric": "sample-size",
-      "from": 2,
-      "to": 5,
-      "reason": "WEEKLY-PICK: only 2 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "ICHIMOKU",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "ICHIMOKU: only 1 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
     {
       "type": "INFO",
       "target": "CROSS-CONFLUENCE",
@@ -68,11 +40,20 @@
     },
     {
       "type": "INFO",
+      "target": "WEEKLY-PICK",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "WEEKLY-PICK: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
-      "to": "24%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 169 candidates (24% of filtered)",
+      "to": "25%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 176 candidates (25% of filtered)",
       "applied": false
     },
     {
@@ -89,10 +70,10 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
-      "to": "6%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 45 candidates (6% of filtered)",
+      "to": "7%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 47 candidates (7% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-10-13\nBook WR 38.03% · realised ₹137900 · book ₹1135861\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   2 · WR  50% · avgRet +11.86%\n  ICHIMOKU             · trades   1 · WR 100% · avgRet +1.97%\n  CROSS-CONFLUENCE     · trades   1 · WR   0% · avgRet -9.37%\n\nImprovements applied: 0 · flagged for review: 6"
+  "humanExplain": "Daily improvisation · 2026-10-13\nBook WR 38.03% · realised ₹139178 · book ₹-192277205\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  CROSS-CONFLUENCE     · trades   1 · WR   0% · avgRet -9.37%\n  WEEKLY-PICK          · trades   1 · WR   0% · avgRet -5.00%\n\nImprovements applied: 0 · flagged for review: 5"
 }
