@@ -1,27 +1,17 @@
 {
-  "generatedAt": "2026-10-15T07:39:35.260Z",
+  "generatedAt": "2026-10-15T11:54:23.925Z",
   "windowDays": 7,
-  "bookWinRate": 37.5,
-  "bookRealisedPnl": 138415.19,
+  "bookWinRate": 36.84,
+  "bookRealisedPnl": 129280.01,
   "perSourceStats": [
     {
-      "source": "CROSS-CONFLUENCE",
-      "trades": 1,
+      "source": "ICHIMOKU",
+      "trades": 2,
       "wins": 0,
-      "losses": 1,
+      "losses": 2,
       "winRatePct": 0,
-      "avgReturnPct": -9.37,
-      "worstSymbol": "TEXRAIL",
-      "repeatedLosses": 1
-    },
-    {
-      "source": "WEEKLY-PICK",
-      "trades": 1,
-      "wins": 0,
-      "losses": 1,
-      "winRatePct": 0,
-      "avgReturnPct": -5,
-      "worstSymbol": "SPANDANA",
+      "avgReturnPct": -3.89,
+      "worstSymbol": "AXISBANK",
       "repeatedLosses": 1
     },
     {
@@ -33,28 +23,29 @@
       "avgReturnPct": -2.51,
       "worstSymbol": "EARKART",
       "repeatedLosses": 1
+    },
+    {
+      "source": "WEEKLY-PICK",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "winRatePct": 100,
+      "avgReturnPct": 0.44,
+      "worstSymbol": null,
+      "repeatedLosses": 0
     }
   ],
-  "masterEmitted": 2,
+  "masterEmitted": 1,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
     {
       "type": "INFO",
-      "target": "CROSS-CONFLUENCE",
+      "target": "ICHIMOKU",
       "metric": "sample-size",
-      "from": 1,
+      "from": 2,
       "to": 5,
-      "reason": "CROSS-CONFLUENCE: only 1 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "WEEKLY-PICK",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "WEEKLY-PICK: only 1 closed trades — need ≥ 5 for gate tuning",
+      "reason": "ICHIMOKU: only 2 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -68,11 +59,20 @@
     },
     {
       "type": "INFO",
+      "target": "WEEKLY-PICK",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "WEEKLY-PICK: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
-      "to": "25%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 165 candidates (25% of filtered)",
+      "to": "26%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 174 candidates (26% of filtered)",
       "applied": false
     },
     {
@@ -80,8 +80,8 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55)",
-      "to": "8%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 52 candidates (8% of filtered)",
+      "to": "6%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 44 candidates (6% of filtered)",
       "applied": false
     },
     {
@@ -90,9 +90,9 @@
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
       "to": "6%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 42 candidates (6% of filtered)",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 39 candidates (6% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-10-15\nBook WR 37.5% · realised ₹138415 · book ₹1146854\nMiss catch-rate 0% · MASTER 2 · Money-Printer 0\n\nPer-source stats (7d window):\n  CROSS-CONFLUENCE     · trades   1 · WR   0% · avgRet -9.37%\n  WEEKLY-PICK          · trades   1 · WR   0% · avgRet -5.00%\n  VP+FIB               · trades   1 · WR   0% · avgRet -2.51%\n\nImprovements applied: 0 · flagged for review: 6"
+  "humanExplain": "Daily improvisation · 2026-10-15\nBook WR 36.84% · realised ₹129280 · book ₹1145473\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  ICHIMOKU             · trades   2 · WR   0% · avgRet -3.89%\n  VP+FIB               · trades   1 · WR   0% · avgRet -2.51%\n  WEEKLY-PICK          · trades   1 · WR 100% · avgRet +0.44%\n\nImprovements applied: 0 · flagged for review: 6"
 }
