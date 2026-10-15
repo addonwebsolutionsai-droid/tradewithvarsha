@@ -1,35 +1,39 @@
 {
-  "generatedAt": "2026-10-14T17:51:47.881Z",
+  "generatedAt": "2026-10-15T07:52:17.466Z",
   "status": "OK_FROM_BIAS_COMPOSER",
-  "spot": 22622.7,
-  "direction": "NEUTRAL",
+  "spot": 23006.9,
+  "direction": "BULLISH",
   "confidence": "LOW",
-  "netScore": 0,
-  "bullScore": 0,
-  "bearScore": 0,
+  "netScore": 15,
+  "bullScore": 25,
+  "bearScore": 10,
   "sessionState": "MARKET_CLOSED",
   "tradePlan": {
-    "action": "BUY NIFTY 22550 PE",
-    "instrument": "NIFTY 22550 PE",
-    "entry": 122.35,
-    "stopLoss": 85.64,
-    "target1": 171.29,
-    "target2": 220.23,
-    "spotEntry": 22622.7,
-    "spotSL": 22848.93,
-    "spotT1": 22396.47,
-    "spotT2": 22170.25,
+    "action": "BUY NIFTY 23050 CE",
+    "instrument": "NIFTY 23050 CE",
+    "entry": 145.85,
+    "stopLoss": 102.09,
+    "target1": 204.19,
+    "target2": 262.53,
+    "spotEntry": 23006.9,
+    "spotSL": 22776.83,
+    "spotT1": 23236.97,
+    "spotT2": 23467.04,
     "expectedMoveDays": 5,
-    "reason": "NEUTRAL composite ()"
+    "reason": "BULLISH composite (OI-BUILDUP BEAR · LONG-HORIZON BULL · TREND-5D BULL)"
   },
   "reasoning": {
-    "OI-BUILDUP": "NEUTRAL · PCR 0.86 · max-pain 22600 (-0.10%) · flows 3↑ 3↓",
-    "LONG-HORIZON": "NEUTRAL · nearest ↑ 23070 (+447) · ↓ 22183 (-440) · 3↑ 2↓ waypoints",
-    "TREND-5D": "NEUTRAL · 0.09%"
+    "OI-BUILDUP": "BEAR · PCR 0.86 · max-pain 22600 (-1.77%) · flows 3↑ 3↓",
+    "LONG-HORIZON": "BULL · nearest ↑ 23070 (+63) · ↓ 22183 (-824) · 3↑ 2↓ waypoints",
+    "TREND-5D": "BULL · +3.50%"
   },
   "smartMoneyLevel": 22600,
-  "smartMoneyDirection": "NEUTRAL",
-  "playbookDetected": [],
+  "smartMoneyDirection": "BULLISH",
+  "playbookDetected": [
+    "OI-BUILDUP-BEAR",
+    "LONG-HORIZON-BULL",
+    "TREND-5D-BULL"
+  ],
   "composedFallback": true,
   "note": "Composed by niftyBiasComposer.ts — foresight engine returned no data (NSE option-chain likely 404 from GH IPs). This synthesis uses OI-buildup + long-horizon + trend so /nifty-outlook renders a live call."
 }
