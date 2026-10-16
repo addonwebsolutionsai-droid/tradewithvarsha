@@ -1,18 +1,18 @@
 {
-  "generatedAt": "2026-10-16T16:51:10.561Z",
+  "generatedAt": "2026-10-16T17:22:36.049Z",
   "totalGainers": 60,
   "caughtCount": 11,
   "wouldHaveCaughtCount": 4,
   "patternBreakdown": {
-    "unknown": 38,
-    "wyckoff-accumulation": 20
+    "unknown": 39,
+    "wyckoff-accumulation": 19
   },
   "topMissReasons": {
     "rule_fired_but_not_emitted": 4,
-    "not_coil_pattern": 25,
+    "not_coil_pattern": 26,
     "vol_already_elevated": 9,
     "extended_freshness_reject": 5,
-    "ema_not_stacked": 4,
+    "ema_not_stacked": 3,
     "not_in_universe": 2
   },
   "rows": [
@@ -240,10 +240,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
+      "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Too wide a range (BB-w 22.64%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
       "symbol": "MCLEODRUSS",
