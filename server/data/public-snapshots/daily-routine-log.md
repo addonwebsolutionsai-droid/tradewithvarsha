@@ -10364,3 +10364,68 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
 
 **Total elapsed:** 19.4s
+
+
+## 2026-10-19T08:00:22.957Z — 13:30 IST
+
+**Book:** WR 37.66% · realised ₹134438
+**Miss catch-rate:** 0% (0/88)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · ONWARDTEC +20.0%
+  · SINGERIND +19.3%
+  · TAMBOLIIN +19.0%
+  · HBLENGINE +17.3%
+  · SHREERAMA +15.3%
+  · MOMSBELIEF +14.5%
+  · EUROPRATIK +13.8%
+  · OSWALAGRO +13.4%
+  · PCJEWELLER +12.7%
+  · IGCL +12.3%
+
+### Why we missed them (postmortem)
+  · rule_fired_but_not_emitted: 4
+  · not_coil_pattern: 30
+  · vol_already_elevated: 6
+  · extended_freshness_reject: 3
+  · ema_not_stacked: 4
+  · not_in_universe: 2
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 38
+  · wyckoff-accumulation: 19
+  · vcp: 1
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 15.0h, rows 0
+  · ✓ master-setups: age 15.1h, rows 15
+  · ⚠EMPTY money-printer: age 15.1h, rows 0
+  · ⚠EMPTY mtf-harmonic: age 15.1h, rows 0
+  · ✓ ichimoku-cloud: age 15.1h, rows 56
+  · ⚠EMPTY nifty-bias: age 15.1h, rows 0
+  · ✓ harmonic: age 15.2h, rows 68
+  · ✓ elliott-wave: age 15.3h, rows 15
+  · ✓ sector-rotation: age 15.0h, rows 13
+  · ✓ high-quality-setups: age 15.1h, rows 135
+  · ✓ pro-edge: age 15.0h, rows 6
+  · ✓ vp-fib: age 15.2h, rows 211
+  · ✓ miss-analysis: age -0.0h, rows 88
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · ICHIMOKU: 3 trades, WR 33.3%, avgRet -1.58%
+  · VP+FIB: 1 trades, WR 0%, avgRet -2.51%
+  · WEEKLY-PICK: 1 trades, WR 100%, avgRet +0.44%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/88 caught (0%) · 19.2s
+  ✓ gainer-postmortem: 4/60 would've been caught with tuning · 0.7s
+  ✓ pattern-learner: 82 new fingerprints (store 82) · 20.4s
+  ✓ self-improve: 13 strategy overrides · +0 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 37.66% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
+
+**Total elapsed:** 40.5s
