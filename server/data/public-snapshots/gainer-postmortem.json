@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T18:47:22.085Z",
+  "generatedAt": "2026-10-19T19:10:58.616Z",
   "totalGainers": 38,
   "caughtCount": 2,
   "wouldHaveCaughtCount": 2,
@@ -9,11 +9,12 @@
     "vcp": 1
   },
   "topMissReasons": {
-    "ema_not_stacked": 10,
+    "ema_not_stacked": 9,
     "not_coil_pattern": 17,
     "vol_already_elevated": 5,
     "rule_fired_but_not_emitted": 2,
-    "not_in_universe": 2
+    "not_in_universe": 2,
+    "extended_freshness_reject": 1
   },
   "rows": [
     {
@@ -406,8 +407,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Stock was already extended (5d 8.11%, 20d 3.02%) — hit our freshness reject",
+      "recommendation": "For wave-2 continuation candidates, extend wave2 scanner to micro/small caps"
     },
     {
       "symbol": "VARMORA",
