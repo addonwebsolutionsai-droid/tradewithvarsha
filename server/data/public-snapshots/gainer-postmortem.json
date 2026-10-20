@@ -1,19 +1,20 @@
 {
-  "generatedAt": "2026-10-20T07:50:22.973Z",
+  "generatedAt": "2026-10-20T11:56:33.932Z",
   "totalGainers": 38,
   "caughtCount": 2,
   "wouldHaveCaughtCount": 2,
   "patternBreakdown": {
-    "unknown": 24,
-    "wyckoff-accumulation": 11,
+    "unknown": 26,
+    "wyckoff-accumulation": 9,
     "vcp": 1
   },
   "topMissReasons": {
-    "ema_not_stacked": 9,
-    "not_coil_pattern": 19,
-    "vol_already_elevated": 4,
+    "not_coil_pattern": 22,
+    "vol_already_elevated": 5,
+    "extended_freshness_reject": 4,
     "rule_fired_but_not_emitted": 2,
-    "not_in_universe": 2
+    "not_in_universe": 2,
+    "ema_not_stacked": 1
   },
   "rows": [
     {
@@ -26,8 +27,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Too wide a range (BB-w 21.32%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
       "symbol": "LAGNAM",
@@ -39,8 +40,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Too wide a range (BB-w 21.18%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
       "symbol": "SWARNSAR",
@@ -50,10 +51,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
+      "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Too wide a range (BB-w 20.02%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
       "symbol": "SMARTLINK",
@@ -63,10 +64,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "wyckoff-accumulation",
+      "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Too wide a range (BB-w 20.82%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
       "symbol": "PLATIND",
@@ -78,8 +79,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Volume was already elevated (3.57× 20d) before the move — fails our dry-up filter",
+      "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
       "symbol": "PCJEWELLER",
@@ -104,7 +105,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 27.57%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 24.87%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -117,7 +118,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 25.26%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 23.74%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -141,10 +142,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "vcp",
+      "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Stock was already extended (5d 13.85%, 20d 5.66%) — hit our freshness reject",
+      "recommendation": "For wave-2 continuation candidates, extend wave2 scanner to micro/small caps"
     },
     {
       "symbol": "TOKYOPLAST",
@@ -156,7 +157,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 20.98%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 19.08%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -221,8 +222,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 15.54%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "missReason": "Stock was already extended (5d 7.11%, 20d -4.28%) — hit our freshness reject",
+      "recommendation": "For wave-2 continuation candidates, extend wave2 scanner to micro/small caps"
     },
     {
       "symbol": "JAICORPLTD",
@@ -247,7 +248,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 20.34%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 18.92%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -273,8 +274,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Stock was already extended (5d 14.07%, 20d 1.31%) — hit our freshness reject",
+      "recommendation": "For wave-2 continuation candidates, extend wave2 scanner to micro/small caps"
     },
     {
       "symbol": "DEEPA",
@@ -333,7 +334,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (1.65× 20d) before the move — fails our dry-up filter",
+      "missReason": "Volume was already elevated (2.13× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
@@ -346,7 +347,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 17.69%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 16.59%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -382,7 +383,7 @@
         "nse-bhavcopy"
       ],
       "caughtTodayByOurTabs": false,
-      "wouldHaveFiredDaysAgo": 8,
+      "wouldHaveFiredDaysAgo": 9,
       "patternDetected": "unknown",
       "preMoveFeatures": {
         "ret5d": 3.48,
@@ -393,7 +394,7 @@
         "distFromHigh20": 0,
         "emaStackBull": true
       },
-      "missReason": "Rule WOULD have fired 8d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
+      "missReason": "Rule WOULD have fired 9d ago but signal was not emitted — likely scanner ran on smaller universe (e.g. CNX500 intraday vs MARKET_ALL post-close)",
       "recommendation": "Expand intraday CNX500 cron to NIFTY_500 or add this symbol to MARKET_ALL universe"
     },
     {
@@ -406,8 +407,8 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
-      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
+      "missReason": "Stock was already extended (5d 8.11%, 20d 3.02%) — hit our freshness reject",
+      "recommendation": "For wave-2 continuation candidates, extend wave2 scanner to micro/small caps"
     },
     {
       "symbol": "VARMORA",
@@ -432,7 +433,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 34.69%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 32.75%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -445,7 +446,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Volume was already elevated (2.15× 20d) before the move — fails our dry-up filter",
+      "missReason": "Volume was already elevated (2.43× 20d) before the move — fails our dry-up filter",
       "recommendation": "Loosen dry-up filter from <1.0 to <1.3, or add vol-surge path alongside dry-up path"
     },
     {
@@ -490,7 +491,7 @@
       ],
       "caughtTodayByOurTabs": true,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "unknown",
+      "patternDetected": "vcp",
       "preMoveFeatures": null,
       "missReason": "— (caught)",
       "recommendation": "No action needed"
@@ -531,7 +532,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 64.71%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 61.63%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     }
   ]
