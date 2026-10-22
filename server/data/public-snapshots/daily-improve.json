@@ -1,27 +1,17 @@
 {
-  "generatedAt": "2026-10-22T07:50:34.969Z",
+  "generatedAt": "2026-10-22T12:14:29.556Z",
   "windowDays": 7,
-  "bookWinRate": 39.76,
-  "bookRealisedPnl": 134445.81,
+  "bookWinRate": 41.18,
+  "bookRealisedPnl": 123665.9,
   "perSourceStats": [
     {
       "source": "WEEKLY-PICK",
-      "trades": 4,
-      "wins": 3,
-      "losses": 1,
-      "winRatePct": 75,
-      "avgReturnPct": 8.3,
-      "worstSymbol": "NAVINFLUOR",
-      "repeatedLosses": 1
-    },
-    {
-      "source": "ICHIMOKU",
       "trades": 3,
-      "wins": 1,
-      "losses": 2,
-      "winRatePct": 33.3,
-      "avgReturnPct": -1.58,
-      "worstSymbol": "AXISBANK",
+      "wins": 2,
+      "losses": 1,
+      "winRatePct": 66.7,
+      "avgReturnPct": 10.92,
+      "worstSymbol": "NAVINFLUOR",
       "repeatedLosses": 1
     },
     {
@@ -33,6 +23,26 @@
       "avgReturnPct": -0.85,
       "worstSymbol": "CITADEL",
       "repeatedLosses": 1
+    },
+    {
+      "source": "ICHIMOKU",
+      "trades": 2,
+      "wins": 2,
+      "losses": 0,
+      "winRatePct": 100,
+      "avgReturnPct": 3.51,
+      "worstSymbol": null,
+      "repeatedLosses": 0
+    },
+    {
+      "source": "PRO-EDGE",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "winRatePct": 100,
+      "avgReturnPct": 1.69,
+      "worstSymbol": null,
+      "repeatedLosses": 0
     }
   ],
   "masterEmitted": 1,
@@ -43,18 +53,9 @@
       "type": "INFO",
       "target": "WEEKLY-PICK",
       "metric": "sample-size",
-      "from": 4,
-      "to": 5,
-      "reason": "WEEKLY-PICK: only 4 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "ICHIMOKU",
-      "metric": "sample-size",
       "from": 3,
       "to": 5,
-      "reason": "ICHIMOKU: only 3 closed trades — need ≥ 5 for gate tuning",
+      "reason": "WEEKLY-PICK: only 3 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -68,11 +69,29 @@
     },
     {
       "type": "INFO",
+      "target": "ICHIMOKU",
+      "metric": "sample-size",
+      "from": 2,
+      "to": 5,
+      "reason": "ICHIMOKU: only 2 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "PRO-EDGE",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "PRO-EDGE: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
-      "to": "25%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 180 candidates (25% of filtered)",
+      "to": "26%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 183 candidates (26% of filtered)",
       "applied": false
     },
     {
@@ -81,18 +100,18 @@
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55)",
       "to": "8%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 56 candidates (8% of filtered)",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 55 candidates (8% of filtered)",
       "applied": false
     },
     {
       "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
-      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
+      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 75)",
       "to": "6%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 45 candidates (6% of filtered)",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 75) killed 40 candidates (6% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-10-22\nBook WR 39.76% · realised ₹134446 · book ₹1142641\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   4 · WR  75% · avgRet +8.30%\n  ICHIMOKU             · trades   3 · WR  33% · avgRet -1.58%\n  VP+FIB               · trades   3 · WR  67% · avgRet -0.85%\n\nImprovements applied: 0 · flagged for review: 6"
+  "humanExplain": "Daily improvisation · 2026-10-22\nBook WR 41.18% · realised ₹123666 · book ₹1146370\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   3 · WR  67% · avgRet +10.92%\n  VP+FIB               · trades   3 · WR  67% · avgRet -0.85%\n  ICHIMOKU             · trades   2 · WR 100% · avgRet +3.51%\n  PRO-EDGE             · trades   1 · WR 100% · avgRet +1.69%\n\nImprovements applied: 0 · flagged for review: 7"
 }
