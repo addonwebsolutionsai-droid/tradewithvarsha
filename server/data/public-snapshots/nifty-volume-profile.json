@@ -1,14 +1,73 @@
 {
-  "generatedAt": "2026-10-22T09:02:20.877Z",
-  "status": "NO_DATA",
-  "note": "NIFTY intraday candles unavailable on this tick. Common causes: Angel session not established on the GH Actions runner, or Yahoo intraday feed empty. Next tick (~4 min during market hours) will retry.",
-  "spot": 0,
+  "generatedAt": "2026-10-22T09:11:29.920Z",
+  "spot": 22656.099609375,
   "compositeBias": "NEUTRAL",
   "confidence": "LOW",
   "bullTfCount": 0,
-  "bearTfCount": 0,
-  "agreementScore": 0,
-  "timeframes": [],
-  "strongestSetup": null,
-  "tradeRecommendation": null
+  "bearTfCount": 1,
+  "agreementScore": 100,
+  "timeframes": [
+    {
+      "tf": "1D",
+      "profile": {
+        "poc": 24066.88486328125,
+        "vah": 25282.9415234375,
+        "val": 22179.900390625,
+        "hvn": [
+          25911.93634765625
+        ],
+        "lvn": [
+          24821.67865234375,
+          25073.27658203125
+        ],
+        "ibH": 26104.19921875,
+        "ibL": 25862.44921875,
+        "totalVolume": 90885200
+      },
+      "signals": [
+        {
+          "setup": "IB_BREAK_DOWN",
+          "side": "BEARISH",
+          "strength": 55,
+          "entry": 22656.099609375,
+          "stopLoss": 25992.642020089286,
+          "target1": 22167.876604352678,
+          "target2": 21679.65359933036,
+          "target3": 21028.689592633928,
+          "keyLevel": 25862.44921875,
+          "reason": "IB low 25862.45 broken decisively — trend-day signature"
+        }
+      ]
+    }
+  ],
+  "strongestSetup": {
+    "tf": "1D",
+    "setup": "IB_BREAK_DOWN",
+    "side": "BEARISH",
+    "strength": 55,
+    "reason": "IB low 25862.45 broken decisively — trend-day signature",
+    "entry": 22656.099609375,
+    "stopLoss": 25992.642020089286,
+    "target1": 22167.876604352678,
+    "target2": 21679.65359933036,
+    "target3": 21028.689592633928,
+    "keyLevel": 25862.44921875
+  },
+  "tradeRecommendation": {
+    "side": "WAIT",
+    "instrument": "NIFTY SPOT (reference)",
+    "optionStrike": 22650,
+    "optionType": null,
+    "entry": 22656.1,
+    "stopLoss": 22656.1,
+    "target1": 22656.1,
+    "target2": 22656.1,
+    "target3": 22656.1,
+    "entryDate": "2026-10-22",
+    "target1Date": "2026-10-23",
+    "target2Date": "2026-10-26",
+    "target3Date": "2026-10-27",
+    "slDate": "2026-10-27",
+    "rationale": "No decisive Volume Profile setup — wait for cleaner rejection or breakout."
+  }
 }
