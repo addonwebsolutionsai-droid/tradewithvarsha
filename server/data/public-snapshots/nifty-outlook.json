@@ -1,36 +1,38 @@
 {
-  "generatedAt": "2026-10-22T17:54:23.695Z",
+  "generatedAt": "2026-10-23T08:05:45.279Z",
   "status": "OK_FROM_BIAS_COMPOSER",
-  "spot": 22687.650390625,
-  "direction": "NEUTRAL",
+  "spot": 22428.400390625,
+  "direction": "BEARISH",
   "confidence": "LOW",
-  "netScore": 10,
+  "netScore": -15,
   "bullScore": 10,
-  "bearScore": 0,
+  "bearScore": 25,
   "sessionState": "MARKET_CLOSED",
   "tradePlan": {
-    "action": "BUY NIFTY 22650 PE",
-    "instrument": "NIFTY 22650 PE",
-    "entry": 162.2,
-    "stopLoss": 113.54,
-    "target1": 227.08,
-    "target2": 291.96,
-    "spotEntry": 22687.650390625,
-    "spotSL": 22914.53,
-    "spotT1": 22460.77,
-    "spotT2": 22233.9,
+    "action": "BUY NIFTY 22400 PE",
+    "instrument": "NIFTY 22400 PE",
+    "entry": 145.9,
+    "stopLoss": 102.13,
+    "target1": 204.26,
+    "target2": 262.62,
+    "spotEntry": 22428.400390625,
+    "spotSL": 22652.68,
+    "spotT1": 22204.12,
+    "spotT2": 21979.83,
     "expectedMoveDays": 5,
-    "reason": "NEUTRAL composite (OI-BUILDUP BULL)"
+    "reason": "BEARISH composite (OI-BUILDUP BULL · LONG-HORIZON BEAR · TREND-5D BEAR)"
   },
   "reasoning": {
-    "OI-BUILDUP": "BULL · PCR 0.81 · max-pain 22850 (+0.72%) · flows 3↑ 3↓",
-    "LONG-HORIZON": "NEUTRAL · nearest ↑ 23070 (+382) · ↓ 22183 (-505) · 3↑ 2↓ waypoints",
-    "TREND-5D": "NEUTRAL · 0.29%"
+    "OI-BUILDUP": "BULL · PCR 0.82 · max-pain 22850 (+1.88%) · flows 3↑ 3↓",
+    "LONG-HORIZON": "BEAR · nearest ↑ 23070 (+642) · ↓ 22183 (-246) · 3↑ 2↓ waypoints",
+    "TREND-5D": "BEAR · -2.47%"
   },
   "smartMoneyLevel": 22850,
-  "smartMoneyDirection": "NEUTRAL",
+  "smartMoneyDirection": "BEARISH",
   "playbookDetected": [
-    "OI-BUILDUP-BULL"
+    "OI-BUILDUP-BULL",
+    "LONG-HORIZON-BEAR",
+    "TREND-5D-BEAR"
   ],
   "composedFallback": true,
   "note": "Composed by niftyBiasComposer.ts — foresight engine returned no data (NSE option-chain likely 404 from GH IPs). This synthesis uses OI-buildup + long-horizon + trend so /nifty-outlook renders a live call."
