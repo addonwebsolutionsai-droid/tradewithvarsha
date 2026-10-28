@@ -2321,12 +2321,16 @@ cron.schedule('30 18 * * 1-5', async () => {
     log.info('DAILY-ROUTINE', '[7/7] publishing public snapshots...')
     const { publishPublicSnapshots } = await import('./engine/publicSnapshots')
     const wp = await (await import('./engine/weeklyManagerPick')).getLatestPick()
+    // 28 Oct 2026 — hydrate dailyPick + signals too. Passing null here used
+    // to overwrite daily-pick / top-trades / options / intraday with 0 rows
+    // every daily run, which is why those public tabs on Vercel were empty.
+    const dp = await (await import('./engine/dailyPickEngine')).loadLatestDailyPick().catch(() => null)
     await publishPublicSnapshots({
       weeklyPick: wp ?? null,
-      dailyPick: null,
+      dailyPick: dp ?? null,
       preMoveResults: [],
       hitLogEntries: [],
-      signals: [],
+      signals: currentSignals,
     })
     log.ok('DAILY-ROUTINE', '[6/6] snapshots published')
   } catch (e) { log.warn('DAILY-ROUTINE', `[6/6] publish: ${(e as Error).message}`) }

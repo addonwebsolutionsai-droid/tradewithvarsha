@@ -120,8 +120,14 @@ function publicWeeklyRows(rows: any[]): any[] {
 }
 
 function publicOptions(signals: Signal[]): any[] {
-  return signals
-    .filter(s => s.type === 'OPTIONS' && s.score >= 9)
+  // 28 Oct 2026 — loosened score ≥ 9 → ≥ 7 with adaptive fallback.
+  // The ≥ 9 bar meant options.json was zero on 90% of days even when the
+  // engine produced grade-A setups at 7-8. Keeps the elite preference via
+  // a sort before slice, but lets quality setups through.
+  let elite = signals.filter(s => s.type === 'OPTIONS' && s.score >= 9)
+  if (elite.length === 0) elite = signals.filter(s => s.type === 'OPTIONS' && s.score >= 7)
+  return elite
+    .sort((a, b) => (b.score ?? 0) - (a.score ?? 0))
     .slice(0, 30)
     .map(s => ({
       timestamp: s.timestamp,
@@ -704,37 +710,53 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
     files.push('weekly-pick.json')
   }
 
+  // 28 Oct 2026 — "no-stomp" guard. The scheduled daily-routine was calling
+  // this with dailyPick:null, preMoveResults:[], hitLogEntries:[], signals:[]
+  // which overwrote every public snapshot with 0 rows and emptied the UI.
+  // From here on, when input is null/empty we SKIP writing and leave the
+  // previous snapshot intact. The intraday publisher (which does have fresh
+  // inputs) still refreshes these files on its own cadence.
+  const hasDaily  = !!(opts.dailyPick?.rows?.length)
+  const hasPre    = !!(opts.preMoveResults?.length)
+  const hasSigs   = !!(opts.signals?.length)
+  const hasHits   = !!(opts.hitLogEntries?.length)
+
   // 2. Daily pick — same enrichment.
-  if (opts.dailyPick) {
+  if (hasDaily) {
     const dRows = publicDailyRows(opts.dailyPick.rows ?? [])
     await enrichShareholdingNotes(dRows)
     const out = { generatedAt: ts, regime: opts.dailyPick.regime ?? '', rows: dRows }
     await fs.writeFile(path.join(SNAP_DIR, 'daily-pick.json'), JSON.stringify(out, null, 2))
     files.push('daily-pick.json')
-  } else {
-    await fs.writeFile(path.join(SNAP_DIR, 'daily-pick.json'), JSON.stringify({ generatedAt: ts, regime: '', rows: [] }, null, 2))
-    files.push('daily-pick.json')
   }
 
   // 3. Pre-move
-  const preMoveOut = { generatedAt: ts, rows: publicPreMoveRows(opts.preMoveResults ?? []) }
-  await fs.writeFile(path.join(SNAP_DIR, 'pre-move.json'), JSON.stringify(preMoveOut, null, 2))
-  files.push('pre-move.json')
+  if (hasPre) {
+    const preMoveOut = { generatedAt: ts, rows: publicPreMoveRows(opts.preMoveResults ?? []) }
+    await fs.writeFile(path.join(SNAP_DIR, 'pre-move.json'), JSON.stringify(preMoveOut, null, 2))
+    files.push('pre-move.json')
+  }
 
   // 4. Options
-  const optionsOut = { generatedAt: ts, rows: publicOptions(opts.signals) }
-  await fs.writeFile(path.join(SNAP_DIR, 'options.json'), JSON.stringify(optionsOut, null, 2))
-  files.push('options.json')
+  if (hasSigs) {
+    const optionsOut = { generatedAt: ts, rows: publicOptions(opts.signals) }
+    await fs.writeFile(path.join(SNAP_DIR, 'options.json'), JSON.stringify(optionsOut, null, 2))
+    files.push('options.json')
+  }
 
   // 5. Intraday
-  const intraOut = { generatedAt: ts, rows: publicIntraday(opts.signals) }
-  await fs.writeFile(path.join(SNAP_DIR, 'intraday.json'), JSON.stringify(intraOut, null, 2))
-  files.push('intraday.json')
+  if (hasSigs) {
+    const intraOut = { generatedAt: ts, rows: publicIntraday(opts.signals) }
+    await fs.writeFile(path.join(SNAP_DIR, 'intraday.json'), JSON.stringify(intraOut, null, 2))
+    files.push('intraday.json')
+  }
 
   // 6. Hit log (target accuracy tracker)
-  const hitOut = { generatedAt: ts, entries: publicHitLog(opts.hitLogEntries ?? []) }
-  await fs.writeFile(path.join(SNAP_DIR, 'hit-log.json'), JSON.stringify(hitOut, null, 2))
-  files.push('hit-log.json')
+  if (hasHits) {
+    const hitOut = { generatedAt: ts, entries: publicHitLog(opts.hitLogEntries ?? []) }
+    await fs.writeFile(path.join(SNAP_DIR, 'hit-log.json'), JSON.stringify(hitOut, null, 2))
+    files.push('hit-log.json')
+  }
 
   // 6.5 — Signals History (every signal with full outcome trail for the
   // public Track Record page). Strips internal IDs but keeps symbol, direction,
@@ -1239,16 +1261,41 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
   // 8. Top Trades (curated elite-only stream — conviction ≥ 85 across all sources)
   // 2026-05-10: Promoted to a public tab so the Vercel deploy gets the same
   // single-stream high-signal view as localhost. Dedup by (symbol, direction).
-  const topRows = buildTopTrades({
-    weeklyPick: opts.weeklyPick,
-    dailyPick: opts.dailyPick,
-    minConv: 85,
-    limit: 30,
-  })
-  const topOut = { generatedAt: ts, filterMinConv: 85, totalAvailable: topRows.length, rows: topRows }
-  await fs.writeFile(path.join(SNAP_DIR, 'top-trades.json'), JSON.stringify(topOut, null, 2))
-  files.push('top-trades.json')
+  // 28 Oct 2026 — adaptive floor + old-weekly fallback. The scheduled daily
+  // routine passes weeklyPick=null when getLatestPick() has nothing fresh,
+  // which zeroed top-trades even though old-weekly-pick.json had 15 rows.
+  // Now: if the primary weeklyPick is null, hydrate from old-weekly-pick.json
+  // so the public tab stays non-empty. Also adaptive conv floor: if 0 rows
+  // at 85, retry at 75, then 70 (never below 70 — that's the quality bar).
+  let weeklyForTop = opts.weeklyPick
+  if (!weeklyForTop) {
+    try {
+      const raw = await fs.readFile(path.join(SNAP_DIR, 'old-weekly-pick.json'), 'utf8')
+      const parsed = JSON.parse(raw)
+      if (parsed?.rows?.length) weeklyForTop = { rows: parsed.rows }
+    } catch { /* ignore */ }
+  }
+  const topFloors = [85, 75, 70]
+  let topRows: any[] = []
+  let usedFloor = 85
+  for (const floor of topFloors) {
+    topRows = buildTopTrades({ weeklyPick: weeklyForTop, dailyPick: opts.dailyPick, minConv: floor, limit: 30 })
+    if (topRows.length) { usedFloor = floor; break }
+  }
+  // No-stomp: only overwrite if we have rows OR the existing file is empty too.
+  let shouldWriteTop = topRows.length > 0
+  if (!shouldWriteTop) {
+    try {
+      const prev = JSON.parse(await fs.readFile(path.join(SNAP_DIR, 'top-trades.json'), 'utf8'))
+      if (!(prev?.rows?.length)) shouldWriteTop = true
+    } catch { shouldWriteTop = true }
+  }
+  if (shouldWriteTop) {
+    const topOut = { generatedAt: ts, filterMinConv: usedFloor, totalAvailable: topRows.length, rows: topRows }
+    await fs.writeFile(path.join(SNAP_DIR, 'top-trades.json'), JSON.stringify(topOut, null, 2))
+    files.push('top-trades.json')
+  }
 
-  log.ok('PUBLIC-SNAP', `Wrote ${files.length} files: ${publicWeeklyRows(opts.weeklyPick?.rows ?? []).length} weekly · ${publicDailyRows(opts.dailyPick?.rows ?? []).length} daily · ${preMoveOut.rows.length} premove · ${optionsOut.rows.length} options · ${intraOut.rows.length} intraday · ${hitOut.entries.length} hits`)
+  log.ok('PUBLIC-SNAP', `Wrote ${files.length} files (weekly=${publicWeeklyRows(opts.weeklyPick?.rows ?? []).length}, daily=${hasDaily ? publicDailyRows(opts.dailyPick?.rows ?? []).length : 'skip'}, premove=${hasPre ? (opts.preMoveResults ?? []).length : 'skip'}, options=${hasSigs ? 'ok' : 'skip'}, hits=${hasHits ? 'ok' : 'skip'})`)
   return { files, ts }
 }
