@@ -1275,11 +1275,94 @@ export async function publishPublicSnapshots(opts: PublishOptions): Promise<{ fi
       if (parsed?.rows?.length) weeklyForTop = { rows: parsed.rows }
     } catch { /* ignore */ }
   }
+  // 28 Oct 2026 — fuse MASTER + SUPERSTAR + MONEY-PRINTER into top-trades.
+  // User feedback: "signals very less and very bad" — they were sitting on
+  // /picks (which only shows weekly+daily+top-trades) while MASTER (15 rows,
+  // multi-source 4-engine confluence, scores up to 100) and SUPERSTAR
+  // (8 rows, Rekha-Jhunjhunwala/Vijay-Kedia-held names at conv 90+) were
+  // on separate routes they weren't checking. Union now, dedup by
+  // (symbol, direction), keep highest-conviction row and merge reasons.
+  const extraSources: Array<{ file: string; source: string; map: (r: any) => any }> = [
+    { file: 'master-setups.json', source: 'MASTER', map: (r: any) => ({
+        symbol: r.symbol, direction: r.direction, conviction: r.masterScore ?? 70,
+        ltp: r.ltp, entryDate: r.entryDate ?? '',
+        entryPrice: r.entry, entryPriceLow: r.entry, entryPriceHigh: r.entry,
+        stopLoss: r.stopLoss,
+        target1: r.target1, target1Date: r.target1Date ?? '',
+        target2: r.target2, target2Date: r.target2Date ?? '',
+        target3: r.target3, target3Date: r.target3Date ?? '',
+        noBrainerBet: false,
+        shareholdingNote: '',
+        reasoning: Array.isArray(r.reasoning) ? r.reasoning.slice(0, 3).join(' · ') : (r.reasoning ?? ''),
+        extraTag: `🏆 MASTER · ${r.sourceCount}-engine confluence`,
+      })},
+    { file: 'superstar-picks.json', source: 'SUPERSTAR', map: (r: any) => ({
+        symbol: r.symbol, direction: r.direction, conviction: r.conviction ?? 70,
+        ltp: r.ltp ?? r.price, entryDate: r.entryDate ?? '',
+        entryPrice: r.entry, entryPriceLow: r.entry, entryPriceHigh: r.entry,
+        stopLoss: r.stopLoss,
+        target1: r.target1, target1Date: r.target1Date ?? '',
+        target2: r.target2, target2Date: r.target2Date ?? '',
+        target3: r.target3, target3Date: r.target3Date ?? '',
+        noBrainerBet: false,
+        shareholdingNote: r.flowNote ?? '',
+        reasoning: Array.isArray(r.reasons) ? r.reasons.slice(0, 3).join(' · ') : (r.flowNote ?? ''),
+        extraTag: `⭐ SUPERSTAR${r.investors?.[0]?.investor ? ' · ' + r.investors[0].investor.split('(')[0].trim() : ''}`,
+      })},
+    { file: 'money-printer.json', source: 'MONEY-PRINTER', map: (r: any) => ({
+        symbol: r.symbol, direction: r.direction, conviction: r.score ?? r.conviction ?? 70,
+        ltp: r.ltp, entryDate: r.entryDate ?? '',
+        entryPrice: r.entry, entryPriceLow: r.entry, entryPriceHigh: r.entry,
+        stopLoss: r.stopLoss,
+        target1: r.target1, target1Date: r.target1Date ?? '',
+        target2: r.target2, target2Date: r.target2Date ?? '',
+        target3: r.target3, target3Date: r.target3Date ?? '',
+        noBrainerBet: false,
+        shareholdingNote: '',
+        reasoning: Array.isArray(r.reasoning) ? r.reasoning.slice(0, 3).join(' · ') : (r.reasoning ?? ''),
+        extraTag: '💰 MONEY-PRINTER · 4-pillar',
+      })},
+  ]
+  const extraRows: any[] = []
+  for (const src of extraSources) {
+    try {
+      const raw = await fs.readFile(path.join(SNAP_DIR, src.file), 'utf8')
+      const parsed = JSON.parse(raw)
+      const rows: any[] = parsed?.rows ?? []
+      for (const r of rows) if (r.symbol && r.direction) extraRows.push({ ...src.map(r), _source: src.source })
+    } catch { /* file missing or invalid — skip */ }
+  }
+
   const topFloors = [85, 75, 70]
   let topRows: any[] = []
   let usedFloor = 85
   for (const floor of topFloors) {
-    topRows = buildTopTrades({ weeklyPick: weeklyForTop, dailyPick: opts.dailyPick, minConv: floor, limit: 30 })
+    const base = buildTopTrades({ weeklyPick: weeklyForTop, dailyPick: opts.dailyPick, minConv: floor, limit: 50 })
+    // Merge with extra sources (dedup by symbol|direction, keep highest conv,
+    // append the extra tag so users see which engine the signal came from).
+    const seen = new Map<string, any>()
+    for (const r of base) seen.set(`${r.symbol}|${r.direction}`, r)
+    for (const r of extraRows) {
+      if ((r.conviction ?? 0) < floor) continue
+      const k = `${r.symbol}|${r.direction}`
+      const prev = seen.get(k)
+      if (!prev) { seen.set(k, r); continue }
+      // Same symbol+direction from multiple engines — strongest signal possible.
+      // Keep the higher-conv row, merge the extraTag into reasoning.
+      if ((r.conviction ?? 0) > (prev.conviction ?? 0)) {
+        seen.set(k, { ...r, reasoning: `${r.reasoning} · also ${prev._source ?? 'WEEKLY'}` })
+      } else {
+        prev.reasoning = `${prev.reasoning} · also ${r._source}`
+      }
+    }
+    topRows = Array.from(seen.values())
+      .sort((a, b) => {
+        const an = !!(a.noBrainer ?? a.noBrainerBet)
+        const bn = !!(b.noBrainer ?? b.noBrainerBet)
+        if (an !== bn) return an ? -1 : 1
+        return (b.conviction ?? 0) - (a.conviction ?? 0)
+      })
+      .slice(0, 50)
     if (topRows.length) { usedFloor = floor; break }
   }
   // No-stomp: only overwrite if we have rows OR the existing file is empty too.
