@@ -149,15 +149,16 @@ function Shell() {
             <Route path="/weekly-pick"  element={<PublicWeeklyPickPage />} />
             <Route path="/daily-pick"   element={<PublicDailyPickPage />} />
             <Route path="/intraday"     element={<PublicIntradayPage />} />
-            {/* 26 Aug 2026 — new /desk Command Center goes LIVE as the
-                default landing per user directive. All old routes stay
-                available for bookmarks (each still resolves directly).
-                CRITICAL: /desk route MUST be defined here for PUBLIC_MODE;
-                otherwise the `/` → /desk redirect + `*` catch-all forms
-                an infinite loop and the page renders blank. */}
+            {/* 28 Oct 2026 — ROLLBACK. Per user feedback the /desk Command
+                Center was too complex and the signal count felt low (root
+                cause was the publish zero-stomp bug — fixed in 181e7485 —
+                but UI was flagged as too complex regardless). Default
+                landing is restored to /picks (Top Trades · 5-20% Move ·
+                Weekly · Daily segment hub) so Vercel shows signal-dense
+                tabs on arrival. /desk/* stays mounted for bookmarks. */}
             <Route path="/desk/*" element={<DeskApp />} />
-            <Route path="/" element={<Navigate to="/desk" replace />} />
-            <Route path="*" element={<Navigate to="/desk" replace />} />
+            <Route path="/" element={<Navigate to="/picks" replace />} />
+            <Route path="*" element={<Navigate to="/picks" replace />} />
           </Routes>
         ) : (
         <Routes>

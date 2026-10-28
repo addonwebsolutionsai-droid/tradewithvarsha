@@ -40,7 +40,15 @@ function targetWinRateFor(strategy: string): number {
 
 // 2026-06-24: bumped from 10 → 30. n=10 has ±15% standard error — system
 // was tightening on noise. n=30 gives ±9%, decisions become statistical.
-const MIN_TRADES_FOR_DECISION = 30
+// 28 Oct 2026: made ADAPTIVE. The strict n=30 bar meant that during
+// low-emission periods (which this exact strangle-loop causes!) the
+// autotuner never fired — strategies stayed stuck at whatever ceilings
+// the earlier noise-tightening left them at. New rule: n=30 for TIGHTENING
+// decisions (which lower emission) but n=15 for RELAXING decisions (which
+// raise emission). Avoids the deadlock where "fewer signals" prevented
+// the autotuner from relaxing.
+const MIN_TRADES_FOR_TIGHTEN = 30
+const MIN_TRADES_FOR_RELAX = 15
 const MAX_CONFLUENCE_BUMP = 6             // absolute ceiling on confluence floor
 const MAX_ADX_BUMP = 30
 
@@ -92,15 +100,18 @@ export async function runSelfImprove(): Promise<AutoTune> {
   const decisions: string[] = []
 
   for (const [strategy, s] of Object.entries(perf.byStrategy)) {
-    if (s.trades < MIN_TRADES_FOR_DECISION) {
-      decisions.push(`${strategy}: only ${s.trades} closed — need ${MIN_TRADES_FOR_DECISION}, no change`)
-      continue
-    }
     const cur = tune.overrides[strategy] ??= {}
     const winRate = s.winRatePct
     const target = targetWinRateFor(strategy)
+    const under = winRate < target - 5
+    const over  = winRate >= target + 5
+    const needed = under ? MIN_TRADES_FOR_TIGHTEN : over ? MIN_TRADES_FOR_RELAX : MIN_TRADES_FOR_TIGHTEN
+    if (s.trades < needed) {
+      decisions.push(`${strategy}: only ${s.trades} closed — need ${needed}, no change`)
+      continue
+    }
 
-    if (winRate < target - 5) {
+    if (under) {
       // Underperforming → tighten
       const oldConf = cur.minConfluence ?? defaultConfluence(strategy)
       const newConf = Math.min(MAX_CONFLUENCE_BUMP, oldConf + 1)
@@ -121,8 +132,8 @@ export async function runSelfImprove(): Promise<AutoTune> {
         })
         decisions.push(`${strategy}: tightened minConfluence ${oldConf}→${newConf} (wr ${winRate}% < ${target}%)`)
       }
-    } else if (winRate >= target + 5) {
-      // Outperforming → safe to relax (we already passed the n≥30 sample gate)
+    } else if (over) {
+      // Outperforming → safe to relax (relax uses the lower n=15 gate)
       // Floor of 2 is the absolute sanity bound (we never go below that).
       const oldConf = cur.minConfluence ?? defaultConfluence(strategy)
       const newConf = Math.max(2, oldConf - 1)
