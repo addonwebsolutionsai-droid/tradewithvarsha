@@ -1,35 +1,38 @@
 {
-  "generatedAt": "2026-10-28T18:43:44.161Z",
+  "generatedAt": "2026-10-29T09:06:24.371Z",
   "status": "OK_FROM_BIAS_COMPOSER",
-  "spot": 22749.75,
+  "spot": 22935.19921875,
   "direction": "NEUTRAL",
   "confidence": "LOW",
-  "netScore": 0,
-  "bullScore": 0,
-  "bearScore": 0,
+  "netScore": 5,
+  "bullScore": 15,
+  "bearScore": 10,
   "sessionState": "MARKET_CLOSED",
   "tradePlan": {
-    "action": "BUY NIFTY 22700 PE",
-    "instrument": "NIFTY 22700 PE",
-    "entry": 180.45,
-    "stopLoss": 126.31,
-    "target1": 252.63,
-    "target2": 324.81,
-    "spotEntry": 22749.75,
-    "spotSL": 22977.25,
-    "spotT1": 22522.25,
-    "spotT2": 22294.76,
+    "action": "BUY NIFTY 22900 PE",
+    "instrument": "NIFTY 22900 PE",
+    "entry": 181.15,
+    "stopLoss": 126.8,
+    "target1": 253.61,
+    "target2": 326.07,
+    "spotEntry": 22935.19921875,
+    "spotSL": 23164.55,
+    "spotT1": 22705.85,
+    "spotT2": 22476.5,
     "expectedMoveDays": 5,
-    "reason": "NEUTRAL composite ()"
+    "reason": "NEUTRAL composite (OI-BUILDUP BEAR · LONG-HORIZON BULL)"
   },
   "reasoning": {
-    "OI-BUILDUP": "NEUTRAL · PCR 1.05 · max-pain 22700 (-0.22%) · flows 3↑ 3↓",
-    "LONG-HORIZON": "NEUTRAL · nearest ↑ 23070 (+320) · ↓ 22183 (-567) · 3↑ 2↓ waypoints",
-    "TREND-5D": "NEUTRAL · -0.49%"
+    "OI-BUILDUP": "BEAR · PCR 1.05 · max-pain 22700 (-1.03%) · flows 3↑ 3↓",
+    "LONG-HORIZON": "BULL · nearest ↑ 23070 (+135) · ↓ 22183 (-753) · 3↑ 2↓ waypoints",
+    "TREND-5D": "NEUTRAL · 1.15%"
   },
   "smartMoneyLevel": 22700,
   "smartMoneyDirection": "NEUTRAL",
-  "playbookDetected": [],
+  "playbookDetected": [
+    "OI-BUILDUP-BEAR",
+    "LONG-HORIZON-BULL"
+  ],
   "composedFallback": true,
   "note": "Composed by niftyBiasComposer.ts — foresight engine returned no data (NSE option-chain likely 404 from GH IPs). This synthesis uses OI-buildup + long-horizon + trend so /nifty-outlook renders a live call."
 }
