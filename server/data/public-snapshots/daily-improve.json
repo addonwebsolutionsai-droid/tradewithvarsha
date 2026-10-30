@@ -1,17 +1,27 @@
 {
-  "generatedAt": "2026-10-30T08:51:49.733Z",
+  "generatedAt": "2026-10-30T13:18:48.056Z",
   "windowDays": 7,
-  "bookWinRate": 45.83,
-  "bookRealisedPnl": 1740901.85,
+  "bookWinRate": 45.45,
+  "bookRealisedPnl": 1733012.74,
   "perSourceStats": [
+    {
+      "source": "WEEKLY-PICK",
+      "trades": 3,
+      "wins": 2,
+      "losses": 1,
+      "winRatePct": 66.7,
+      "avgReturnPct": 4.96,
+      "worstSymbol": "RRKABEL",
+      "repeatedLosses": 1
+    },
     {
       "source": "VP+FIB",
       "trades": 3,
       "wins": 2,
       "losses": 1,
       "winRatePct": 66.7,
-      "avgReturnPct": 0.22,
-      "worstSymbol": "INDOCO",
+      "avgReturnPct": 0.7,
+      "worstSymbol": "REPL",
       "repeatedLosses": 1
     },
     {
@@ -33,22 +43,21 @@
       "avgReturnPct": 3.35,
       "worstSymbol": null,
       "repeatedLosses": 0
-    },
-    {
-      "source": "WEEKLY-PICK",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "winRatePct": 100,
-      "avgReturnPct": 14.55,
-      "worstSymbol": null,
-      "repeatedLosses": 0
     }
   ],
-  "masterEmitted": 15,
+  "masterEmitted": 1,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
+    {
+      "type": "INFO",
+      "target": "WEEKLY-PICK",
+      "metric": "sample-size",
+      "from": 3,
+      "to": 5,
+      "reason": "WEEKLY-PICK: only 3 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
     {
       "type": "INFO",
       "target": "VP+FIB",
@@ -78,29 +87,11 @@
     },
     {
       "type": "INFO",
-      "target": "WEEKLY-PICK",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "WEEKLY-PICK: only 1 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
-      "to": "26%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 188 candidates (26% of filtered)",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "MASTER",
-      "metric": "pillar-kill",
-      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55)",
-      "to": "7%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 49 candidates (7% of filtered)",
+      "to": "23%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 161 candidates (23% of filtered)",
       "applied": false
     },
     {
@@ -108,10 +99,19 @@
       "target": "MASTER",
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
-      "to": "6%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 43 candidates (6% of filtered)",
+      "to": "7%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 51 candidates (7% of filtered)",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "MASTER",
+      "metric": "pillar-kill",
+      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55)",
+      "to": "5%",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 34 candidates (5% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-10-30\nBook WR 45.83% · realised ₹1740902 · book ₹2741199\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  VP+FIB               · trades   3 · WR  67% · avgRet +0.22%\n  ICHIMOKU             · trades   2 · WR 100% · avgRet +1161.72%\n  STOCK-FNO-VP         · trades   1 · WR 100% · avgRet +3.35%\n  WEEKLY-PICK          · trades   1 · WR 100% · avgRet +14.55%\n\nImprovements applied: 0 · flagged for review: 7"
+  "humanExplain": "Daily improvisation · 2026-10-30\nBook WR 45.45% · realised ₹1733013 · book ₹2721673\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   3 · WR  67% · avgRet +4.96%\n  VP+FIB               · trades   3 · WR  67% · avgRet +0.70%\n  ICHIMOKU             · trades   2 · WR 100% · avgRet +1161.72%\n  STOCK-FNO-VP         · trades   1 · WR 100% · avgRet +3.35%\n\nImprovements applied: 0 · flagged for review: 7"
 }
