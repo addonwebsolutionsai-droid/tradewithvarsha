@@ -1,7 +1,7 @@
 {
   "version": 1,
   "startedAt": "2026-07-25",
-  "lastUpdatedAt": "2026-11-03",
+  "lastUpdatedAt": "2026-11-04",
   "startingCapital": 1000000,
   "trades": [
     {
@@ -2246,9 +2246,9 @@
       ],
       "daysHeld": 30,
       "totalRealisedPnl": 993.8599023437512,
-      "unrealisedPnl": -162.77000000000044,
-      "totalPnl": 831.0899023437507,
-      "returnPct": 4.853711767101647,
+      "unrealisedPnl": -157.96921875000044,
+      "totalPnl": 835.8906835937507,
+      "returnPct": 4.88174917722863,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 4 @ ₹1174.10 (+9.1%) · trailed SL to entry ₹1076.31",
         "🔒 T1 hit — SL trailed to breakeven ₹1076.31 (was ₹1076.31)",
@@ -2700,9 +2700,9 @@
       ],
       "daysHeld": 30,
       "totalRealisedPnl": 1701.7600000000004,
-      "unrealisedPnl": 1067.9501708984317,
-      "totalPnl": 2769.710170898432,
-      "returnPct": 6.281212555252045,
+      "unrealisedPnl": 938.3521484374943,
+      "totalPnl": 2640.112148437495,
+      "returnPct": 5.987307173248332,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 47 @ ₹255.50 (+5.3%) · trailed SL to entry ₹269.70",
         "🔒 T1 hit — SL trailed to breakeven ₹269.70 (was ₹269.70)",
@@ -5295,11 +5295,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 19,
+      "daysHeld": 20,
       "totalRealisedPnl": 201.4000000000001,
-      "unrealisedPnl": 306.9000000000001,
-      "totalPnl": 508.3000000000002,
-      "returnPct": 13.010648100747419,
+      "unrealisedPnl": 316.4000000000001,
+      "totalPnl": 517.8000000000002,
+      "returnPct": 13.253813863008093,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 1 @ ₹1752.00 (+10.3%) · trailed SL to entry ₹1953.40",
         "🔒 T1 hit — SL trailed to breakeven ₹1953.40 (was ₹1953.40)",
@@ -5456,7 +5456,7 @@
       "entryTime": "15:21",
       "entryPrice": 788.2120689655173,
       "qty": 58,
-      "remainingQty": 58,
+      "remainingQty": 0,
       "positionValue": 45716.3,
       "riskAmount": 2052.4400000000014,
       "stopLoss": 705.9642961774554,
@@ -5464,7 +5464,7 @@
       "target2": 909.91,
       "target3": 990.26,
       "entryReason": "[VP] Close above VAH ₹779.65 — value-area breakout continuation · [FIB] LTP at 61.8% golden-zone retracement (₹794.45) of the last swing ₹732.30→₹895.00 · [OB] bullish OB zone ₹815.8–818.5 · [LIQ] bullish sweep — wick 3.1% below 775.0 then reclaimed · [VOLUME] 5-day vol 3.1× the 20-day avg — full accumulation",
-      "status": "T1_HIT",
+      "status": "SL_HIT",
       "exits": [
         {
           "date": "2026-10-05",
@@ -5479,22 +5479,30 @@
           "qty": -26,
           "reason": "MANUAL",
           "pnl": 0
+        },
+        {
+          "date": "2026-11-02",
+          "price": 705.9642961774554,
+          "qty": 58,
+          "reason": "SL_HIT",
+          "pnl": -4770.370821707595
         }
       ],
-      "daysHeld": 19,
-      "totalRealisedPnl": 1205.1999999999998,
-      "unrealisedPnl": -2799.1992919921936,
-      "totalPnl": -1593.9992919921938,
-      "returnPct": -3.486719817640959,
+      "daysHeld": 20,
+      "totalRealisedPnl": -3565.1708217075948,
+      "unrealisedPnl": 0,
+      "totalPnl": -3565.1708217075948,
+      "returnPct": -7.798467552508831,
       "trapNotes": [
         "🔒 T1 hit — SL trailed to breakeven ₹789.40 (was ₹749.93)",
-        "🎯 AVERAGED (conf 75): added 26 @ ₹786.75, new avg ₹788.21, new SL ₹705.96 · trap 75"
+        "🎯 AVERAGED (conf 75): added 26 @ ₹786.75, new avg ₹788.21, new SL ₹705.96 · trap 75",
+        "🛑 EXIT (conf 95) · trap 40 · hard invalidation breached"
       ],
       "slVerdict": {
-        "action": "AVERAGE",
-        "confidence": 75,
-        "humanExplain": "AVERAGE IN · combined score 75 (trap 75 + institutional 0). Adding 50% at hunted price and widening SL to hard invalidation.\n\nSymbol · SVLL   Bar · ₹786.75–859.95   SL · ₹789.40\n\nScore breakdown:\n  +  20  Intraday reclaim  —  close ₹822.20 back on right side of SL ₹789.40\n  +  15  20-EMA trend  —  close ≥ 20-EMA ₹817.74 — trend intact\n  +  10  Range sanity  —  bar range 1.8× ATR — not a panic flush\n     0  Bar-close strength  —  only 2/5 bars showed defence\n  +  20  ≤ 8% from entry  —  still within 8% of original entry ₹789.40\n  +  10  Volume sanity  —  0.1× 20d avg — not a flush\n     0  Shareholding  —  shareholding data unavailable — decision based on price + smart-money only",
-        "at": "2026-10-05"
+        "action": "EXIT",
+        "confidence": 95,
+        "humanExplain": "EXIT · hard invalidation floor breached at ₹705.96. Case is broken — no averaging.\n\nSymbol · SVLL   Bar · ₹656.20–792.40   SL · ₹705.96\n\nScore breakdown:\n  -100  Hard invalidation  —  bar breached ₹705.96 floor\n  +  20  Intraday reclaim  —  close ₹750.90 back on right side of SL ₹705.96\n     0  20-EMA trend  —  close broke below 20-EMA — trend fading\n  +  10  Range sanity  —  bar range 2.3× ATR — not a panic flush\n     0  Bar-close strength  —  only 1/5 bars showed defence\n     0  ≤ 8% from entry  —  beyond 8% from entry — case weakening\n  +  10  Volume sanity  —  0.5× 20d avg — not a flush\n     0  Shareholding  —  shareholding data unavailable — decision based on price + smart-money only",
+        "at": "2026-11-02"
       },
       "originalEntry": 789.4,
       "hardInvalidation": 705.9642961774554,
@@ -5684,9 +5692,9 @@
       ],
       "daysHeld": 20,
       "totalRealisedPnl": 26.389999999999986,
-      "unrealisedPnl": 23.16999938964841,
-      "totalPnl": 49.5599993896484,
-      "returnPct": 15.99483598257985,
+      "unrealisedPnl": 23.169988403320303,
+      "totalPnl": 49.55998840332029,
+      "returnPct": 15.99483243688739,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 1 @ ₹170.57 (+8.5%) · trailed SL to entry ₹157.24",
         "🔒 T1 hit — SL trailed to breakeven ₹157.24 (was ₹157.24)",
@@ -6276,11 +6284,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 10,
+      "daysHeld": 11,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": -764.0492187500058,
-      "totalPnl": -764.0492187500058,
-      "returnPct": -1.117108604930476,
+      "unrealisedPnl": -1927.1527343750058,
+      "totalPnl": -1927.1527343750058,
+      "returnPct": -2.817670445508323,
       "slVerdict": {
         "action": "AVERAGE",
         "confidence": 68,
@@ -6488,11 +6496,11 @@
       "entryReason": "Ichimoku SELL · 5/5 signals · 1D ·",
       "status": "OPEN",
       "exits": [],
-      "daysHeld": 9,
+      "daysHeld": 10,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": 510,
-      "totalPnl": 510,
-      "returnPct": 0.8870336551004436
+      "unrealisedPnl": -865,
+      "totalPnl": -865,
+      "returnPct": -1.504478650317419
     },
     {
       "id": "MARUTI-FUT-HEDGE-11900CE-2026-10-16-LONG",
@@ -6698,11 +6706,11 @@
       "entryReason": "Bullish Engulfing",
       "status": "OPEN",
       "exits": [],
-      "daysHeld": 7,
+      "daysHeld": 8,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": 142.40078124999854,
-      "totalPnl": 142.40078124999854,
-      "returnPct": 0.46380993423966377
+      "unrealisedPnl": 496.00039062499854,
+      "totalPnl": 496.00039062499854,
+      "returnPct": 1.6155101575935384
     },
     {
       "id": "CRUDE-2026-10-21-LONG",
@@ -6819,11 +6827,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 6,
+      "daysHeld": 7,
       "totalRealisedPnl": 722.9900000000004,
-      "unrealisedPnl": 1048.949584960938,
-      "totalPnl": 1771.9395849609382,
-      "returnPct": 11.822388477188005,
+      "unrealisedPnl": 2652.050415039063,
+      "totalPnl": 3375.040415039063,
+      "returnPct": 22.51828406084243,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 4 @ ₹933.00 (+5.1%) · trailed SL to entry ₹888.00",
         "🔒 T1 hit — SL trailed to breakeven ₹888.00 (was ₹888.00)",
@@ -6890,11 +6898,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 5,
+      "daysHeld": 6,
       "totalRealisedPnl": 628.6599999999999,
-      "unrealisedPnl": -76.59985351562477,
-      "totalPnl": 552.0601464843751,
-      "returnPct": 11.116797150309607,
+      "unrealisedPnl": -164.20007324218727,
+      "totalPnl": 464.4599267578126,
+      "returnPct": 9.352797558554423,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 2 @ ₹916.75 (+9.5%) · trailed SL to entry ₹837.00",
         "🔒 T1 hit — SL trailed to breakeven ₹837.00 (was ₹837.00)",
@@ -7125,23 +7133,51 @@
       "score": 100,
       "entryDate": "2026-10-26",
       "entryTime": "13:47",
-      "entryPrice": 2307,
-      "qty": 29,
-      "remainingQty": 29,
-      "positionValue": 66903,
+      "entryPrice": 2328.195348837209,
+      "qty": 43,
+      "remainingQty": 0,
+      "positionValue": 100112.4,
       "riskAmount": 1755.9500000000053,
-      "stopLoss": 2367.55,
+      "stopLoss": 2423.4714285714285,
       "target1": 2216.17,
       "target2": 2155.62,
       "target3": 2064.8,
       "entryReason": "Ichimoku SELL · 5/5 signals · 1D ·",
-      "status": "OPEN",
-      "exits": [],
-      "daysHeld": 4,
-      "totalRealisedPnl": 0,
-      "unrealisedPnl": -377,
-      "totalPnl": -377,
-      "returnPct": -0.5635023840485479
+      "status": "SL_HIT",
+      "exits": [
+        {
+          "date": "2026-11-02",
+          "price": 2372.1,
+          "qty": -14,
+          "reason": "MANUAL",
+          "pnl": 0
+        },
+        {
+          "date": "2026-11-03",
+          "price": 2423.4714285714285,
+          "qty": 43,
+          "reason": "SL_HIT",
+          "pnl": -4096.871428571432
+        }
+      ],
+      "daysHeld": 6,
+      "totalRealisedPnl": -4096.871428571432,
+      "unrealisedPnl": 0,
+      "totalPnl": -4096.871428571432,
+      "returnPct": -4.092271715163589,
+      "slVerdict": {
+        "action": "EXIT",
+        "confidence": 95,
+        "humanExplain": "EXIT · hard invalidation floor breached at ₹2423.47. Case is broken — no averaging.\n\nSymbol · ASIANPAINT   Bar · ₹2362.50–2443.40   SL · ₹2423.47\n\nScore breakdown:\n  -100  Hard invalidation  —  bar breached ₹2423.47 floor\n     0  Intraday reclaim  —  no reclaim — bar closed on wrong side of SL\n     0  20-EMA trend  —  close broke above 20-EMA — trend fading\n  +  10  Range sanity  —  bar range 1.4× ATR — not a panic flush\n     0  Bar-close strength  —  only 0/5 bars showed defence\n  +  20  ≤ 8% from entry  —  still within 8% of original entry ₹2307.00\n  +  10  Volume sanity  —  2.4× 20d avg — not a flush\n     0  Shareholding  —  shareholding data unavailable — decision based on price + smart-money only",
+        "at": "2026-11-03"
+      },
+      "originalEntry": 2307,
+      "hardInvalidation": 2423.4714285714285,
+      "avgInCount": 1,
+      "trapNotes": [
+        "🎯 AVERAGED (conf 75): added 14 @ ₹2372.10, new avg ₹2328.20, new SL ₹2423.47 · trap 75",
+        "🛑 EXIT (conf 95) · trap 40 · hard invalidation breached"
+      ]
     },
     {
       "id": "ASIANPAINT-FUT-HEDGE-2400CE-2026-10-26-LONG",
@@ -7193,11 +7229,11 @@
       "entryReason": "Ichimoku SELL · 5/5 signals · 1D ·",
       "status": "OPEN",
       "exits": [],
-      "daysHeld": 3,
+      "daysHeld": 4,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": -2216.248168945316,
-      "totalPnl": -2216.248168945316,
-      "returnPct": -3.248856641848997
+      "unrealisedPnl": -3738.751831054691,
+      "totalPnl": -3738.751831054691,
+      "returnPct": -5.480734914415101
     },
     {
       "id": "BAJFINANCE-FUT-HEDGE-950CE-2026-10-27-LONG",
@@ -7264,7 +7300,7 @@
           "pnl": 3577.8499999999995
         }
       ],
-      "daysHeld": 3,
+      "daysHeld": 4,
       "totalRealisedPnl": 5221.849999999999,
       "unrealisedPnl": -1016.3997650146484,
       "totalPnl": 4205.450234985351,
@@ -7279,13 +7315,15 @@
         "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars",
         "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars",
         "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars",
-        "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars"
+        "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars",
+        "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars",
+        "⏸ HELD through SL touch (conf 55) · trap 30 · smart-money=[none] · waiting for next 2 bars"
       ],
       "slVerdict": {
         "action": "HOLD",
         "confidence": 55,
-        "humanExplain": "HOLD (partial confidence 40). Structural case is intact enough not to panic sell, but not strong enough to add. Watching next 2 bars.\n\nSymbol · RALEGRA   Bar · ₹52.35–56.01   SL · ₹55.00\n\nScore breakdown:\n     0  Intraday reclaim  —  no reclaim — bar closed on wrong side of SL\n     0  20-EMA trend  —  close broke below 20-EMA — trend fading\n  +  10  Range sanity  —  bar range 0.7× ATR — not a panic flush\n     0  Bar-close strength  —  only 0/5 bars showed defence\n  +  20  ≤ 8% from entry  —  still within 8% of original entry ₹55.00\n  +  10  Volume sanity  —  0.2× 20d avg — not a flush\n     0  Shareholding  —  shareholding data unavailable — decision based on price + smart-money only",
-        "at": "2026-10-30"
+        "humanExplain": "HOLD (partial confidence 30). Structural case is intact enough not to panic sell, but not strong enough to add. Watching next 2 bars.\n\nSymbol · RALEGRA   Bar · ₹52.36–52.36   SL · ₹55.00\n\nScore breakdown:\n     0  Intraday reclaim  —  no reclaim — bar closed on wrong side of SL\n     0  20-EMA trend  —  close broke below 20-EMA — trend fading\n  +  10  Range sanity  —  bar range 0.0× ATR — not a panic flush\n     0  Bar-close strength  —  only 0/5 bars showed defence\n  +  20  ≤ 8% from entry  —  still within 8% of original entry ₹55.00\n     0  Shareholding  —  shareholding data unavailable — decision based on price + smart-money only",
+        "at": "2026-11-02"
       }
     },
     {
@@ -7387,11 +7425,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 2,
+      "daysHeld": 3,
       "totalRealisedPnl": 487.66000000000014,
-      "unrealisedPnl": 2491.3684914398186,
-      "totalPnl": 2979.028491439819,
-      "returnPct": 6.83581374877998,
+      "unrealisedPnl": 1898.1806285667412,
+      "totalPnl": 2385.8406285667415,
+      "returnPct": 5.474658002774551,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 1318 @ ₹7.01 (+5.6%) · trailed SL to entry ₹6.64",
         "🎯 AVERAGED (conf 73): added 2636 @ ₹6.57, new avg ₹6.61, new SL ₹5.22 · trap 70"
@@ -7436,11 +7474,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 2,
+      "daysHeld": 3,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": -8576.476455078122,
-      "totalPnl": -8576.476455078122,
-      "returnPct": -2.4473775862909846,
+      "unrealisedPnl": -7792.406203613277,
+      "totalPnl": -7792.406203613277,
+      "returnPct": -2.2236358236261538,
       "slVerdict": {
         "action": "AVERAGE",
         "confidence": 77,
@@ -7478,9 +7516,9 @@
       "exits": [],
       "daysHeld": 0,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": 44071.02627410887,
-      "totalPnl": 44071.02627410887,
-      "returnPct": 26.979408875210055
+      "unrealisedPnl": 40407.7737258911,
+      "totalPnl": 40407.7737258911,
+      "returnPct": 24.73683826437803
     },
     {
       "id": "NUVAMA-2026-11-03-LONG",
@@ -7506,32 +7544,32 @@
       "exits": [],
       "daysHeld": 0,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": 0,
-      "totalPnl": 0,
-      "returnPct": 0
+      "unrealisedPnl": -0.001977539055133093,
+      "totalPnl": -0.001977539055133093,
+      "returnPct": -0.0000013525047038419217
     }
   ],
   "ledger": {
     "startingCapital": 1000000,
-    "currentCash": 1350884.64,
-    "openPositionsValue": 1415801.13,
-    "totalRealisedPnl": 1733012.74,
-    "totalUnrealisedPnl": 33673.02,
-    "bookValue": 2766685.77,
-    "totalReturnPct": 176.67
+    "currentCash": 1454636.69,
+    "openPositionsValue": 1300578.85,
+    "totalRealisedPnl": 1724145.5,
+    "totalUnrealisedPnl": 31070.05,
+    "bookValue": 2755215.55,
+    "totalReturnPct": 175.52
   },
   "performance": {
     "totalTrades": 132,
-    "openTrades": 33,
-    "closedTrades": 99,
+    "openTrades": 31,
+    "closedTrades": 101,
     "wins": 45,
-    "losses": 54,
-    "winRatePct": 45.45,
+    "losses": 56,
+    "winRatePct": 44.55,
     "avgWinPct": 60.42,
-    "avgLossPct": -5.06,
+    "avgLossPct": -5.09,
     "biggestWinInr": 1597737.12,
     "biggestLossInr": -9954.7,
-    "avgDaysHeld": 8.6
+    "avgDaysHeld": 8.68
   },
   "rules": {
     "tierAlloc": {
@@ -7560,8 +7598,8 @@
     },
     "timeStopBars": 15
   },
-  "generatedAt": "2026-11-02T22:20:26.128Z",
-  "daysRunning": 101,
+  "generatedAt": "2026-11-03T20:11:45.011Z",
+  "daysRunning": 102,
   "allTradesCount": 132,
   "openTrades": [
     {
@@ -7780,9 +7818,9 @@
       ],
       "daysHeld": 30,
       "totalRealisedPnl": 993.8599023437512,
-      "unrealisedPnl": -162.77000000000044,
-      "totalPnl": 831.0899023437507,
-      "returnPct": 4.853711767101647,
+      "unrealisedPnl": -157.96921875000044,
+      "totalPnl": 835.8906835937507,
+      "returnPct": 4.88174917722863,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 4 @ ₹1174.10 (+9.1%) · trailed SL to entry ₹1076.31",
         "🔒 T1 hit — SL trailed to breakeven ₹1076.31 (was ₹1076.31)",
@@ -7899,9 +7937,9 @@
       ],
       "daysHeld": 30,
       "totalRealisedPnl": 1701.7600000000004,
-      "unrealisedPnl": 1067.9501708984317,
-      "totalPnl": 2769.710170898432,
-      "returnPct": 6.281212555252045,
+      "unrealisedPnl": 938.3521484374943,
+      "totalPnl": 2640.112148437495,
+      "returnPct": 5.987307173248332,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 47 @ ₹255.50 (+5.3%) · trailed SL to entry ₹269.70",
         "🔒 T1 hit — SL trailed to breakeven ₹269.70 (was ₹269.70)",
@@ -8123,11 +8161,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 19,
+      "daysHeld": 20,
       "totalRealisedPnl": 201.4000000000001,
-      "unrealisedPnl": 306.9000000000001,
-      "totalPnl": 508.3000000000002,
-      "returnPct": 13.010648100747419,
+      "unrealisedPnl": 316.4000000000001,
+      "totalPnl": 517.8000000000002,
+      "returnPct": 13.253813863008093,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 1 @ ₹1752.00 (+10.3%) · trailed SL to entry ₹1953.40",
         "🔒 T1 hit — SL trailed to breakeven ₹1953.40 (was ₹1953.40)",
@@ -8161,62 +8199,6 @@
       "unrealisedPnl": 0,
       "totalPnl": 0,
       "returnPct": 0
-    },
-    {
-      "id": "SVLL-2026-10-01-LONG",
-      "symbol": "SVLL",
-      "segment": "CASH",
-      "direction": "LONG",
-      "source": "VP+FIB",
-      "tier": "STRONG",
-      "score": 85,
-      "entryDate": "2026-10-01",
-      "entryTime": "15:21",
-      "entryPrice": 788.2120689655173,
-      "qty": 58,
-      "remainingQty": 58,
-      "positionValue": 45716.3,
-      "riskAmount": 2052.4400000000014,
-      "stopLoss": 705.9642961774554,
-      "target1": 849.66,
-      "target2": 909.91,
-      "target3": 990.26,
-      "entryReason": "[VP] Close above VAH ₹779.65 — value-area breakout continuation · [FIB] LTP at 61.8% golden-zone retracement (₹794.45) of the last swing ₹732.30→₹895.00 · [OB] bullish OB zone ₹815.8–818.5 · [LIQ] bullish sweep — wick 3.1% below 775.0 then reclaimed · [VOLUME] 5-day vol 3.1× the 20-day avg — full accumulation",
-      "status": "T1_HIT",
-      "exits": [
-        {
-          "date": "2026-10-05",
-          "price": 849.66,
-          "qty": 20,
-          "reason": "T1_HIT",
-          "pnl": 1205.1999999999998
-        },
-        {
-          "date": "2026-10-05",
-          "price": 786.75,
-          "qty": -26,
-          "reason": "MANUAL",
-          "pnl": 0
-        }
-      ],
-      "daysHeld": 19,
-      "totalRealisedPnl": 1205.1999999999998,
-      "unrealisedPnl": -2799.1992919921936,
-      "totalPnl": -1593.9992919921938,
-      "returnPct": -3.486719817640959,
-      "trapNotes": [
-        "🔒 T1 hit — SL trailed to breakeven ₹789.40 (was ₹749.93)",
-        "🎯 AVERAGED (conf 75): added 26 @ ₹786.75, new avg ₹788.21, new SL ₹705.96 · trap 75"
-      ],
-      "slVerdict": {
-        "action": "AVERAGE",
-        "confidence": 75,
-        "humanExplain": "AVERAGE IN · combined score 75 (trap 75 + institutional 0). Adding 50% at hunted price and widening SL to hard invalidation.\n\nSymbol · SVLL   Bar · ₹786.75–859.95   SL · ₹789.40\n\nScore breakdown:\n  +  20  Intraday reclaim  —  close ₹822.20 back on right side of SL ₹789.40\n  +  15  20-EMA trend  —  close ≥ 20-EMA ₹817.74 — trend intact\n  +  10  Range sanity  —  bar range 1.8× ATR — not a panic flush\n     0  Bar-close strength  —  only 2/5 bars showed defence\n  +  20  ≤ 8% from entry  —  still within 8% of original entry ₹789.40\n  +  10  Volume sanity  —  0.1× 20d avg — not a flush\n     0  Shareholding  —  shareholding data unavailable — decision based on price + smart-money only",
-        "at": "2026-10-05"
-      },
-      "originalEntry": 789.4,
-      "hardInvalidation": 705.9642961774554,
-      "avgInCount": 1
     },
     {
       "id": "GYFTR-2026-10-01-LONG",
@@ -8264,9 +8246,9 @@
       ],
       "daysHeld": 20,
       "totalRealisedPnl": 26.389999999999986,
-      "unrealisedPnl": 23.16999938964841,
-      "totalPnl": 49.5599993896484,
-      "returnPct": 15.99483598257985,
+      "unrealisedPnl": 23.169988403320303,
+      "totalPnl": 49.55998840332029,
+      "returnPct": 15.99483243688739,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 1 @ ₹170.57 (+8.5%) · trailed SL to entry ₹157.24",
         "🔒 T1 hit — SL trailed to breakeven ₹157.24 (was ₹157.24)",
@@ -8339,11 +8321,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 10,
+      "daysHeld": 11,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": -764.0492187500058,
-      "totalPnl": -764.0492187500058,
-      "returnPct": -1.117108604930476,
+      "unrealisedPnl": -1927.1527343750058,
+      "totalPnl": -1927.1527343750058,
+      "returnPct": -2.817670445508323,
       "slVerdict": {
         "action": "AVERAGE",
         "confidence": 68,
@@ -8423,11 +8405,11 @@
       "entryReason": "Ichimoku SELL · 5/5 signals · 1D ·",
       "status": "OPEN",
       "exits": [],
-      "daysHeld": 9,
+      "daysHeld": 10,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": 510,
-      "totalPnl": 510,
-      "returnPct": 0.8870336551004436
+      "unrealisedPnl": -865,
+      "totalPnl": -865,
+      "returnPct": -1.504478650317419
     },
     {
       "id": "MARUTI-FUT-HEDGE-11900CE-2026-10-16-LONG",
@@ -8479,11 +8461,11 @@
       "entryReason": "Bullish Engulfing",
       "status": "OPEN",
       "exits": [],
-      "daysHeld": 7,
+      "daysHeld": 8,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": 142.40078124999854,
-      "totalPnl": 142.40078124999854,
-      "returnPct": 0.46380993423966377
+      "unrealisedPnl": 496.00039062499854,
+      "totalPnl": 496.00039062499854,
+      "returnPct": 1.6155101575935384
     },
     {
       "id": "GALXBRG-2026-10-22-LONG",
@@ -8529,11 +8511,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 6,
+      "daysHeld": 7,
       "totalRealisedPnl": 722.9900000000004,
-      "unrealisedPnl": 1048.949584960938,
-      "totalPnl": 1771.9395849609382,
-      "returnPct": 11.822388477188005,
+      "unrealisedPnl": 2652.050415039063,
+      "totalPnl": 3375.040415039063,
+      "returnPct": 22.51828406084243,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 4 @ ₹933.00 (+5.1%) · trailed SL to entry ₹888.00",
         "🔒 T1 hit — SL trailed to breakeven ₹888.00 (was ₹888.00)",
@@ -8600,11 +8582,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 5,
+      "daysHeld": 6,
       "totalRealisedPnl": 628.6599999999999,
-      "unrealisedPnl": -76.59985351562477,
-      "totalPnl": 552.0601464843751,
-      "returnPct": 11.116797150309607,
+      "unrealisedPnl": -164.20007324218727,
+      "totalPnl": 464.4599267578126,
+      "returnPct": 9.352797558554423,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 2 @ ₹916.75 (+9.5%) · trailed SL to entry ₹837.00",
         "🔒 T1 hit — SL trailed to breakeven ₹837.00 (was ₹837.00)",
@@ -8678,34 +8660,6 @@
       "avgInCount": 1
     },
     {
-      "id": "ASIANPAINT-2026-10-26-SHORT",
-      "symbol": "ASIANPAINT",
-      "segment": "FNO",
-      "direction": "SHORT",
-      "source": "ICHIMOKU",
-      "tier": "ELITE",
-      "score": 100,
-      "entryDate": "2026-10-26",
-      "entryTime": "13:47",
-      "entryPrice": 2307,
-      "qty": 29,
-      "remainingQty": 29,
-      "positionValue": 66903,
-      "riskAmount": 1755.9500000000053,
-      "stopLoss": 2367.55,
-      "target1": 2216.17,
-      "target2": 2155.62,
-      "target3": 2064.8,
-      "entryReason": "Ichimoku SELL · 5/5 signals · 1D ·",
-      "status": "OPEN",
-      "exits": [],
-      "daysHeld": 4,
-      "totalRealisedPnl": 0,
-      "unrealisedPnl": -377,
-      "totalPnl": -377,
-      "returnPct": -0.5635023840485479
-    },
-    {
       "id": "ASIANPAINT-FUT-HEDGE-2400CE-2026-10-26-LONG",
       "symbol": "ASIANPAINT-FUT-HEDGE-2400CE",
       "segment": "FNO",
@@ -8755,11 +8709,11 @@
       "entryReason": "Ichimoku SELL · 5/5 signals · 1D ·",
       "status": "OPEN",
       "exits": [],
-      "daysHeld": 3,
+      "daysHeld": 4,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": -2216.248168945316,
-      "totalPnl": -2216.248168945316,
-      "returnPct": -3.248856641848997
+      "unrealisedPnl": -3738.751831054691,
+      "totalPnl": -3738.751831054691,
+      "returnPct": -5.480734914415101
     },
     {
       "id": "BAJFINANCE-FUT-HEDGE-950CE-2026-10-27-LONG",
@@ -8826,7 +8780,7 @@
           "pnl": 3577.8499999999995
         }
       ],
-      "daysHeld": 3,
+      "daysHeld": 4,
       "totalRealisedPnl": 5221.849999999999,
       "unrealisedPnl": -1016.3997650146484,
       "totalPnl": 4205.450234985351,
@@ -8841,13 +8795,15 @@
         "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars",
         "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars",
         "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars",
-        "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars"
+        "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars",
+        "⏸ HELD through SL touch (conf 55) · trap 40 · smart-money=[none] · waiting for next 2 bars",
+        "⏸ HELD through SL touch (conf 55) · trap 30 · smart-money=[none] · waiting for next 2 bars"
       ],
       "slVerdict": {
         "action": "HOLD",
         "confidence": 55,
-        "humanExplain": "HOLD (partial confidence 40). Structural case is intact enough not to panic sell, but not strong enough to add. Watching next 2 bars.\n\nSymbol · RALEGRA   Bar · ₹52.35–56.01   SL · ₹55.00\n\nScore breakdown:\n     0  Intraday reclaim  —  no reclaim — bar closed on wrong side of SL\n     0  20-EMA trend  —  close broke below 20-EMA — trend fading\n  +  10  Range sanity  —  bar range 0.7× ATR — not a panic flush\n     0  Bar-close strength  —  only 0/5 bars showed defence\n  +  20  ≤ 8% from entry  —  still within 8% of original entry ₹55.00\n  +  10  Volume sanity  —  0.2× 20d avg — not a flush\n     0  Shareholding  —  shareholding data unavailable — decision based on price + smart-money only",
-        "at": "2026-10-30"
+        "humanExplain": "HOLD (partial confidence 30). Structural case is intact enough not to panic sell, but not strong enough to add. Watching next 2 bars.\n\nSymbol · RALEGRA   Bar · ₹52.36–52.36   SL · ₹55.00\n\nScore breakdown:\n     0  Intraday reclaim  —  no reclaim — bar closed on wrong side of SL\n     0  20-EMA trend  —  close broke below 20-EMA — trend fading\n  +  10  Range sanity  —  bar range 0.0× ATR — not a panic flush\n     0  Bar-close strength  —  only 0/5 bars showed defence\n  +  20  ≤ 8% from entry  —  still within 8% of original entry ₹55.00\n     0  Shareholding  —  shareholding data unavailable — decision based on price + smart-money only",
+        "at": "2026-11-02"
       }
     },
     {
@@ -8887,11 +8843,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 2,
+      "daysHeld": 3,
       "totalRealisedPnl": 487.66000000000014,
-      "unrealisedPnl": 2491.3684914398186,
-      "totalPnl": 2979.028491439819,
-      "returnPct": 6.83581374877998,
+      "unrealisedPnl": 1898.1806285667412,
+      "totalPnl": 2385.8406285667415,
+      "returnPct": 5.474658002774551,
       "trapNotes": [
         "💰 EARLY PROFIT: booked 1318 @ ₹7.01 (+5.6%) · trailed SL to entry ₹6.64",
         "🎯 AVERAGED (conf 73): added 2636 @ ₹6.57, new avg ₹6.61, new SL ₹5.22 · trap 70"
@@ -8936,11 +8892,11 @@
           "pnl": 0
         }
       ],
-      "daysHeld": 2,
+      "daysHeld": 3,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": -8576.476455078122,
-      "totalPnl": -8576.476455078122,
-      "returnPct": -2.4473775862909846,
+      "unrealisedPnl": -7792.406203613277,
+      "totalPnl": -7792.406203613277,
+      "returnPct": -2.2236358236261538,
       "slVerdict": {
         "action": "AVERAGE",
         "confidence": 77,
@@ -8978,9 +8934,9 @@
       "exits": [],
       "daysHeld": 0,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": 44071.02627410887,
-      "totalPnl": 44071.02627410887,
-      "returnPct": 26.979408875210055
+      "unrealisedPnl": 40407.7737258911,
+      "totalPnl": 40407.7737258911,
+      "returnPct": 24.73683826437803
     },
     {
       "id": "NUVAMA-2026-11-03-LONG",
@@ -9006,48 +8962,12 @@
       "exits": [],
       "daysHeld": 0,
       "totalRealisedPnl": 0,
-      "unrealisedPnl": 0,
-      "totalPnl": 0,
-      "returnPct": 0
+      "unrealisedPnl": -0.001977539055133093,
+      "totalPnl": -0.001977539055133093,
+      "returnPct": -0.0000013525047038419217
     }
   ],
   "closedTrades": [
-    {
-      "id": "GODREJIND-2026-07-25-LONG",
-      "symbol": "GODREJIND",
-      "segment": "CASH",
-      "direction": "LONG",
-      "source": "PRO-EDGE",
-      "tier": "ELITE",
-      "score": 100,
-      "entryDate": "2026-07-25",
-      "entryTime": "15:04",
-      "entryPrice": 1417.7,
-      "qty": 107,
-      "remainingQty": 0,
-      "positionValue": 151693.9,
-      "riskAmount": 9912.48000000001,
-      "stopLoss": 1325.06,
-      "target1": 1572.1,
-      "target2": 1572.1,
-      "target3": 1703.64,
-      "entryReason": "Confluence: PRE_MOVE + OLD_WEEKLY (2 engines) · Sector: unmapped · Smart-money: neutral · Conviction 100 ≥ 85 floor · 20dH break · ATR 4.5× · +17% (5d) · 5/5",
-      "status": "SL_HIT",
-      "exits": [
-        {
-          "date": "2026-07-28",
-          "price": 1325.06,
-          "qty": 107,
-          "reason": "SL_HIT",
-          "pnl": -9912.48000000001
-        }
-      ],
-      "daysHeld": 2,
-      "totalRealisedPnl": -9912.48000000001,
-      "unrealisedPnl": 0,
-      "totalPnl": -9912.48000000001,
-      "returnPct": -6.534527756224878
-    },
     {
       "id": "MNC-2026-07-25-LONG",
       "symbol": "MNC",
@@ -13855,6 +13775,70 @@
       ]
     },
     {
+      "id": "SVLL-2026-10-01-LONG",
+      "symbol": "SVLL",
+      "segment": "CASH",
+      "direction": "LONG",
+      "source": "VP+FIB",
+      "tier": "STRONG",
+      "score": 85,
+      "entryDate": "2026-10-01",
+      "entryTime": "15:21",
+      "entryPrice": 788.2120689655173,
+      "qty": 58,
+      "remainingQty": 0,
+      "positionValue": 45716.3,
+      "riskAmount": 2052.4400000000014,
+      "stopLoss": 705.9642961774554,
+      "target1": 849.66,
+      "target2": 909.91,
+      "target3": 990.26,
+      "entryReason": "[VP] Close above VAH ₹779.65 — value-area breakout continuation · [FIB] LTP at 61.8% golden-zone retracement (₹794.45) of the last swing ₹732.30→₹895.00 · [OB] bullish OB zone ₹815.8–818.5 · [LIQ] bullish sweep — wick 3.1% below 775.0 then reclaimed · [VOLUME] 5-day vol 3.1× the 20-day avg — full accumulation",
+      "status": "SL_HIT",
+      "exits": [
+        {
+          "date": "2026-10-05",
+          "price": 849.66,
+          "qty": 20,
+          "reason": "T1_HIT",
+          "pnl": 1205.1999999999998
+        },
+        {
+          "date": "2026-10-05",
+          "price": 786.75,
+          "qty": -26,
+          "reason": "MANUAL",
+          "pnl": 0
+        },
+        {
+          "date": "2026-11-02",
+          "price": 705.9642961774554,
+          "qty": 58,
+          "reason": "SL_HIT",
+          "pnl": -4770.370821707595
+        }
+      ],
+      "daysHeld": 20,
+      "totalRealisedPnl": -3565.1708217075948,
+      "unrealisedPnl": 0,
+      "totalPnl": -3565.1708217075948,
+      "returnPct": -7.798467552508831,
+      "trapNotes": [
+        "🔒 T1 hit — SL trailed to breakeven ₹789.40 (was ₹749.93)",
+        "🎯 AVERAGED (conf 75): added 26 @ ₹786.75, new avg ₹788.21, new SL ₹705.96 · trap 75",
+        "🛑 EXIT (conf 95) · trap 40 · hard invalidation breached"
+      ],
+      "slVerdict": {
+        "action": "EXIT",
+        "confidence": 95,
+        "humanExplain": "EXIT · hard invalidation floor breached at ₹705.96. Case is broken — no averaging.\n\nSymbol · SVLL   Bar · ₹656.20–792.40   SL · ₹705.96\n\nScore breakdown:\n  -100  Hard invalidation  —  bar breached ₹705.96 floor\n  +  20  Intraday reclaim  —  close ₹750.90 back on right side of SL ₹705.96\n     0  20-EMA trend  —  close broke below 20-EMA — trend fading\n  +  10  Range sanity  —  bar range 2.3× ATR — not a panic flush\n     0  Bar-close strength  —  only 1/5 bars showed defence\n     0  ≤ 8% from entry  —  beyond 8% from entry — case weakening\n  +  10  Volume sanity  —  0.5× 20d avg — not a flush\n     0  Shareholding  —  shareholding data unavailable — decision based on price + smart-money only",
+        "at": "2026-11-02"
+      },
+      "originalEntry": 789.4,
+      "hardInvalidation": 705.9642961774554,
+      "avgInCount": 1
+    },
+    {
       "id": "TEXRAIL-2026-10-01-LONG",
       "symbol": "TEXRAIL",
       "segment": "CASH",
@@ -15011,6 +14995,62 @@
       ]
     },
     {
+      "id": "ASIANPAINT-2026-10-26-SHORT",
+      "symbol": "ASIANPAINT",
+      "segment": "FNO",
+      "direction": "SHORT",
+      "source": "ICHIMOKU",
+      "tier": "ELITE",
+      "score": 100,
+      "entryDate": "2026-10-26",
+      "entryTime": "13:47",
+      "entryPrice": 2328.195348837209,
+      "qty": 43,
+      "remainingQty": 0,
+      "positionValue": 100112.4,
+      "riskAmount": 1755.9500000000053,
+      "stopLoss": 2423.4714285714285,
+      "target1": 2216.17,
+      "target2": 2155.62,
+      "target3": 2064.8,
+      "entryReason": "Ichimoku SELL · 5/5 signals · 1D ·",
+      "status": "SL_HIT",
+      "exits": [
+        {
+          "date": "2026-11-02",
+          "price": 2372.1,
+          "qty": -14,
+          "reason": "MANUAL",
+          "pnl": 0
+        },
+        {
+          "date": "2026-11-03",
+          "price": 2423.4714285714285,
+          "qty": 43,
+          "reason": "SL_HIT",
+          "pnl": -4096.871428571432
+        }
+      ],
+      "daysHeld": 6,
+      "totalRealisedPnl": -4096.871428571432,
+      "unrealisedPnl": 0,
+      "totalPnl": -4096.871428571432,
+      "returnPct": -4.092271715163589,
+      "slVerdict": {
+        "action": "EXIT",
+        "confidence": 95,
+        "humanExplain": "EXIT · hard invalidation floor breached at ₹2423.47. Case is broken — no averaging.\n\nSymbol · ASIANPAINT   Bar · ₹2362.50–2443.40   SL · ₹2423.47\n\nScore breakdown:\n  -100  Hard invalidation  —  bar breached ₹2423.47 floor\n     0  Intraday reclaim  —  no reclaim — bar closed on wrong side of SL\n     0  20-EMA trend  —  close broke above 20-EMA — trend fading\n  +  10  Range sanity  —  bar range 1.4× ATR — not a panic flush\n     0  Bar-close strength  —  only 0/5 bars showed defence\n  +  20  ≤ 8% from entry  —  still within 8% of original entry ₹2307.00\n  +  10  Volume sanity  —  2.4× 20d avg — not a flush\n     0  Shareholding  —  shareholding data unavailable — decision based on price + smart-money only",
+        "at": "2026-11-03"
+      },
+      "originalEntry": 2307,
+      "hardInvalidation": 2423.4714285714285,
+      "avgInCount": 1,
+      "trapNotes": [
+        "🎯 AVERAGED (conf 75): added 14 @ ₹2372.10, new avg ₹2328.20, new SL ₹2423.47 · trap 75",
+        "🛑 EXIT (conf 95) · trap 40 · hard invalidation breached"
+      ]
+    },
+    {
       "id": "CRUDE-2026-10-28-LONG",
       "symbol": "CRUDE",
       "segment": "CASH",
@@ -15073,34 +15113,5 @@
       ]
     }
   ],
-  "newTradesThisTick": [
-    {
-      "id": "NUVAMA-2026-11-03-LONG",
-      "symbol": "NUVAMA",
-      "segment": "CASH",
-      "direction": "LONG",
-      "source": "CHART-PATTERN",
-      "tier": "STRONG",
-      "score": 85,
-      "entryDate": "2026-11-03",
-      "entryTime": "03:50",
-      "entryPrice": 1805.1,
-      "qty": 81,
-      "remainingQty": 81,
-      "positionValue": 146213.1,
-      "riskAmount": 10449.81,
-      "stopLoss": 1676.09,
-      "target1": 2003.8,
-      "target2": 2083.54,
-      "target3": 2083.54,
-      "entryReason": "Inverse Head & Shoulders",
-      "status": "OPEN",
-      "exits": [],
-      "daysHeld": 0,
-      "totalRealisedPnl": 0,
-      "unrealisedPnl": 0,
-      "totalPnl": 0,
-      "returnPct": 0
-    }
-  ]
+  "newTradesThisTick": []
 }
