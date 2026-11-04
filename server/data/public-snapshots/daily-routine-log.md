@@ -13489,3 +13489,66 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
 
 **Total elapsed:** 33.1s
+
+
+## 2026-11-04T14:46:27.210Z — 20:16 IST
+
+**Book:** WR 44.55% · realised ₹1724146
+**Miss catch-rate:** 0% (0/275)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · MELSTAR +3365.0%
+  · IGLSPIRITS +315.6%
+  · FAZE3Q +20.0%
+  · HEGAM +19.8%
+  · CNL +17.0%
+  · PARAGMILK +17.0%
+  · DALMIASUG +16.6%
+  · FRACTAL +14.0%
+  · RUSHIL +13.6%
+  · HMAAGRO +13.5%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 43
+  · not_in_universe: 2
+  · rule_fired_but_not_emitted: 1
+  · vol_already_elevated: 3
+  · extended_freshness_reject: 5
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 53
+  · wyckoff-accumulation: 5
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 18.6h, rows 0
+  · ✓ master-setups: age 18.7h, rows 15
+  · ⚠EMPTY money-printer: age 18.7h, rows 0
+  · ⚠EMPTY mtf-harmonic: age 18.7h, rows 0
+  · ✓ ichimoku-cloud: age 18.7h, rows 65
+  · ⚠EMPTY nifty-bias: age 18.7h, rows 0
+  · ✓ harmonic: age 18.8h, rows 62
+  · ✓ elliott-wave: age 18.8h, rows 18
+  · ✓ sector-rotation: age 18.6h, rows 13
+  · ✓ high-quality-setups: age 18.7h, rows 135
+  · ⚠EMPTY pro-edge: age 4.0h, rows 0
+  · ✓ vp-fib: age 18.7h, rows 216
+  · ✓ miss-analysis: age -0.0h, rows 275
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · VP+FIB: 3 trades, WR 33.3%, avgRet -3.98%
+  · WEEKLY-PICK: 2 trades, WR 50%, avgRet +0.17%
+  · ICHIMOKU: 2 trades, WR 50%, avgRet +1159.28%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/275 caught (0%) · 43.7s
+  ✓ gainer-postmortem: 1/60 would've been caught with tuning · 12.1s
+  ✓ pattern-learner: 194 new fingerprints (store 194) · 26.1s
+  ✓ self-improve: 13 strategy overrides · +0 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 44.55% · MASTER 15 · MP 0 · 0.1s
+  ✓ engine-health: 9 fresh · 0 stale · 5 empty · 0 missing · 0.0s
+
+**Total elapsed:** 82.3s

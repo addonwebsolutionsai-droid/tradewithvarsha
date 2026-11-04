@@ -1,9 +1,19 @@
 {
-  "generatedAt": "2026-11-03T20:11:27.102Z",
+  "generatedAt": "2026-11-04T14:47:49.446Z",
   "windowDays": 7,
-  "bookWinRate": 45.45,
-  "bookRealisedPnl": 1733012.74,
+  "bookWinRate": 44.55,
+  "bookRealisedPnl": 1724145.5,
   "perSourceStats": [
+    {
+      "source": "VP+FIB",
+      "trades": 3,
+      "wins": 1,
+      "losses": 2,
+      "winRatePct": 33.3,
+      "avgReturnPct": -3.98,
+      "worstSymbol": "SVLL",
+      "repeatedLosses": 1
+    },
     {
       "source": "WEEKLY-PICK",
       "trades": 2,
@@ -15,30 +25,29 @@
       "repeatedLosses": 1
     },
     {
-      "source": "VP+FIB",
+      "source": "ICHIMOKU",
       "trades": 2,
       "wins": 1,
       "losses": 1,
       "winRatePct": 50,
-      "avgReturnPct": -2.07,
-      "worstSymbol": "REPL",
+      "avgReturnPct": 1159.28,
+      "worstSymbol": "ASIANPAINT",
       "repeatedLosses": 1
-    },
-    {
-      "source": "ICHIMOKU",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "winRatePct": 100,
-      "avgReturnPct": 2322.66,
-      "worstSymbol": null,
-      "repeatedLosses": 0
     }
   ],
   "masterEmitted": 15,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
+    {
+      "type": "INFO",
+      "target": "VP+FIB",
+      "metric": "sample-size",
+      "from": 3,
+      "to": 5,
+      "reason": "VP+FIB: only 3 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
     {
       "type": "INFO",
       "target": "WEEKLY-PICK",
@@ -50,20 +59,11 @@
     },
     {
       "type": "INFO",
-      "target": "VP+FIB",
+      "target": "ICHIMOKU",
       "metric": "sample-size",
       "from": 2,
       "to": 5,
-      "reason": "VP+FIB: only 2 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
-      "target": "ICHIMOKU",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "ICHIMOKU: only 1 closed trades — need ≥ 5 for gate tuning",
+      "reason": "ICHIMOKU: only 2 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -94,5 +94,5 @@
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-11-03\nBook WR 45.45% · realised ₹1733013 · book ₹2766686\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   2 · WR  50% · avgRet +0.17%\n  VP+FIB               · trades   2 · WR  50% · avgRet -2.07%\n  ICHIMOKU             · trades   1 · WR 100% · avgRet +2322.66%\n\nImprovements applied: 0 · flagged for review: 6"
+  "humanExplain": "Daily improvisation · 2026-11-04\nBook WR 44.55% · realised ₹1724146 · book ₹2755216\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  VP+FIB               · trades   3 · WR  33% · avgRet -3.98%\n  WEEKLY-PICK          · trades   2 · WR  50% · avgRet +0.17%\n  ICHIMOKU             · trades   2 · WR  50% · avgRet +1159.28%\n\nImprovements applied: 0 · flagged for review: 6"
 }
