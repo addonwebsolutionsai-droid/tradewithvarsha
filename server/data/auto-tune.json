@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-11-05T09:44:45.658Z",
+  "lastRunAt": "2026-11-05T14:51:41.010Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -39,9 +39,20 @@
     },
     "EARLY-MOM": {
       "minScore": 55
+    },
+    "ICHIMOKU": {
+      "minScore": 65
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-11-05T14:51:41.281Z",
+      "strategy": "ICHIMOKU",
+      "metric": "minScore",
+      "from": 60,
+      "to": 65,
+      "reason": "DAILY-IMPROVE: WR 0% over 5 — raise gate"
+    },
     {
       "ts": "2026-10-28T07:58:09.842017Z",
       "strategy": "unknown",
