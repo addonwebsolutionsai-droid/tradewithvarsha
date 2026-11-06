@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T19:37:17.615Z",
+  "generatedAt": "2026-11-06T20:05:10.902Z",
   "windowDays": 7,
   "bookWinRate": 44.95,
   "bookRealisedPnl": 1742216.94,
@@ -35,18 +35,18 @@
       "repeatedLosses": 0
     }
   ],
-  "masterEmitted": 15,
+  "masterEmitted": 1,
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
     {
-      "type": "GATE_TIGHTEN",
+      "type": "INFO",
       "target": "ICHIMOKU",
-      "metric": "minScore",
-      "from": 70,
-      "to": 75,
-      "reason": "WR 0% over 5 trades",
-      "applied": true
+      "metric": "cooldown-active",
+      "from": "0.5h",
+      "to": "6h",
+      "reason": "ICHIMOKU: tuned 0.5h ago — cooldown holds until 6h",
+      "applied": false
     },
     {
       "type": "INFO",
@@ -72,7 +72,7 @@
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60)",
       "to": "24%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 174 candidates (24% of filtered)",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 60) killed 172 candidates (24% of filtered)",
       "applied": false
     },
     {
@@ -81,18 +81,18 @@
       "metric": "pillar-kill",
       "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53)",
       "to": "8%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 58 candidates (8% of filtered)",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 53) killed 57 candidates (8% of filtered)",
       "applied": false
     },
     {
       "type": "INFO",
       "target": "MASTER",
       "metric": "pillar-kill",
-      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 75)",
+      "from": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55)",
       "to": "6%",
-      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 75) killed 43 candidates (6% of filtered)",
+      "reason": "pillar-1-multi-source (1 sources within 0.0d, bestScore 55) killed 40 candidates (6% of filtered)",
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-11-06\nBook WR 44.95% · realised ₹1742217 · book ₹2736221\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  ICHIMOKU             · trades   5 · WR   0% · avgRet -3.08%\n  VP+FIB               · trades   2 · WR  50% · avgRet +15.15%\n  WEEKLY-PICK          · trades   1 · WR 100% · avgRet +14.38%\n\nImprovements applied: 1 · flagged for review: 5\n  🔒 ICHIMOKU/minScore: 70 → 75 — WR 0% over 5 trades"
+  "humanExplain": "Daily improvisation · 2026-11-06\nBook WR 44.95% · realised ₹1742217 · book ₹2736221\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  ICHIMOKU             · trades   5 · WR   0% · avgRet -3.08%\n  VP+FIB               · trades   2 · WR  50% · avgRet +15.15%\n  WEEKLY-PICK          · trades   1 · WR 100% · avgRet +14.38%\n\nImprovements applied: 0 · flagged for review: 6"
 }
