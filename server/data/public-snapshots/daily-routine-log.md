@@ -14327,3 +14327,67 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
 
 **Total elapsed:** 16.2s
+
+
+## 2026-11-08T17:59:55.635Z — 23:29 IST
+
+**Book:** WR 44.95% · realised ₹1742217
+**Miss catch-rate:** 0% (0/98)
+**Engine emit:** MASTER 1 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · TRANSWORLD +20.0%
+  · FINCABLES +20.0%
+  · NTCIND +17.2%
+  · BANCOINDIA +14.5%
+  · SEIL +11.2%
+  · ADDIND +11.1%
+  · RRKABEL +10.1%
+  · HAPPYFORGE +10.0%
+  · EIFFL +9.6%
+  · KJMCFIN +9.5%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 29
+  · vol_already_elevated: 9
+  · extended_freshness_reject: 7
+  · ema_not_stacked: 9
+  · rule_fired_but_not_emitted: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 41
+  · wyckoff-accumulation: 15
+  · vcp: 4
+
+### Engine health
+  · ⚠STALE trading-journal: age 45.9h, rows 0
+  · ⚠STALE master-setups: age 46.1h, rows 1
+  · ⚠STALE money-printer: age 46.1h, rows 0
+  · ⚠STALE mtf-harmonic: age 46.1h, rows 0
+  · ⚠STALE ichimoku-cloud: age 46.1h, rows 58
+  · ⚠STALE nifty-bias: age 46.1h, rows 0
+  · ⚠STALE harmonic: age 46.1h, rows 68
+  · ⚠STALE elliott-wave: age 46.2h, rows 20
+  · ⚠STALE sector-rotation: age 45.9h, rows 13
+  · ⚠STALE high-quality-setups: age 46.1h, rows 135
+  · ⚠STALE pro-edge: age 45.9h, rows 0
+  · ⚠STALE vp-fib: age 46.1h, rows 235
+  · ✓ miss-analysis: age -0.0h, rows 98
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · ICHIMOKU: 5 trades, WR 0%, avgRet -3.08%
+  · VP+FIB: 2 trades, WR 50%, avgRet +15.15%
+  · WEEKLY-PICK: 1 trades, WR 100%, avgRet +14.38%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/98 caught (0%) · 10.7s
+  ✓ gainer-postmortem: 1/60 would've been caught with tuning · 0.2s
+  ✓ pattern-learner: 96 new fingerprints (store 96) · 6.5s
+  ✓ self-improve: 14 strategy overrides · +0 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 44.95% · MASTER 1 · MP 0 · 0.0s
+  ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
+
+**Total elapsed:** 17.6s
