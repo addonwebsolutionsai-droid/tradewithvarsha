@@ -1,14 +1,85 @@
 {
-  "generatedAt": "2026-11-11T19:59:02.390Z",
-  "status": "NO_DATA",
-  "note": "NIFTY intraday candles unavailable on this tick. Common causes: Angel session not established on the GH Actions runner, or Yahoo intraday feed empty. Next tick (~4 min during market hours) will retry.",
-  "spot": 0,
+  "generatedAt": "2026-11-12T20:34:51.974Z",
+  "spot": 25255.05078125,
   "compositeBias": "NEUTRAL",
   "confidence": "LOW",
-  "bullTfCount": 0,
+  "bullTfCount": 1,
   "bearTfCount": 0,
-  "agreementScore": 0,
-  "timeframes": [],
-  "strongestSetup": null,
-  "tradeRecommendation": null
+  "agreementScore": 100,
+  "timeframes": [
+    {
+      "tf": "1D",
+      "profile": {
+        "poc": 24066.88486328125,
+        "vah": 24779.7456640625,
+        "val": 22347.63234375,
+        "hvn": [
+          25911.93634765625
+        ],
+        "lvn": [
+          24821.67865234375,
+          25073.27658203125
+        ],
+        "ibH": 25934.55078125,
+        "ibL": 25781.150390625,
+        "totalVolume": 92544000
+      },
+      "signals": [
+        {
+          "setup": "LVN_SLICE_UP",
+          "side": "BULLISH",
+          "strength": 65,
+          "entry": 25255.05078125,
+          "stopLoss": 24949.830341796875,
+          "target1": 25678.295033482143,
+          "target2": 26136.809640066964,
+          "target3": 26665.86495535714,
+          "keyLevel": 25073.27658203125,
+          "reason": "Fast candle sliced through LVN 25073.28 — vacuum breakout to the next HVN"
+        },
+        {
+          "setup": "IB_BREAK_DOWN",
+          "side": "BEARISH",
+          "strength": 55,
+          "entry": 25255.05078125,
+          "stopLoss": 25922.231808035714,
+          "target1": 24725.995465959822,
+          "target2": 24196.94015066964,
+          "target3": 23491.533063616072,
+          "keyLevel": 25781.150390625,
+          "reason": "IB low 25781.15 broken decisively — trend-day signature"
+        }
+      ]
+    }
+  ],
+  "strongestSetup": {
+    "tf": "1D",
+    "setup": "LVN_SLICE_UP",
+    "side": "BULLISH",
+    "strength": 65,
+    "reason": "Fast candle sliced through LVN 25073.28 — vacuum breakout to the next HVN",
+    "entry": 25255.05078125,
+    "stopLoss": 24949.830341796875,
+    "target1": 25678.295033482143,
+    "target2": 26136.809640066964,
+    "target3": 26665.86495535714,
+    "keyLevel": 25073.27658203125
+  },
+  "tradeRecommendation": {
+    "side": "WAIT",
+    "instrument": "NIFTY SPOT (reference)",
+    "optionStrike": 25250,
+    "optionType": null,
+    "entry": 25255.05,
+    "stopLoss": 25255.05,
+    "target1": 25255.05,
+    "target2": 25255.05,
+    "target3": 25255.05,
+    "entryDate": "2026-11-13",
+    "target1Date": "2026-11-14",
+    "target2Date": "2026-11-17",
+    "target3Date": "2026-11-18",
+    "slDate": "2026-11-18",
+    "rationale": "No decisive Volume Profile setup — wait for cleaner rejection or breakout."
+  }
 }

@@ -1,17 +1,17 @@
 {
-  "generatedAt": "2026-11-12T20:15:46.809Z",
+  "generatedAt": "2026-11-12T20:49:37.019Z",
   "totalGainers": 60,
   "caughtCount": 8,
   "wouldHaveCaughtCount": 6,
   "patternBreakdown": {
-    "unknown": 39,
-    "wyckoff-accumulation": 13,
+    "unknown": 38,
+    "wyckoff-accumulation": 14,
     "vcp": 6
   },
   "topMissReasons": {
     "rule_fired_but_not_emitted": 6,
-    "not_coil_pattern": 24,
-    "ema_not_stacked": 15,
+    "not_coil_pattern": 23,
+    "ema_not_stacked": 16,
     "extended_freshness_reject": 3,
     "vol_already_elevated": 1,
     "not_in_universe": 2,
@@ -109,7 +109,7 @@
       "wouldHaveFiredDaysAgo": null,
       "patternDetected": "unknown",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 29.76%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
+      "missReason": "Too wide a range (BB-w 17.65%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
       "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
     },
     {
@@ -698,10 +698,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "unknown",
+      "patternDetected": "wyckoff-accumulation",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 26.58%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "missReason": "EMA stack not bullish (9 < 21 or below 50) — moved despite weak trend structure",
+      "recommendation": "Add news/insider scanner OR loosen EMA stack requirement for small caps"
     },
     {
       "symbol": "COASTCORP",
