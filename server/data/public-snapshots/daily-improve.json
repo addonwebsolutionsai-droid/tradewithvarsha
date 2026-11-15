@@ -1,29 +1,9 @@
 {
-  "generatedAt": "2026-11-15T09:44:56.927Z",
+  "generatedAt": "2026-11-15T14:12:07.755Z",
   "windowDays": 7,
   "bookWinRate": 45.54,
   "bookRealisedPnl": 1736429.41,
   "perSourceStats": [
-    {
-      "source": "VP+FIB",
-      "trades": 1,
-      "wins": 1,
-      "losses": 0,
-      "winRatePct": 100,
-      "avgReturnPct": 1.3,
-      "worstSymbol": null,
-      "repeatedLosses": 0
-    },
-    {
-      "source": "ICHIMOKU",
-      "trades": 1,
-      "wins": 0,
-      "losses": 1,
-      "winRatePct": 0,
-      "avgReturnPct": -4.03,
-      "worstSymbol": "ADANIENT",
-      "repeatedLosses": 1
-    },
     {
       "source": "WEEKLY-PICK",
       "trades": 1,
@@ -40,22 +20,13 @@
   "missCatchRate": 0,
   "improvements": [
     {
-      "type": "INFO",
-      "target": "VP+FIB",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "VP+FIB: only 1 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
-    },
-    {
-      "type": "INFO",
+      "type": "GATE_RELAX",
       "target": "ICHIMOKU",
-      "metric": "sample-size",
-      "from": 1,
-      "to": 5,
-      "reason": "ICHIMOKU: only 1 closed trades — need ≥ 5 for gate tuning",
-      "applied": false
+      "metric": "minScore",
+      "from": 85,
+      "to": 80,
+      "reason": "silent source (no closed trades in 7d) — relaxed to reactivate",
+      "applied": true
     },
     {
       "type": "INFO",
@@ -94,5 +65,5 @@
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-11-15\nBook WR 45.54% · realised ₹1736429 · book ₹2775429\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  VP+FIB               · trades   1 · WR 100% · avgRet +1.30%\n  ICHIMOKU             · trades   1 · WR   0% · avgRet -4.03%\n  WEEKLY-PICK          · trades   1 · WR 100% · avgRet +18.07%\n\nImprovements applied: 0 · flagged for review: 6"
+  "humanExplain": "Daily improvisation · 2026-11-15\nBook WR 45.54% · realised ₹1736429 · book ₹2775429\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   1 · WR 100% · avgRet +18.07%\n\nImprovements applied: 1 · flagged for review: 4\n  🔓 ICHIMOKU/minScore: 85 → 80 — silent source (no closed trades in 7d) — relaxed to reactivate"
 }
