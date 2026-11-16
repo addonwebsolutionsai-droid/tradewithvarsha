@@ -15736,3 +15736,64 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
 
 **Total elapsed:** 23.9s
+
+
+## 2026-11-16T10:01:16.216Z — 15:31 IST
+
+**Book:** WR 45.54% · realised ₹1736429
+**Miss catch-rate:** 0% (0/70)
+**Engine emit:** MASTER 1 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · ANUP +20.0%
+  · MSTCLTD +20.0%
+  · ALICON +17.3%
+  · BLSPOLY +15.5%
+  · BONLON +15.3%
+  · DHANBANK +14.8%
+  · KENNAMET +13.9%
+  · SHALPAINTS +12.6%
+  · PRECOT +12.4%
+  · BPLPHARMA +11.0%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 39
+  · rule_fired_but_not_emitted: 2
+  · not_in_universe: 9
+  · vol_already_elevated: 5
+  · ema_not_stacked: 2
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 41
+  · wyckoff-accumulation: 10
+
+### Engine health
+  · ⚠STALE trading-journal: age 85.2h, rows 0
+  · ⚠STALE master-setups: age 85.3h, rows 1
+  · ⚠STALE money-printer: age 85.3h, rows 0
+  · ⚠STALE mtf-harmonic: age 85.3h, rows 0
+  · ⚠STALE ichimoku-cloud: age 85.3h, rows 65
+  · ⚠STALE nifty-bias: age 85.3h, rows 0
+  · ⚠STALE harmonic: age 85.4h, rows 66
+  · ⚠STALE elliott-wave: age 85.4h, rows 13
+  · ⚠STALE sector-rotation: age 85.2h, rows 13
+  · ⚠STALE high-quality-setups: age 85.3h, rows 135
+  · ⚠STALE pro-edge: age 71.2h, rows 0
+  · ⚠STALE vp-fib: age 85.3h, rows 243
+  · ✓ miss-analysis: age -0.0h, rows 70
+  · ✓ gainer-postmortem: age -0.0h, rows 60
+
+### Per-source WR (last 7d closed trades)
+  · WEEKLY-PICK: 1 trades, WR 100%, avgRet +18.07%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/70 caught (0%) · 8.1s
+  ✓ gainer-postmortem: 2/60 would've been caught with tuning · 0.1s
+  ✓ pattern-learner: 58 new fingerprints (store 58) · 3.9s
+  ✓ self-improve: 14 strategy overrides · +1 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 45.54% · MASTER 1 · MP 0 · 0.0s
+  ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
+
+**Total elapsed:** 12.4s
