@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-16T10:01:28.606Z",
+  "generatedAt": "2026-11-16T16:15:06.905Z",
   "windowDays": 7,
   "bookWinRate": 45.54,
   "bookRealisedPnl": 1736429.41,
@@ -19,6 +19,15 @@
   "moneyPrinterEmitted": 0,
   "missCatchRate": 0,
   "improvements": [
+    {
+      "type": "GATE_RELAX",
+      "target": "ICHIMOKU",
+      "metric": "minScore",
+      "from": 80,
+      "to": 75,
+      "reason": "silent source (no closed trades in 7d) — relaxed to reactivate",
+      "applied": true
+    },
     {
       "type": "INFO",
       "target": "WEEKLY-PICK",
@@ -56,5 +65,5 @@
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-11-16\nBook WR 45.54% · realised ₹1736429 · book ₹2775429\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   1 · WR 100% · avgRet +18.07%\n\nImprovements applied: 0 · flagged for review: 4"
+  "humanExplain": "Daily improvisation · 2026-11-16\nBook WR 45.54% · realised ₹1736429 · book ₹2775429\nMiss catch-rate 0% · MASTER 1 · Money-Printer 0\n\nPer-source stats (7d window):\n  WEEKLY-PICK          · trades   1 · WR 100% · avgRet +18.07%\n\nImprovements applied: 1 · flagged for review: 4\n  🔓 ICHIMOKU/minScore: 80 → 75 — silent source (no closed trades in 7d) — relaxed to reactivate"
 }
