@@ -16175,3 +16175,65 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
 
 **Total elapsed:** 11.8s
+
+
+## 2026-11-18T15:53:17.258Z — 21:23 IST
+
+**Book:** WR 45.13% · realised ₹1741803
+**Miss catch-rate:** 0% (0/39)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · OMPOWER +20.0%
+  · BALAXI +19.6%
+  · RPPINFRA +16.1%
+  · SUBROS +13.1%
+  · JKSHAH +12.8%
+  · WEWIN +11.1%
+  · VESUVIUS +10.8%
+  · GREENLAM +10.6%
+  · APOLLOPIPE +10.5%
+  · BPLPHARMA +10.5%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 16
+  · vol_already_elevated: 12
+  · not_in_universe: 1
+  · extended_freshness_reject: 2
+  · ema_not_stacked: 3
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 26
+  · wyckoff-accumulation: 11
+  · vcp: 1
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 18.0h, rows 0
+  · ✓ master-setups: age 18.2h, rows 15
+  · ⚠EMPTY money-printer: age 18.2h, rows 0
+  · ✓ mtf-harmonic: age 18.2h, rows 1
+  · ✓ ichimoku-cloud: age 18.2h, rows 62
+  · ⚠EMPTY nifty-bias: age 18.2h, rows 0
+  · ✓ harmonic: age 18.3h, rows 60
+  · ✓ elliott-wave: age 18.3h, rows 14
+  · ✓ sector-rotation: age 18.1h, rows 13
+  · ✓ high-quality-setups: age 18.2h, rows 132
+  · ✓ pro-edge: age 4.3h, rows 1
+  · ✓ vp-fib: age 18.2h, rows 220
+  · ✓ miss-analysis: age -0.0h, rows 39
+  · ✓ gainer-postmortem: age -0.0h, rows 39
+
+### Per-source WR (last 7d closed trades)
+  · CHART-PATTERN: 1 trades, WR 0%, avgRet -2.78%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/39 caught (0%) · 22.3s
+  ✓ gainer-postmortem: 0/39 would've been caught with tuning · 12.1s
+  ✓ pattern-learner: 38 new fingerprints (store 38) · 14.5s
+  ✓ self-improve: 14 strategy overrides · +1 new adjustments · 0.3s
+  ✓ daily-core-improvise: 0 tunes applied · WR 45.13% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
+
+**Total elapsed:** 49.2s
