@@ -1,5 +1,5 @@
 {
-  "lastRunAt": "2026-11-19T15:57:27.527Z",
+  "lastRunAt": "2026-11-19T20:52:51.930Z",
   "overrides": {
     "oi-flow": {
       "minConfluence": 2
@@ -41,10 +41,18 @@
       "minScore": 55
     },
     "ICHIMOKU": {
-      "minScore": 65
+      "minScore": 60
     }
   },
   "adjustments": [
+    {
+      "ts": "2026-11-19T20:52:52.095Z",
+      "strategy": "ICHIMOKU",
+      "metric": "minScore",
+      "from": 65,
+      "to": 60,
+      "reason": "SILENCE-RELAX: no closed trades in 7d — relax gate so source can emit again"
+    },
     {
       "ts": "2026-11-18T20:47:46.031Z",
       "strategy": "ICHIMOKU",
