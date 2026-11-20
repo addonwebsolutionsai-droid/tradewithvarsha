@@ -1,19 +1,20 @@
 {
-  "generatedAt": "2026-11-20T20:38:08.854Z",
+  "generatedAt": "2026-11-20T21:15:54.953Z",
   "totalGainers": 34,
   "caughtCount": 4,
   "wouldHaveCaughtCount": 3,
   "patternBreakdown": {
-    "unknown": 23,
+    "unknown": 22,
     "wyckoff-accumulation": 10,
     "vcp": 1
   },
   "topMissReasons": {
-    "not_coil_pattern": 19,
+    "not_coil_pattern": 18,
     "extended_freshness_reject": 1,
     "rule_fired_but_not_emitted": 3,
     "ema_not_stacked": 5,
-    "scanner_gap": 2
+    "scanner_gap": 2,
+    "not_in_universe": 1
   },
   "rows": [
     {
@@ -339,10 +340,10 @@
       ],
       "caughtTodayByOurTabs": false,
       "wouldHaveFiredDaysAgo": null,
-      "patternDetected": "unknown",
+      "patternDetected": "no-data",
       "preMoveFeatures": null,
-      "missReason": "Too wide a range (BB-w 15.5%) — not a coil setup. Pattern was momentum-driven, not pre-breakout.",
-      "recommendation": "Add momentum-style scanner: ret5d > 10% + vol > 2× + RSI > 60 firing"
+      "missReason": "Not in scanner universe (no candle history available)",
+      "recommendation": "Add to MARKET_ALL scan list; verify Angel ScripMaster has token"
     },
     {
       "symbol": "ALICON",
