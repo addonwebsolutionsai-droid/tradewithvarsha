@@ -16613,3 +16613,65 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 3 fresh · 11 stale · 0 empty · 0 missing · 0.0s
 
 **Total elapsed:** 48.1s
+
+
+## 2026-11-20T20:37:47.603Z — 02:07 IST
+
+**Book:** WR 45.13% · realised ₹1746663
+**Miss catch-rate:** 0% (0/46)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · OAL +20.0%
+  · HMAAGRO +15.6%
+  · GLOBUSSPR +14.2%
+  · JLHL +12.9%
+  · RRIL +12.7%
+  · WELINV +12.1%
+  · AJMERA +11.8%
+  · VIVOBIOT +11.8%
+  · SIGACHI +10.9%
+  · VERTOZ +10.4%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 19
+  · extended_freshness_reject: 1
+  · rule_fired_but_not_emitted: 3
+  · ema_not_stacked: 5
+  · scanner_gap: 2
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 23
+  · wyckoff-accumulation: 10
+  · vcp: 1
+
+### Engine health
+  · ⚠STALE trading-journal: age 47.2h, rows 0
+  · ⚠STALE master-setups: age 47.4h, rows 15
+  · ⚠STALE money-printer: age 47.4h, rows 0
+  · ⚠STALE mtf-harmonic: age 47.4h, rows 1
+  · ⚠STALE ichimoku-cloud: age 47.4h, rows 58
+  · ⚠STALE nifty-bias: age 47.4h, rows 0
+  · ⚠STALE harmonic: age 47.5h, rows 75
+  · ⚠STALE elliott-wave: age 47.6h, rows 15
+  · ⚠STALE sector-rotation: age 47.3h, rows 13
+  · ⚠STALE high-quality-setups: age 47.4h, rows 132
+  · ✓ pro-edge: age 9.3h, rows 2
+  · ⚠STALE vp-fib: age 47.4h, rows 225
+  · ✓ miss-analysis: age -0.0h, rows 46
+  · ✓ gainer-postmortem: age -0.0h, rows 34
+
+### Per-source WR (last 7d closed trades)
+  · CHART-PATTERN: 1 trades, WR 0%, avgRet -2.78%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/46 caught (0%) · 21.2s
+  ✓ gainer-postmortem: 3/34 would've been caught with tuning · 12.1s
+  ✓ pattern-learner: 34 new fingerprints (store 34) · 14.2s
+  ✓ self-improve: 14 strategy overrides · +1 new adjustments · 0.3s
+  ✓ daily-core-improvise: 0 tunes applied · WR 45.13% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 3 fresh · 11 stale · 0 empty · 0 missing · 0.0s
+
+**Total elapsed:** 47.8s
