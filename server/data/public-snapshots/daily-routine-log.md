@@ -16675,3 +16675,66 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 3 fresh · 11 stale · 0 empty · 0 missing · 0.0s
 
 **Total elapsed:** 47.8s
+
+
+## 2026-11-21T10:02:35.781Z — 15:32 IST
+
+**Book:** WR 46.55% · realised ₹1783476
+**Miss catch-rate:** 0% (0/34)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · OAL +20.0%
+  · HMAAGRO +15.6%
+  · JLHL +12.9%
+  · RRIL +12.7%
+  · WELINV +12.1%
+  · AJMERA +11.8%
+  · VIVOBIOT +11.8%
+  · SIGACHI +10.9%
+  · VERTOZ +10.4%
+  · UGROCAP +9.6%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 21
+  · rule_fired_but_not_emitted: 3
+  · ema_not_stacked: 3
+  · vol_already_elevated: 1
+  · extended_freshness_reject: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 27
+  · wyckoff-accumulation: 7
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 12.8h, rows 0
+  · ✓ master-setups: age 12.9h, rows 15
+  · ⚠EMPTY money-printer: age 12.9h, rows 0
+  · ✓ mtf-harmonic: age 12.9h, rows 1
+  · ✓ ichimoku-cloud: age 12.9h, rows 60
+  · ⚠EMPTY nifty-bias: age 12.9h, rows 0
+  · ✓ harmonic: age 13.0h, rows 71
+  · ✓ elliott-wave: age 13.1h, rows 9
+  · ✓ sector-rotation: age 12.8h, rows 13
+  · ✓ high-quality-setups: age 12.9h, rows 127
+  · ✓ pro-edge: age 12.8h, rows 2
+  · ✓ vp-fib: age 12.9h, rows 195
+  · ✓ miss-analysis: age -0.0h, rows 34
+  · ✓ gainer-postmortem: age -0.0h, rows 34
+
+### Per-source WR (last 7d closed trades)
+  · CHART-PATTERN: 1 trades, WR 0%, avgRet -2.78%
+  · VP+FIB: 1 trades, WR 100%, avgRet +1.81%
+  · WEEKLY-PICK: 1 trades, WR 100%, avgRet +17.63%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/34 caught (0%) · 9.8s
+  ✓ gainer-postmortem: 3/34 would've been caught with tuning · 0.1s
+  ✓ pattern-learner: 34 new fingerprints (store 34) · 2.4s
+  ✓ self-improve: 14 strategy overrides · +0 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 46.55% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
+
+**Total elapsed:** 12.5s

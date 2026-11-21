@@ -1,8 +1,8 @@
 {
-  "generatedAt": "2026-11-20T21:16:32.064Z",
+  "generatedAt": "2026-11-21T10:02:48.289Z",
   "windowDays": 7,
-  "bookWinRate": 45.13,
-  "bookRealisedPnl": 1746663.2,
+  "bookWinRate": 46.55,
+  "bookRealisedPnl": 1783475.86,
   "perSourceStats": [
     {
       "source": "CHART-PATTERN",
@@ -13,6 +13,26 @@
       "avgReturnPct": -2.78,
       "worstSymbol": "IPCALAB",
       "repeatedLosses": 1
+    },
+    {
+      "source": "VP+FIB",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "winRatePct": 100,
+      "avgReturnPct": 1.81,
+      "worstSymbol": null,
+      "repeatedLosses": 0
+    },
+    {
+      "source": "WEEKLY-PICK",
+      "trades": 1,
+      "wins": 1,
+      "losses": 0,
+      "winRatePct": 100,
+      "avgReturnPct": 17.63,
+      "worstSymbol": null,
+      "repeatedLosses": 0
     }
   ],
   "masterEmitted": 15,
@@ -26,6 +46,24 @@
       "from": 1,
       "to": 5,
       "reason": "CHART-PATTERN: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "VP+FIB",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "VP+FIB: only 1 closed trades — need ≥ 5 for gate tuning",
+      "applied": false
+    },
+    {
+      "type": "INFO",
+      "target": "WEEKLY-PICK",
+      "metric": "sample-size",
+      "from": 1,
+      "to": 5,
+      "reason": "WEEKLY-PICK: only 1 closed trades — need ≥ 5 for gate tuning",
       "applied": false
     },
     {
@@ -56,5 +94,5 @@
       "applied": false
     }
   ],
-  "humanExplain": "Daily improvisation · 2026-11-20\nBook WR 45.13% · realised ₹1746663 · book ₹2845814\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  CHART-PATTERN        · trades   1 · WR   0% · avgRet -2.78%\n\nImprovements applied: 0 · flagged for review: 4"
+  "humanExplain": "Daily improvisation · 2026-11-21\nBook WR 46.55% · realised ₹1783476 · book ₹2803986\nMiss catch-rate 0% · MASTER 15 · Money-Printer 0\n\nPer-source stats (7d window):\n  CHART-PATTERN        · trades   1 · WR   0% · avgRet -2.78%\n  VP+FIB               · trades   1 · WR 100% · avgRet +1.81%\n  WEEKLY-PICK          · trades   1 · WR 100% · avgRet +17.63%\n\nImprovements applied: 0 · flagged for review: 6"
 }
