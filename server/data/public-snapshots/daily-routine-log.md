@@ -16738,3 +16738,66 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
 
 **Total elapsed:** 12.5s
+
+
+## 2026-11-21T14:50:50.479Z — 20:20 IST
+
+**Book:** WR 46.55% · realised ₹1783476
+**Miss catch-rate:** 0% (0/34)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · OAL +20.0%
+  · HMAAGRO +15.6%
+  · JLHL +12.9%
+  · RRIL +12.7%
+  · WELINV +12.1%
+  · AJMERA +11.8%
+  · VIVOBIOT +11.8%
+  · SIGACHI +10.9%
+  · VERTOZ +10.4%
+  · UGROCAP +9.6%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 21
+  · rule_fired_but_not_emitted: 3
+  · ema_not_stacked: 3
+  · not_in_universe: 1
+  · extended_freshness_reject: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 26
+  · wyckoff-accumulation: 7
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 17.6h, rows 0
+  · ✓ master-setups: age 17.7h, rows 15
+  · ⚠EMPTY money-printer: age 17.7h, rows 0
+  · ✓ mtf-harmonic: age 17.7h, rows 1
+  · ✓ ichimoku-cloud: age 17.7h, rows 60
+  · ⚠EMPTY nifty-bias: age 17.7h, rows 0
+  · ✓ harmonic: age 17.8h, rows 71
+  · ✓ elliott-wave: age 17.9h, rows 9
+  · ✓ sector-rotation: age 17.6h, rows 13
+  · ✓ high-quality-setups: age 17.7h, rows 127
+  · ✓ pro-edge: age 17.6h, rows 2
+  · ✓ vp-fib: age 17.7h, rows 195
+  · ✓ miss-analysis: age -0.0h, rows 34
+  · ✓ gainer-postmortem: age -0.0h, rows 34
+
+### Per-source WR (last 7d closed trades)
+  · CHART-PATTERN: 1 trades, WR 0%, avgRet -2.78%
+  · VP+FIB: 1 trades, WR 100%, avgRet +1.81%
+  · WEEKLY-PICK: 1 trades, WR 100%, avgRet +17.63%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/34 caught (0%) · 16.9s
+  ✓ gainer-postmortem: 3/34 would've been caught with tuning · 1.8s
+  ✓ pattern-learner: 33 new fingerprints (store 33) · 2.3s
+  ✓ self-improve: 14 strategy overrides · +0 new adjustments · 0.1s
+  ✓ daily-core-improvise: 0 tunes applied · WR 46.55% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
+
+**Total elapsed:** 21.2s
