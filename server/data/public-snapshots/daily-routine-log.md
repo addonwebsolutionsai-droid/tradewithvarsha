@@ -17053,3 +17053,66 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
 
 **Total elapsed:** 12.5s
+
+
+## 2026-11-23T11:01:26.261Z — 16:31 IST
+
+**Book:** WR 46.55% · realised ₹1783476
+**Miss catch-rate:** 0% (0/36)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · OAL +20.0%
+  · HMAAGRO +15.6%
+  · JLHL +12.9%
+  · RRIL +12.7%
+  · WELINV +12.1%
+  · AJMERA +11.8%
+  · VIVOBIOT +11.8%
+  · SIGACHI +10.9%
+  · VERTOZ +10.4%
+  · UGROCAP +9.6%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 22
+  · rule_fired_but_not_emitted: 3
+  · ema_not_stacked: 2
+  · vol_already_elevated: 1
+  · extended_freshness_reject: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 26
+  · wyckoff-accumulation: 7
+  · vcp: 1
+
+### Engine health
+  · ⚠STALE trading-journal: age 61.7h, rows 0
+  · ⚠STALE master-setups: age 61.9h, rows 15
+  · ⚠STALE money-printer: age 61.9h, rows 0
+  · ⚠STALE mtf-harmonic: age 61.9h, rows 1
+  · ⚠STALE ichimoku-cloud: age 61.9h, rows 60
+  · ⚠STALE nifty-bias: age 61.9h, rows 0
+  · ⚠STALE harmonic: age 62.0h, rows 71
+  · ⚠STALE elliott-wave: age 62.1h, rows 9
+  · ⚠STALE sector-rotation: age 61.8h, rows 13
+  · ⚠STALE high-quality-setups: age 61.9h, rows 127
+  · ⚠STALE pro-edge: age 61.8h, rows 2
+  · ⚠STALE vp-fib: age 61.9h, rows 195
+  · ✓ miss-analysis: age -0.0h, rows 36
+  · ✓ gainer-postmortem: age -0.0h, rows 34
+
+### Per-source WR (last 7d closed trades)
+  · VP+FIB: 1 trades, WR 100%, avgRet +1.81%
+  · WEEKLY-PICK: 1 trades, WR 100%, avgRet +17.63%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/36 caught (0%) · 10.0s
+  ✓ gainer-postmortem: 3/34 would've been caught with tuning · 0.2s
+  ✓ pattern-learner: 34 new fingerprints (store 34) · 2.5s
+  ✓ self-improve: 14 strategy overrides · +0 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 46.55% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 2 fresh · 12 stale · 0 empty · 0 missing · 0.0s
+
+**Total elapsed:** 12.9s
