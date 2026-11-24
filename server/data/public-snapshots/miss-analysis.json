@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-23T18:35:52.495Z",
+  "generatedAt": "2026-11-24T00:10:43.823Z",
   "totalGainers": 47,
   "caughtCount": 0,
   "missedCount": 47,
@@ -578,7 +578,8 @@
         "OptionsPro": false
       },
       "diagnosis": [
-        "Insufficient candle history (likely not in scanner universe)"
+        "Pre-breakout filter rejected: prior-day |ret5d|=-8.0% > 6% threshold",
+        "Volume too low: 5d/20d=0.22× (need ≥1.3 for fno-futures pass)"
       ]
     },
     {
@@ -730,7 +731,8 @@
         "OptionsPro": false
       },
       "diagnosis": [
-        "Insufficient candle history (likely not in scanner universe)"
+        "Pre-breakout filter rejected: prior-day |ret20d|=42.7% > 25% threshold",
+        "Volume too low: 5d/20d=0.31× (need ≥1.3 for fno-futures pass)"
       ]
     },
     {
@@ -906,10 +908,9 @@
     }
   ],
   "diagnoses": {
-    "vol_too_low": 24,
-    "prebreakout_ret20d>25%": 2,
-    "prebreakout_ret5d>6%": 11,
-    "conviction_floor": 14,
-    "not_in_universe": 2
+    "vol_too_low": 26,
+    "prebreakout_ret20d>25%": 3,
+    "prebreakout_ret5d>6%": 12,
+    "conviction_floor": 14
   }
 }
