@@ -17430,3 +17430,66 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 2 fresh · 11 stale · 1 empty · 0 missing · 0.0s
 
 **Total elapsed:** 11.1s
+
+
+## 2026-11-25T11:33:51.265Z — 17:03 IST
+
+**Book:** WR 46.55% · realised ₹1794924
+**Miss catch-rate:** 0% (0/50)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · JWL +20.0%
+  · RMC +20.0%
+  · VERTOZ +16.4%
+  · THOMASCOOK +15.6%
+  · GREAVESCOT +15.0%
+  · ARIS +14.1%
+  · BALKRISHNA +13.9%
+  · FISCHER +12.1%
+  · HUBTOWN +11.4%
+  · KALAMANDIR +10.4%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 27
+  · vol_already_elevated: 4
+  · extended_freshness_reject: 2
+  · ema_not_stacked: 11
+  · scanner_gap: 1
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 34
+  · wyckoff-accumulation: 15
+  · vcp: 1
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 12.3h, rows 0
+  · ✓ master-setups: age 12.5h, rows 15
+  · ⚠EMPTY money-printer: age 12.5h, rows 0
+  · ✓ mtf-harmonic: age 12.5h, rows 2
+  · ✓ ichimoku-cloud: age 12.5h, rows 44
+  · ⚠EMPTY nifty-bias: age 12.5h, rows 0
+  · ✓ harmonic: age 12.5h, rows 66
+  · ✓ elliott-wave: age 12.6h, rows 13
+  · ✓ sector-rotation: age 12.3h, rows 13
+  · ✓ high-quality-setups: age 12.5h, rows 131
+  · ⚠EMPTY pro-edge: age 12.3h, rows 0
+  · ✓ vp-fib: age 12.5h, rows 199
+  · ✓ miss-analysis: age -0.0h, rows 50
+  · ✓ gainer-postmortem: age -0.0h, rows 50
+
+### Per-source WR (last 7d closed trades)
+  · VP+FIB: 1 trades, WR 100%, avgRet +1.81%
+  · WEEKLY-PICK: 1 trades, WR 100%, avgRet +17.63%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/50 caught (0%) · 11.2s
+  ✓ gainer-postmortem: 0/50 would've been caught with tuning · 0.6s
+  ✓ pattern-learner: 50 new fingerprints (store 50) · 3.2s
+  ✓ self-improve: 14 strategy overrides · +0 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 46.55% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
+
+**Total elapsed:** 15.2s
