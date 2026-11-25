@@ -17556,3 +17556,67 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
 
 **Total elapsed:** 15.9s
+
+
+## 2026-11-25T21:53:44.358Z — 03:23 IST
+
+**Book:** WR 46.55% · realised ₹1794924
+**Miss catch-rate:** 0% (0/52)
+**Engine emit:** MASTER 15 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · JWL +20.0%
+  · RMC +20.0%
+  · VERTOZ +16.4%
+  · THOMASCOOK +15.6%
+  · GREAVESCOT +15.0%
+  · ARIS +14.1%
+  · BALKRISHNA +13.9%
+  · FISCHER +12.1%
+  · HUBTOWN +11.4%
+  · KALAMANDIR +10.4%
+
+### Why we missed them (postmortem)
+  · not_coil_pattern: 22
+  · ema_not_stacked: 16
+  · vol_already_elevated: 1
+  · rule_fired_but_not_emitted: 1
+  · extended_freshness_reject: 3
+  · scanner_gap: 2
+
+### Patterns detected in the missed movers (for future signal generation)
+  · unknown: 34
+  · wyckoff-accumulation: 13
+  · vcp: 3
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 22.7h, rows 0
+  · ✓ master-setups: age 22.8h, rows 15
+  · ⚠EMPTY money-printer: age 22.8h, rows 0
+  · ✓ mtf-harmonic: age 22.8h, rows 2
+  · ✓ ichimoku-cloud: age 22.8h, rows 44
+  · ⚠EMPTY nifty-bias: age 22.8h, rows 0
+  · ✓ harmonic: age 22.9h, rows 66
+  · ✓ elliott-wave: age 22.9h, rows 13
+  · ✓ sector-rotation: age 22.7h, rows 13
+  · ✓ high-quality-setups: age 22.8h, rows 131
+  · ✓ pro-edge: age 9.3h, rows 4
+  · ✓ vp-fib: age 22.8h, rows 199
+  · ✓ miss-analysis: age -0.0h, rows 52
+  · ✓ gainer-postmortem: age -0.0h, rows 50
+
+### Per-source WR (last 7d closed trades)
+  · VP+FIB: 1 trades, WR 100%, avgRet +1.81%
+  · WEEKLY-PICK: 1 trades, WR 100%, avgRet +17.63%
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/52 caught (0%) · 11.0s
+  ✓ gainer-postmortem: 1/50 would've been caught with tuning · 0.1s
+  ✓ pattern-learner: 50 new fingerprints (store 50) · 3.3s
+  ✓ self-improve: 14 strategy overrides · +0 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 46.55% · MASTER 15 · MP 0 · 0.0s
+  ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
+
+**Total elapsed:** 14.7s
