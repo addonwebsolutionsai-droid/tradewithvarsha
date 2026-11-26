@@ -17738,3 +17738,50 @@ Schedule: 08:00 / 12:00 / 18:00 IST.
   ✓ engine-health: 11 fresh · 0 stale · 3 empty · 0 missing · 0.0s
 
 **Total elapsed:** 15.0s
+
+
+## 2026-11-26T21:48:18.340Z — 03:18 IST
+
+**Book:** WR 47.01% · realised ₹1795230
+**Miss catch-rate:** 0% (0/6)
+**Engine emit:** MASTER 1 · Money-Printer 0
+
+### Top misses today (10-20% movers we didn't catch)
+  · DABUR +7.8%
+  · HINDUNILVR +6.1%
+  · J&KBANK +5.8%
+  · GODREJCP +5.6%
+  · DMART +5.5%
+  · BRITANNIA +5.1%
+
+### Why we missed them (postmortem)
+
+### Patterns detected in the missed movers (for future signal generation)
+
+### Engine health
+  · ⚠EMPTY trading-journal: age 23.4h, rows 0
+  · ✓ master-setups: age 23.5h, rows 1
+  · ⚠EMPTY money-printer: age 23.5h, rows 0
+  · ✓ mtf-harmonic: age 23.5h, rows 2
+  · ✓ ichimoku-cloud: age 23.5h, rows 49
+  · ⚠EMPTY nifty-bias: age 23.5h, rows 0
+  · ✓ harmonic: age 23.6h, rows 73
+  · ✓ elliott-wave: age 23.6h, rows 13
+  · ✓ sector-rotation: age 23.4h, rows 13
+  · ✓ high-quality-setups: age 23.5h, rows 126
+  · ✓ pro-edge: age 9.5h, rows 3
+  · ✓ vp-fib: age 23.5h, rows 197
+  · ✓ miss-analysis: age -0.0h, rows 6
+  · ⚠EMPTY gainer-postmortem: age -0.0h, rows 0
+
+### Tunes applied: 0
+
+### Step outcomes
+  ✓ miss-analysis: 0/6 caught (0%) · 7.5s
+  ✓ gainer-postmortem: 0/0 would've been caught with tuning · 0.2s
+  ✓ pattern-learner: 0 new fingerprints (store 0) · 0.2s
+  ✓ self-improve: 14 strategy overrides · +0 new adjustments · 0.2s
+  ✓ daily-core-improvise: 0 tunes applied · WR 47.01% · MASTER 1 · MP 0 · 0.0s
+  ✓ engine-health: 10 fresh · 0 stale · 4 empty · 0 missing · 0.0s
+
+**Total elapsed:** 8.2s
